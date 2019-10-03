@@ -102,6 +102,14 @@ namespace RivalAI {
 
             //LogicManager.Setup();
 
+            if(IsServer == false) {
+
+                return;
+
+            }
+
+            MyAPIGateway.Session.DamageSystem.RegisterBeforeDamageHandler(100, DamageHelper.DamageHandler);
+
         }
 
         protected override void UnloadData() {
