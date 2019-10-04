@@ -280,6 +280,80 @@ namespace RivalAI.Helpers{
             return targetPosition;
 
         }
+		
+	public static Vector3D GetPlanetWaypointPathing(Vector3D myCoords, Vector3D targetCoords, double minAltitude = 200, double maxDistanceToCheck = 1000){
+			
+			var planet = MyGamePruningStructure.GetClosestPlanet(targetCoords);
+			
+			if(planet == null){
+				
+				return Vector3D.Zero;
+				
+			}
+			
+			var planetCoords = planet.PositionComp.WorldAABB.Center;
+			var aboveTargetCoords = Vector3D.Normalize(targetCoords - planetCoords) * minAltitude + targetCoords;
+			var dirToTarget = Vector3D.Normalize(aboveTargetCoords - myCoords);
+			var distToTarget = Vector3D.Distance(targetCoords, myCoords);
+			double distanceToUse = distToTarget;
+			
+			if(distToTarget > maxDistanceToCheck){
+				
+				distanceToUse = maxDistanceToCheck;
+				
+			}
+			
+			List<Vector3D> pathSteps = new List<Vector3D>();
+			double currentPathDistance = 0;
+			
+			while(currentPathDistance < distanceToUse){
+				
+				if((currentPathDistance - distanceToUse) < 50{
+					
+					thisStep = currentPathDistance - distanceToUse;
+					currentPathDistance = distanceToUse;
+					
+				}else{
+					
+					currentPathDistance += 50;
+					
+				}
+				
+				pathSteps.Add(dirToTarget * currentPathDistance + myCoords);
+				
+			}
+			
+			var myDistToCore = Vector3D.Distance(myCoords, planetCoords);
+			double currentHighestDistance = myDistToCore;
+			Vector3D pathEnd = Vector3D.Zero;
+			
+			foreach(var pathPoint in pathSteps){
+
+				Vector3D pathPointRef = pathPoint;
+				Vector3D surfacePoint = planet.GetClosestSurfacePointGlobal(ref pathPointRef);
+				pathEnd = Vector3D.Normalize(surfacePoint - planetCoords) * minAltitude + surfacePoint;
+				double pointDistanceFromCore = Vector3D.Distance(planetCoords, pathEnd);
+				
+				if(currentHighestDistance < pointDistanceFromCore){
+					
+					currentHighestDistance = pointDistanceFromCore;
+					
+				}
+				
+			}
+			
+			if(currentHighestDistance > myDistToCore){
+				
+				var forwardStep = dirToTarget * 50 + myCoords;
+				return Vector3D.Normalize(forwardStep - planetCoords) * currentHighestDistance + planetCoords;
+				
+			} else{
+				
+				return pathEnd;
+				
+			}
+			
+		}
 
         //IsPositionUnderground
         public static bool IsPositionUnderground(Vector3D coords, MyPlanet planet){
