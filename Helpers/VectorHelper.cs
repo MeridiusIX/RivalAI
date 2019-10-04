@@ -272,15 +272,7 @@ namespace RivalAI.Helpers{
 			return myDistance - testDistance;
 			
 		}
-
-        public static Vector3 GetProjectileLeadPosition(float projectileVelocity, Vector3 myPosition, Vector3 myVelocity, Vector3 targetPosition, Vector3 targetVelocity) {
-
-
-
-            return targetPosition;
-
-        }
-		
+	
 	public static Vector3D GetPlanetWaypointPathing(Vector3D myCoords, Vector3D targetCoords, double minAltitude = 200, double maxDistanceToCheck = 1000){
 			
 			var planet = MyGamePruningStructure.GetClosestPlanet(targetCoords);
