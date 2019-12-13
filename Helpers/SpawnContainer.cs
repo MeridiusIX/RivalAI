@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,39 +33,19 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Helpers {
 
-    public static class DamageHelper {
+    public class RivalAISpawn {
 
-        public static HashSet<IMyCubeGrid> MonitoredGrids = new HashSet<IMyCubeGrid>();
-        public static Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>> RegisteredDamageHandlers = new Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>>();
+        public List<string> SpawnGroupNames;
 
-        public static void DamageHandler(object target, MyDamageInformation info) {
+        public bool IgnoreSpawnRules;
 
-            var block = target as IMySlimBlock;
+        public RivalAISpawn() {
 
-            if(block == null) {
+            SpawnGroupNames = new List<string>();
 
-                return;
-
-            }
-
-            var grid = block.CubeGrid;
-
-            if(MonitoredGrids.Contains(grid)) {
-
-                Action<object, MyDamageInformation> action = null;
-
-                if(RegisteredDamageHandlers.TryGetValue(grid, out action)) {
-
-                    action?.Invoke(target, info);
-                    return;
-
-                }
-
-            }
+            IgnoreSpawnRules = false;
 
         }
-
-        
 
     }
 

@@ -30,10 +30,11 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
-namespace RivalAI.Behavior.Subsystems{
-	
-	public enum WeaponEngageModeEnum{
+namespace RivalAI.Behavior.Subsystems {
+
+    public enum WeaponEngageModeEnum{
 		
 		Angle,
 		Raycast,
@@ -48,6 +49,8 @@ namespace RivalAI.Behavior.Subsystems{
         public bool UseStaticGuns;
         public double WeaponMaxAngleFromTarget;
         public bool UseBarrageFire;
+        public int MaxFireRateForBarrageWeapons;
+        public bool KeepWeaponsLoaded;
         public bool WeaponsAttackVoxels;
         public bool WeaponsAttackAnyGrids;
 
@@ -59,17 +62,24 @@ namespace RivalAI.Behavior.Subsystems{
         public List<IMyLargeTurretBase> Turrets;
         public double HighestRangeStaticGun;
 
+        public IMyEntity TurretTarget;
+
         public int BarrageInt;
         public bool EngageTargets;
         public bool UsingProjectileLead;
         public Vector3D TargetCoords;
+        public TargetEvaluation Target;
         public double DistanceToTarget;
+
+        public bool CanAnyWeaponFire;
  
 		public WeaponsSystem(IMyRemoteControl remoteControl = null) {
 
             UseStaticGuns = false;
             WeaponMaxAngleFromTarget = 2;
             UseBarrageFire = false;
+            MaxFireRateForBarrageWeapons = 300;
+            KeepWeaponsLoaded = false;
             WeaponsAttackVoxels = false;
             WeaponsAttackAnyGrids = false;
 
@@ -80,11 +90,16 @@ namespace RivalAI.Behavior.Subsystems{
 			Turrets = new List<IMyLargeTurretBase>();
             HighestRangeStaticGun = 0;
 
+            TurretTarget = null;
+
             BarrageInt = 0;
             EngageTargets = false;
             UsingProjectileLead = false;
             TargetCoords = Vector3D.Zero;
+            Target = new TargetEvaluation(null, TargetTypeEnum.None);
             DistanceToTarget = -1;
+
+            CanAnyWeaponFire = true;
 
             Setup(remoteControl);
 
@@ -123,36 +138,36 @@ namespace RivalAI.Behavior.Subsystems{
 
         public void BarrageFire() {
 
-            if(RAI_SessionCore.IsServer == false || this.EngageTargets == false || this.UseBarrageFire == false || this.StaticWeapons.Count == 0) {
+            if(this.EngageTargets == false || this.UseBarrageFire == false || this.StaticWeapons.Count == 0) {
 
                 return;
 
             }
 
-            int originalBarrageInt = this.BarrageInt;
             this.BarrageInt++;
 
-            while(originalBarrageInt != this.BarrageInt) {
+            if(this.BarrageInt >= this.StaticWeapons.Count) {
 
-                if(this.BarrageInt >= this.StaticWeapons.Count) {
+                this.BarrageInt = 0;
 
-                    this.BarrageInt = 0;
+            }
 
-                }
+            if(this.StaticWeapons.Count > 0) {
 
                 var weapon = this.StaticWeapons[this.BarrageInt];
 
-                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != false) {
 
                     weapon.SingleShot();
 
                 }
 
             }
+            
 
         }
 
-        public void FireEligibleWeapons(Vector3D targetCoords, bool usingProjectileLead){
+        public void FireEligibleWeapons(TargetEvaluation target){
 
             if(this.UseStaticGuns == false || this.HighestRangeStaticGun == 0 || this.EngageTargets == false) {
 
@@ -160,158 +175,88 @@ namespace RivalAI.Behavior.Subsystems{
 
             }
 
-            this.TargetCoords = targetCoords;
-            this.UsingProjectileLead = usingProjectileLead;
+            this.Target = target;
 
-            MyAPIGateway.Parallel.Start(() => {
+            bool hasTarget = false;
+            double targetDistance = this.Target.Distance;
 
-                bool hasTarget = false;
-                double targetDistance = Vector3D.Distance(this.TargetCoords, this.RemoteControl.GetPosition());
-                CollisionDetectType closestThing = CollisionDetectType.None;
-                double closestDistance = targetDistance;
+            if(this.Target.TargetExists == true) {
 
-                var safezoneCoords = TargetHelper.SafeZoneIntersectionCheck(this.RemoteControl.GetPosition(), this.RemoteControl.WorldMatrix.Forward, targetDistance);
-                double safeZoneDistance = targetDistance + 100;
+                if(this.Target.UseLeadPrediction == true || this.Target.TargetType == TargetTypeEnum.Player) {
 
-                if(safezoneCoords != Vector3D.Zero) {
-
-                    safeZoneDistance = Vector3D.Distance(safezoneCoords, this.RemoteControl.GetPosition());
-
-                    if(safeZoneDistance < closestDistance) {
-
-                        closestDistance = safeZoneDistance;
-                        closestThing = CollisionDetectType.SafeZone;
-
-                    }
-
-                }
-
-                var voxelCoords = Vector3D.Zero;
-                double voxelDistance = targetDistance + 100;
-
-                if(this.WeaponsAttackVoxels == false) {
-
-                    voxelCoords = TargetHelper.VoxelIntersectionCheck(this.RemoteControl.GetPosition(), this.RemoteControl.WorldMatrix.Forward, targetDistance);
-
-                    if(voxelCoords != Vector3D.Zero) {
-
-                        voxelDistance = Vector3D.Distance(voxelCoords, this.RemoteControl.GetPosition());
-
-                        if(voxelDistance < closestDistance) {
-
-                            closestDistance = voxelDistance;
-                            closestThing = CollisionDetectType.Voxel;
-
-                        }
-
-                    }
-
-                }
-
-                var shieldCoords = TargetHelper.ShieldIntersectionCheck(this.RemoteControl.GetPosition(), this.RemoteControl.WorldMatrix.Forward, targetDistance, this.RemoteControl.OwnerId);
-                double shieldDistance = targetDistance + 100;
-
-                if(shieldCoords != Vector3D.Zero) {
-
-                    shieldDistance = Vector3D.Distance(shieldCoords, this.RemoteControl.GetPosition());
-
-                    if(shieldDistance < closestDistance) {
-
-                        closestDistance = shieldDistance;
-                        closestThing = CollisionDetectType.DefenseShield;
-
-                    }
-
-                }
-
-                if(this.UsingProjectileLead == true) {
-
-                    var angle = VectorHelper.GetAngleBetweenDirections(this.RemoteControl.WorldMatrix.Forward, Vector3D.Normalize(this.TargetCoords - this.RemoteControl.GetPosition()));
-
-                    if(angle <= this.WeaponMaxAngleFromTarget && closestThing != CollisionDetectType.SafeZone) {
+                    if(this.Target.TargetAngle <= this.WeaponMaxAngleFromTarget && this.Target.TargetObstruction != TargetObstructionEnum.Safezone) {
 
                         hasTarget = true;
-                        targetDistance = closestDistance;
+                        this.Target.Distance = this.Target.TargetObstructionDistance;
 
                     }
 
                 } else {
 
-                    IMyCubeGrid grid = null;
-                    var gridCoords = TargetHelper.TargetIntersectionCheck(this.RemoteControl, this.RemoteControl.WorldMatrix.Forward, targetDistance, out grid);
-                    double gridDistance = targetDistance + 100;
-                    var relation = OwnershipHelper.GetTargetReputation(this.RemoteControl.OwnerId, grid);
-                    bool allowFire = (relation.HasFlag(TargetRelationEnum.Enemy) == true || this.WeaponsAttackAnyGrids == true);
-
-                    if(gridCoords != Vector3D.Zero && allowFire == true) {
-
-                        gridDistance = Vector3D.Distance(gridCoords, this.RemoteControl.GetPosition());
-
-                        if(gridDistance < closestDistance) {
-
-                            closestDistance = gridDistance;
-                            closestThing = CollisionDetectType.Grid;
-
-                        }
-
-                    }
-
-                    if(closestThing != CollisionDetectType.SafeZone && closestThing != CollisionDetectType.None) {
+                    if(this.Target.TargetObstruction != TargetObstructionEnum.Safezone && this.Target.TargetObstruction != TargetObstructionEnum.None) {
 
                         hasTarget = true;
-                        targetDistance = closestDistance;
+                        targetDistance = this.Target.TargetObstructionDistance;
 
                     }
 
                 }
 
-                foreach(var weapon in this.StaticWeapons.ToList()) {
+            }
 
-                    if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+            foreach(var weapon in this.StaticWeapons.ToList()) {
 
-                        weapon.CheckWeaponReadiness(hasTarget, targetDistance);
+                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
 
-                    } else {
+                    try {
 
-                        this.StaticWeapons.Remove(weapon);
+                        weapon.CheckWeaponReadiness(hasTarget, targetDistance, this.KeepWeaponsLoaded);
+
+                    } catch(Exception exc) {
+
+                        Logger.AddMsg("Exception Detected Checking Weapon Readiness");
+                        Logger.AddMsg(exc.ToString(), true);
+
+                    }
+                    
+
+                } else {
+
+                    this.StaticWeapons.Remove(weapon);
+
+                }
+
+            }
+
+            foreach(var weapon in this.StaticWeapons.ToList()) {
+
+                if(this.UseBarrageFire == true && weapon.RateOfFire < this.MaxFireRateForBarrageWeapons) {
+
+                    continue;
+
+                }
+
+                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+
+                    if(weapon.ReadyToFire == true && weapon.CurrentlyFiring == false) {
+
+                        weapon.ToggleFiring();
 
                     }
 
-                }
+                    if(weapon.ReadyToFire == false && weapon.CurrentlyFiring == true) {
 
-            }, () => {
-
-                if(this.UseBarrageFire == true) {
-
-                    return;
-
-                }
-
-                foreach(var weapon in this.StaticWeapons.ToList()) {
-
-                    if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
-
-                        if(weapon.ReadyToFire == true && weapon.CurrentlyFiring == false) {
-
-                            weapon.ToggleFiring();
-
-                        }
-
-                        if(weapon.ReadyToFire == false && weapon.CurrentlyFiring == true) {
-
-                            weapon.ToggleFiring();
-
-                        }
-
-                    } else {
-
-                        this.StaticWeapons.Remove(weapon);
+                        weapon.ToggleFiring();
 
                     }
 
+                } else {
+
+                    this.StaticWeapons.Remove(weapon);
+
                 }
 
-            });
+            }
 
         }
 
@@ -322,6 +267,8 @@ namespace RivalAI.Behavior.Subsystems{
                 return;
 
             }
+
+            this.RemoteControl = remoteControl;
 
             var allBlocks = TargetHelper.GetAllBlocks(remoteControl.SlimBlock.CubeGrid);
             this.StaticWeapons.Clear();
@@ -343,6 +290,62 @@ namespace RivalAI.Behavior.Subsystems{
                     if(weaponProfile.AmmoRange > this.HighestRangeStaticGun) {
 
                         this.HighestRangeStaticGun = weaponProfile.AmmoRange;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        public void InitTags() {
+
+            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
+
+                foreach(var tag in descSplit) {
+
+                    //UseStaticGuns
+                    if(tag.Contains("[UseStaticGuns:") == true) {
+
+                        this.UseStaticGuns = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //WeaponMaxAngleFromTarget
+                    if(tag.Contains("[WeaponMaxAngleFromTarget:") == true) {
+
+                        this.WeaponMaxAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.WeaponMaxAngleFromTarget);
+
+                    }
+
+                    //UseBarrageFire
+                    if(tag.Contains("[UseBarrageFire:") == true) {
+
+                        this.UseBarrageFire = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //KeepWeaponsLoaded
+                    if(tag.Contains("[KeepWeaponsLoaded:") == true) {
+
+                        this.KeepWeaponsLoaded = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //WeaponsAttackVoxels
+                    if(tag.Contains("[WeaponsAttackVoxels:") == true) {
+
+                        this.WeaponsAttackVoxels = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //WeaponsAttackAnyGrids
+                    if(tag.Contains("[WeaponsAttackAnyGrids:") == true) {
+
+                        this.WeaponsAttackAnyGrids = TagHelper.TagBoolCheck(tag);
 
                     }
 

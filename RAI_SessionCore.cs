@@ -30,6 +30,7 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Sync;
 
 namespace RivalAI {
 
@@ -45,6 +46,7 @@ namespace RivalAI {
         public bool ShieldMod { get; set; }
         public bool ShieldApiLoaded { get; set; }
         public ShieldApi SApi = new ShieldApi();
+        public static string ConfigInstance = "";
 
         public static bool SetupComplete = false;
 
@@ -63,6 +65,15 @@ namespace RivalAI {
             }
 
         }
+
+        public override void BeforeStart() {
+
+            TagHelper.Setup();
+
+        }
+
+        
+        
 
         public override void UpdateBeforeSimulation() {
 
@@ -87,6 +98,8 @@ namespace RivalAI {
 
             IsServer = MyAPIGateway.Multiplayer.IsServer;
             IsDedicated = MyAPIGateway.Utilities.IsDedicated;
+            ConfigInstance = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+            SyncManager.Setup();
 
             //Add ShieldBlocks To TargetHelper
             TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterSA"));
@@ -108,7 +121,7 @@ namespace RivalAI {
 
             }
 
-            MyAPIGateway.Session.DamageSystem.RegisterBeforeDamageHandler(100, DamageHelper.DamageHandler);
+            MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(1, DamageHelper.DamageHandler);
 
         }
 
@@ -120,6 +133,8 @@ namespace RivalAI {
                 Instance = null;
 
             }
+
+            SyncManager.Close();
 
         }
 

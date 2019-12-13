@@ -26,65 +26,99 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
 using RivalAI;
-using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
-namespace RivalAI.Behavior.Subsystems{
-	
+namespace RivalAI.Behavior.Subsystems {
+
+    public enum ThrustMode {
+
+        None,
+        Strafe,
+        ConstantForward
+
+    }
+
 	public class ThrustSystem{
+
+        public bool AllowStrafing;
+        public int StrafeMinDurationMs;
+        public int StrafeMaxDurationMs;
+        public int StrafeMinCooldownMs;
+        public int StrafeMaxCooldownMs;
+        public double StrafeSpeedCutOff;
+        public double StrafeDistanceCutOff;
+        public Vector3I AllowedStrafingDirectionsSpace;
+        public Vector3I AllowedStrafingDirectionsPlanet;
+
+        public IMyRemoteControl RemoteControl;
+        public ThrustMode Mode;
+        public List<ThrustProfile> ThrustProfiles;
+        public Random Rnd;
+
+        private AutoPilotSystem AutoPilot;
+        private CollisionSystem Collision;
+
+        public Vector3I PreviousAllowedThrust;
+        public Vector3I PreviousRequiredThrust;
+        public Vector3I CurrentAllowedThrust;
+        public Vector3I CurrentRequiredThrust;
+
+        public bool Strafing;
+        public Vector3I CurrentStrafeDirections;
+        public Vector3I CurrentAllowedStrafeDirections;
+        public bool InvertStrafingActivated;
+        public int ThisStrafeDuration;
+        public int ThisStrafeCooldown;
+        public DateTime LastStrafeStartTime;
+        public DateTime LastStrafeEndTime;
 		
-		public IMyRemoteControl RemoteControl;
-		
-		public List<IMyThrust> AllThrust;
-
-		public List<IMyThrust> ForwardThrust;
-        public double ForwardThrustForce;
-
-        public List<IMyThrust> BackwardThrust;
-        public double BackwardThrustForce;
-
-        public List<IMyThrust> UpThrust;
-        public double UpThrustForce;
-
-        public List<IMyThrust> DownThrust;
-        public double DownThrustForce;
-
-        public List<IMyThrust> LeftThrust;
-        public double LeftThrustForce;
-
-        public List<IMyThrust> RightThrust;
-        public double RightThrustForce;
-
         public ThrustSystem(IMyRemoteControl remoteControl){
-			
-			RemoteControl = null;
-			
-			AllThrust = new List<IMyThrust>();
 
-			ForwardThrust = new List<IMyThrust>();
-            ForwardThrustForce = 0;
+            AllowStrafing = false;
+            StrafeMinDurationMs = 750;
+            StrafeMaxDurationMs = 1500;
+            StrafeMinCooldownMs = 1000;
+            StrafeMaxCooldownMs = 3000;
+            StrafeSpeedCutOff = 100;
+            StrafeDistanceCutOff = 1000;
+            AllowedStrafingDirectionsSpace = new Vector3I(1, 1, 1);
+            AllowedStrafingDirectionsPlanet = new Vector3I(1, 1, 1);
 
-			BackwardThrust = new List<IMyThrust>();
-            BackwardThrustForce = 0;
+            RemoteControl = null;
+            Mode = ThrustMode.None;
+            ThrustProfiles = new List<ThrustProfile>();
+            Rnd = new Random();
 
-            UpThrust = new List<IMyThrust>();
-            UpThrustForce = 0;
+            CurrentAllowedThrust = Vector3I.Zero;
+            CurrentRequiredThrust = Vector3I.Zero;
 
-            DownThrust = new List<IMyThrust>();
-            DownThrustForce = 0;
+            if(StrafeMinDurationMs >= StrafeMaxDurationMs) {
 
-            LeftThrust = new List<IMyThrust>();
-            LeftThrustForce = 0;
+                StrafeMaxDurationMs = StrafeMinDurationMs + 1;
 
-            RightThrust = new List<IMyThrust>();
-            RightThrustForce = 0;
+            }
+
+            if(StrafeMinCooldownMs >= StrafeMaxCooldownMs) {
+
+                StrafeMaxCooldownMs = StrafeMinCooldownMs + 1;
+
+            }
+
+            Strafing = false;
+            CurrentStrafeDirections = Vector3I.Zero;
+            CurrentAllowedStrafeDirections = Vector3I.Zero;
+            ThisStrafeDuration = Rnd.Next(StrafeMinDurationMs, StrafeMaxDurationMs);
+            ThisStrafeCooldown = Rnd.Next(StrafeMinCooldownMs, StrafeMaxCooldownMs);
+            LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
+            LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 
             Setup(remoteControl);
 
 
         }
-		
+
 		private void Setup(IMyRemoteControl remoteControl){
 			
 			if(remoteControl == null){
@@ -97,168 +131,315 @@ namespace RivalAI.Behavior.Subsystems{
 			var blockList = new List<IMySlimBlock>();
 			this.RemoteControl.SlimBlock.CubeGrid.GetBlocks(blockList);
 			
-			var rcEntity = this.RemoteControl as IMyEntity;
-			
 			foreach(var block in blockList.Where(item => item.FatBlock as IMyThrust != null)){
-				
-				var thrust = block.FatBlock as IMyThrust;
-                thrust.IsWorkingChanged += UpdateThrustForces;
-				AllThrust.Add(thrust);
-				
-				if(this.RemoteControl.WorldMatrix.Forward == thrust.WorldMatrix.Backward){
 
-                    this.ForwardThrust.Add(thrust);
-                    this.ForwardThrustForce += (double)thrust.MaxEffectiveThrust;
-					
-				}
-				
-				if(this.RemoteControl.WorldMatrix.Backward == thrust.WorldMatrix.Forward){
+                this.ThrustProfiles.Add(new ThrustProfile(block.FatBlock as IMyThrust, this.RemoteControl));
 
-                    this.BackwardThrust.Add(thrust);
-                    this.BackwardThrustForce += (double)thrust.MaxEffectiveThrust;
-
-                }
-				
-				if(this.RemoteControl.WorldMatrix.Up == thrust.WorldMatrix.Down){
-
-                    this.UpThrust.Add(thrust);
-                    this.UpThrustForce += (double)thrust.MaxEffectiveThrust;
-
-                }
-				
-				if(this.RemoteControl.WorldMatrix.Down == thrust.WorldMatrix.Up){
-
-                    this.DownThrust.Add(thrust);
-                    this.DownThrustForce += (double)thrust.MaxEffectiveThrust;
-
-                }
-				
-				if(this.RemoteControl.WorldMatrix.Left == thrust.WorldMatrix.Right){
-
-                    this.LeftThrust.Add(thrust);
-                    this.LeftThrustForce += (double)thrust.MaxEffectiveThrust;
-
-                }
-				
-				if(this.RemoteControl.WorldMatrix.Right == thrust.WorldMatrix.Left){
-
-                    this.RightThrust.Add(thrust);
-                    this.RightThrustForce += (double)thrust.MaxEffectiveThrust;
-
-                }
-				
 			}
 			
 		}
 
-        public void StopAllThrust() {
+        public void SetupReferences(AutoPilotSystem autoPilot, CollisionSystem collision) {
 
-
+            this.AutoPilot = autoPilot;
+            this.Collision = collision;
 
         }
 
-        public void UpdateThrustForces(IMyCubeBlock cubeBlock) {
+        public void ChangeMode(ThrustMode newMode) {
 
-            var thrust = cubeBlock as IMyThrust;
-
-            if(thrust == null) {
+            if(newMode == this.Mode) {
 
                 return;
 
             }
 
-            //Forward
-            if(this.ForwardThrust.Contains(thrust) == true) {
+            this.Mode = newMode;
+            this.Strafing = false;
+            this.SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
 
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
+        }
 
-                    ForwardThrustForce += thrust.MaxEffectiveThrust;
+        public void ProcessThrust(Vector3D upDirection = new Vector3D(), Vector3D destination = new Vector3D(), double minAltitude = -1, double minTargetDist = -1) {
+
+            if(this.Mode == ThrustMode.None) {
+
+                StopAllThrust();
+
+            }
+
+            if(Mode == ThrustMode.Strafe && this.AllowStrafing == true) {
+
+                if(this.Strafing == false) {
+
+                    TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeEndTime;
+                    if(duration.TotalMilliseconds >= this.ThisStrafeCooldown) {
+
+                        //Logger.AddMsg("Begin Strafe", true);
+                        this.LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
+                        this.ThisStrafeDuration = Rnd.Next(StrafeMinDurationMs, StrafeMaxDurationMs);
+                        this.Strafing = true;
+                        Collision.RemoteControlPosition = this.RemoteControl.GetPosition();
+                        Collision.RemoteMaxtrix = this.RemoteControl.WorldMatrix;
+
+                        MyAPIGateway.Parallel.Start(() => {
+
+                            Collision.CheckDirectionalCollisionsThreaded();
+                            this.CurrentStrafeDirections = new Vector3I(Rnd.Next(-1, 2), Rnd.Next(-1, 2), Rnd.Next(-1, 2));
+
+                            if(this.CurrentStrafeDirections.X != 0) {
+
+                                if(this.CurrentStrafeDirections.X == 1) {
+
+                                    if(Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: X Reverse", true);
+                                        this.CurrentStrafeDirections.X *= -1;
+
+                                    } else if(Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: X Negate", true);
+                                        this.CurrentStrafeDirections.X = 0;
+
+                                    }
+
+                                } else {
+
+                                    if(Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: X Reverse", true);
+                                        this.CurrentStrafeDirections.X *= -1;
+
+                                    } else if(Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: X Negate", true);
+                                        this.CurrentStrafeDirections.X = 0;
+
+                                    }
+
+                                }
+
+                            }
+
+                            if(this.CurrentStrafeDirections.Y != 0) {
+
+                                if(this.CurrentStrafeDirections.Y == 1) {
+
+                                    if(Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: Y Reverse", true);
+                                        this.CurrentStrafeDirections.Y *= -1;
+
+                                    } else if(Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: Y Negate", true);
+                                        this.CurrentStrafeDirections.Y = 0;
+
+                                    }
+
+                                } else {
+
+                                    if(Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: Y Reverse", true);
+                                        this.CurrentStrafeDirections.Y *= -1;
+
+                                    } else if(Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: Y Negate", true);
+                                        this.CurrentStrafeDirections.Y = 0;
+
+                                    }
+
+                                }
+
+                            }
+
+                            if(this.CurrentStrafeDirections.Z != 0) {
+
+                                if(this.CurrentStrafeDirections.Z == 1) {
+
+                                    if(Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: Z Reverse", true);
+                                        this.CurrentStrafeDirections.Z *= -1;
+
+                                    } else if(Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: Z Negate", true);
+                                        this.CurrentStrafeDirections.Z = 0;
+
+                                    }
+
+                                } else {
+
+                                    if(Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == false) {
+
+                                        //Logger.AddMsg("Strafe: Z Reverse", true);
+                                        this.CurrentStrafeDirections.Z *= -1;
+
+                                    } else if(Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == true) {
+
+                                        //Logger.AddMsg("Strafe: Z Negate", true);
+                                        this.CurrentStrafeDirections.Z = 0;
+
+                                    }
+
+                                }
+
+                            }
+
+
+                        }, () => {
+
+                            
+                            MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+                                //Game Thread
+                                SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+                            });
+
+                        });
+
+                        
+                        //SafeStrafeDirections(upDirection, destination, minAltitude, minTargetDist);
+                        //Logger.AddMsg("Duration: " + this.ThisStrafeDuration.ToString(), true);
+
+                    }
 
                 } else {
 
-                    ForwardThrustForce -= thrust.MaxEffectiveThrust;
+                    //SafeStrafeDirections(upDirection, destination, minAltitude, minTargetDist);
+
+                    TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeStartTime;
+
+                    if(duration.TotalMilliseconds >= this.ThisStrafeDuration) {
+
+                        //Logger.AddMsg("End Strafe", true);
+                        this.InvertStrafingActivated = false;
+                        this.LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
+                        this.ThisStrafeCooldown = Rnd.Next(StrafeMinCooldownMs, StrafeMaxCooldownMs);
+                        this.Strafing = false;
+                        SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
+                        //Logger.AddMsg("Cooldown: " + this.ThisStrafeCooldown.ToString(), true);
+
+                    }
 
                 }
 
             }
 
-            //Backward
-            if(this.BackwardThrust.Contains(thrust) == true) {
+            if(Mode == ThrustMode.ConstantForward) {
 
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
+                SetThrust(this.CurrentAllowedThrust, this.CurrentRequiredThrust);
 
-                    BackwardThrustForce += thrust.MaxEffectiveThrust;
+            }
 
-                } else {
+        }
 
-                    BackwardThrustForce -= thrust.MaxEffectiveThrust;
+        public void SafeStrafeDirections(Vector3D upDirection, Vector3D destination, double minAltitude, double minTargetDist){
+
+            if(upDirection != new Vector3D()) {
+
+                double elevation = 0;
+
+                if(this.RemoteControl.TryGetPlanetElevation(Sandbox.ModAPI.Ingame.MyPlanetElevation.Surface, out elevation) == true) {
+
+                    if(elevation < minAltitude) {
+
+                        var newThrust = VectorHelper.GetThrustDirectionsAwayFromSurface(this.RemoteControl.WorldMatrix, upDirection, this.CurrentStrafeDirections);
+
+                        if(newThrust != this.CurrentStrafeDirections) {
+
+                            this.CurrentStrafeDirections = newThrust;
+                            SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+                        }
+
+                    }
 
                 }
 
             }
 
-            //Up
-            if(this.UpThrust.Contains(thrust) == true) {
+            if(Vector3D.Distance(this.RemoteControl.GetPosition(), destination) < minTargetDist) {
 
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
+                var dirToCollision = Vector3D.Normalize(destination - this.RemoteControl.GetPosition());
+                var newThrust = VectorHelper.GetThrustDirectionsAwayFromSurface(this.RemoteControl.WorldMatrix, -dirToCollision, this.CurrentStrafeDirections);
 
-                    UpThrustForce += thrust.MaxEffectiveThrust;
+                if(newThrust != this.CurrentStrafeDirections) {
 
-                } else {
-
-                    UpThrustForce -= thrust.MaxEffectiveThrust;
-
-                }
-
-            }
-
-            //Down
-            if(this.DownThrust.Contains(thrust) == true) {
-
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
-
-                    DownThrustForce += thrust.MaxEffectiveThrust;
-
-                } else {
-
-                    DownThrustForce -= thrust.MaxEffectiveThrust;
-
-                }
-
-            }
-
-            //Left
-            if(this.LeftThrust.Contains(thrust) == true) {
-
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
-
-                    LeftThrustForce += thrust.MaxEffectiveThrust;
-
-                } else {
-
-                    LeftThrustForce -= thrust.MaxEffectiveThrust;
-
-                }
-
-            }
-
-            //Right
-            if(this.RightThrust.Contains(thrust) == true) {
-
-                if(thrust.IsWorking == true && thrust.IsFunctional == true) {
-
-                    RightThrustForce += thrust.MaxEffectiveThrust;
-
-                } else {
-
-                    RightThrustForce -= thrust.MaxEffectiveThrust;
+                    this.CurrentStrafeDirections = newThrust;
+                    SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
 
                 }
 
             }
 
         }
-		
+
+        public void InvertStrafe(Vector3D collisionCoords) {
+
+            if(this.Strafing == false) {
+
+                return;
+
+            }
+
+            SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
+
+            /*
+            var dirToCollision = Vector3D.Normalize(collisionCoords - this.RemoteControl.GetPosition());
+            var newThrust = VectorHelper.GetThrustDirectionsAwayFromSurface(this.RemoteControl.WorldMatrix, -dirToCollision, this.CurrentStrafeDirections);
+
+            if(newThrust != this.CurrentStrafeDirections) {
+
+                this.CurrentStrafeDirections = newThrust;
+                SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+            }
+            */
+
+        }
+
+        public void SetThrust(Vector3I allowedThrust, Vector3I requiredThrust) {
+
+            if(this.PreviousAllowedThrust == allowedThrust && this.PreviousRequiredThrust == requiredThrust)
+                return;
+
+            foreach(var thrustProfile in this.ThrustProfiles.ToList()) {
+
+                if(thrustProfile.ThrustBlock == null || MyAPIGateway.Entities.Exist(thrustProfile.ThrustBlock?.SlimBlock?.CubeGrid) == false) {
+
+                    this.ThrustProfiles.Remove(thrustProfile);
+                    continue;
+
+                }
+
+                if(thrustProfile.ThrustBlock.SlimBlock.CubeGrid != this.RemoteControl.SlimBlock.CubeGrid) {
+
+                    this.ThrustProfiles.Remove(thrustProfile);
+                    continue;
+
+                }
+
+                thrustProfile.UpdateThrust(allowedThrust, requiredThrust);
+
+            }
+
+            this.PreviousAllowedThrust = allowedThrust;
+            this.PreviousRequiredThrust = requiredThrust;
+
+        }
+
+        public void StopAllThrust() {
+
+            this.Strafing = false;
+            this.SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
+
+        }
+
 	}
 	
 }

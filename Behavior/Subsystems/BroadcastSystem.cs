@@ -27,11 +27,24 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
+namespace RivalAI.Behavior.Subsystems {
 
-namespace RivalAI.Behavior.Subsystems{
+    public struct ChatDetails {
+
+        public bool UseChat;
+        public double ChatTriggerDistance;
+        public int ChatMinTime;
+        public int ChatMaxTime;
+        public int ChatChance;
+        public int MaxChats;
+        public List<string> ChatMessages;
+        public List<string> ChatAudio;
+        public List<BroadcastType> BroadcastChatType;
+
+    }
 
     public class BroadcastSystem {
 
@@ -39,42 +52,16 @@ namespace RivalAI.Behavior.Subsystems{
         public bool UseChatSystem;
         public bool UseNotificationSystem;
         public bool DelayChatIfSoundPlaying;
+        public bool SingleChatPerTrigger;
         public string ChatAuthor;
         public string ChatAuthorColor;
 
-        public bool UseGreetingChat;
-        public double GreetingChatTriggerDistance;
-        public int GreetingChatChance;
-        public List<string> GreetingChatMessages;
-        public List<string> GreetingChatSounds;
-
-        public bool UseTauntChat;
-        public int TauntChatMinTime;
-        public int TauntChatMaxTime;
-        public int TauntChatChance;
-        public int MaxTauntChats;
-        public List<string> TauntChatMessages;
-        public List<string> TauntChatSounds;
-
-        public bool UseRetreatChat;
-        public int RetreatChatChance;
-        public List<string> RetreatChatMessages;
-        public List<string> RetreatChatSounds;
-
-        public bool UseDamageChat;
-        public int DamageChatChance;
-        public List<string> DamageChatMessages;
-        public List<string> DamageChatSounds;
+        //New Classes
+        public List<ChatProfile> ChatControlReference;
 
         //Non-Configurable
         public IMyRemoteControl RemoteControl;
         public string LastChatMessageSent;
-        public bool GreetingChatSent; //Storage
-        public int TauntsSentCount; //Storage
-        public DateTime LastTauntTime;
-        public int SecondsUntilTaunt;
-
-        public bool RetreatChatSent; //Storage
         public List<IMyRadioAntenna> AntennaList;
         public double HighestRadius;
         public Vector3D AntennaCoords;
@@ -86,35 +73,17 @@ namespace RivalAI.Behavior.Subsystems{
             UseChatSystem = false;
             UseNotificationSystem = false;
             DelayChatIfSoundPlaying = true;
+            SingleChatPerTrigger = true;
             ChatAuthor = "";
             ChatAuthorColor = "";
 
-            UseGreetingChat = false;
-            GreetingChatTriggerDistance = 4000;
-            GreetingChatChance = 100;
-            GreetingChatMessages = new List<string>();
-
-            UseTauntChat = false;
-            TauntChatMinTime = 60;
-            TauntChatMaxTime = 120;
-            TauntChatChance = 100;
-            MaxTauntChats = 5;
-            TauntChatMessages = new List<string>();
-
-            UseRetreatChat = false;
-            RetreatChatChance = 100;
-            RetreatChatMessages = new List<string>();
-
-            UseDamageChat = false;
+            ChatControlReference = new List<ChatProfile>();
 
             RemoteControl = null;
             LastChatMessageSent = "";
-            GreetingChatSent = false;
-            TauntsSentCount = 0;
-            LastTauntTime = MyAPIGateway.Session.GameDateTime;
-            SecondsUntilTaunt = TauntChatMinTime;
-            RetreatChatSent = false;
             AntennaList = new List<IMyRadioAntenna>();
+            HighestRadius = 0;
+            AntennaCoords = Vector3D.Zero;
             Rnd = new Random();
 
             Setup(remoteControl);
@@ -131,302 +100,211 @@ namespace RivalAI.Behavior.Subsystems{
             }
 
             this.RemoteControl = remoteControl;
+            RefreshAntennaList();
 
-            if(string.IsNullOrWhiteSpace(remoteControl.CustomData) == true) {
+        }
 
-                var descSplit = remoteControl.CustomData.Split('\n');
+        public void InitTags() {
+
+            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
 
                 foreach(var tag in descSplit) {
 
                     //UseChatSystem
-                    if(tag.Contains("[UseChatSystem") == true) {
+                    if(tag.Contains("[UseChatSystem:") == true) {
 
                         this.UseChatSystem = TagHelper.TagBoolCheck(tag);
 
                     }
 
                     //UseNotificationSystem
-                    if(tag.Contains("[UseNotificationSystem") == true) {
+                    if(tag.Contains("[UseNotificationSystem:") == true) {
 
                         this.UseNotificationSystem = TagHelper.TagBoolCheck(tag);
 
                     }
 
                     //DelayChatIfSoundPlaying
-                    if(tag.Contains("[DelayChatIfSoundPlaying") == true) {
+                    if(tag.Contains("[DelayChatIfSoundPlaying:") == true) {
 
                         this.DelayChatIfSoundPlaying = TagHelper.TagBoolCheck(tag);
 
                     }
 
+                    //DelayChatIfSoundPlaying
+                    if(tag.Contains("[DelayChatIfSoundPlaying:") == true) {
+
+                        this.DelayChatIfSoundPlaying = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //SingleChatPerTrigger
+                    if(tag.Contains("[SingleChatPerTrigger:") == true) {
+
+                        this.SingleChatPerTrigger = TagHelper.TagBoolCheck(tag);
+
+                    }
+
                     //ChatAuthor
-                    if(tag.Contains("[ChatAuthor") == true) {
+                    if(tag.Contains("[ChatAuthor:") == true) {
 
                         this.ChatAuthor = TagHelper.TagStringCheck(tag);
 
                     }
 
-                    //UseGreetingChat
-                    if(tag.Contains("[UseGreetingChat") == true) {
+                    //ChatAuthorColor
+                    if(tag.Contains("[ChatAuthorColor:") == true) {
 
-                        this.UseGreetingChat = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //GreetingChatTriggerDistance
-                    if(tag.Contains("[GreetingChatTriggerDistance") == true) {
-
-                        this.GreetingChatTriggerDistance = TagHelper.TagDoubleCheck(tag, this.GreetingChatTriggerDistance);
+                        this.ChatAuthorColor = TagHelper.TagStringCheck(tag);
 
                     }
 
-                    //GreetingChatChance
-                    if(tag.Contains("[GreetingChatChance") == true) {
+                }
 
-                        this.GreetingChatChance = TagHelper.TagIntCheck(tag, this.GreetingChatChance);
+                foreach(var chatControl in this.ChatControlReference) {
 
-                    }
-
-                    //GreetingChatMessages
-                    if(tag.Contains("[GreetingChatMessages") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.GreetingChatMessages.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //GreetingChatSounds
-                    if(tag.Contains("[GreetingChatSounds") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.GreetingChatSounds.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //UseTauntChat
-                    if(tag.Contains("[UseTauntChat") == true) {
-
-                        this.UseTauntChat = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //TauntChatMinTime
-                    if(tag.Contains("[TauntChatMinTime") == true) {
-
-                        this.TauntChatMinTime = TagHelper.TagIntCheck(tag, this.TauntChatMinTime);
-
-                    }
-
-                    //TauntChatMaxTime
-                    if(tag.Contains("[TauntChatMaxTime") == true) {
-
-                        this.TauntChatMaxTime = TagHelper.TagIntCheck(tag, this.TauntChatMaxTime);
-
-                    }
-
-                    //TauntChatChance
-                    if(tag.Contains("[TauntChatChance") == true) {
-
-                        this.TauntChatChance = TagHelper.TagIntCheck(tag, this.TauntChatChance);
-
-                    }
-
-                    //MaxTauntChats
-                    if(tag.Contains("[MaxTauntChats") == true) {
-
-                        this.MaxTauntChats = TagHelper.TagIntCheck(tag, this.MaxTauntChats);
-
-                    }
-
-                    //TauntChatMessages
-                    if(tag.Contains("[TauntChatMessages") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.TauntChatMessages.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //TauntChatSounds
-                    if(tag.Contains("[TauntChatSounds") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.TauntChatSounds.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //UseRetreatChat
-                    if(tag.Contains("[UseRetreatChat") == true) {
-
-                        this.UseRetreatChat = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //RetreatChatChance
-                    if(tag.Contains("[RetreatChatChance") == true) {
-
-                        this.RetreatChatChance = TagHelper.TagIntCheck(tag, this.RetreatChatChance);
-
-                    }
-
-                    //RetreatChatMessages
-                    if(tag.Contains("[RetreatChatMessages") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.RetreatChatMessages.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //RetreatChatSounds
-                    if(tag.Contains("[RetreatChatMessages") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.RetreatChatMessages.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //UseDamageChat
-                    if(tag.Contains("[UseDamageChat") == true) {
-
-                        this.UseDamageChat = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //DamageChatChance
-                    if(tag.Contains("[DamageChatChance") == true) {
-
-                        this.DamageChatChance = TagHelper.TagIntCheck(tag, this.DamageChatChance);
-
-                    }
-
-                    //DamageChatMessages
-                    if(tag.Contains("[DamageChatMessages") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.DamageChatMessages.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //DamageChatSounds
-                    if(tag.Contains("[DamageChatSounds") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            this.DamageChatSounds.Add(tempValue);
-
-                        }
-
-                    }
-
-
+                    chatControl.InitTags(this.RemoteControl.CustomData);
 
                 }
 
             }
 
-            if(this.UseTauntChat == true) {
-
-                if(this.TauntChatMinTime > TauntChatMaxTime) {
-
-                    this.TauntChatMinTime = this.TauntChatMaxTime;
-
-                }
-
-                this.SecondsUntilTaunt = Rnd.Next(this.TauntChatMinTime - this.TauntChatMaxTime);
-
-            }
-
-            RefreshAntennaList();
 
         }
 
-        public void ProcessAutoMessages() {
+        public void BroadcastRequest(ChatProfile chat) {
 
-            if(RAI_SessionCore.IsServer == false || this.UseChatSystem == false) {
+            if(chat.UseChat == false) {
 
                 return;
 
             }
 
-            if(this.UseGreetingChat == true && this.GreetingChatSent == false) {
+            string message = "";
+            string sound = "";
+            var broadcastType = BroadcastType.None;
 
-                var player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
+            if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
 
-                if(player != null) {
+                return;
 
-                    if(Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition()) <= this.GreetingChatTriggerDistance) {
+            }
 
-                        this.GreetingChatSent = true;
+            if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message) == true) {
 
-                        if(Rnd.Next(1, 101) <= this.GreetingChatChance) {
+                Logger.AddMsg("Last Message Same", true);
+                return;
 
-                            string msg = "";
-                            string sound = "";
-                            BroadcastChatToPlayers(msg, this.ChatAuthor, this.ChatAuthorColor, sound);
+            }
 
-                        }
+            GetHighestAntennaRange();
+
+            if(this.HighestRadius == 0) {
+
+                Logger.AddMsg("No Valid Antenna", true);
+                return;
+
+            }
+
+            var playerList = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(playerList);
+
+            foreach(var player in playerList) {
+
+                if(player.IsBot == true || player.Character == null) {
+
+                    continue;
+
+                }
+
+                if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
+
+                    continue;
+
+                }
+
+                var modifiedMsg = message;
+
+                if(modifiedMsg.Contains("{PlayerName}") == true) {
+
+                    modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
+
+                }
+
+                if(modifiedMsg.Contains("{PlayerFactionName}") == true) {
+
+                    var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
+
+                    if(playerFaction != null) {
+
+                        modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", playerFaction.Name);
+
+                    } else {
+
+                        modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", "Unaffiliated");
 
                     }
+
+                }
+
+                var authorName = this.ChatAuthor;
+                var authorColor = this.ChatAuthorColor;
+
+                if(string.IsNullOrWhiteSpace(chat.AuthorOverride) == false) {
+
+                    authorName = chat.AuthorOverride;
+
+                }
+
+                if(string.IsNullOrWhiteSpace(chat.ColorOverride) == false) {
+
+                    authorColor = chat.ColorOverride;
+
+                }
+
+                if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
+
+                    authorColor = "White";
+
+                }
+
+                if(broadcastType == BroadcastType.Chat || broadcastType == BroadcastType.Both) {
+
+                    MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, authorName, player.IdentityId, authorColor);
+
+                }
+
+                if(broadcastType == BroadcastType.Notify || broadcastType == BroadcastType.Both) {
+
+                    MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, 6000, authorColor, player.IdentityId);
+
+                }
+
+                if(sound != "") {
+
+                    if(string.IsNullOrEmpty(player.Character.Name) == true) {
+
+                        MyVisualScriptLogicProvider.SetName(player.Character.EntityId, player.Character.EntityId.ToString());
+
+                    }
+
+                    //Do Syncy Thing Instead
+                    //MyVisualScriptLogicProvider.PlaySingleSoundAtEntity(audio, player.Character.EntityId.ToString());
 
                 }
 
             }
 
-            if(this.UseTauntChat == true && this.TauntsSentCount < this.MaxTauntChats) {
+        }
 
-                TimeSpan timePassed = MyAPIGateway.Session.GameDateTime - this.LastTauntTime;
+        public void ProcessAutoMessages() {
 
-                if(timePassed.TotalSeconds >= this.SecondsUntilTaunt) {
+            if(RAI_SessionCore.IsServer == false || (this.UseChatSystem == false && this.UseNotificationSystem == false)) {
 
-                    this.LastTauntTime = MyAPIGateway.Session.GameDateTime;
-                    var player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
-
-                    if(player != null) {
-
-                        if(Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition()) <= this.GreetingChatTriggerDistance) {
-
-                            if(Rnd.Next(1, 101) <= this.TauntChatChance) {
-
-                                this.TauntsSentCount++;
-                                string msg = "";
-                                string sound = "";
-                                BroadcastChatToPlayers(msg, this.ChatAuthor, this.ChatAuthorColor, sound);
-
-                            }
-
-                        }
-
-                    }
-
-                }
+                //Logger.AddMsg("Chat System Inactive", true);
+                return;
 
             }
 
@@ -438,6 +316,12 @@ namespace RivalAI.Behavior.Subsystems{
             this.AntennaCoords = Vector3D.Zero;
 
             foreach(var antenna in this.AntennaList) {
+
+                if(antenna?.SlimBlock == null) {
+
+                    continue;
+
+                }
 
                 if(antenna.IsWorking == false || antenna.IsFunctional == false || antenna.IsBroadcasting == false) {
 
@@ -458,7 +342,7 @@ namespace RivalAI.Behavior.Subsystems{
 
         }
 
-        private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, ref string message, ref string sound){
+        private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, ref string message, ref string sound, ref BroadcastType broadcastType){
 
             if(messages.Count == 0) {
 
@@ -475,161 +359,11 @@ namespace RivalAI.Behavior.Subsystems{
 
             }
 
-        }
+            if(broadcastTypes.Count >= messages.Count) {
 
-		public string BroadcastChatToPlayers(string msg, string author, string color, string audio){
-			
-			if(this.LastChatMessageSent == msg || string.IsNullOrWhiteSpace(msg) == true){
-				
-				return "";
-				
-			}
-
-            GetHighestAntennaRange();
-
-            if(this.HighestRadius == 0) {
-
-                return "";
+                broadcastType = broadcastTypes[index];
 
             }
-
-
-
-            var playerList = new List<IMyPlayer>();
-			MyAPIGateway.Players.GetPlayers(playerList);
-            
-			foreach(var player in playerList){
-				
-				if(player.IsBot == true || player.Character == null){
-					
-					continue;
-					
-				}
-
-                if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
-
-                    continue;
-
-                }
-				
-				var modifiedMsg = msg;
-				
-				if(modifiedMsg.Contains("{PlayerName}") == true){
-					
-					modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
-					
-				}
-				
-				if(modifiedMsg.Contains("{PlayerFactionName}") == true){
-					
-					var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
-					
-					if(playerFaction != null){
-						
-						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", playerFaction.Name);
-					
-					}else{
-						
-						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", "Unaffiliated");
-						
-					}
-					
-				}
-				
-				var authorColor = color;
-				
-				if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue"){
-					
-					authorColor = "White";
-					
-				}
-				
-				MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, author, player.IdentityId, authorColor);
-				
-				if(audio != ""){
-					
-					if(string.IsNullOrEmpty(player.Character.Name) == true){
-						
-						MyVisualScriptLogicProvider.SetName(player.Character.EntityId, player.Character.EntityId.ToString());
-						
-					}
-					
-					MyVisualScriptLogicProvider.PlaySingleSoundAtEntity(audio, player.Character.EntityId.ToString());
-					
-				}
-
-			}
-			
-			return msg;
-			
-		}
-		
-		public void BroadcastNotificationToPlayers(string msg, string author, string color, string audio, double broadcastDistance, int disappearTimeMs, Vector3D coords){
-			
-			var playerList = new List<IMyPlayer>();
-			MyAPIGateway.Players.GetPlayers(playerList);
-			
-			foreach(var player in playerList){
-				
-				if(player.IsBot == true || player.Character == null){
-					
-					continue;
-					
-				}
-				
-				var modifiedMsg = msg;
-				
-				if(modifiedMsg.Contains("{PlayerName}") == true){
-					
-					modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
-					
-				}
-				
-				if(modifiedMsg.Contains("{PlayerFactionName}") == true){
-					
-					var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
-					
-					if(playerFaction != null){
-						
-						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", playerFaction.Name);
-					
-					}else{
-						
-						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", "Unaffiliated");
-						
-					}
-					
-				}
-				
-				var authorColor = color;
-				
-				if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue"){
-					
-					authorColor = "White";
-					
-				}
-				
-				MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, disappearTimeMs, authorColor, player.IdentityId);
-				
-				if(audio != ""){
-					
-					if(string.IsNullOrEmpty(player.Character.Name) == true){
-						
-						MyVisualScriptLogicProvider.SetName(player.Character.EntityId, player.Character.EntityId.ToString());
-						
-					}
-					
-					MyVisualScriptLogicProvider.PlaySingleSoundAtEntity(audio, player.Character.EntityId.ToString());
-					
-				}
-
-			}
-			
-		}
-
-        public void DamageChatTriggered() {
-
-
 
         }
 

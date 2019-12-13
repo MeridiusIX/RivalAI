@@ -30,92 +30,9 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior.Subsystems{
-	
-	public enum TargetTypeEnum{
-		
-		None,
-		Coords,
-		Player,
-		Entity,
-		Grid,
-		Block
-		
-	}
-	
-	public enum TargetDistanceEnum{
-		
-		Any,
-		Closest,
-		Furthest
-		
-	}
-
-    [Flags]
-    public enum TargetFilterEnum {
-
-        None = 0,
-        IgnoreSafeZone = 1,
-        IsBroadcasting = 2,
-        IgnoreUnderground = 4,
-        IncludeGridMinorityOwners = 8,
-
-
-    }
-
-    [Flags]
-	public enum TargetRelationEnum{
-		
-        None = 0,
-		Faction = 1,
-		Neutral = 2,
-		Enemy = 4,
-        Friend = 8,
-        Unowned = 16
-
-	}
-	
-	[Flags]
-	public enum TargetOwnerEnum{
-
-        None = 0,
-        Unowned = 1,
-		Owned = 2,
-		Player = 4,
-		NPC = 8,
-        All = 16
-		
-	}
-	
-	[Flags]
-	public enum BlockTargetTypes{
-		
-		All = 1,
-		Containers = 2,
-		Decoys = 4,
-		GravityBlocks = 8,
-		Guns = 16,
-		JumpDrive = 32,
-		Power = 64,
-		Production = 128,
-		Propulsion = 256,
-		Shields = 512,
-		ShipControllers = 1024,
-		Tools = 2048,
-		Turrets = 4096,
-		Communications = 8192
-		
-	}
-
-    public struct PendingTargetData{
-
-        public IMyPlayer DetectedPlayer;
-        public IMyEntity DetectedEntity;
-        public IMyCubeGrid DetectedCubeGrid;
-        public IMyTerminalBlock DetectedBlock;
-
-    }
 	
 	public class TargetingSystem{
 
@@ -129,6 +46,8 @@ namespace RivalAI.Behavior.Subsystems{
         public double MaximumTargetScanDistance;
         public bool UseProjectileLeadTargeting;
         public bool UseCollisionLeadTargeting;
+
+        public TargetProfile TargetData;
 
         //Non-Configurable
         public IMyRemoteControl RemoteControl;
@@ -148,9 +67,11 @@ namespace RivalAI.Behavior.Subsystems{
 		public long RequestedGridId;
 		public long RequestedBlockId;
 
+        
         public TargetEvaluation Target;
+        public event Action<TargetEvaluation> WeaponTrigger;
 
-		public float PrimaryAmmoVelocity;
+        public float PrimaryAmmoVelocity;
 
         public Random Rnd;
 		
@@ -160,6 +81,7 @@ namespace RivalAI.Behavior.Subsystems{
 
             LastValidTarget = MyAPIGateway.Session.GameDateTime;
 
+            NeedsTarget = false;
             SearchingForTarget = false;
             TargetType = TargetTypeEnum.None;
 			InvalidTarget = true;
@@ -172,9 +94,10 @@ namespace RivalAI.Behavior.Subsystems{
 			RequestedGridId = 0;
 			RequestedBlockId = 0;
 
-            Target = null;
+            Target = new TargetEvaluation(null, TargetTypeEnum.None);
 
-            TargetDistance = TargetDistanceEnum.Any;
+            TargetData = new TargetProfile();
+            TargetDistance = TargetDistanceEnum.Closest;
 			MaximumTargetScanDistance = 15000;
 
 			BlockFilter = BlockTargetTypes.All;
@@ -197,21 +120,27 @@ namespace RivalAI.Behavior.Subsystems{
 
             }
 
-            if(string.IsNullOrWhiteSpace(remoteControl.CustomData) == false) {
+            this.RemoteControl = remoteControl;
 
-                var descSplit = remoteControl.CustomData.Split('\n');
+        }
+
+        public void InitTags() {
+
+            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
 
                 foreach(var tag in descSplit) {
 
                     //TargetType
-                    if(tag.Contains("[TargetType") == true) {
+                    if(tag.Contains("[TargetType:") == true) {
 
                         this.TargetType = TagHelper.TagTargetTypeEnumCheck(tag);
 
                     }
 
                     //TargetRelation
-                    if(tag.Contains("[TargetRelation") == true) {
+                    if(tag.Contains("[TargetRelation:") == true) {
 
                         var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
 
@@ -221,17 +150,23 @@ namespace RivalAI.Behavior.Subsystems{
 
                         }
 
+                        if(this.TargetRelation.HasFlag(TargetRelationEnum.None) == false) {
+
+                            this.TargetRelation &= ~TargetRelationEnum.None;
+
+                        }
+
                     }
 
                     //TargetDistance
-                    if(tag.Contains("[TargetDistance") == true) {
+                    if(tag.Contains("[TargetDistance:") == true) {
 
                         this.TargetDistance = TagHelper.TagTargetDistanceEnumCheck(tag);
 
                     }
 
                     //TargetOwner
-                    if(tag.Contains("[TargetOwner") == true) {
+                    if(tag.Contains("[TargetOwner:") == true) {
 
                         var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
 
@@ -241,10 +176,16 @@ namespace RivalAI.Behavior.Subsystems{
 
                         }
 
+                        if(this.TargetOwner.HasFlag(TargetOwnerEnum.None) == false) {
+
+                            this.TargetOwner &= ~TargetOwnerEnum.None;
+
+                        }
+
                     }
 
                     //TargetFilter
-                    if(tag.Contains("[TargetFilter") == true) {
+                    if(tag.Contains("[TargetFilter:") == true) {
 
                         var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
 
@@ -254,10 +195,16 @@ namespace RivalAI.Behavior.Subsystems{
 
                         }
 
+                        if(this.TargetFilter.HasFlag(TargetFilterEnum.None) == false) {
+
+                            this.TargetFilter &= ~TargetFilterEnum.None;
+
+                        }
+
                     }
 
                     //BlockFilter
-                    if(tag.Contains("[BlockFilter") == true) {
+                    if(tag.Contains("[BlockFilter:") == true) {
 
                         var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
 
@@ -270,21 +217,21 @@ namespace RivalAI.Behavior.Subsystems{
                     }
 
                     //MaximumTargetScanDistance
-                    if(tag.Contains("[MaximumTargetScanDistance") == true) {
+                    if(tag.Contains("[MaximumTargetScanDistance:") == true) {
 
                         this.MaximumTargetScanDistance = TagHelper.TagDoubleCheck(tag, this.MaximumTargetScanDistance);
 
                     }
 
                     //UseProjectileLeadTargeting
-                    if(tag.Contains("[UseProjectileLeadTargeting") == true) {
+                    if(tag.Contains("[UseProjectileLeadTargeting:") == true) {
 
                         this.UseProjectileLeadTargeting = TagHelper.TagBoolCheck(tag);
 
                     }
 
                     //UseCollisionLeadTargeting
-                    if(tag.Contains("[UseCollisionLeadTargeting") == true) {
+                    if(tag.Contains("[UseCollisionLeadTargeting:") == true) {
 
                         this.UseCollisionLeadTargeting = TagHelper.TagBoolCheck(tag);
 
@@ -296,7 +243,7 @@ namespace RivalAI.Behavior.Subsystems{
 
         }
 
-		public void RequestTarget(long requestGridId = 0, long requestBlockId = 0){
+        public void RequestTarget(long requestGridId = 0, long requestBlockId = 0){
 
             if(RAI_SessionCore.IsServer == false) {
 
@@ -310,8 +257,6 @@ namespace RivalAI.Behavior.Subsystems{
 
             }
 
-            this.SearchingForTarget = true;
-            this.InvalidTarget = false;
             this.TargetIsShielded = false;
             this.TargetPlayer = null;
             this.TargetEntity = null;
@@ -322,24 +267,50 @@ namespace RivalAI.Behavior.Subsystems{
 
             MyAPIGateway.Parallel.Start(() => {
 
-                if(this.NeedsTarget == true && this.InvalidTarget == true) {
+                //Logger.AddMsg("Get Target", true);
+                try {
 
-                    AcquireTarget();
-                    this.Target = new TargetEvaluation(this.TargetEntity, this.TargetType);
+                    if(this.NeedsTarget == true && this.InvalidTarget == true) {
 
-                }
-
-                if(this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
-
-                    this.Target.Evaluate(this.RemoteControl, this.UseProjectileLeadTargeting, this.PrimaryAmmoVelocity, this.UseCollisionLeadTargeting);
-
-                    if(this.Target.TargetExists == false) {
-
-                        this.InvalidTarget = true;
+                        AcquireTarget();
+                        this.Target = new TargetEvaluation(this.TargetEntity, this.TargetType);
+                        this.Target.TargetPlayer = this.TargetPlayer;
+                        this.InvalidTarget = false;
 
                     }
 
+                    if(this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
+
+                        //Logger.AddMsg("Eva Target", true);
+                        this.Target.Evaluate(this.RemoteControl, this.TargetData);
+                        //Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
+
+
+                        if(this.Target.TargetExists == false) {
+
+                            //Logger.AddMsg("Inv Target", true);
+                            this.InvalidTarget = true;
+
+                        }
+
+                    }
+
+                } catch(Exception exc) {
+
+                    Logger.AddMsg("Acquire Target Exception", true);
+                    Logger.AddMsg(exc.ToString(), true);
+
                 }
+
+                
+
+            }, () => {
+
+                MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+                    WeaponTrigger?.Invoke(Target);
+
+                });
 
             });
 			
@@ -348,60 +319,71 @@ namespace RivalAI.Behavior.Subsystems{
 		//Parallel
 		public void AcquireTarget(){
 
-            //Players
-            if(TargetType == TargetTypeEnum.Player) {
+            this.SearchingForTarget = true;
+            this.InvalidTarget = false;
 
-                this.TargetPlayer = TargetHelper.AcquirePlayerTarget(this.RemoteControl, this.MaximumTargetScanDistance, this.TargetRelation, this.TargetDistance);
+            //Players
+            if(TargetData.Target == TargetTypeEnum.Player) {
+
+                try {
+
+                    this.TargetPlayer = TargetHelper.AcquirePlayerTarget(this.RemoteControl, this.TargetData);
+
+                } catch(Exception exc) {
+
+                    Logger.AddMsg("Exception Getting Player Target: ", true); //
+
+                }
+                
 
                 if(this.TargetPlayer == null) {
 
+                    //Logger.AddMsg("Cannot Find Player", true);
                     this.InvalidTarget = true;
-
-                } else if(RAI_SessionCore.Instance.ShieldApiLoaded == true) {
-
-                    this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
-                    this.TargetIsShielded = RAI_SessionCore.Instance.SApi.ProtectedByShield(this.TargetPlayer.Character);
+                    this.SearchingForTarget = false;
+                    return;
 
                 }
 
-                this.TargetEntity = this.TargetPlayer.Character;
-
+                //Logger.AddMsg("Got Player", true);
+                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
+                this.TargetEntity = this.TargetPlayer.Controller.ControlledEntity.Entity;
+ 
             }
 
             //Grids
-            if(TargetType == TargetTypeEnum.Grid) {
+            if(TargetData.Target == TargetTypeEnum.Grid) {
 
-                TargetHelper.AcquireGridTarget(this.RemoteControl, this.MaximumTargetScanDistance, this.TargetRelation, this.TargetDistance, this.TargetOwner, this.TargetFilter, this.RequestedGridId);
+                TargetHelper.AcquireGridTarget(this.RemoteControl, this.TargetData, this.RequestedGridId);
 
                 if(this.TargetGrid == null) {
 
                     this.InvalidTarget = true;
+                    this.SearchingForTarget = false;
                     return;
 
-                } else if(RAI_SessionCore.Instance.ShieldApiLoaded == true) {
-
-                    this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
-                    this.TargetIsShielded = RAI_SessionCore.Instance.SApi.ProtectedByShield(this.TargetGrid);
-
                 }
+
+                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
+                this.TargetEntity = this.TargetGrid;
 
             }
 
             //Blocks
-            if(TargetType == TargetTypeEnum.Block) {
+            if(TargetData.Target == TargetTypeEnum.Block) {
 
-                TargetHelper.AcquireBlockTarget(this.RemoteControl, this.MaximumTargetScanDistance, this.TargetRelation, this.TargetDistance, this.TargetOwner, this.BlockFilter, this.TargetFilter, this.RequestedBlockId);
+                TargetHelper.AcquireBlockTarget(this.RemoteControl, this.TargetData, this.RequestedBlockId);
 
-                if(this.TargetGrid == null) {
+                if(this.TargetBlock == null) {
 
                     this.InvalidTarget = true;
-
-                } else if(RAI_SessionCore.Instance.ShieldApiLoaded == true) {
-
-                    this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
-                    this.TargetIsShielded = RAI_SessionCore.Instance.SApi.ProtectedByShield(this.TargetBlock.SlimBlock.CubeGrid);
+                    this.SearchingForTarget = false;
+                    return;
 
                 }
+
+                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
+                this.TargetEntity = this.TargetBlock;
 
             }
 
@@ -409,122 +391,33 @@ namespace RivalAI.Behavior.Subsystems{
 
         }
 
-		public Vector3D GetTargetPosition(){
-			
-			//Check Remote
-			if(MyAPIGateway.Entities.Exist(this.RemoteControl) == false){
-				
-				this.InvalidTarget = true;
-				return Vector3D.Zero;
-				
-			}
-			
+		public Vector3D GetTargetPosition(Vector3D originalCoords = new Vector3D()){
+
 			//None
-			if(this.TargetType == TargetTypeEnum.None){
+			if(this.TargetData.Target == TargetTypeEnum.None){
 				
 				this.InvalidTarget = false;
-				return Vector3D.Zero;
+				return originalCoords;
 				
 			}
 			
 			//Coords
-			if(this.TargetType == TargetTypeEnum.Coords){
+			if(this.TargetData.Target == TargetTypeEnum.Coords){
 				
 				this.InvalidTarget = false;
                 return this.TargetCoords;
 				
 			}
 			
-			//Player
-			if(this.TargetType == TargetTypeEnum.Player){
-				
-				if(this.TargetPlayer?.Character != null){
-					
-					this.InvalidTarget = false;
+            if(this.Target.TargetExists == true) {
 
-                    if(this.UseProjectileLeadTargeting == true && this.TargetPlayer.Character.Physics != null && this.RemoteControl.SlimBlock.CubeGrid.Physics != null){
-						
-						//return VectorHelpers.GetProjectileLeadPosition(this.PrimaryAmmoVelocity, this.RemoteControl.GetPosition(), this.RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity, this.TargetPlayer.GetPosition(), this.TargetPlayer.Character.Physics.LinearVelocity);
-						return this.TargetPlayer.Character.GetPosition(); //Remove Later
-						
-					}
-					
-					return this.TargetPlayer.Character.GetPosition();
-					
-				}
-				
-				this.InvalidTarget = true;
-				return Vector3D.Zero;
-				
-			}
-			
-			//Entity
-			if(this.TargetType == TargetTypeEnum.Entity){
-				
-				if(MyAPIGateway.Entities.Exist(this.TargetEntity) == true && this.TargetEntity != null){
-					
-					this.InvalidTarget = false;
-                    return this.TargetEntity.GetPosition();
-					
-				}
-				
-				this.InvalidTarget = true;
-				return Vector3D.Zero;
-				
-			}
-			
-			//Grid
-			if(this.TargetType == TargetTypeEnum.Grid){
-
-                if(MyAPIGateway.Entities.Exist(this.TargetGrid) == true && this.TargetGrid != null) {
-
-                    this.InvalidTarget = false;
-
-                    if(this.UseProjectileLeadTargeting == false || this.TargetGrid.IsStatic == true || this.TargetGrid.Physics == null) {
-
-                        return this.TargetGrid.PositionComp.WorldAABB.Center;
-
-                    } else {
-
-                        //return VectorHelpers.GetProjectileLeadPosition(this.PrimaryAmmoVelocity, this.RemoteControl.GetPosition(), this.RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity, this.TargetPlayer.GetPosition(), this.TargetPlayer.Character.Physics.LinearVelocity);
-						return this.TargetGrid.PositionComp.WorldAABB.Center; //Remove Later
-						
-                    }
-
-                }
-
-                this.InvalidTarget = true;
-                return Vector3D.Zero;
+                return Target.TargetCoords;
 
             }
 			
-			//Block
-			if(this.TargetType == TargetTypeEnum.Block){
-				
-				if(MyAPIGateway.Entities.Exist(this.TargetBlock?.SlimBlock?.CubeGrid) == true && this.TargetBlock != null) {
-					
-					this.InvalidTarget = false;
-					
-					if(this.UseProjectileLeadTargeting == false || this.TargetBlock.SlimBlock.CubeGrid.IsStatic == true || this.TargetBlock.SlimBlock.CubeGrid.Physics == null) {
 
-                        return this.TargetBlock.GetPosition();
-
-                    } else {
-
-                        //return VectorHelpers.GetProjectileLeadPosition(this.PrimaryAmmoVelocity, this.RemoteControl.GetPosition(), this.RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity, this.TargetPlayer.GetPosition(), this.TargetPlayer.Character.Physics.LinearVelocity);
-						return this.TargetBlock.GetPosition(); //Remove Later
-						
-                    }
-					
-				}
-				
-				this.InvalidTarget = true;
-				return Vector3D.Zero;
-				
-			}
-			
 			this.InvalidTarget = true;
-			return Vector3D.Zero;
+			return originalCoords;
 			
 		}
 		

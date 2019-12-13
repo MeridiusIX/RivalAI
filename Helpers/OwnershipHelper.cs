@@ -237,7 +237,7 @@ namespace RivalAI.Helpers {
 
         }
 
-        private static TargetRelationEnum GetTargetReputation(long myIdentity, List<long> identities) {
+        public static TargetRelationEnum GetTargetReputation(long myIdentity, List<long> identities) {
 
             var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
 
@@ -257,7 +257,7 @@ namespace RivalAI.Helpers {
 
             foreach(var identity in identities) {
 
-                if(myFaction.IsMember(myIdentity) == true && result.HasFlag(TargetRelationEnum.Faction) == false) {
+                if(myFaction.IsMember(identity) == true && result.HasFlag(TargetRelationEnum.Faction) == false) {
 
                     result |= TargetRelationEnum.Faction;
                     continue;

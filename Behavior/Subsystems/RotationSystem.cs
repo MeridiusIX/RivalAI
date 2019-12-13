@@ -33,17 +33,23 @@ using RivalAI.Helpers;
 namespace RivalAI.Behavior.Subsystems{
 	
 	public class RotationSystem{
-		
-		public bool RotationEnabled;
+
+        public bool RotationEnabled;
 		public IMyGyro ControlGyro;
 		public IMyRemoteControl RemoteControl;
 		public IMyTerminalBlock ReferenceBlock;
 		public IMyCubeGrid CubeGrid;
         public List<IMyGyro> BrokenGyros;
+
+        public bool ControlGyroNotFound;
+        public bool NewGyroFound;
+
+        public MatrixD RefBlockMatrix;
+        public MatrixD GyroMatrix;
 		
 		public Vector3D RotationTarget;
 		public Vector3D UpDirection;
-		
+
 		public bool ControlYaw;
 		public bool ControlPitch;
 		public bool ControlRoll;
@@ -63,7 +69,11 @@ namespace RivalAI.Behavior.Subsystems{
 		public double CurrentRollDifference;
 		public double DesiredAngleToTarget;
 
+        public bool BarrelRollEnabled;
+        public double BarrellRollMagnitudePerEvent;
+
         public Vector3 RotationToApply;
+        public Dictionary<string, Vector3D> ControlGyroRotationTranslation;
 		
 		public RotationSystem(IMyRemoteControl remoteControl){
 			
@@ -72,6 +82,9 @@ namespace RivalAI.Behavior.Subsystems{
 			RemoteControl = null;
 			ReferenceBlock = null;
             BrokenGyros = new List<IMyGyro>();
+
+            ControlGyroNotFound = false;
+            NewGyroFound = false;
 
             RotationTarget = Vector3D.Zero;
 			UpDirection = Vector3D.Zero;
@@ -94,8 +107,12 @@ namespace RivalAI.Behavior.Subsystems{
             CurrentPitchDifference = 0;
 			CurrentRollDifference = 0;
 			DesiredAngleToTarget = 0.5;
+
+            BarrelRollEnabled = false;
+            BarrellRollMagnitudePerEvent = 1;
 			
 			RotationToApply = Vector3.Zero;
+            ControlGyroRotationTranslation = new Dictionary<string, Vector3D>();
 
             Setup(remoteControl);
 			
@@ -169,29 +186,57 @@ namespace RivalAI.Behavior.Subsystems{
 		}
 		
 		public void StartCalculation(Vector3D rotationTarget, IMyTerminalBlock block = null, Vector3D upDirection = new Vector3D()){
-			
+
+            if(this.ControlGyroNotFound == true) {
+
+                return;
+
+            }
+
 			if(block == null || MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid) == false){
 
                 return;
 				
 			}
 
+            if(this.ControlGyro == null || MyAPIGateway.Entities.Exist(this.ControlGyro?.SlimBlock?.CubeGrid) == false) {
+
+                this.ControlGyro = GetControlGyro(this.RemoteControl.SlimBlock.CubeGrid);
+
+                if(this.ControlGyro == null) {
+
+                    ControlGyroNotFound = true;
+                    return;
+
+                } else {
+
+                    this.NewGyroFound = true;
+
+                }
+
+            }
+
+            this.RotationEnabled = true;
             this.ReferenceBlock = block;
 			this.RotationTarget = rotationTarget;
+            this.RefBlockMatrix = this.ReferenceBlock.WorldMatrix;
+            this.GyroMatrix = this.ControlGyro.WorldMatrix;
+            this.UpDirection = upDirection;
             MyAPIGateway.Parallel.Start(CalculateGyroRotation, ApplyGyroRotation);
-			
 			
 		}
 
         public void StopAllRotation() {
 
+            this.RotationEnabled = false;
+            this.BarrelRollEnabled = false;
+
             if(this.ControlGyro != null && MyAPIGateway.Entities.Exist(this.ControlGyro?.SlimBlock?.CubeGrid) == true) {
 
+                //Logger.AddMsg("Stopping Control Gyro", true);
                 this.ControlGyro.GyroOverride = false;
 
             }
-
-            this.RotationEnabled = false;
 
         }
 		
@@ -213,11 +258,12 @@ namespace RivalAI.Behavior.Subsystems{
 
                 if(MyAPIGateway.Entities.Exist(this.ControlGyro?.SlimBlock?.CubeGrid) == false || this.ControlGyro == null) {
 
+                    this.ControlGyro = null;
                     return;
 
                 }
 
-                if(this.RotationToApply != Vector3.Zero) {
+                if(this.RotationToApply != Vector3.Zero && this.RotationEnabled == true) {
 
                     this.ControlGyro.GyroOverride = true;
 
@@ -228,9 +274,28 @@ namespace RivalAI.Behavior.Subsystems{
                 }
 
                 this.ControlGyro.GyroPower = this.ControlGyroStrength;
-                this.ControlGyro.Yaw = this.RotationToApply.X;
-                this.ControlGyro.Pitch = this.RotationToApply.Y;
+                this.ControlGyro.Yaw = this.RotationToApply.Y;
+                this.ControlGyro.Pitch = this.RotationToApply.X;
                 this.ControlGyro.Roll = this.RotationToApply.Z;
+                //Logger.AddMsg(this.ControlGyro.Pitch.ToString() + " - " + this.ControlGyro.Yaw.ToString() + " - " + this.ControlGyro.Roll.ToString(), true);
+
+                if(this?.ControlGyro?.SlimBlock?.CubeGrid?.Physics != null && this.BarrelRollEnabled == false) {
+
+                    if(this.CurrentAngleToTarget < 45) {
+
+                        var angularVel = this.ControlGyro.SlimBlock.CubeGrid.Physics.AngularVelocity;
+                        var angularMag = angularVel.Length();
+
+                        if(angularMag > 0.4) {
+
+                            //Logger.AddMsg("Fix Rotation", true);
+                            this.ControlGyro.SlimBlock.CubeGrid.Physics.AngularVelocity = angularVel - (angularVel * 0.25f);
+
+                        }
+
+                    }
+
+                }
 
             });
 			
@@ -238,13 +303,15 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		//Updated Method
 		public void CalculateGyroRotation(){
-			
+
+            bool updatedGyro = false;
 			//Check That Control Gyro Exists
 			if(this.ControlGyro == null){
 				
 				this.ControlGyro = GetControlGyro(CubeGrid);
-				
-				if(this.ControlGyro == null){
+                updatedGyro = true;
+
+                if(this.ControlGyro == null){
 
                    return;
 					
@@ -256,94 +323,91 @@ namespace RivalAI.Behavior.Subsystems{
 			if(this.ControlGyro.IsFunctional == false || this.ControlGyro.IsWorking == false) {
 				
 				this.ControlGyro = GetControlGyro(CubeGrid);
-				
-				if(this.ControlGyro == null){
+                updatedGyro = true;
+
+                if(this.ControlGyro == null){
 
                     return;
 					
 				}
 				
 			}
-			
+
 			if(this.ReferenceBlock == null){
 
               return;
 				
 			}
-			
-			if(this.RotationEnabled == false){
+
+            if(this.NewGyroFound == true) {
+
+                this.NewGyroFound = false;
+                this.ControlGyroRotationTranslation = VectorHelper.GetTransformedGyroRotations(this.RefBlockMatrix, this.GyroMatrix);
+
+            }
+
+            if(this.RotationEnabled == false){
 
                 this.ControlGyro.GyroOverride = false;
 				return;
 				
 			}
 
-            if(this.UpdateMassAndForceBeforeRotation == true) {
-
-                this.UpdateMassAndForceBeforeRotation = false;
-                UpdateMassAndGyroForce();
-
-            }
-
-            float maxRotationSlider = 3.14f;
-
-            if(this.ControlGyro.CubeGrid.GridSizeEnum == MyCubeSize.Small) {
-
-                maxRotationSlider = 6.28f;
-
-            }
-			
-			MatrixD referenceMatrix = ReferenceBlock.WorldMatrix;
+			MatrixD referenceMatrix = this.RefBlockMatrix;
 			Vector3D directionToTarget = Vector3D.Normalize(this.RotationTarget - referenceMatrix.Translation);
 			Vector3 gyroRotation = new Vector3(0,0,0); // Pitch,Yaw,Roll
-			
-			//Get Actual Angle To Target
-			double angleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, directionToTarget);
-            //MyVisualScriptLogicProvider.ShowNotificationToAll("Total Angle: " + angleToTarget.ToString(), 166);
+
+            if(this.BarrelRollEnabled == false) {
+
+                //Get Actual Angle To Target
+                double angleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, directionToTarget);
+                this.CurrentAngleToTarget = angleToTarget;
+                //MyVisualScriptLogicProvider.ShowNotificationToAll("Total Angle: " + angleToTarget.ToString(), 166);
 
 
-            if(angleToTarget <= this.DesiredAngleToTarget && this.UpDirection == Vector3D.Zero){
+                if(angleToTarget <= this.DesiredAngleToTarget && this.UpDirection == Vector3D.Zero) {
 
-				this.RotationToApply = Vector3.Zero;
-				return;
-			
-			}
+                    this.RotationToApply = Vector3.Zero;
+                    return;
 
-            //Calculate Yaw
-            double angleLeftToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, directionToTarget);
-            double angleRightToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, directionToTarget);
-			double tempYawAngleDifference = 0;
-            gyroRotation.X = (float)CalculateAxisRotation(angleRightToTarget, angleLeftToTarget, angleToTarget, out tempYawAngleDifference) * maxRotationSlider;
-			this.CurrentYawDifference = tempYawAngleDifference;
-			
-            //Calculate Pitch
-            double angleUpToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, directionToTarget);
-			double angleDownToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Down, directionToTarget);
-			double tempPitchAngleDifference = 0;
-            gyroRotation.Y = (float)CalculateAxisRotation(angleUpToTarget, angleDownToTarget, angleToTarget, out tempPitchAngleDifference) * maxRotationSlider;
-            this.CurrentPitchDifference = tempPitchAngleDifference;
-			
-            //Calculate Roll - If Specified
-            if(this.UpDirection != Vector3D.Zero){
+                }
 
-                double rollAngleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, this.UpDirection);
-                double angleRollLeftToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, this.UpDirection);
-				double angleRollRightToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, this.UpDirection);
-				double tempRollAngleDifference = 0;
-                gyroRotation.Z = (float)CalculateAxisRotation(angleRollLeftToUp, angleRollRightToUp, rollAngleToTarget, out tempRollAngleDifference) * maxRotationSlider;
-				this.CurrentRollDifference = tempRollAngleDifference;
+                //Calculate Yaw
+                double angleLeftToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, directionToTarget);
+                double angleRightToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, directionToTarget);
+                gyroRotation.Y = (float)CalculateAxisRotation(angleLeftToTarget, angleRightToTarget, angleToTarget);
+
+                //Calculate Pitch
+                double angleUpToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, directionToTarget);
+                double angleDownToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Down, directionToTarget);
+                gyroRotation.X = (float)CalculateAxisRotation(angleDownToTarget, angleUpToTarget, angleToTarget);
+
+                //Calculate Roll - If Specified
+                if(this.UpDirection != Vector3D.Zero) {
+
+                    double rollAngleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, this.UpDirection);
+                    double angleRollLeftToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, this.UpDirection);
+                    double angleRollRightToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, this.UpDirection);
+                    gyroRotation.Z = (float)CalculateAxisRotation(angleRollLeftToUp, angleRollRightToUp, rollAngleToTarget);
+
+                }
+
+            } else {
+
+                gyroRotation.Z = 10;
 
             }
+			
 			
 			if(this.ControlYaw == false){
 				
-				gyroRotation.X = 0;
+				gyroRotation.Y = 0;
 				
 			}
 			
 			if(this.ControlPitch == false){
 				
-				gyroRotation.Y = 0;
+				gyroRotation.X = 0;
 				
 			}
 			
@@ -352,15 +416,72 @@ namespace RivalAI.Behavior.Subsystems{
 				gyroRotation.Z = 0;
 				
 			}
-			
-            this.RotationToApply = Vector3.TransformNormal(gyroRotation, this.ControlGyro.Orientation);
-            this.RotationToApply.Y *= -1;
+
+            var pitchVector = Vector3D.Zero;
+            var yawVector = Vector3D.Zero;
+            var rollVector = Vector3D.Zero;
+
+            this.ControlGyroRotationTranslation.TryGetValue("Pitch", out pitchVector);
+            this.ControlGyroRotationTranslation.TryGetValue("Yaw", out yawVector);
+            this.ControlGyroRotationTranslation.TryGetValue("Roll", out rollVector); //
+
+            pitchVector *= gyroRotation.X;
+            yawVector *= gyroRotation.Y;
+            rollVector *= gyroRotation.Z;
+            this.RotationToApply = pitchVector + yawVector + rollVector;
             
+            /*
+            var sb = new StringBuilder();
+            sb.Append("RotationData:").AppendLine();
+
+            if(gyroRotation.X > 0) {
+
+                sb.Append(" - Pitch: Up").AppendLine();
+
+            } else if(gyroRotation.X < 0) {
+
+                sb.Append(" - Pitch: Down").AppendLine();
+
+            }
+
+            if(gyroRotation.Y > 0) {
+
+                sb.Append(" - Yaw:   Right").AppendLine();
+
+            } else if(gyroRotation.Y < 0) {
+
+                sb.Append(" - Yaw:   Left").AppendLine();
+
+            }
+
+            if(gyroRotation.Z > 0) {
+
+                sb.Append(" - Roll:  Right").AppendLine();
+
+            } else if(gyroRotation.Z < 0) {
+
+                sb.Append(" - Roll:  Left").AppendLine();
+
+            }
+            
+            sb.Append(" - Angle To Target: ").Append(this.CurrentAngleToTarget.ToString()).AppendLine();
+            sb.Append(" - Required Rotation: ").Append(gyroRotation.ToString()).AppendLine();
+            sb.Append(" - Actual Rotation:   ").Append(this.RotationToApply.ToString()).AppendLine();
+            
+            //sb.Append(" - ").Append().AppendLine();
+
+            Logger.AddMsg(sb.ToString(), true);
+            */
+
+            //gyroRotation.Y *= -1;
+            //this.RotationToApply = Vector3.TransformNormal(gyroRotation, this.ControlGyro.Orientation);
+            //this.RotationToApply.Y *= -1;
+
         }
 		
-		public double CalculateAxisRotation(double angleA, double angleB, double totalAngle, out double angleDifference){
+		public double CalculateAxisRotation(double angleA, double angleB, double totalAngle){
 			
-			angleDifference = 0;
+			double angleDifference = 0;
 			double angleDirection = 1;
 			
 			if(angleA > angleB){
@@ -376,8 +497,6 @@ namespace RivalAI.Behavior.Subsystems{
 				
 			}
 
-            //MyVisualScriptLogicProvider.ShowNotificationToAll("Angle Diff: " + Math.Round(angleDifference, 2).ToString(), 166);
-			
 			if(angleDifference <= this.DesiredAngleToTarget){
 				
 				return 0;
@@ -386,22 +505,13 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			if(totalAngle >= 90 && angleDifference >= 180) {
 				
-				return 1 * angleDirection;
+				return Math.PI * angleDirection;
 				
 			}
-			
-			var numB = angleDifference / 180;
 
-            if(numB < this.MinimumRotationMultiplier) {
+            return (angleDifference * (Math.PI / 180)) * angleDirection;
 
-                numB = this.MinimumRotationMultiplier;
-
-            }
-			
-			//TODO: Validate this is done
-			return numB * angleDirection;
-			
-		}
+        }
 		
 		public void UpdateMassAndGyroForce(){
 			

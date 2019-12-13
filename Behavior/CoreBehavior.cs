@@ -33,31 +33,33 @@ using RivalAI;
 
 namespace RivalAI.Behavior {
 
-    public enum BehaviorMode {
-
-        Init,
-        Idle,
-        Retreat,
-        ApproachWaypoint,
-        ApproachTarget,
-        EvadeCollision,
-        KamikazeCollision,
-        EngageTarget,
-        WaitingForTarget
-
-    }
-
     public class CoreBehavior{
 		
 		public IMyRemoteControl RemoteControl;
 		public IMyCubeGrid CubeGrid;
 
-		public BaseSystems Systems;
+		//public BaseSystems Systems;
+
+        public AutoPilotSystem AutoPilot;
+        public BroadcastSystem Broadcast;
+        public CollisionSystem Collision;
+        public DamageSystem Damage;
+        public DespawnSystem Despawn;
+        public ExtrasSystem Extras;
+        public OwnerSystem Owner;
+        public RotationSystem Rotation;
+        public SpawningSystem Spawning;
+        public TargetingSystem Targeting;
+        public ThrustSystem Thrust;
+        public TriggerSystem Trigger;
+        public WeaponsSystem Weapons;
+
         public BehaviorMode Mode;
-        public CoreBehaviorStatus Status;
+        public BehaviorMode PreviousMode;
 
         public bool SetupCompleted;
 		public bool SetupFailed;
+        public bool ConfigCheck;
         public bool EndScript;
 
 		public byte CoreCounter;
@@ -68,10 +70,11 @@ namespace RivalAI.Behavior {
 			CubeGrid = null;
 
             Mode = BehaviorMode.Init;
-            Status = new CoreBehaviorStatus();
+            PreviousMode = BehaviorMode.Init;
 
             SetupCompleted = false;
 			SetupFailed = false;
+            ConfigCheck = false;
             EndScript = false;
 
             CoreCounter = 0;
@@ -80,74 +83,93 @@ namespace RivalAI.Behavior {
 		
 		public void RunCoreAi(){
 
-            //MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Systems.Owner.NpcOwned.ToString(), 16);
+            //MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
 
-			if(Systems.Owner.NpcOwned == false || EndScript == true) {
+			if(Owner.NpcOwned == false || EndScript == true) {
 				
 				return;
 				
 			}
 
-            RunCoreBehavior();
-			
 			CoreCounter++;
 
-
+            /*
+            Vector4 color = new Vector4(1, 1, 1, 1);
+            var endCoords = this.RemoteControl.WorldMatrix.Forward * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
+            MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoords, MyStringId.GetOrCompute("WeaponLaser"), ref color, 0.1f);
+            
+            
+            var endCoordsb = Targeting.Target.TargetDirection * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
+            MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
+            */
+            
+            Vector4 colorb = new Vector4(0, 1, 1, 1);
+            Vector4 colorc = new Vector4(0, 1, 0, 1);
+            var endCoordsc = AutoPilot.WaypointCoords;
+            MySimpleObjectDraw.DrawLine(new Vector3D(0,0,0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
+            MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
+            
             if((CoreCounter % 10) == 0){
 				
-				
-				
-			}
+				//TODO: Damage Alert Handlers
+                Weapons.BarrageFire();
 
-            //15 Tick - Autopilot
-            if((CoreCounter % 15) == 0) {
+            }
 
-                Systems.AutoPilot.TargetCoords = Systems.Targeting.TargetCoords;
-                Systems.AutoPilot.EngageAutoPilot();
-                Systems.Weapons.BarrageFire();
+            if((CoreCounter % 20) == 0) {
+
+                //Internalize Collision To AutoPilot Class
+                AutoPilot.CollisionDetected = Collision.VelocityResult.CollisionImminent;
+                AutoPilot.TargetCoords = Targeting.GetTargetPosition();
+                AutoPilot.EngageAutoPilot();
+                
+
+            }
+
+            if((CoreCounter % 25) == 0) {
+
+                Collision.RequestVelocityCheckCollisions();
 
             }
 
             if((CoreCounter % 30) == 0) {
 
-                
+                Trigger.ProcessTriggerWatchers();
 
             }
 
-            //50 Tick - Collision Check
+            //50 Tick - Target Check
             if((CoreCounter % 50) == 0) {
 
-                Systems.Collision.RequestCheckCollisions();
-
-            }
-
-            //55 Tick - Target Check
-            if((CoreCounter % 55) == 0) {
-
-                Systems.Targeting.RequestTarget();
+                Targeting.RequestTarget();
 
             }
 
             if((CoreCounter % 60) == 0) {
 
                 CoreCounter = 0;
+                AutoPilot.ProcessEvasionCounter();
+                Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
 
-                Systems.Despawn.ProcessTimers(Mode);
+                if(this.ConfigCheck == false) {
 
-                if(Mode != BehaviorMode.Retreat) {
+                    this.ConfigCheck = true;
 
-                    if(Systems.Despawn.DoRetreat == true) {
+                    if(RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) == false) {
 
-                        Mode = BehaviorMode.Retreat;
+                        this.EndScript = true;
+                        return;
 
                     }
 
                 }
 
-                if(Systems.Despawn.DoDespawn == true) {
+                Broadcast.ProcessAutoMessages();
 
-                    EndScript = true;
-                    Systems.Despawn.DespawnGrid();
+                if(Despawn.DoDespawn == true) {
+
+                    this.EndScript = true;
+                    Despawn.DespawnGrid();
                     return;
 
                 }
@@ -156,73 +178,23 @@ namespace RivalAI.Behavior {
 			
 		}
 		
-		//Runs Every Tick
-		public void RunCoreBehavior(){
-			
-			
-			
-			//Above Here Runs On All Clients
-			if(RAI_SessionCore.IsServer == false){
-				
-				return;
-				
-			}
-			//Below Here Runs On Server Only
-			
-			
-			
-		}
 		
-		//Runs Every 10 Ticks
-		public void RunCoreBehavior10(){
+		
+		
+        
 
-			if(RAI_SessionCore.IsServer == false){
-				
-				return;
-				
-			}
-
-            //Weapon Systems
-
-            
-        }
-
-        //Runs Every 30 Ticks (Approx 0.5 Second)
-        public void RunCoreBehavior30() {
-
-
-            if(RAI_SessionCore.IsServer == false) {
-
-                return;
-
-            }
-
-            //Collision
-            Systems.Collision.RequestCheckCollisions();
-
-            //Target
-
-            //Autopilot
+        public void ChangeBehavior(string newBehaviorSubtypeID) {
 
 
 
         }
 
-        //Runs Every 60 Ticks (Approx 1 Second)
-        public void RunCoreBehavior60(){
-			
-			
-			if(RAI_SessionCore.IsServer == false){
-				
-				return;
-				
-			}
-			
-            //Chat Stuff
+        public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-			//Update Status and Save To Entity
-			
-		}
+            Logger.AddMsg("Changed Core Mode To: " + newMode.ToString(), true);
+            this.Mode = newMode;
+
+        }
 		
 		public void CoreSetup(IMyRemoteControl remoteControl){
 			
@@ -235,15 +207,74 @@ namespace RivalAI.Behavior {
 			
 			this.RemoteControl = remoteControl;
 			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
-            Systems = new BaseSystems(remoteControl);
-            Systems.SetupBaseSystems(remoteControl);
-            Status = new CoreBehaviorStatus();
-            //TODO: Try Get Existing CoreBehaviorStatus
+
+            AutoPilot = new AutoPilotSystem(remoteControl);
+            Broadcast = new BroadcastSystem(remoteControl);
+            Collision = new CollisionSystem(remoteControl);
+            Damage = new DamageSystem(remoteControl);
+            Despawn = new DespawnSystem(remoteControl);
+            Extras = new ExtrasSystem(remoteControl);
+            Rotation = new RotationSystem(remoteControl);
+            Owner = new OwnerSystem(remoteControl);
+            Spawning = new SpawningSystem(remoteControl);
+            Targeting = new TargetingSystem(remoteControl);
+            Thrust = new ThrustSystem(remoteControl);
+            Trigger = new TriggerSystem(remoteControl);
+            Weapons = new WeaponsSystem(remoteControl);
+
+            Targeting.WeaponTrigger += Weapons.FireEligibleWeapons;
+            Collision.TriggerWarning += Thrust.InvertStrafe;
+
+            AutoPilot.SetupReferences(this.Collision, this.Rotation, this.Targeting, this.Thrust, this.Weapons);
+            Collision.SetupReferences(this.Thrust);
+            Thrust.SetupReferences(this.AutoPilot, this.Collision);
+            Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Targeting, this.Weapons);
+
+            //Setup Alert Systems
+            //Register Damage Handler if Eligible
 
         }
-		
-		
-		
-	}
+
+        public void InitCoreTags() {
+
+            AutoPilot.InitTags();
+            Collision.InitTags();
+            Targeting.InitTags();
+            Weapons.InitTags();
+            Broadcast.InitTags();
+            Damage.InitTags();
+            Despawn.InitTags();
+            Extras.InitTags();
+            Owner.InitTags();
+            Trigger.InitTags();
+
+        }
+
+        public void RegisterEligibleListeners() {
+
+            bool foundDamageListener = false;
+
+            foreach(var trigger in Trigger.Triggers) {
+
+                if(trigger.Type == "Damage") {
+
+                    foundDamageListener = true;
+                    break;
+
+                }
+
+            }
+
+
+
+        }
+
+        public void UnregisterEligibleListeners() {
+
+            Damage.UnregisterDamageHandler();
+
+        }
+
+    }
 	
 }

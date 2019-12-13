@@ -31,6 +31,7 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
 
@@ -38,8 +39,12 @@ namespace RivalAI.Helpers {
 
         public Vector3D MyPosition;
         public Vector3D MyVelocity;
-        public bool UseLeadPrediction;
+        public Vector3D MyDirection;
+        public IMyRemoteControl RemoteControl;
+
+        public long MyIdentityId;
         public float ProjectileVelocity;
+        private TargetProfile _targetData;
 
         public IMyEntity Target;
         public IMyTerminalBlock TargetBlock;
@@ -47,7 +52,9 @@ namespace RivalAI.Helpers {
         public TargetTypeEnum TargetType;
         public Vector3D TargetCoords;
         public Vector3D TargetVelocity;
-        public double TargetDistance;
+        public Vector3D TargetDirection;
+        public double Distance;
+        public double TargetAngle;
 
         public DateTime TargetEvaluationTime;
         public bool TargetExists;
@@ -61,11 +68,15 @@ namespace RivalAI.Helpers {
         public bool IsShielded;
         public bool HasThrust;
 
+        public TargetObstructionEnum TargetObstruction;
+        public double TargetObstructionDistance;
+
         public TargetEvaluation(IMyEntity entity, TargetTypeEnum entityType) {
 
             MyPosition = Vector3D.Zero;
             MyVelocity = Vector3D.Zero;
-            UseLeadPrediction = false;
+            MyDirection = Vector3D.Zero;
+            RemoteControl = null;
             ProjectileVelocity = 100;
 
             Target = entity;
@@ -73,7 +84,8 @@ namespace RivalAI.Helpers {
             TargetPlayer = null;
             TargetType = entityType;
             TargetCoords = Vector3D.Zero;
-            TargetDistance = 0;
+            Distance = 0;
+            TargetDirection = Vector3D.Zero;
             TargetVelocity = Vector3D.Zero;
 
             TargetEvaluationTime = MyAPIGateway.Session.GameDateTime;
@@ -88,43 +100,40 @@ namespace RivalAI.Helpers {
             IsShielded = false;
             HasThrust = false;
 
+            TargetObstruction = TargetObstructionEnum.None;
+            TargetObstructionDistance = 0;
 
         }
 
-        public void Evaluate(IMyRemoteControl remoteControl, bool leadPrediction = false, float projectileVelocity = 100, bool useGridSpeedForLead = false) {
+        public void Evaluate(IMyRemoteControl remoteControl, TargetProfile targetData, float projectileVelocity = 100) {
 
+            this.RemoteControl = remoteControl;
             this.MyPosition = remoteControl.GetPosition();
-            this.UseLeadPrediction = leadPrediction;
-            this.ProjectileVelocity = projectileVelocity;
+            this.MyDirection = remoteControl.WorldMatrix.Forward;
+            this.MyIdentityId = remoteControl.OwnerId;
             this.MyVelocity = remoteControl.GetShipVelocities().LinearVelocity;
+            this._targetData = targetData;
 
-            if(useGridSpeedForLead == true) {
+            if(targetData.UseCollisionLead == true) {
 
-                this.UseLeadPrediction = true;
                 this.ProjectileVelocity = (float)this.MyVelocity.Length();
 
             }
 
-            MyAPIGateway.Parallel.Start(EvaluateParallel);
+            //MyAPIGateway.Parallel.Start(EvaluateParallel);
+            EvaluateParallel();
 
         }
 
         public void EvaluateParallel() {
 
+            //Logger.AddMsg("Target Evaluation", true);
             //Check If Entity Exists
             if(this.TargetType == TargetTypeEnum.Block) {
 
                 if(this.TargetBlock == null || MyAPIGateway.Entities.Exist(this.TargetBlock?.SlimBlock?.CubeGrid) == false) {
 
-                    SetTargetsNull();
-                    return;
-
-                }
-
-            } else {
-
-                if(this.Target == null || MyAPIGateway.Entities.Exist(this.Target) == false) {
-
+                    //Logger.AddMsg("Target Block Null", true);
                     SetTargetsNull();
                     return;
 
@@ -132,43 +141,60 @@ namespace RivalAI.Helpers {
 
             }
 
+            if(this.TargetType == TargetTypeEnum.Grid) {
+
+                if(this.Target == null || MyAPIGateway.Entities.Exist(this.Target) == false) {
+
+                    //Logger.AddMsg("Target Grid Null", true);
+                    SetTargetsNull();
+                    return;
+
+                }
+
+            }
+
+            //Player
             if(this.TargetType == TargetTypeEnum.Player) {
 
-                var character = this.Target as IMyCharacter;
+                var character = this.TargetPlayer?.Controller?.ControlledEntity?.Entity;
 
-                if(character != null) {
+                if((character as IMyCharacter) != null) {
 
-                    if(character.IsDead == true) {
+                    if((character as IMyCharacter).IsDead == true) {
 
+                        Logger.AddMsg("Target Character Dead", true);
                         SetTargetsNull();
                         return;
 
                     }
 
-                } else {
+                } else if(character == null) {
 
+
+                    Logger.AddMsg("Target Character Null", true);
                     SetTargetsNull();
                     return;
 
                 }
 
+                if(this.Target != this.TargetPlayer.Controller.ControlledEntity.Entity) {
+
+                    this.Target = this.TargetPlayer.Controller.ControlledEntity.Entity;
+
+                }
+
             }
 
+            //Logger.AddMsg("Target Exists", true);
             this.TargetExists = true;
             this.TargetEvaluationTime = MyAPIGateway.Session.GameDateTime;
 
             //TargetCoords
-            if(this.TargetType == TargetTypeEnum.Grid) {
+            this.TargetCoords = this.Target.PositionComp.WorldAABB.Center;
 
-                this.TargetCoords = this.Target.PositionComp.WorldAABB.Center;
-
-            } else {
-
-                this.TargetCoords = this.Target.GetPosition();
-
-            }
-
-            this.TargetDistance = Vector3D.Distance(this.MyPosition, this.TargetCoords);
+            this.Distance = Vector3D.Distance(this.MyPosition, this.TargetCoords);
+            this.TargetDirection = Vector3D.Normalize(this.TargetCoords - this.MyPosition);
+            this.TargetAngle = VectorHelper.GetAngleBetweenDirections(this.MyDirection, this.TargetDirection);
             this.InSafeZone = TargetHelper.IsPositionInSafeZone(this.TargetCoords);
 
             //IsMoving
@@ -213,11 +239,14 @@ namespace RivalAI.Helpers {
             }
 
             //Target Lead Stuff
-            if(this.UseLeadPrediction == true) {
+            if(_targetData.UseCollisionLead == true || _targetData.UseProjectileLead) {
 
                 this.TargetCoords = VectorHelper.FirstOrderIntercept(this.MyPosition, this.MyVelocity, this.ProjectileVelocity, this.TargetCoords, this.TargetVelocity);
 
             }
+
+            //Obstruction To Target (For Weapons)
+            IsTargetObstructed();
 
             //IsHumanControlled
             if(TargetType == TargetTypeEnum.Block) {
@@ -289,6 +318,115 @@ namespace RivalAI.Helpers {
                 this.IsShielded = false;
 
             }
+
+        }
+
+        public void IsTargetObstructed() {
+
+            double targetDistance = Vector3D.Distance(this.TargetCoords, this.MyPosition);
+            TargetObstructionEnum closestThing = TargetObstructionEnum.None;
+            double closestDistance = targetDistance;
+
+            IMyEntity zoneEntity = null;
+            var safezoneCoords = TargetHelper.SafeZoneIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out zoneEntity);
+            double safeZoneDistance = targetDistance + 100;
+
+            if(safezoneCoords != Vector3D.Zero) {
+
+                safeZoneDistance = Vector3D.Distance(safezoneCoords, this.MyPosition);
+
+                if(safeZoneDistance < closestDistance) {
+
+                    closestDistance = safeZoneDistance;
+                    closestThing = TargetObstructionEnum.Safezone;
+
+                }
+
+            }
+
+            var voxelCoords = Vector3D.Zero;
+            double voxelDistance = targetDistance + 100;
+
+            IMyEntity voxelEntity = null;
+            voxelCoords = TargetHelper.VoxelIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out voxelEntity);
+
+            if(voxelCoords != Vector3D.Zero) {
+
+                voxelDistance = Vector3D.Distance(voxelCoords, this.MyPosition);
+
+                if(voxelDistance < closestDistance) {
+
+                    closestDistance = voxelDistance;
+                    closestThing = TargetObstructionEnum.Voxel;
+
+                }
+
+            }
+
+            IMyEntity shieldEntity = null;
+            var shieldCoords = TargetHelper.ShieldIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out shieldEntity, this.MyIdentityId);
+            double shieldDistance = targetDistance + 100;
+
+            if(shieldCoords != Vector3D.Zero) {
+
+                shieldDistance = Vector3D.Distance(shieldCoords, this.MyPosition);
+
+                if(shieldDistance < closestDistance) {
+
+                    closestDistance = shieldDistance;
+                    closestThing = TargetObstructionEnum.DefenseShield;
+
+                }
+
+            }
+
+            IMyCubeGrid grid = null;
+            var gridCoords = TargetHelper.TargetIntersectionCheck(this.RemoteControl, this.MyDirection, targetDistance, out grid);
+            double gridDistance = targetDistance + 100;
+
+            if(gridCoords != Vector3D.Zero) {
+
+                gridDistance = Vector3D.Distance(gridCoords, this.MyPosition);
+
+                if(gridDistance < closestDistance) {
+
+                    closestDistance = gridDistance;
+                    closestThing = TargetObstructionEnum.Grid;
+
+                }
+
+            }
+
+            this.TargetObstruction = closestThing;
+            this.TargetObstructionDistance = closestDistance;
+
+        }
+
+        public bool IsTargetReachable() {
+
+            if(this.TargetObstruction == TargetObstructionEnum.None) {
+
+                return true;
+
+            }
+
+            if(this.TargetObstruction == TargetObstructionEnum.Voxel || this.TargetObstruction == TargetObstructionEnum.Safezone) {
+
+                if(this.Distance > this.TargetObstructionDistance) {
+
+                    return false;
+
+                }
+
+            }
+
+            if(this.TargetObstruction == TargetObstructionEnum.Grid) {
+
+                //TODO: Friendly Check
+
+            }
+
+            return false;
 
         }
 

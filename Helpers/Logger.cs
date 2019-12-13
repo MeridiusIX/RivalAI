@@ -37,7 +37,7 @@ namespace RivalAI.Helpers{
 		
 		public static bool LoggerDebugMode = true;
 		public static bool SkipNextMessage = false;
-		public static string LogDefaultIdentifier = "Meridius_IX's AI Systems: ";
+		public static string LogDefaultIdentifier = "RivalAI: ";
 		public static Stopwatch PerformanceTimer = new Stopwatch();
 		
 		public static void AddMsg(string message, bool debugOnly = false, string identifier = ""){

@@ -33,39 +33,60 @@ using RivalAI.Helpers;
 namespace RivalAI.Behavior.Subsystems{
 	
 	public class DespawnSystem{
-		
-		public IMyRemoteControl RemoteControl;
-		
-		public bool UsePlayerDistanceTimer;
-		public int PlayerDistanceTimer;
-		public int PlayerDistanceTimerTrigger;
-		public double PlayerDistance;
-		public double PlayerDistanceTrigger; //Storage
-		
-		public bool UseRetreatTimer;
-        public int RetreatTimer;
-        public int RetreatTimerTrigger; //Storage
 
-        public double DespawnDistance;
+        public bool UsePlayerDistanceTimer;
+        public int PlayerDistanceTimerTrigger;
+        public double PlayerDistanceTrigger;
+
+        public bool UseNoTargetTimer;
+        public int NoTargetTimerTrigger;
+
+        public bool UseRetreatTimer;
+        public int RetreatTimerTrigger;
+        public double RetreatDespawnDistance;
+
+        public IMyRemoteControl RemoteControl;
+
+		public int PlayerDistanceTimer; //Storage
+		public double PlayerDistance;
+		public IMyPlayer NearestPlayer;
+
+        public int RetreatTimer; //Storage
+
+        public bool SuspendNoTargetTimer = false;
+        public int NoTargetTimer;
 
         public bool DoDespawn;
         public bool DoRetreat;
+        public bool NoTargetExpire;
+		
+		public event Action RetreatTriggered;
 
         public DespawnSystem(IMyRemoteControl remoteControl = null) {
-			
-			RemoteControl = null;
-			
-			UsePlayerDistanceTimer = false;
-			PlayerDistanceTimer = 0;
-			PlayerDistanceTimerTrigger = 150;
-			PlayerDistance = 0;
-			PlayerDistanceTrigger = 25000;
-			
-			UseRetreatTimer = false;
-			RetreatTimer = 0;
-			RetreatTimerTrigger = 600;
 
-            DespawnDistance = 3000;
+            UsePlayerDistanceTimer = true;
+            PlayerDistanceTimerTrigger = 150;
+            PlayerDistanceTrigger = 25000;
+
+            UseNoTargetTimer = false;
+            NoTargetTimerTrigger = 10;
+
+            UseRetreatTimer = false;
+            RetreatTimerTrigger = 600;
+            RetreatDespawnDistance = 3000;
+
+            RemoteControl = null;
+
+			PlayerDistanceTimer = 0;
+			PlayerDistance = 0;
+
+			RetreatTimer = 0;
+
+            NoTargetTimer = 0;
+
+            DoDespawn = false;
+            DoRetreat = false;
+            NoTargetExpire = false;
 
             Setup(remoteControl);
 
@@ -73,29 +94,47 @@ namespace RivalAI.Behavior.Subsystems{
         }
 		
 		private void Setup(IMyRemoteControl remoteControl){
+
+            if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
+
+                return;
+
+            }
+
+            this.RemoteControl = remoteControl;
+
+        }
+
+        public void InitTags() {
+
+
+
+        }
+
+        public void ProcessTimers(BehaviorMode mode, bool invalidTarget = false){
 			
-			
-			
-		}
-		
-		public void ProcessTimers(BehaviorMode mode){
-			
-			if(RAI_SessionCore.IsServer == false || this.RemoteControl == null){
+			if(this.RemoteControl == null){
 				
 				return;
 				
 			}
+			
+			this.NearestPlayer = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
 
             if(mode == BehaviorMode.Retreat) {
 
-                var player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
+                if(this.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
 
-                if(player?.Character != null) {
+                    if(Vector3D.Distance(this.RemoteControl.GetPosition(), this.NearestPlayer.GetPosition()) > this.RetreatDespawnDistance){
 
-
+                        Logger.AddMsg("Retreat Despawn: Player Far Enough", true);
+                        DoDespawn = true;
+						
+					}
 
                 } else {
 
+                    Logger.AddMsg("Retreat Despawn: No Player", true);
                     DoDespawn = true;
 
                 }
@@ -104,20 +143,19 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			if(this.UsePlayerDistanceTimer == true){
 				
-				var player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
-				
-				if(player == null){
+				if(this.NearestPlayer == null){
 					
 					PlayerDistanceTimer++;
 					
-				}else if(player.Character != null){
+				}else if(this.NearestPlayer?.Controller?.ControlledEntity?.Entity != null){
 
-					if(Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition()) > PlayerDistance){
+					if(Vector3D.Distance(this.NearestPlayer.GetPosition(), this.RemoteControl.GetPosition()) > this.PlayerDistanceTrigger) {
 						
 						PlayerDistanceTimer++;
 
                         if(PlayerDistanceTimer >= PlayerDistanceTimerTrigger) {
 
+                            Logger.AddMsg("Despawn: No Player Within Distance", true);
                             DoDespawn = true;
 
                         }
@@ -131,8 +169,28 @@ namespace RivalAI.Behavior.Subsystems{
 				}
 				
 			}
+
+            if(this.UseNoTargetTimer == true && this.SuspendNoTargetTimer == false) {
+                
+                if(invalidTarget == true) {
+
+                    this.NoTargetTimer++;
+
+                    if(this.NoTargetTimer >= this.NoTargetTimerTrigger) {
+
+                        this.NoTargetExpire = true;
+
+                    }
+
+                } else {
+
+                    this.NoTargetTimer = 0;
+
+                }
+
+            }
 			
-			if(this.UseRetreatTimer == true){
+			if(this.UseRetreatTimer == true && this.DoRetreat == false){
 				
 				RetreatTimer++;
 
@@ -143,12 +201,36 @@ namespace RivalAI.Behavior.Subsystems{
                 }
 				
 			}
-            			
+        
+		}
+		
+		public void Retreat(){
+
+            Logger.AddMsg("Retreat Signal Received For Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, true);
+            DoRetreat = true;
+			
 		}
 
         public void DespawnGrid() {
 
+            Logger.AddMsg("Despawning Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName);
 
+            MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+                var gridGroup = MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Logical);
+
+                foreach(var grid in gridGroup) {
+
+                    if(grid.MarkedForClose == false) {
+
+                        grid.Close();
+
+                    }
+
+                }
+
+            });
+            
 
         }
 		

@@ -39,6 +39,9 @@ namespace RivalAI.Behavior.Subsystems{
 		public string RequiredFactionTag;
 		public bool NpcOwned;
         public bool AllowHumansInFaction;
+
+        public IMyFaction Faction;
+        public long FactionId;
 		
 		public bool UseGridReclamation;
 		public double SecondsBetweenAttempts;
@@ -79,8 +82,14 @@ namespace RivalAI.Behavior.Subsystems{
 			CheckIfNpcOwned(remoteControl);
 			
 		}
-		
-		public void ChangeRequiredFaction(string newFaction){
+
+        public void InitTags() {
+
+
+
+        }
+
+        public void ChangeRequiredFaction(string newFaction){
 			
 			this.RequiredFactionTag = newFaction;
 			CheckIfNpcOwned(this.RemoteControl);
@@ -106,6 +115,8 @@ namespace RivalAI.Behavior.Subsystems{
                     if(faction.IsEveryoneNpc() == true) {
 
                         this.NpcOwned = true;
+                        this.Faction = faction;
+                        this.FactionId = faction.FactionId;
                         Logger.AddMsg("Owner Check: Valid NPC Faction", true);
                         var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
 
@@ -125,6 +136,9 @@ namespace RivalAI.Behavior.Subsystems{
 
                     if(npcSteam == 0) {
 
+                        this.NpcOwned = true;
+                        this.Faction = faction;
+                        this.FactionId = faction.FactionId;
                         Logger.AddMsg("Owner Check: Valid NPC Faction", true);
                         return;
 
@@ -136,6 +150,8 @@ namespace RivalAI.Behavior.Subsystems{
 
             //TODO: Maybe Update This To Include Factionless NPCs?
             Logger.AddMsg("Owner Check: Not NPC Faction", true);
+            this.Faction = null;
+            this.FactionId = 0;
             this.NpcOwned = false;
 			
 		}

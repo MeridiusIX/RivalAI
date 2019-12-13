@@ -40,23 +40,30 @@ namespace RivalAI.Behavior{
 	public class BehaviorManagerLogic : MyGameLogicComponent{
 
         //Block and Entity
-        public IMyRemoteControl RemoteControl;
+        private IMyRemoteControl RemoteControl;
+        public string BehaviorName = "";
+        public string GridName = "";
 
         //Emissive
-        public Color PreviousEmissiveColor;
+        private Color PreviousEmissiveColor;
 
 		//Behavior
 		public event Action BehaviorRun;
 		public event Action BehaviorRemove;
-		public CoreBehavior CoreBehaviorInstance;
-		public Fighter FighterBehaviorInstance;
+        private CoreBehavior CoreBehaviorInstance;
+        private Fighter FighterBehaviorInstance;
+        private Horsefly HorseflyBehaviorInstance;
+        private Strike StrikeBehaviorInstance;
+
+        //Behavior Change
+        public bool BehaviorChangeRequest = false;
+        public int BehaviorChangeTimeBuffer = 0;
+        public string BehaviorProfileChangeTo = "";
 
         //Setup
-
-        
-        bool ValidBehavior = false;
-		bool SetupComplete = false;
-		bool SetupFailed = false;
+        private bool ValidBehavior = false;
+        private bool SetupComplete = false;
+        private bool SetupFailed = false;
 		
 		public override void Init(MyObjectBuilder_EntityBase objectBuilder){
 			
@@ -76,49 +83,128 @@ namespace RivalAI.Behavior{
 		}
 		
 		public override void UpdateBeforeSimulation(){
-			
+
+            if(BehaviorChangeRequest == true) {
+
+                BehaviorChangeTimeBuffer++;
+
+                if(BehaviorChangeTimeBuffer < 10) {
+
+                    return;
+
+                }
+
+                BehaviorChangeTimeBuffer = 0;
+                BehaviorChangeRequest = false;
+                SetupComplete = false;
+                ValidBehavior = false;
+                //TODO: Replace Custom Data
+                BehaviorProfileChangeTo = "";
+
+            }
+
 			if(SetupComplete == false){
-				
-				SetupComplete = true;
+
+                if(MyAPIGateway.Multiplayer.IsServer == false) {
+
+                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+                    return;
+
+                }
+
+                BehaviorRun = null;
+                BehaviorRemove = null;
+                SetupComplete = true;
 				RemoteControl = Entity as IMyRemoteControl;
-				
-				if(string.IsNullOrEmpty(RemoteControl?.CustomData) == true){
+
+                if(string.IsNullOrEmpty(RemoteControl?.CustomData) == true){
 				
 					Logger.AddMsg("Remote Control Null Or Has No Behavior Data In CustomData.", true);
-					return;
+                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+                    return;
 					
 				}
 
-                //Emissive
-                PreviousEmissiveColor = Color.Blue;
+                if(RemoteControl.CustomData.Contains("[RivalAI Behavior]") == false && RemoteControl.CustomData.Contains("[Rival AI Behavior]") == false) {
 
-                //CoreBehavior
-                if(RemoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
-					
-					ValidBehavior = true;
-					CoreBehaviorInstance = new CoreBehavior();
-					CoreBehaviorInstance.CoreSetup(RemoteControl);
-					BehaviorRun += CoreBehaviorInstance.RunCoreAi;
+                    Logger.AddMsg("Remote Control CustomData Does Not Contain Initializer.", true);
+                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+                    return;
 
-				}
-				
-				//Fighter
-				if(RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
-					
-					ValidBehavior = true;
-					FighterBehaviorInstance = new Fighter();
-					FighterBehaviorInstance.CoreSetup(RemoteControl);
-					BehaviorRun += FighterBehaviorInstance.RunAi;
+                }
 
-				}
-				
+                MyAPIGateway.Parallel.Start(() => {
+
+                    //CoreBehavior
+                    if(RemoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
+
+                        ValidBehavior = true;
+                        CoreBehaviorInstance = new CoreBehavior();
+                        CoreBehaviorInstance.CoreSetup(RemoteControl);
+                        BehaviorRun += CoreBehaviorInstance.RunCoreAi;
+
+                    }
+
+                    //Fighter
+                    if(RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
+
+                        ValidBehavior = true;
+                        FighterBehaviorInstance = new Fighter();
+                        BehaviorName = "Fighter";
+                        GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+                        FighterBehaviorInstance.BehaviorInit(RemoteControl);
+                        BehaviorRun += FighterBehaviorInstance.RunAi;
+
+                    }
+
+                    //Horsefly
+                    if(RemoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
+
+                        ValidBehavior = true;
+                        HorseflyBehaviorInstance = new Horsefly();
+                        BehaviorName = "Horsefly";
+                        GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+                        HorseflyBehaviorInstance.BehaviorInit(RemoteControl);
+                        BehaviorRun += HorseflyBehaviorInstance.RunAi;
+
+                    }
+
+                    //Strike
+                    if(RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
+
+                        ValidBehavior = true;
+                        StrikeBehaviorInstance = new Strike();
+                        BehaviorName = "Strike";
+                        GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+                        StrikeBehaviorInstance.BehaviorInit(RemoteControl);
+                        BehaviorRun += StrikeBehaviorInstance.RunAi;
+
+                    }
+
+                });
+
 			}
 
             if(ValidBehavior == true) {
 
-                BehaviorRun?.Invoke();
+                try {
+
+                    BehaviorRun?.Invoke();
+
+                } catch(Exception exc) {
+
+                    Logger.AddMsg("Exception Found In Behavior: " + BehaviorName + " / " + GridName, true);
+
+                }
+
 
             }
+
+        }
+
+        public void ResetBehavior() {
+
+            SetupComplete = false;
 
         }
 

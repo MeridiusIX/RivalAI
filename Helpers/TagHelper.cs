@@ -29,10 +29,91 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
-	
+
     public static class TagHelper {
+
+        public static Dictionary<string, string> BehaviorTemplates = new Dictionary<string, string>();
+
+        public static Dictionary<string, byte[]> ActionObjectTemplates = new Dictionary<string, byte[]>();
+        public static Dictionary<string, byte[]> ChatObjectTemplates = new Dictionary<string, byte[]>();
+        public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
+        public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
+        public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
+
+        public static void Setup() {
+
+            var definitionList = MyDefinitionManager.Static.GetEntityComponentDefinitions();
+
+            //Get All Chat and Spawner
+            foreach(var def in definitionList) {
+
+                try {
+
+                    if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+
+                        continue;
+
+                    }
+
+                    if(def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var chatObject = new ChatProfile();
+                        chatObject.InitTags(def.DescriptionText);
+                        var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
+                        Logger.AddMsg("Chat Profile Added: " + def.Id.SubtypeName, true);
+                        ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
+                        continue;
+
+                    }
+
+                    if(def.DescriptionText.Contains("[RivalAI Spawner]") == true && SpawnerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var spawnerObject = new SpawnProfile();
+                        spawnerObject.InitTags(def.DescriptionText);
+                        var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
+                        Logger.AddMsg("Spawner Profile Added: " + def.Id.SubtypeName, true);
+                        SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
+                        continue;
+
+                    }
+
+                } catch(Exception) {
+
+                    Logger.AddMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+
+                }
+
+            }
+
+            //Get All Triggers - Build With Chat and Spawner
+            foreach(var def in definitionList) {
+
+                if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+
+                    continue;
+
+                }
+
+                if(def.DescriptionText.Contains("[RivalAI Trigger]") == true && TriggerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                    var triggerObject = new TriggerProfile();
+                    triggerObject.InitTags(def.DescriptionText);
+                    var triggerBytes = MyAPIGateway.Utilities.SerializeToBinary<TriggerProfile>(triggerObject);
+                    Logger.AddMsg("Trigger Profile Added: " + def.Id.SubtypeName, true);
+                    TriggerObjectTemplates.Add(def.Id.SubtypeName, triggerBytes);
+                    continue;
+
+                }
+
+
+            }
+
+            //Get All Behavior
+
+        }
 
         private static string [] ProcessTag(string tag){
 			
@@ -86,22 +167,56 @@ namespace RivalAI.Helpers {
 
         }
 
+        public static Base6Directions.Direction TagBase6DirectionCheck(string tag) {
+
+            Base6Directions.Direction result = Base6Directions.Direction.Forward;
+            var tagSplit = ProcessTag(tag);
+
+            if(tagSplit.Length == 2) {
+
+                bool parseResult = Base6Directions.Direction.TryParse(tagSplit[1], out result) == false;
+
+            }
+
+            return result;
+
+        }
+
         public static bool TagBoolCheck(string tag){
 			
 			bool result = false;
 			var tagSplit = ProcessTag(tag);
-					
-			if(tagSplit.Length == 2){
-				
-				bool parseResult = bool.TryParse(tagSplit[1], out result) == false;
+
+            if(tagSplit.Length == 2){
+
+				bool parseResult = bool.TryParse(tagSplit[1], out result);
 				
 			}
 			
 			return result;
 			
 		}
-		
-		public static double TagDoubleCheck(string tag, double defaultValue){
+
+        public static BroadcastType TagBroadcastTypeEnumCheck(string tag) {
+
+            BroadcastType result = BroadcastType.None;
+            var tagSplit = ProcessTag(tag);
+
+            if(tagSplit.Length == 2) {
+
+                if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
+
+                    return BroadcastType.None;
+
+                }
+
+            }
+
+            return result;
+
+        }
+
+        public static double TagDoubleCheck(string tag, double defaultValue){
 			
 			double result = defaultValue;
 			var tagSplit = ProcessTag(tag);
@@ -185,6 +300,25 @@ namespace RivalAI.Helpers {
             if(tagSplit.Length == 2) {
 
                 result = tagSplit[1];
+
+            }
+
+            return result;
+
+        }
+
+        public static SpawnPositioningEnum TagSpawnPositioningEnumCheck(string tag) {
+
+            SpawnPositioningEnum result = SpawnPositioningEnum.RandomDirection;
+            var tagSplit = ProcessTag(tag);
+
+            if(tagSplit.Length == 2) {
+
+                if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
+
+                    return SpawnPositioningEnum.RandomDirection;
+
+                }
 
             }
 
@@ -287,7 +421,43 @@ namespace RivalAI.Helpers {
 
         }
 
-        
+        public static TriggerAction TagTriggerActionCheck(string tag) {
+
+            TriggerAction result = TriggerAction.None;
+            var tagSplit = ProcessTag(tag);
+
+            if(tagSplit.Length == 2) {
+
+                if(TriggerAction.TryParse(tagSplit[1], out result) == false) {
+
+                    return TriggerAction.None;
+
+                }
+
+            }
+
+            return result;
+
+        }
+
+        public static Vector3D TagVector3DCheck(string tag) {
+
+            Vector3D result = Vector3D.Zero;
+            var tagSplit = ProcessTag(tag);
+
+            if(tagSplit.Length == 2) {
+
+                if(Vector3D.TryParse(tagSplit[1], out result) == false) {
+
+                    return Vector3D.Zero;
+
+                }
+
+            }
+
+            return result;
+
+        }
 
     }
 	

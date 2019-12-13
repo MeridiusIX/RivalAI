@@ -34,16 +34,15 @@ using RivalAI.Helpers;
 namespace RivalAI.Behavior.Subsystems{
 	
 	public class BaseSystems{
-		
+
         //Subsystems
+        public TriggerSystem Trigger;
 		public AutoPilotSystem AutoPilot;
 		public BroadcastSystem Broadcast;
-        public CollisionSystem Collision;
         public DamageSystem Damage;
-        public OwnerSystem Owner;
-        public TargetingSystem Targeting;
         public DespawnSystem Despawn;
-        public WeaponsSystem Weapons;
+        public ExtrasSystem Extras;
+        public OwnerSystem Owner;
 
         //Base Status
         bool IsWorking = false;
@@ -51,26 +50,30 @@ namespace RivalAI.Behavior.Subsystems{
         bool IsPhysicsEnabled = false;
 
         public BaseSystems(IMyRemoteControl remoteControl){
-			
-			AutoPilot = new AutoPilotSystem(remoteControl);
-			Broadcast = new BroadcastSystem(remoteControl);
-            Collision = new CollisionSystem(remoteControl);
-            Damage = new DamageSystem(remoteControl);
-            Owner = new OwnerSystem(remoteControl);
-            Targeting = new TargetingSystem(remoteControl);
-            Despawn = new DespawnSystem(remoteControl);
-            Weapons = new WeaponsSystem(remoteControl);
 
+            Trigger = new TriggerSystem(remoteControl);
+            AutoPilot = new AutoPilotSystem(remoteControl);
+			Broadcast = new BroadcastSystem(remoteControl);
+            Damage = new DamageSystem(remoteControl);
+            Despawn = new DespawnSystem(remoteControl);
+            Extras = new ExtrasSystem(remoteControl);
+            Owner = new OwnerSystem(remoteControl);
 
         }
 		
 		public void SetupBaseSystems(IMyRemoteControl remoteControl){
 			
             //Cross-Class Event Setup
-            Damage.DamageChatEvent += Broadcast.DamageChatTriggered;
 
+            
             remoteControl.IsWorkingChanged += OnWorkingChanged;
             remoteControl.OnPhysicsChanged += PhysicsExist;
+
+        }
+
+        public void InitTags() {
+
+
 
         }
 

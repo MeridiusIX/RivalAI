@@ -30,26 +30,43 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
 
-    public class CollisionCheckResult {
+    public struct CollisionCheckResult {
 
-        public bool HasTarget = false;
-        public Vector3D Coords = new Vector3D(0,0,0);
-        public double Distance = 0;
-        public CollisionDetectType Type = CollisionDetectType.None;
-        public IMyEntity Entity = null;
+        public bool HasTarget;
+        public bool CollisionImminent;
+        public Vector3D Coords;
+        public double Distance;
+        public double Time;
+        public CollisionDetectType Type;
+        public IMyEntity Entity;
 
-    }
+        public CollisionCheckResult(bool empty) {
 
-    public enum CollisionDetectType {
+            HasTarget = false;
+            CollisionImminent = false;
+            Coords = Vector3D.Zero;
+            Distance = 0;
+            Time = 0;
+            Type = CollisionDetectType.None;
+            Entity = null;
 
-        None,
-        Voxel,
-        Grid,
-        SafeZone,
-        DefenseShield
+        }
+
+        public CollisionCheckResult(bool target, bool collisionImminent, Vector3D coords, double distance, double time, CollisionDetectType type, IMyEntity entity) {
+
+            HasTarget = target;
+            CollisionImminent = collisionImminent;
+            Coords = coords;
+            Distance = distance;
+            Time = time;
+            Type = type;
+            Entity = entity;
+
+        }
 
     }
 
@@ -59,7 +76,7 @@ namespace RivalAI.Helpers {
 		
 		public static Random Rnd = new Random();
 
-        public static IMyTerminalBlock AcquireBlockTarget(IMyRemoteControl remoteControl, double maxDistance, TargetRelationEnum relationEnum, TargetDistanceEnum distanceEnum, TargetOwnerEnum ownerEnum, BlockTargetTypes blocksFilter, TargetFilterEnum filterEnum, long requestedBlockEntity = 0) {
+        public static IMyTerminalBlock AcquireBlockTarget(IMyRemoteControl remoteControl, TargetProfile targetData, long requestedBlockEntity = 0) {
 
             if(requestedBlockEntity != 0) {
 
@@ -105,19 +122,19 @@ namespace RivalAI.Helpers {
 
                 }
 
-                if(Vector3D.Distance(remoteControl.GetPosition(), cubeGrid.GetPosition()) > maxDistance) {
+                if(Vector3D.Distance(remoteControl.GetPosition(), cubeGrid.GetPosition()) > targetData.MaxDistance) {
 
                     continue;
 
                 }
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IgnoreSafeZone) == true && TargetHelper.IsPositionInSafeZone(cubeGrid.PositionComp.WorldAABB.Center) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreSafeZone) == true && TargetHelper.IsPositionInSafeZone(cubeGrid.PositionComp.WorldAABB.Center) == true) {
 
                     continue;
 
                 }
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IsBroadcasting) == true && IsTargetBroadcasting(cubeGrid, remoteControl, true, true) == false) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IsBroadcasting) == true && IsTargetBroadcasting(cubeGrid, remoteControl, true, true) == false) {
 
                     continue;
 
@@ -150,7 +167,7 @@ namespace RivalAI.Helpers {
 
                 }
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IgnoreUnderground) && VectorHelper.IsPositionUnderground(block.GetPosition(), planet) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreUnderground) && VectorHelper.IsPositionUnderground(block.GetPosition(), planet) == true) {
 
                     blockList.RemoveAt(i);
                     continue;
@@ -160,7 +177,7 @@ namespace RivalAI.Helpers {
                 var relationResult = OwnershipHelper.GetTargetReputation(remoteControl.OwnerId, block);
                 var ownerResults = OwnershipHelper.GetOwnershipTypes(block);
 
-                if(OwnershipHelper.CompareAllowedReputation(relationEnum, relationResult) == false || OwnershipHelper.CompareAllowedOwnerTypes(ownerEnum, ownerResults) == false) {
+                if(OwnershipHelper.CompareAllowedReputation(targetData.Relations, relationResult) == false || OwnershipHelper.CompareAllowedOwnerTypes(targetData.Owners, ownerResults) == false) {
 
                     blockList.RemoveAt(i);
                     continue;
@@ -169,13 +186,13 @@ namespace RivalAI.Helpers {
 
             }
 
-            var filteredBlockList = FilterBlocksByFamily(blockList, blocksFilter);
+            var filteredBlockList = FilterBlocksByFamily(blockList, targetData.BlockTargets);
 
-            return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), filteredBlockList, distanceEnum) as IMyTerminalBlock;
+            return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), filteredBlockList, targetData.Distance) as IMyTerminalBlock;
 
         }
 
-        public static IMyCubeGrid AcquireGridTarget(IMyRemoteControl remoteControl, double maxDistance, TargetRelationEnum relationEnum, TargetDistanceEnum distanceEnum, TargetOwnerEnum ownerEnum, TargetFilterEnum filterEnum, long requestedGridEntity = 0) {
+        public static IMyCubeGrid AcquireGridTarget(IMyRemoteControl remoteControl, TargetProfile targetData, long requestedGridEntity = 0) {
 
             if(requestedGridEntity != 0) {
 
@@ -218,19 +235,19 @@ namespace RivalAI.Helpers {
 
                 }
 
-                if(Vector3D.Distance(remoteControl.GetPosition(), cubeGrid.GetPosition()) > maxDistance) {
+                if(Vector3D.Distance(remoteControl.GetPosition(), cubeGrid.GetPosition()) > targetData.MaxDistance) {
 
                     continue;
 
                 }
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IgnoreSafeZone) == true && TargetHelper.IsPositionInSafeZone(cubeGrid.PositionComp.WorldAABB.Center) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreSafeZone) == true && TargetHelper.IsPositionInSafeZone(cubeGrid.PositionComp.WorldAABB.Center) == true) {
 
                     continue;
 
                 }
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IsBroadcasting) == true && IsTargetBroadcasting(cubeGrid, remoteControl, true, true) == false) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IsBroadcasting) == true && IsTargetBroadcasting(cubeGrid, remoteControl, true, true) == false) {
 
                     continue;
 
@@ -238,7 +255,7 @@ namespace RivalAI.Helpers {
 
                 MyPlanet planet = MyGamePruningStructure.GetClosestPlanet(remoteControl.GetPosition());
 
-                if(filterEnum.HasFlag(TargetFilterEnum.IgnoreUnderground) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreUnderground) == true) {
 
                     bool aboveSurface = false;
 
@@ -261,10 +278,10 @@ namespace RivalAI.Helpers {
 
                 }
 
-                bool includeSmallOwners = filterEnum.HasFlag(TargetFilterEnum.IncludeGridMinorityOwners);
+                bool includeSmallOwners = targetData.Filters.HasFlag(TargetFilterEnum.IncludeGridMinorityOwners);
 
                 var relationResult = OwnershipHelper.GetTargetReputation(remoteControl.OwnerId, cubeGrid, includeSmallOwners);
-                bool validRelation = OwnershipHelper.CompareAllowedReputation(relationEnum, relationResult);
+                bool validRelation = OwnershipHelper.CompareAllowedReputation(targetData.Relations, relationResult);
 
                 if(validRelation == false) {
 
@@ -273,7 +290,7 @@ namespace RivalAI.Helpers {
                 }
 
                 var ownerResult = OwnershipHelper.GetOwnershipTypes(cubeGrid, includeSmallOwners);
-                bool validOwner = OwnershipHelper.CompareAllowedOwnerTypes(ownerEnum, ownerResult);
+                bool validOwner = OwnershipHelper.CompareAllowedOwnerTypes(targetData.Owners, ownerResult);
 
                 if(validOwner == false) {
 
@@ -285,11 +302,11 @@ namespace RivalAI.Helpers {
 
             }
 
-            return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), gridList, distanceEnum) as IMyCubeGrid;
+            return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), gridList, targetData.Distance) as IMyCubeGrid;
 
         }
 
-        public static IMyPlayer AcquirePlayerTarget(IMyRemoteControl remoteControl, double maxDistance, TargetRelationEnum relationEnum, TargetDistanceEnum distanceEnum, bool ignoreTargetsInSafezone = false) {
+        public static IMyPlayer AcquirePlayerTarget(IMyRemoteControl remoteControl, TargetProfile targetData) {
 
             var playerList = new List<IMyPlayer>();
             MyAPIGateway.Players.GetPlayers(playerList);
@@ -301,57 +318,36 @@ namespace RivalAI.Helpers {
             }
 
             //Filter Out By Relation First and Outside Max Distance
-            for(int i = playerList.Count - 1;i >= 0;i--) {
+            for(int i = playerList.Count - 1; i >= 0; i--) {
 
-                var player = playerList[1];
+                var player = playerList[i];
 
                 //Ignore Non-Character and Bots
-                if(player.IsBot == true || player.Character == null) {
+                if(player.IsBot == true || (player.Controller?.ControlledEntity?.Entity == null && player.Character == null)) {
 
                     playerList.RemoveAt(i);
                     continue;
 
                 }
 
-                if(Vector3D.Distance(remoteControl.GetPosition(), player.GetPosition()) > maxDistance) {
+                if(Vector3D.Distance(remoteControl.GetPosition(), player.GetPosition()) > targetData.MaxDistance) {
 
                     playerList.RemoveAt(i);
                     continue;
 
                 }
 
-                if(ignoreTargetsInSafezone == true && IsPositionInSafeZone(player.GetPosition()) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreSafeZone) == false && IsPositionInSafeZone(player.GetPosition()) == true) {
 
                     playerList.RemoveAt(i);
                     continue;
 
                 }
 
-                var relation = OwnershipHelper.GetReputation(remoteControl.OwnerId, player.IdentityId);
+                var relation = OwnershipHelper.GetTargetReputation(remoteControl.OwnerId, new List<long> { player.IdentityId });
 
                 //Valid Enemy
-                if(relation < -500 && relationEnum == TargetRelationEnum.Enemy) {
-
-                    continue;
-
-                }
-
-                //Valid Neutral
-                if(relation >= -500 && relation <= 500 && relationEnum == TargetRelationEnum.Neutral) {
-
-                    continue;
-
-                }
-
-                //Valid Friend
-                if(relation > 500 && relationEnum == TargetRelationEnum.Friend) {
-
-                    continue;
-
-                }
-
-                //Valid FactionMember
-                if(OwnershipHelper.IsFactionMember(remoteControl.OwnerId, player.IdentityId) == true && relationEnum == TargetRelationEnum.Faction) {
+                if(OwnershipHelper.CompareAllowedReputation(targetData.Relations, relation) == true) {
 
                     continue;
 
@@ -373,8 +369,7 @@ namespace RivalAI.Helpers {
             }
 
             //Distance - Any
-            if(distanceEnum == TargetDistanceEnum.Any) {
-
+            if(targetData.Distance == TargetDistanceEnum.Any) {
 
                 return playerList[Rnd.Next(0, playerList.Count)];
 
@@ -384,7 +379,7 @@ namespace RivalAI.Helpers {
             double closestPlayerDistance = 0;
 
             //Distance - Closest
-            if(distanceEnum == TargetDistanceEnum.Closest) {
+            if(targetData.Distance == TargetDistanceEnum.Closest) {
 
                 foreach(var player in playerList) {
 
@@ -404,7 +399,7 @@ namespace RivalAI.Helpers {
             }
 
             //Distance - Furthest
-            if(distanceEnum == TargetDistanceEnum.Furthest) {
+            if(targetData.Distance == TargetDistanceEnum.Furthest) {
 
                 foreach(var player in playerList) {
 
@@ -428,10 +423,10 @@ namespace RivalAI.Helpers {
         }
 
         //CheckCollisions
-        public static CollisionCheckResult CheckCollisions(IMyTerminalBlock sourceBlock, Vector3D directionCheck, double distance, bool detectVoxel, bool detectGrid, bool detectSafeZone, bool detectShield, bool detectPlayer) {
+        public static CollisionCheckResult CheckCollisions(IMyTerminalBlock sourceBlock, Vector3D directionCheck, double distance, double speed, double timeTrigger, bool detectVoxel, bool detectGrid, bool detectSafeZone, bool detectShield, bool detectPlayer) {
 
-            CollisionCheckResult result = new CollisionCheckResult();
-
+            CollisionCheckResult result = new CollisionCheckResult(false);
+            
             try {
 
                 Vector3D remoteControlPosition = sourceBlock.GetPosition();
@@ -442,13 +437,15 @@ namespace RivalAI.Helpers {
 
                 if(detectVoxel) {
 
-                    var collision = TargetHelper.VoxelIntersectionCheck(remoteControlPosition, directionCheck, distance);
+                    IMyEntity voxelEntity = null;
+                    var collision = TargetHelper.VoxelIntersectionCheck(remoteControlPosition, directionCheck, distance, out voxelEntity);
 
                     if(collision != Vector3D.Zero) {
 
                         var thisCollisionDist = Vector3D.Distance(collision, remoteControlPosition);
                         closestCollisionCoords = collision;
                         closestCollisionDistance = thisCollisionDist;
+                        closestEntity = voxelEntity;
                         detectType = CollisionDetectType.Voxel;
 
                     }
@@ -468,6 +465,7 @@ namespace RivalAI.Helpers {
 
                             closestCollisionCoords = collision;
                             closestCollisionDistance = thisCollisionDist;
+                            closestEntity = targetGrid;
                             detectType = CollisionDetectType.Grid;
 
                         }
@@ -478,7 +476,8 @@ namespace RivalAI.Helpers {
 
                 if(detectSafeZone == true) {
 
-                    var collision = TargetHelper.SafeZoneIntersectionCheck(remoteControlPosition, directionCheck, distance);
+                    IMyEntity zoneEntity = null;
+                    var collision = SafeZoneIntersectionCheck(remoteControlPosition, directionCheck, distance, out zoneEntity);
 
                     if(collision != Vector3D.Zero) {
 
@@ -488,6 +487,7 @@ namespace RivalAI.Helpers {
 
                             closestCollisionCoords = collision;
                             closestCollisionDistance = thisCollisionDist;
+                            closestEntity = zoneEntity;
                             detectType = CollisionDetectType.SafeZone;
 
                         }
@@ -498,7 +498,8 @@ namespace RivalAI.Helpers {
 
                 if(detectShield == true) {
 
-                    var collision = TargetHelper.ShieldIntersectionCheck(remoteControlPosition, directionCheck, distance);
+                    IMyEntity shieldEntity = null;
+                    var collision = TargetHelper.ShieldIntersectionCheck(remoteControlPosition, directionCheck, distance, out shieldEntity);
 
                     if(collision != Vector3D.Zero) {
 
@@ -508,6 +509,7 @@ namespace RivalAI.Helpers {
 
                             closestCollisionCoords = collision;
                             closestCollisionDistance = thisCollisionDist;
+                            closestEntity = shieldEntity;
                             detectType = CollisionDetectType.DefenseShield;
 
                         }
@@ -520,17 +522,14 @@ namespace RivalAI.Helpers {
 
 
 
-                if(closestEntity != null) {
+                if(closestCollisionDistance != 0) {
 
-                    result.HasTarget = true;
-                    result.Coords = closestCollisionCoords;
-                    result.Distance = closestCollisionDistance;
-                    result.Type = detectType;
-                    result.Entity = closestEntity;
+                    var imminentCol = timeTrigger > (closestCollisionDistance / speed);
+                    return new CollisionCheckResult(true, imminentCol, closestCollisionCoords, closestCollisionDistance, closestCollisionDistance / speed, detectType, closestEntity);
 
                 }
 
-
+                /*
                 if(Logger.LoggerDebugMode == true) {
 
                     if(closestCollisionCoords != Vector3D.Zero) {
@@ -542,6 +541,7 @@ namespace RivalAI.Helpers {
                     }
 
                 }
+                */
 
             } catch(Exception exc) {
 
@@ -823,7 +823,7 @@ namespace RivalAI.Helpers {
 			
 			foreach(var player in activePlayers){
 				
-				if(player.Character == null || player.IsBot == true){
+				if(player.Controller.ControlledEntity.Entity == null || player.IsBot == true){
 					
 					continue;
 					
@@ -851,6 +851,52 @@ namespace RivalAI.Helpers {
 			return closestPlayer;
 			
 		}
+
+        public static IMyPlayer GetClosestPlayerWithReputation(Vector3D coords, long factionId, int minRep, int maxRep) {
+
+            var activePlayers = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(activePlayers);
+            IMyPlayer closestPlayer = null;
+            double closestPlayerDistance = 0;
+
+            foreach(var player in activePlayers) {
+
+                if(player.Controller.ControlledEntity.Entity == null || player.IsBot == true) {
+
+                    continue;
+
+                }
+
+                var playerRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(player.IdentityId, factionId);
+
+                if(playerRep < minRep || playerRep > maxRep) {
+
+                    continue;
+
+                }
+
+                var distance = Vector3D.Distance(player.GetPosition(), coords);
+
+                if(closestPlayer == null) {
+
+                    closestPlayer = player;
+                    closestPlayerDistance = distance;
+                    continue;
+
+                }
+
+                if(distance < closestPlayerDistance) {
+
+                    closestPlayer = player;
+                    closestPlayerDistance = distance;
+
+                }
+
+            }
+
+            return closestPlayer;
+
+        }
 
         public static IMyEntity GetEntityAtDistance(Vector3D coords, List<IMyEntity> entityList, TargetDistanceEnum distanceEnum) {
 
@@ -1261,17 +1307,23 @@ namespace RivalAI.Helpers {
 					
 				}
 
+                if(safezone.Enabled == false) {
+
+                    continue;
+
+                }
+
 				var checkPosition = position;
 				bool inZone = false;
 				
 				if (safezone.Shape == MySafeZoneShape.Sphere){
-					
-					if(zoneEntity.PositionComp.WorldVolume.Contains(checkPosition) == ContainmentType.Contains){
-						
-						inZone = true;
-						
-					}
-					
+
+                    if(Vector3D.Distance(zoneEntity.PositionComp.WorldVolume.Center, position) < safezone.Radius) {
+
+                        inZone = true;
+
+                    }
+
 				}else{
 					
 					MyOrientedBoundingBoxD myOrientedBoundingBoxD = new MyOrientedBoundingBoxD(zoneEntity.PositionComp.LocalAABB, zoneEntity.PositionComp.WorldMatrix);
@@ -1622,9 +1674,10 @@ namespace RivalAI.Helpers {
 			
 		}
 		
-		public static Vector3D SafeZoneIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance){
-			
-			var safezoneList = GetSafeZones();
+		public static Vector3D SafeZoneIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, out IMyEntity zoneOutEntity){
+
+            zoneOutEntity = null;
+            var safezoneList = GetSafeZones();
 			double closestDistance = -1;
 			var ray = new RayD(fromCoords, direction);
 			
@@ -1637,18 +1690,26 @@ namespace RivalAI.Helpers {
 					continue;
 					
 				}
+
+                if(zone.Enabled == false) {
+
+                    continue;
+
+                }
 				
 				if(zone.Shape == MySafeZoneShape.Sphere){
-					
-					var result = ray.Intersects(zoneEntity.PositionComp.WorldVolume);
+
+                    var newSphere = new BoundingSphereD(zoneEntity.PositionComp.WorldVolume.Center, zone.Radius);
+					var result = ray.Intersects(newSphere);
 					
 					if(result.HasValue == true){
 						
 						if((double)result <= distance){
 							
 							if((double)result < closestDistance || closestDistance == -1){
-								
-								closestDistance = (double)result;
+
+                                zoneEntity = zone;
+                                closestDistance = (double)result;
 								
 							}
 							
@@ -1665,8 +1726,9 @@ namespace RivalAI.Helpers {
 						if((double)result <= distance){
 							
 							if((double)result < closestDistance || closestDistance == -1){
-								
-								closestDistance = (double)result;
+
+                                zoneEntity = zone;
+                                closestDistance = (double)result;
 								
 							}
 							
@@ -1688,9 +1750,11 @@ namespace RivalAI.Helpers {
 			
 		}
 		
-		public static Vector3D ShieldIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, long ownerId = 0){
-			
-			if(RAI_SessionCore.Instance.ShieldApiLoaded){
+		public static Vector3D ShieldIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, out IMyEntity shieldEntity, long ownerId = 0){
+
+            shieldEntity = null;
+
+            if(RAI_SessionCore.Instance.ShieldApiLoaded){
 				
 				var api = RAI_SessionCore.Instance.SApi;
 				var toCoords = direction * distance + fromCoords;
@@ -1700,6 +1764,7 @@ namespace RivalAI.Helpers {
 				if(result.Item1.HasValue){
 							
 					var dist = (double)result.Item1.Value;
+                    shieldEntity = result.Item2;
 
                     if(ownerId != 0) {
 
@@ -1708,6 +1773,7 @@ namespace RivalAI.Helpers {
 
                         if(reputation.HasFlag(TargetRelationEnum.Enemy) == false) {
 
+                            shieldEntity = null;
                             return Vector3D.Zero;
 
                         }
@@ -1792,8 +1858,9 @@ namespace RivalAI.Helpers {
 			
 		}
 		
-		public static Vector3D VoxelIntersectionCheck(Vector3D startScan, Vector3D scanDirection, double distance){
-			
+		public static Vector3D VoxelIntersectionCheck(Vector3D startScan, Vector3D scanDirection, double distance, out IMyEntity voxelEntity){
+
+            voxelEntity = null;
 			var voxelFrom = startScan;
 			var voxelTo = scanDirection * distance + voxelFrom;
 			var line = new LineD(voxelFrom, voxelTo);
@@ -1818,15 +1885,17 @@ namespace RivalAI.Helpers {
 					if(nearestHit.HasValue == true){
 						
 						if(closestDistance == Vector3D.Zero){
-							
-							closestDistance = (Vector3D)nearestHit;
+
+                            voxelEntity = voxelBase;
+                            closestDistance = (Vector3D)nearestHit;
 							continue;
 							
 						}
 						
 						if(Vector3D.Distance(voxelFrom, (Vector3D)nearestHit) < Vector3D.Distance(voxelFrom, closestDistance)){
-							
-							closestDistance = (Vector3D)nearestHit;
+
+                            voxelEntity = voxelBase;
+                            closestDistance = (Vector3D)nearestHit;
 							
 						}
 						

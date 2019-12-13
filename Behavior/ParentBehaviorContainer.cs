@@ -38,6 +38,7 @@ namespace RivalAI.Behavior{
         public IMyEntity RemoteControlEntity;
 
 		public long RemoteControlId = 0;
+        
 		public bool ValidBehavior = false;
 		public bool MarkedForRemoval = false;
 
@@ -79,7 +80,7 @@ namespace RivalAI.Behavior{
 				
 			}
 
-            BehaviorRun?.Invoke();
+           
 
             if(LogicManager.RemoveAIEntityIDs.Contains(RemoteControlId) == true){
 				
