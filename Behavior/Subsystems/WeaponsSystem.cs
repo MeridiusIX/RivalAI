@@ -68,7 +68,8 @@ namespace RivalAI.Behavior.Subsystems {
         public bool EngageTargets;
         public bool UsingProjectileLead;
         public Vector3D TargetCoords;
-        public TargetEvaluation Target;
+        private TargetingSystem _targeting;
+        public TargetEvaluation TargetEval;
         public double DistanceToTarget;
 
         public bool CanAnyWeaponFire;
@@ -96,7 +97,7 @@ namespace RivalAI.Behavior.Subsystems {
             EngageTargets = false;
             UsingProjectileLead = false;
             TargetCoords = Vector3D.Zero;
-            Target = new TargetEvaluation(null, TargetTypeEnum.None);
+            TargetEval = new TargetEvaluation(null, TargetTypeEnum.None);
             DistanceToTarget = -1;
 
             CanAnyWeaponFire = true;
@@ -175,28 +176,28 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            this.Target = target;
+            this.TargetEval = target;
 
             bool hasTarget = false;
-            double targetDistance = this.Target.Distance;
+            double targetDistance = this.TargetEval.Distance;
 
-            if(this.Target.TargetExists == true) {
+            if(this.TargetEval.TargetExists == true) {
 
-                if(this.Target.UseLeadPrediction == true || this.Target.TargetType == TargetTypeEnum.Player) {
+                if(this._targeting.TargetData.UseProjectileLead == true || this.TargetEval.TargetType == TargetTypeEnum.Player) {
 
-                    if(this.Target.TargetAngle <= this.WeaponMaxAngleFromTarget && this.Target.TargetObstruction != TargetObstructionEnum.Safezone) {
+                    if(this.TargetEval.TargetAngle <= this.WeaponMaxAngleFromTarget && this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone) {
 
                         hasTarget = true;
-                        this.Target.Distance = this.Target.TargetObstructionDistance;
+                        this.TargetEval.Distance = this.TargetEval.TargetObstructionDistance;
 
                     }
 
                 } else {
 
-                    if(this.Target.TargetObstruction != TargetObstructionEnum.Safezone && this.Target.TargetObstruction != TargetObstructionEnum.None) {
+                    if(this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone && this.TargetEval.TargetObstruction != TargetObstructionEnum.None) {
 
                         hasTarget = true;
-                        targetDistance = this.Target.TargetObstructionDistance;
+                        targetDistance = this.TargetEval.TargetObstructionDistance;
 
                     }
 
@@ -297,6 +298,12 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
+        }
+
+        public void SetupReferences(TargetingSystem targeting) {
+
+            _targeting = targeting;
+            
         }
 
         public void InitTags() {

@@ -273,7 +273,7 @@ namespace RivalAI.Behavior.Subsystems{
                     if(this.NeedsTarget == true && this.InvalidTarget == true) {
 
                         AcquireTarget();
-                        this.Target = new TargetEvaluation(this.TargetEntity, this.TargetType);
+                        this.Target = new TargetEvaluation(this.TargetEntity, this.TargetData.Target);
                         this.Target.TargetPlayer = this.TargetPlayer;
                         this.InvalidTarget = false;
 

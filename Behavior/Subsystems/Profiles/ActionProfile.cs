@@ -33,5 +33,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 
 
+        public void InitTags(string customData) {
+
+
+
+        }
+
     }
+
 }

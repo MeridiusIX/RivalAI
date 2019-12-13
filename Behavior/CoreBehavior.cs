@@ -229,6 +229,7 @@ namespace RivalAI.Behavior {
             Collision.SetupReferences(this.Thrust);
             Thrust.SetupReferences(this.AutoPilot, this.Collision);
             Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Targeting, this.Weapons);
+            Weapons.SetupReferences(this.Targeting);
 
             //Setup Alert Systems
             //Register Damage Handler if Eligible
