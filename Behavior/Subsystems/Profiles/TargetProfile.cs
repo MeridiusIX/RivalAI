@@ -93,6 +93,148 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             UseCollisionLead = false;
 
         }
+        
+        public void InitTags(string customData) {
+
+            if(string.IsNullOrWhiteSpace(customData) == false) {
+
+                var descSplit = customData.Split('\n');
+
+                foreach(var tag in descSplit) {
+
+                    //UseCustomTargeting
+                    if(tag.Contains("[UseCustomTargeting:") == true) {
+
+                        this.UseCustomTargeting = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //BlockTargets
+                    if(tag.Contains("[BlockTargets:") == true) {
+
+                        var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
+
+                        if(this.BlockTargets.HasFlag(tempValue) == false) {
+
+                            this.BlockTargets |= tempValue;
+
+                        }
+
+                    }
+                    
+                    //Distance
+                    if(tag.Contains("[Distance:") == true) {
+
+                        this.Distance = TagHelper.TagTargetDistanceEnumCheck(tag);
+
+                    }
+                    
+                    //Filters
+                    if(tag.Contains("[Filters:") == true) {
+
+                        var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
+
+                        if(this.Filters.HasFlag(tempValue) == false) {
+
+                            this.Filters |= tempValue;
+
+                        }
+
+                    }
+                    
+                    //Owners
+                    if(tag.Contains("[Owners:") == true) {
+
+                        var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
+
+                        if(this.Owners.HasFlag(tempValue) == false) {
+
+                            this.Owners |= tempValue;
+
+                        }
+
+                    }
+                    
+                    //Relations
+                    if(tag.Contains("[Relations:") == true) {
+
+                        var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
+
+                        if(this.Relations.HasFlag(tempValue) == false) {
+
+                            this.Relations |= tempValue;
+
+                        }
+
+                    }
+                    
+                    //Target
+                    if(tag.Contains("[Target:") == true) {
+
+                        this.Target = TagHelper.TagTargetTypeEnumCheck(tag);
+
+                    }
+                    
+                    //UseTimeout
+                    if(tag.Contains("[UseTimeout:") == true) {
+
+                        this.UseTimeout = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //MinTimeout
+                    if(tag.Contains("[MinTimeout:") == true) {
+
+                        this.MinTimeout = TagHelper.TagIntCheck(tag, this.MinTimeout);
+
+                    }
+                    
+                    //MaxTimeout
+                    if(tag.Contains("[MaxTimeout:") == true) {
+
+                        this.MaxTimeout = TagHelper.TagIntCheck(tag, this.MaxTimeout);
+
+                    }
+                    
+                    //NonBroadcastingMaxDistance
+                    if(tag.Contains("[NonBroadcastingMaxDistance:") == true) {
+
+                        this.NonBroadcastingMaxDistance = TagHelper.TagDoubleCheck(tag, this.NonBroadcastingMaxDistance);
+
+                    }
+                    
+                    //MaxDistance
+                    if(tag.Contains("[MaxDistance:") == true) {
+
+                        this.MaxDistance = TagHelper.TagDoubleCheck(tag, this.MaxDistance);
+
+                    }
+                    
+                    //UseProjectileLead
+                    if(tag.Contains("[UseProjectileLead:") == true) {
+
+                        this.UseProjectileLead = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //UseCollisionLead
+                    if(tag.Contains("[UseCollisionLead:") == true) {
+
+                        this.UseCollisionLead = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                }
+
+            }
+
+            if(MinTimeout > MaxTimeout) {
+
+                MinTimeout = MaxTimeout;
+
+            }
+
+        }
 
     }
 }
