@@ -47,7 +47,7 @@ namespace RivalAI.Helpers {
 
             var definitionList = MyDefinitionManager.Static.GetEntityComponentDefinitions();
 
-            //Get All Chat and Spawner
+            //Get All Action, Chat, Spawner, and Target
             foreach(var def in definitionList) {
 
                 try {
@@ -58,6 +58,17 @@ namespace RivalAI.Helpers {
 
                     }
 
+		    if(def.DescriptionText.Contains("[RivalAI Action]") == true && ActionObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var actionObject = new ActionProfile();
+                        actionObject.InitTags(def.DescriptionText);
+                        var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<ActionProfile>(actionObject);
+                        Logger.AddMsg("Action Profile Added: " + def.Id.SubtypeName, true);
+                        ActionObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
+                        continue;
+
+                    }
+			
                     if(def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
                         var chatObject = new ChatProfile();
@@ -79,6 +90,17 @@ namespace RivalAI.Helpers {
                         continue;
 
                     }
+			
+		    if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var targetObject = new TargetProfile();
+                        targetObject.InitTags(def.DescriptionText);
+                        var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<TargetProfile>(targetObject);
+                        Logger.AddMsg("Target Profile Added: " + def.Id.SubtypeName, true);
+                        TargetObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
+                        continue;
+
+                    }
 
                 } catch(Exception) {
 
@@ -88,7 +110,7 @@ namespace RivalAI.Helpers {
 
             }
 
-            //Get All Triggers - Build With Chat and Spawner
+            //Get All Triggers - Build With Action, Chat and Spawner
             foreach(var def in definitionList) {
 
                 if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
