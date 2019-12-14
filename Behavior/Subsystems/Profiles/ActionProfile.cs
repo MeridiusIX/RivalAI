@@ -49,7 +49,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public bool SpawnEncounter;
         
         [ProtoMember(6)]
-        public List<string> SpawnGroups;
+        public List<string> SpawnGroups; //Unused
         
         [ProtoMember(7)]
         public bool SelfDestruct;
@@ -70,7 +70,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public bool TriggerTimerBlocks;
         
         [ProtoMember(13)]
-        public List<string> TimeBlockNames;
+        public List<string> TimerBlockNames;
         
         [ProtoMember(14)]
         public bool ChangeReputationWithPlayers;
@@ -100,8 +100,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             NewAutopilotSpeed = 0;
             
             SpawnEncounter = false;
-            SpawnGroups = new List<string>();
-            
+
             SelfDestruct = false;
             
             Retreat = false;
@@ -113,7 +112,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             RefreshTarget = false;
             
             TriggerTimerBlocks = false;
-            TimeBlockNames = new List<string>();
+            TimerBlockNames = new List<string>();
             
             ChangeReputationWithPlayers = false;
             ReputationChangeRadius = 0;
@@ -128,7 +127,147 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         public void InitTags(string customData) {
 
-            
+            if(string.IsNullOrWhiteSpace(customData) == false) {
+
+                var descSplit = customData.Split('\n');
+
+                foreach(var tag in descSplit) {
+                    
+                    //BroadcastMessage
+                    if(tag.Contains("[BroadcastMessage:") == true) {
+
+                        this.BroadcastMessage = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //BarrelRoll
+                    if(tag.Contains("[BarrelRoll:") == true) {
+
+                        this.BroadcastMessage = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //ChangeAutopilotSpeed
+                    if(tag.Contains("[ChangeAutopilotSpeed:") == true) {
+
+                        this.ChangeAutopilotSpeed = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //NewAutopilotSpeed
+                    if(tag.Contains("[NewAutopilotSpeed:") == true) {
+
+                        this.NewAutopilotSpeed = TagHelper.TagFloatCheck(tag, this.NewAutopilotSpeed);
+
+                    }
+                    
+                    //SpawnEncounter
+                    if(tag.Contains("[SpawnEncounter:") == true) {
+
+                        this.SpawnEncounter = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //SelfDestruct
+                    if(tag.Contains("[SelfDestruct:") == true) {
+
+                        this.SelfDestruct = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //Retreat
+                    if(tag.Contains("[Retreat:") == true) {
+
+                        this.Retreat = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //SwitchToReceivedTarget
+                    if(tag.Contains("[SwitchToReceivedTarget:") == true) {
+
+                        this.SwitchToReceivedTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //SwitchToDamagerTarget
+                    if(tag.Contains("[SwitchToDamagerTarget:") == true) {
+
+                        this.SwitchToDamagerTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //RefreshTarget
+                    if(tag.Contains("[RefreshTarget:") == true) {
+
+                        this.RefreshTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //TriggerTimerBlocks
+                    if(tag.Contains("[TriggerTimerBlocks:") == true) {
+
+                        this.TriggerTimerBlocks = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //TimerBlockNames
+                    if(tag.Contains("[TimerBlockNames:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            TimerBlockNames.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //ChangeReputationWithPlayers
+                    if(tag.Contains("[ChangeReputationWithPlayers:") == true) {
+
+                        this.ChangeReputationWithPlayers = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //ReputationChangeRadius
+                    if(tag.Contains("[ReputationChangeRadius:") == true) {
+
+                        ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
+
+                    }
+                    
+                    //ReputationChangeAmount
+                    if(tag.Contains("[ReputationChangeAmount:") == true) {
+
+                        ReputationChangeAmount = TagHelper.TagIntCheck(tag, ReputationChangeAmount);
+
+                    }
+                    
+                    //ActivateAssertiveAntennas
+                    if(tag.Contains("[ActivateAssertiveAntennas:") == true) {
+
+                        this.ActivateAssertiveAntennas = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //ChangeAntennaOwnership
+                    if(tag.Contains("[ChangeAntennaOwnership:") == true) {
+
+                        this.ChangeAntennaOwnership = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //AntennaFactionOwner
+                    if(tag.Contains("[AntennaFactionOwner:") == true) {
+
+                        this.AntennaFactionOwner = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                }
+
+            }
 
         }
 
