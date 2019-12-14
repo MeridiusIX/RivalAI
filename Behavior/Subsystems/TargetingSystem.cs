@@ -132,108 +132,36 @@ namespace RivalAI.Behavior.Subsystems{
 
                 foreach(var tag in descSplit) {
 
-                    //TargetType
-                    if(tag.Contains("[TargetType:") == true) {
+                    //TargetData
+                    if(tag.Contains("[TargetData:") == true) {
 
-                        this.TargetType = TagHelper.TagTargetTypeEnumCheck(tag);
+                        var tempValue = TagHelper.TagStringCheck(tag);
 
-                    }
+                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                    //TargetRelation
-                    if(tag.Contains("[TargetRelation:") == true) {
+                            byte[] byteData = { };
 
-                        var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
+                            if(TagHelper.TargetObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
-                        if(this.TargetRelation.HasFlag(tempValue) == false) {
+                                try {
 
-                            this.TargetRelation |= tempValue;
+                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
 
-                        }
+                                    if(profile != null) {
 
-                        if(this.TargetRelation.HasFlag(TargetRelationEnum.None) == false) {
+                                        this.TargetData = profile;
 
-                            this.TargetRelation &= ~TargetRelationEnum.None;
+                                    }
 
-                        }
+                                } catch(Exception) {
 
-                    }
 
-                    //TargetDistance
-                    if(tag.Contains("[TargetDistance:") == true) {
 
-                        this.TargetDistance = TagHelper.TagTargetDistanceEnumCheck(tag);
+                                }
 
-                    }
-
-                    //TargetOwner
-                    if(tag.Contains("[TargetOwner:") == true) {
-
-                        var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
-
-                        if(this.TargetOwner.HasFlag(tempValue) == false) {
-
-                            this.TargetOwner |= tempValue;
+                            }
 
                         }
-
-                        if(this.TargetOwner.HasFlag(TargetOwnerEnum.None) == false) {
-
-                            this.TargetOwner &= ~TargetOwnerEnum.None;
-
-                        }
-
-                    }
-
-                    //TargetFilter
-                    if(tag.Contains("[TargetFilter:") == true) {
-
-                        var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
-
-                        if(this.TargetFilter.HasFlag(tempValue) == false) {
-
-                            this.TargetFilter |= tempValue;
-
-                        }
-
-                        if(this.TargetFilter.HasFlag(TargetFilterEnum.None) == false) {
-
-                            this.TargetFilter &= ~TargetFilterEnum.None;
-
-                        }
-
-                    }
-
-                    //BlockFilter
-                    if(tag.Contains("[BlockFilter:") == true) {
-
-                        var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
-
-                        if(this.BlockFilter.HasFlag(tempValue) == false) {
-
-                            this.BlockFilter |= tempValue;
-
-                        }
-
-                    }
-
-                    //MaximumTargetScanDistance
-                    if(tag.Contains("[MaximumTargetScanDistance:") == true) {
-
-                        this.MaximumTargetScanDistance = TagHelper.TagDoubleCheck(tag, this.MaximumTargetScanDistance);
-
-                    }
-
-                    //UseProjectileLeadTargeting
-                    if(tag.Contains("[UseProjectileLeadTargeting:") == true) {
-
-                        this.UseProjectileLeadTargeting = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //UseCollisionLeadTargeting
-                    if(tag.Contains("[UseCollisionLeadTargeting:") == true) {
-
-                        this.UseCollisionLeadTargeting = TagHelper.TagBoolCheck(tag);
 
                     }
 
