@@ -32,6 +32,7 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 
 namespace RivalAI.Sync {
+    
     public static class EffectManager {
 
         public static bool SoundsPending = false;
@@ -43,8 +44,9 @@ namespace RivalAI.Sync {
         public static void ClientReceiveEffect(Effects effectData) {
 
             if(effectData.Mode == EffectSyncMode.PlayerSound) {
-
-
+                
+                SoundsPendingList.Add(effectData.SoundId);
+                SoundsPending = true;
 
             }
 
@@ -74,6 +76,23 @@ namespace RivalAI.Sync {
 
                 return;
 
+            }
+            
+            if(SoundsPending.Count == 0){
+            
+                SoundsPending = false;
+                return;
+            
+            }
+            
+            var soundPair = new MySoundPair(SoundsPending[0]);
+			SoundsPending.RemoveAt(0);
+            SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
+            
+            if(SoundsPending.Count == 0){
+            
+                SoundsPending = false;
+            
             }
 
         }
