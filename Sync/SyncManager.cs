@@ -42,6 +42,30 @@ namespace RivalAI.Sync {
             MyAPIGateway.Utilities.MessageEntered += ChatManager.ChatReceived;
 
         }
+        
+        public static void SendSyncMesage(SyncContainer syncContainer, ulong userId = 0, bool sendServer = false, bool sendOthers = false){
+        
+            var byteData = MyAPIGateway.Utilities.SerializeToBinary<SyncContainer>(syncContainer);
+            
+            if(userId != 0){
+            
+                MyAPIGateway.Multiplayer.SendMessageTo(NetworkId, byteData, userId);
+            
+            }
+            
+            if(sendServer == true){
+            
+                MyAPIGateway.Multiplayer.SendMessageToServer(NetworkId, byteData);
+            
+            }
+            
+            if(sendOthers == true){
+            
+                MyAPIGateway.Multiplayer.SendMessageToOthers(NetworkId, byteData);
+            
+            }
+        
+        }
 
         public static void NetworkMessageReceiver(byte[] initialData) {
 
