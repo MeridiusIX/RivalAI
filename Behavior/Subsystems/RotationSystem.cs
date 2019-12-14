@@ -33,8 +33,10 @@ using RivalAI.Helpers;
 namespace RivalAI.Behavior.Subsystems{
 	
 	public class RotationSystem{
-
-        public bool RotationEnabled;
+		
+		public float RotationMultiplier;
+		
+        	public bool RotationEnabled;
 		public IMyGyro ControlGyro;
 		public IMyRemoteControl RemoteControl;
 		public IMyTerminalBlock ReferenceBlock;
@@ -54,8 +56,7 @@ namespace RivalAI.Behavior.Subsystems{
 		public bool ControlPitch;
 		public bool ControlRoll;
 
-		public double MinimumRotationMultiplier;
-		public double RotationMultiplier;
+		
 		public float ControlGyroStrength;
 
         public bool UpdateMassAndForceBeforeRotation;
@@ -77,6 +78,8 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public RotationSystem(IMyRemoteControl remoteControl){
 			
+			RotationMultiplier = 1;
+			
 			RotationEnabled = false;
 			ControlGyro = null;
 			RemoteControl = null;
@@ -93,8 +96,7 @@ namespace RivalAI.Behavior.Subsystems{
 			ControlPitch = true;
 			ControlRoll = true;
 			
-			MinimumRotationMultiplier = .005;
-			RotationMultiplier = 1;
+			
 			ControlGyroStrength = 1;
 
             UpdateMassAndForceBeforeRotation = true;
@@ -274,9 +276,9 @@ namespace RivalAI.Behavior.Subsystems{
                 }
 
                 this.ControlGyro.GyroPower = this.ControlGyroStrength;
-                this.ControlGyro.Yaw = this.RotationToApply.Y;
-                this.ControlGyro.Pitch = this.RotationToApply.X;
-                this.ControlGyro.Roll = this.RotationToApply.Z;
+                this.ControlGyro.Yaw = this.RotationToApply.Y * this.RotationMultiplier;
+                this.ControlGyro.Pitch = this.RotationToApply.X * this.RotationMultiplier;
+                this.ControlGyro.Roll = this.RotationToApply.Z * this.RotationMultiplier;
                 //Logger.AddMsg(this.ControlGyro.Pitch.ToString() + " - " + this.ControlGyro.Yaw.ToString() + " - " + this.ControlGyro.Roll.ToString(), true);
 
                 if(this?.ControlGyro?.SlimBlock?.CubeGrid?.Physics != null && this.BarrelRollEnabled == false) {
