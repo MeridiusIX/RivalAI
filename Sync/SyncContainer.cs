@@ -64,6 +64,13 @@ namespace RivalAI.Sync {
             Data = data;
 
         }
+        
+        public SyncContainer(Effects effect){
+            
+            this.Mode = SyncMode.Effect;
+            this.Data = MyAPIGateway.Utilities.SerializeToBinary<Effects>(effect);
+        
+        }
 
     }
 
