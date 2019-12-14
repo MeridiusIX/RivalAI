@@ -526,6 +526,15 @@ namespace RivalAI.Behavior.Subsystems{
                         this.EvasionModeMaxTime = TagHelper.TagIntCheck(tag, this.EvasionModeMaxTime);
 
                     }
+			
+		    //Rotation Settings
+			
+                    //RotationMultiplier
+                    if(tag.Contains("[RotationMultiplier:") == true) {
+
+                        this.Rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.Rotation.RotationMultiplier);
+
+                    }
 
                     //Thrust Settings
 
