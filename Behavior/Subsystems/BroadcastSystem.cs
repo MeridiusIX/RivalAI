@@ -282,7 +282,7 @@ namespace RivalAI.Behavior.Subsystems {
 
                 }
 
-                if(sound != "") {
+                if(string.IsNullOrWhiteSpace(sound) == false && sound != "None") {
 
                     if(string.IsNullOrEmpty(player.Character.Name) == true) {
 
@@ -290,8 +290,10 @@ namespace RivalAI.Behavior.Subsystems {
 
                     }
 
-                    //Do Syncy Thing Instead
-                    //MyVisualScriptLogicProvider.PlaySingleSoundAtEntity(audio, player.Character.EntityId.ToString());
+                    var effect = new Effects();
+                    effect.Mode = EffectSyncMode.PlayerSound;
+                    effect.SoundId = sound;
+                    
 
                 }
 
