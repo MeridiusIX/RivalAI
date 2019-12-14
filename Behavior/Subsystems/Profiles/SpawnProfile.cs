@@ -62,6 +62,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         [ProtoMember(10)]
         public DateTime LastSpawnTime;
+        
+        public bool UseRelativeSpawnPosition;
+        
+        public double MinDistance;
+        
+        public double MaxDistance;
+        
+        public Vector3D RelativeSpawnOffset; 
+        
+        public Vector3D RelativeSpawnVelocity;
 
         [ProtoIgnore]
         public Random Rnd;
@@ -79,7 +89,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             CooldownTime = 0;
             SpawnCount = 0;
             LastSpawnTime = MyAPIGateway.Session.GameDateTime;
-
+            
+            UseRelativeSpawnPosition = false;
+            MinDistance = 0;
+            MaxDistance = 1;
+            FixedSpawnOffset = Vector3D.Zero;
+            FixedSpawnVelocity = Vector3D.Zero;
 
             Rnd = new Random();
 
