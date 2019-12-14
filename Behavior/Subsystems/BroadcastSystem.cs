@@ -284,16 +284,11 @@ namespace RivalAI.Behavior.Subsystems {
 
                 if(string.IsNullOrWhiteSpace(sound) == false && sound != "None") {
 
-                    if(string.IsNullOrEmpty(player.Character.Name) == true) {
-
-                        MyVisualScriptLogicProvider.SetName(player.Character.EntityId, player.Character.EntityId.ToString());
-
-                    }
-
                     var effect = new Effects();
                     effect.Mode = EffectSyncMode.PlayerSound;
                     effect.SoundId = sound;
-                    
+                    var sync = new SyncContainer(effect);
+                    SyncManager.SendNetworkMessage(sync, player.SteamUserId);
 
                 }
 
