@@ -154,7 +154,9 @@ namespace RivalAI.Helpers {
                 }
 
             }
-
+	    
+	    Logger.AddMsg("Block List Count Before Filters: " + blockList.Count.ToString(), true);
+		
             //Relation & Owner
             for(int i = blockList.Count - 1; i >= 0; i--) {
 
@@ -173,6 +175,8 @@ namespace RivalAI.Helpers {
                     continue;
 
                 }
+		    
+		Logger.AddMsg("Block List Count After Underground: " + blockList.Count.ToString(), true);
 
                 var relationResult = OwnershipHelper.GetTargetReputation(remoteControl.OwnerId, block);
                 var ownerResults = OwnershipHelper.GetOwnershipTypes(block);
@@ -184,9 +188,12 @@ namespace RivalAI.Helpers {
 
                 }
 
+		Logger.AddMsg("Block List Count After Relation/Owner: " + blockList.Count.ToString(), true);
+
             }
 
             var filteredBlockList = FilterBlocksByFamily(blockList, targetData.BlockTargets);
+	    Logger.AddMsg("Block List Count After Type Filter: " + blockList.Count.ToString(), true);
 
             return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), filteredBlockList, targetData.Distance) as IMyTerminalBlock;
 
