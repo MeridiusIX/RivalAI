@@ -78,18 +78,18 @@ namespace RivalAI.Sync {
 
             }
             
-            if(SoundsPending.Count == 0){
+            if(SoundsPendingList.Count == 0){
             
                 SoundsPending = false;
                 return;
             
             }
             
-            var soundPair = new MySoundPair(SoundsPending[0]);
-			SoundsPending.RemoveAt(0);
+            var soundPair = new MySoundPair(SoundsPendingList[0]);
+            SoundsPendingList.RemoveAt(0);
             SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
             
-            if(SoundsPending.Count == 0){
+            if(SoundsPendingList.Count == 0){
             
                 SoundsPending = false;
             
