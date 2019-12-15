@@ -93,8 +93,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             UseRelativeSpawnPosition = false;
             MinDistance = 0;
             MaxDistance = 1;
-            FixedSpawnOffset = Vector3D.Zero;
-            FixedSpawnVelocity = Vector3D.Zero;
+            RelativeSpawnOffset = Vector3D.Zero;
+            RelativeSpawnVelocity = Vector3D.Zero;
 
             Rnd = new Random();
 

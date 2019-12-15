@@ -58,7 +58,7 @@ namespace RivalAI.Helpers {
 
                     }
 
-		    if(def.DescriptionText.Contains("[RivalAI Action]") == true && ActionObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+		            if(def.DescriptionText.Contains("[RivalAI Action]") == true && ActionObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
                         var actionObject = new ActionProfile();
                         actionObject.InitTags(def.DescriptionText);
@@ -91,7 +91,7 @@ namespace RivalAI.Helpers {
 
                     }
 			
-		    if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+		            if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
                         var targetObject = new TargetProfile();
                         targetObject.InitTags(def.DescriptionText);

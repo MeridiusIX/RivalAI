@@ -304,6 +304,7 @@ namespace RivalAI.Behavior.Subsystems{
 
                 if(this.TargetBlock == null) {
 
+                    //Logger.AddMsg("No Block Found", true);
                     this.InvalidTarget = true;
                     this.SearchingForTarget = false;
                     return;

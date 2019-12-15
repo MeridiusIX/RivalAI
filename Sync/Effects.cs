@@ -42,13 +42,25 @@ namespace RivalAI.Sync {
 
     }
 
+    [ProtoContract]
     public class Effects {
 
+        [ProtoMember(1)]
         public EffectSyncMode Mode;
+
+        [ProtoMember(2)]
         public string SoundId;
+
+        [ProtoMember(3)]
         public string ParticleId;
+
+        [ProtoMember(4)]
         public float ParticleScale;
+
+        [ProtoMember(5)]
         public Vector3 ParticleColor;
+
+        [ProtoMember(6)]
         public Vector3D Coords;
 
         public Effects() {

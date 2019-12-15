@@ -167,7 +167,7 @@ namespace RivalAI.Helpers {
 
                 }
 
-                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreUnderground) && VectorHelper.IsPositionUnderground(block.GetPosition(), planet) == true) {
+                if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreUnderground) == true && VectorHelper.IsPositionUnderground(block.GetPosition(), planet) == true) {
 
                     blockList.RemoveAt(i);
                     continue;

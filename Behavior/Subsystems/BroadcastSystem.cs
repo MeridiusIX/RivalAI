@@ -29,6 +29,7 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Helpers;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Sync;
 
 namespace RivalAI.Behavior.Subsystems {
 
@@ -288,7 +289,7 @@ namespace RivalAI.Behavior.Subsystems {
                     effect.Mode = EffectSyncMode.PlayerSound;
                     effect.SoundId = sound;
                     var sync = new SyncContainer(effect);
-                    SyncManager.SendNetworkMessage(sync, player.SteamUserId);
+                    SyncManager.SendSyncMesage(sync, player.SteamUserId);
 
                 }
 

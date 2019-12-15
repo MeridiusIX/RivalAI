@@ -48,6 +48,8 @@ namespace RivalAI {
         public ShieldApi SApi = new ShieldApi();
         public static string ConfigInstance = "";
 
+        public int Ticks = 0;
+
         public static bool SetupComplete = false;
 
         public override void LoadData() {
@@ -90,7 +92,23 @@ namespace RivalAI {
 
             }
 
-            //LogicManager.ProcessLists();
+            Ticks++;
+
+            if(Ticks % 10 == 0) {
+
+                if(EffectManager.SoundsPending == true) {
+
+                    EffectManager.ProcessPlayerSoundEffect();
+
+                }
+
+            }
+
+            if(Ticks % 60 == 0) {
+
+                Ticks = 0;
+
+            }
 
         }
 
