@@ -49,25 +49,21 @@ namespace RivalAI.Behavior.Subsystems {
 
         //Configurable
         public bool UseDamageDetection;
-        public bool BarrelRollOnGrinderDamage;
-        public int DamageDetectionCooldown;
-        public DamageReaction DamagedAction;
+
 
         //Non-Configurable
         public IMyRemoteControl RemoteControl;
         public IMyCubeGrid CurrentCubeGrid;
         public List<IMyCubeGrid> CurrentGrids;
-        public DateTime LastDamageEvent;
+
+        public Func<bool> IsRemoteWorking;
 
         public DamageSystem(IMyRemoteControl remoteControl = null) {
 
             UseDamageDetection = false;
-            DamageDetectionCooldown = 5;
-            DamagedAction = DamageReaction.None;
 
             RemoteControl = null;
             CurrentGrids = new List<IMyCubeGrid>();
-            LastDamageEvent = MyAPIGateway.Session.GameDateTime;
 
             Setup(remoteControl);
 
@@ -101,7 +97,16 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void DamageHandler(object target, MyDamageInformation info) {
 
+            if(IsRemoteWorking != null && IsRemoteWorking.Invoke() == false)
+                return;
 
+            var block = target as IMySlimBlock;
+
+            if(target == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
+                return;
+
+            if(this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false)
+                return;
 
         }
 
@@ -178,7 +183,22 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void InitTags() {
 
+            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
+
+                foreach(var tag in descSplit) {
+
+                    //UseStaticGuns
+                    if(tag.Contains("[UseDamageDetection:") == true) {
+
+                        this.UseDamageDetection = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                }
+
+            }
 
         }
 

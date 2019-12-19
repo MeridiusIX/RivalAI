@@ -195,28 +195,29 @@ namespace RivalAI.Behavior.Subsystems{
 
             MyAPIGateway.Parallel.Start(() => {
 
-                //Logger.AddMsg("Get Target", true);
                 try {
 
                     if(this.NeedsTarget == true && this.InvalidTarget == true) {
 
+                        //Logger.AddMsg("Get New Target", true);
                         AcquireTarget();
                         this.Target = new TargetEvaluation(this.TargetEntity, this.TargetData.Target);
                         this.Target.TargetPlayer = this.TargetPlayer;
+                        this.Target.TargetBlock = this.TargetBlock;
                         this.InvalidTarget = false;
 
                     }
 
                     if(this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
 
-                        //Logger.AddMsg("Eva Target", true);
+                        //Logger.AddMsg("Evaluate Target", true);
                         this.Target.Evaluate(this.RemoteControl, this.TargetData);
                         //Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
 
 
                         if(this.Target.TargetExists == false) {
 
-                            //Logger.AddMsg("Inv Target", true);
+                            //Logger.AddMsg("Invalid Target", true);
                             this.InvalidTarget = true;
 
                         }
@@ -282,7 +283,7 @@ namespace RivalAI.Behavior.Subsystems{
             //Grids
             if(TargetData.Target == TargetTypeEnum.Grid) {
 
-                TargetHelper.AcquireGridTarget(this.RemoteControl, this.TargetData, this.RequestedGridId);
+                this.TargetGrid = TargetHelper.AcquireGridTarget(this.RemoteControl, this.TargetData, this.RequestedGridId);
 
                 if(this.TargetGrid == null) {
 
@@ -300,11 +301,10 @@ namespace RivalAI.Behavior.Subsystems{
             //Blocks
             if(TargetData.Target == TargetTypeEnum.Block) {
 
-                TargetHelper.AcquireBlockTarget(this.RemoteControl, this.TargetData, this.RequestedBlockId);
+                this.TargetBlock = TargetHelper.AcquireBlockTarget(this.RemoteControl, this.TargetData, this.RequestedBlockId);
 
                 if(this.TargetBlock == null) {
 
-                    //Logger.AddMsg("No Block Found", true);
                     this.InvalidTarget = true;
                     this.SearchingForTarget = false;
                     return;
@@ -312,7 +312,7 @@ namespace RivalAI.Behavior.Subsystems{
                 }
 
                 this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
-                this.TargetEntity = this.TargetBlock;
+                this.TargetEntity = this.TargetBlock.SlimBlock.CubeGrid;
 
             }
 

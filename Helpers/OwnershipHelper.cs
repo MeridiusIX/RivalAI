@@ -171,7 +171,7 @@ namespace RivalAI.Helpers {
 
         public static TargetOwnerEnum GetOwnershipTypes(IMyTerminalBlock block) {
 
-            return GetOwnershipTypes(new List<long> { 0 });
+            return GetOwnershipTypes(new List<long> { block.OwnerId });
 
         }
 
@@ -184,18 +184,21 @@ namespace RivalAI.Helpers {
                 if(identity == 0 && result.HasFlag(TargetOwnerEnum.Unowned) == false) {
 
                     result |= TargetOwnerEnum.Unowned;
+                    continue;
 
                 }
 
                 if(IsNPC(identity) == true && result.HasFlag(TargetOwnerEnum.NPC) == false) {
 
                     result |= TargetOwnerEnum.NPC;
+                    continue;
 
                 }
 
                 if(IsNPC(identity) == false && result.HasFlag(TargetOwnerEnum.Player) == false) {
 
                     result |= TargetOwnerEnum.Player;
+                    continue;
 
                 }
 
@@ -260,6 +263,13 @@ namespace RivalAI.Helpers {
                 if(myFaction.IsMember(identity) == true && result.HasFlag(TargetRelationEnum.Faction) == false) {
 
                     result |= TargetRelationEnum.Faction;
+                    continue;
+
+                }
+
+                if(identity == 0) {
+
+                    result |= TargetRelationEnum.Unowned;
                     continue;
 
                 }

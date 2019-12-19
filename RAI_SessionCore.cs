@@ -54,6 +54,9 @@ namespace RivalAI {
 
         public override void LoadData() {
 
+            if(MyAPIGateway.Multiplayer.IsServer == false)
+                return;
+
             Instance = this;
 
             foreach(var mod in MyAPIGateway.Session.Mods) {
@@ -65,6 +68,8 @@ namespace RivalAI {
                 }
 
             }
+
+            MESApi.RegisterAPIListener();
 
         }
 
@@ -83,6 +88,7 @@ namespace RivalAI {
 
                 SetupComplete = true;
                 Setup();
+                Logger.AddMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
 
             }
 
@@ -139,7 +145,7 @@ namespace RivalAI {
 
             }
 
-            MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(1, DamageHelper.DamageHandler);
+            MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
 
         }
 

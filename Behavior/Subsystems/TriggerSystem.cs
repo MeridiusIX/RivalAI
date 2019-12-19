@@ -48,6 +48,7 @@ namespace RivalAI.Behavior.Subsystems {
         private WeaponsSystem _weapons;
 
         public List<TriggerProfile> Triggers;
+        public List<TriggerProfile> DamageTriggers;
 
         public bool DamageHandlerRegistered;
         public MyDamageInformation DamageInfo;
@@ -61,6 +62,7 @@ namespace RivalAI.Behavior.Subsystems {
             TurretList = new List<IMyLargeTurretBase>();
 
             Triggers = new List<TriggerProfile>();
+            DamageTriggers = new List<TriggerProfile>();
 
             DamageHandlerRegistered = false;
             DamageInfo = new MyDamageInformation();
@@ -137,6 +139,12 @@ namespace RivalAI.Behavior.Subsystems {
 
                                 trigger.ActivateTrigger();
 
+                                if(trigger.Triggered == true) {
+
+                                    trigger.DetectedEntityId = _weapons.TurretTarget.EntityId;
+
+                                }
+
                             }
 
                         }
@@ -150,9 +158,38 @@ namespace RivalAI.Behavior.Subsystems {
 
                         if(trigger.UseTrigger == true) {
 
-                            //Check all weapons for functionality
-                            //Check all weapons for ammo
-                            trigger.ActivateTrigger();
+                            bool validWeapon = false;
+
+                            foreach(var weapon in _weapons.AllWeapons) {
+
+                                if(weapon == null) {
+
+                                    continue;
+
+                                }
+
+                                if(weapon.IsFunctional == false || weapon.IsWorking == false) {
+
+                                    continue;
+
+                                }
+
+                                if(weapon.GetInventory().Empty() == true) {
+
+                                    continue;
+
+                                }
+
+                                validWeapon = true;
+                                break;
+
+                            }
+
+                            if(validWeapon == false) {
+
+                                trigger.ActivateTrigger();
+
+                            }
 
                         }
 
@@ -227,7 +264,33 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void ProcessTrigger(TriggerProfile trigger) {
+        public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
+
+            for(int i = 0;i < this.DamageTriggers.Count;i++) {
+
+                var trigger = this.DamageTriggers[i];
+
+                if(trigger.DamageTypes.Contains(info.Type.ToString())) {
+
+                    if(trigger.UseTrigger == true) {
+
+                        trigger.ActivateTrigger();
+
+                        if(trigger.Triggered == true) {
+
+                            ProcessTrigger(trigger, info.AttackerId);
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
 
             if(trigger.Triggered == false) {
 
@@ -251,6 +314,13 @@ namespace RivalAI.Behavior.Subsystems {
             if(trigger.Actions.Contains("BarrelRoll") == true) {
 
                 _autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
+
+            }
+
+            //DamageAttacker
+            if(trigger.Actions.Contains("DamageAttacker") == true && attackerEntityId == 0) {
+
+                //
 
             }
 
@@ -501,8 +571,16 @@ namespace RivalAI.Behavior.Subsystems {
 
                                 if(profile != null) {
 
-                                    this.Triggers.Add(profile);
+                                    if(profile.Type == "Damage") {
 
+                                        this.DamageTriggers.Add(profile);
+
+                                    } else {
+
+                                        this.Triggers.Add(profile);
+
+                                    }
+                                    
                                 }
 
                             } catch(Exception) {

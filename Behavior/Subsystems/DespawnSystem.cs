@@ -171,7 +171,7 @@ namespace RivalAI.Behavior.Subsystems{
 			}
 
             if(this.UseNoTargetTimer == true && this.SuspendNoTargetTimer == false) {
-                
+
                 if(invalidTarget == true) {
 
                     this.NoTargetTimer++;

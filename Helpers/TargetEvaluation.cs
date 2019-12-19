@@ -133,11 +133,19 @@ namespace RivalAI.Helpers {
 
                 if(this.TargetBlock == null || MyAPIGateway.Entities.Exist(this.TargetBlock?.SlimBlock?.CubeGrid) == false) {
 
-                    //Logger.AddMsg("Target Block Null", true);
-                    SetTargetsNull();
+                    SetTargetsNull("Target Block or Block Grid Null");
                     return;
 
                 }
+
+                if(this.TargetBlock.IsFunctional == false) {
+
+                    SetTargetsNull("Target Block Not Functional");
+                    return;
+
+                }
+
+                this.Target = this.TargetBlock.SlimBlock.CubeGrid;
 
             }
 
@@ -146,7 +154,7 @@ namespace RivalAI.Helpers {
                 if(this.Target == null || MyAPIGateway.Entities.Exist(this.Target) == false) {
 
                     //Logger.AddMsg("Target Grid Null", true);
-                    SetTargetsNull();
+                    SetTargetsNull("Target Grid Null");
                     return;
 
                 }
@@ -162,17 +170,14 @@ namespace RivalAI.Helpers {
 
                     if((character as IMyCharacter).IsDead == true) {
 
-                        Logger.AddMsg("Target Character Dead", true);
-                        SetTargetsNull();
+                        SetTargetsNull("Target Character Dead");
                         return;
 
                     }
 
                 } else if(character == null) {
 
-
-                    Logger.AddMsg("Target Character Null", true);
-                    SetTargetsNull();
+                    SetTargetsNull("Target Character Null");
                     return;
 
                 }
@@ -430,12 +435,13 @@ namespace RivalAI.Helpers {
 
         }
 
-        public void SetTargetsNull() {
+        public void SetTargetsNull(string reason = "") {
 
             this.Target = null;
             this.TargetBlock = null;
             this.TargetPlayer = null;
             this.TargetExists = false;
+            Logger.AddMsg("Target Evaluation Fail: " + reason, true);
 
         }
 

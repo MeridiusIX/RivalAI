@@ -371,7 +371,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             //Add
             if(WeaponBlock.GetInventory(0).CanItemsBeAdded((MyFixedPoint)amtToAdd, CurrentAmmoDefinition.Id) == true) {
 
-                Logger.AddMsg("Weapon Reloaded! " + amtToAdd.ToString(), true);
+                //Logger.AddMsg("Weapon Reloaded! " + amtToAdd.ToString(), true);
                 WeaponBlock.GetInventory().AddItems((MyFixedPoint)amtToAdd, inventoryItem.Content);
 
             }

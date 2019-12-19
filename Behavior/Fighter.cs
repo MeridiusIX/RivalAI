@@ -60,11 +60,8 @@ namespace RivalAI.Behavior{
 
         public void RunAi() {
 
-            if(Owner.NpcOwned == false) {
-
+            if(!IsAIReady())
                 return;
-
-            }
 
             RunCoreAi();
 
@@ -99,8 +96,8 @@ namespace RivalAI.Behavior{
 				ReceivedEvadeSignal = false;
 				
 				if(Collision.UseCollisionDetection == true){
-					
-					Mode = BehaviorMode.EvadeCollision;
+
+                    ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
 					//Set Waypoint Here
 					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 					
@@ -110,7 +107,7 @@ namespace RivalAI.Behavior{
 			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
-				Mode = BehaviorMode.Retreat;
+                ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
 			
 			}
@@ -126,11 +123,11 @@ namespace RivalAI.Behavior{
 
                 if(Targeting.InvalidTarget == true) {
 
-                    Mode = BehaviorMode.WaitingForTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
                 } else {
 
-                    Mode = BehaviorMode.ApproachTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 
                 }
@@ -147,7 +144,7 @@ namespace RivalAI.Behavior{
 
                 if(Targeting.InvalidTarget == false) {
 
-                    Mode = BehaviorMode.ApproachTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 
                 }else if(Despawn.NoTargetExpire == true){
@@ -158,9 +155,9 @@ namespace RivalAI.Behavior{
 
             }
 
-            if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
+            if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
-                Mode = BehaviorMode.WaitingForTarget;
+                ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
             }
 
@@ -170,7 +167,7 @@ namespace RivalAI.Behavior{
 				if(AutoPilot.EvasionModeTimer >= AutoPilot.EvasionModeTimer || Vector3D.Distance(this.RemoteControl.GetPosition(), this.AutoPilot.WaypointCoords) < 50){
 					
 					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-					Mode = BehaviorMode.ApproachTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					
 				}
 
@@ -187,7 +184,7 @@ namespace RivalAI.Behavior{
                 if(Targeting.Target.Distance < this.FighterEngageDistanceSpace) {
 
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
-                    Mode = BehaviorMode.EngageTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
                 }
 
@@ -202,7 +199,7 @@ namespace RivalAI.Behavior{
                 if(Targeting.Target.Distance > this.FighterEngageDistanceSpace) {
 
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-                    Mode = BehaviorMode.ApproachTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
                 }
 
@@ -228,7 +225,7 @@ namespace RivalAI.Behavior{
                 if(Targeting.Target.Distance < this.FighterEngageDistancePlanet) {
 
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
-                    Mode = BehaviorMode.EngageTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
                 }
 
@@ -243,7 +240,7 @@ namespace RivalAI.Behavior{
                 if(Targeting.Target.Distance > this.FighterEngageDistancePlanet) {
 
                     AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-                    Mode = BehaviorMode.ApproachTarget;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
                 }
 
@@ -270,7 +267,7 @@ namespace RivalAI.Behavior{
 
             if(Targeting.InvalidTarget == true) {
 
-                Mode = BehaviorMode.WaitingForTarget;
+                ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
                 AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
 
             }
@@ -281,7 +278,7 @@ namespace RivalAI.Behavior{
 
             if(Mode == BehaviorMode.ApproachTarget == true) {
 
-                Mode = BehaviorMode.EvadeCollision;
+                ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
 
                 if(AutoPilot.UpDirection == Vector3D.Zero) {
 

@@ -60,6 +60,7 @@ namespace RivalAI.Behavior.Subsystems {
         public IMyRemoteControl RemoteControl;
         public List<WeaponProfile> StaticWeapons;
         public List<IMyLargeTurretBase> Turrets;
+        public List<IMyUserControllableGun> AllWeapons;
         public double HighestRangeStaticGun;
 
         public IMyEntity TurretTarget;

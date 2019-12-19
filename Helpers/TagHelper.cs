@@ -39,6 +39,7 @@ namespace RivalAI.Helpers {
 
         public static Dictionary<string, byte[]> ActionObjectTemplates = new Dictionary<string, byte[]>();
         public static Dictionary<string, byte[]> ChatObjectTemplates = new Dictionary<string, byte[]>();
+        public static Dictionary<string, byte[]> ConditionObjectTemplates = new Dictionary<string, byte[]>();
         public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
         public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
         public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
@@ -76,6 +77,17 @@ namespace RivalAI.Helpers {
                         var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
                         Logger.AddMsg("Chat Profile Added: " + def.Id.SubtypeName, true);
                         ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
+                        continue;
+
+                    }
+
+                    if(def.DescriptionText.Contains("[RivalAI Condition]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var conditionObject = new ConditionProfile();
+                        conditionObject.InitTags(def.DescriptionText);
+                        var conditionBytes = MyAPIGateway.Utilities.SerializeToBinary<ConditionProfile>(conditionObject);
+                        Logger.AddMsg("Condition Profile Added: " + def.Id.SubtypeName, true);
+                        ConditionObjectTemplates.Add(def.Id.SubtypeName, conditionBytes);
                         continue;
 
                     }
@@ -296,7 +308,7 @@ namespace RivalAI.Helpers {
 		}
 
 		public static long TagLongCheck(string tag, long defaultValue){
-			
+
 			long result = defaultValue;
 			var tagSplit = ProcessTag(tag);
 					

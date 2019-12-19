@@ -140,29 +140,35 @@ namespace RivalAI.Helpers {
 
                 }
 
+                
                 var gridBlocks = new List<IMySlimBlock>();
                 cubeGrid.GetBlocks(gridBlocks, x => x.FatBlock != null);
 
                 foreach(var block in gridBlocks) {
 
-                    if(block as IMyTerminalBlock != null) {
+                    if(block.FatBlock as IMyTerminalBlock != null) {
 
-                        blockList.Add(block as IMyEntity);
+                        blockList.Add(block.FatBlock as IMyEntity);
 
                     }
 
                 }
 
             }
-	    
-	    Logger.AddMsg("Block List Count Before Filters: " + blockList.Count.ToString(), true);
-		
+
             //Relation & Owner
             for(int i = blockList.Count - 1; i >= 0; i--) {
 
                 var block = blockList[i] as IMyTerminalBlock;
 
                 if(block == null) {
+
+                    blockList.RemoveAt(i);
+                    continue;
+
+                }
+
+                if(block.IsFunctional == false) {
 
                     blockList.RemoveAt(i);
                     continue;
@@ -176,8 +182,6 @@ namespace RivalAI.Helpers {
 
                 }
 		    
-		Logger.AddMsg("Block List Count After Underground: " + blockList.Count.ToString(), true);
-
                 var relationResult = OwnershipHelper.GetTargetReputation(remoteControl.OwnerId, block);
                 var ownerResults = OwnershipHelper.GetOwnershipTypes(block);
 
@@ -188,13 +192,13 @@ namespace RivalAI.Helpers {
 
                 }
 
-		Logger.AddMsg("Block List Count After Relation/Owner: " + blockList.Count.ToString(), true);
-
             }
 
             var filteredBlockList = FilterBlocksByFamily(blockList, targetData.BlockTargets);
-	    Logger.AddMsg("Block List Count After Type Filter: " + blockList.Count.ToString(), true);
-
+            Logger.AddMsg("Eligible Block Targets: " + filteredBlockList.Count.ToString(), true);
+            Logger.AddMsg(targetData.Relations.ToString(), true);
+            Logger.AddMsg(targetData.Owners.ToString(), true);
+            Logger.AddMsg(targetData.BlockTargets.ToString(), true);
             return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), filteredBlockList, targetData.Distance) as IMyTerminalBlock;
 
         }
@@ -618,13 +622,12 @@ namespace RivalAI.Helpers {
 
             }
 
-            for(int i = blockList.Count - 1; i >= 0; i--) {
+            for(int i = entityList.Count - 1; i >= 0; i--) {
 
-                var block = blockList[i] as IMyTerminalBlock;
+                var block = entityList[i] as IMyTerminalBlock;
 
                 if(block == null) {
 
-                    blockList.RemoveAt(i);
                     continue;
 
                 }
@@ -1049,14 +1052,14 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.All){
+					if(systemTarget.HasFlag(BlockTargetTypes.All)){
 						
 						targetBlocksList.Add(block);
 						continue;
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Communications){
+					if(systemTarget.HasFlag(BlockTargetTypes.Communications)){
 						
 						if(block as IMyLaserAntenna != null){
 							
@@ -1081,7 +1084,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Containers){
+					if(systemTarget.HasFlag(BlockTargetTypes.Containers)){
 						
 						if(block as IMyCargoContainer != null){
 							
@@ -1092,7 +1095,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.GravityBlocks){
+					if(systemTarget.HasFlag(BlockTargetTypes.GravityBlocks)){
 						
 						if(block as IMyGravityGeneratorBase != null || block as IMyArtificialMassBlock != null){
 							
@@ -1103,7 +1106,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Guns){
+					if(systemTarget.HasFlag(BlockTargetTypes.Guns)){
 						
 						if(block as IMyUserControllableGun != null && block as IMyLargeTurretBase == null){
 							
@@ -1114,7 +1117,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.JumpDrive){
+					if(systemTarget.HasFlag(BlockTargetTypes.JumpDrive)){
 						
 						if(block as IMyJumpDrive != null){
 							
@@ -1125,7 +1128,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Power){
+					if(systemTarget.HasFlag(BlockTargetTypes.Power)){
 						
 						if(block as IMyPowerProducer != null){
 							
@@ -1136,7 +1139,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Production){
+					if(systemTarget.HasFlag(BlockTargetTypes.Production)){
 						
 						if(block as IMyProductionBlock != null){
 							
@@ -1154,7 +1157,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Propulsion){
+					if(systemTarget.HasFlag(BlockTargetTypes.Propulsion)){
 						
 						if(block as IMyThrust != null){
 							
@@ -1165,7 +1168,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Shields){
+					if(systemTarget.HasFlag(BlockTargetTypes.Shields)){
 						
 						if(ShieldBlockIDs.Contains(block.SlimBlock.BlockDefinition.Id) == true){
 							
@@ -1176,7 +1179,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.ShipControllers){
+					if(systemTarget.HasFlag(BlockTargetTypes.ShipControllers)){
 						
 						if(block as IMyShipController != null){
 							
@@ -1187,7 +1190,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Tools){
+					if(systemTarget.HasFlag(BlockTargetTypes.Tools)){
 						
 						if(block as IMyShipToolBase != null){
 							
@@ -1198,7 +1201,7 @@ namespace RivalAI.Helpers {
 						
 					}
 					
-					if(systemTarget == BlockTargetTypes.Turrets){
+					if(systemTarget.HasFlag(BlockTargetTypes.Turrets)){
 						
 						if(block as IMyLargeTurretBase != null){
 							

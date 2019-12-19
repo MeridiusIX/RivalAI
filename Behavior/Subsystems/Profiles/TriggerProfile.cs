@@ -90,6 +90,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         [ProtoMember(19)]
         public int MaxPlayerReputation;
 
+        [ProtoMember(20)]
+        public ConditionProfile Conditions;
+
+        [ProtoMember(21)]
+        public long DetectedEntityId;
+
         [ProtoIgnore]
         public Random Rnd;
 
@@ -109,11 +115,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             TimerNames = new List<string>();
             ChatMessage = new ChatProfile();
             Spawner = new SpawnProfile();
+            Conditions = new ConditionProfile();
 
             Triggered = false;
             CooldownTime = 0;
             TriggerCount = 0;
             LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+            DetectedEntityId = 0;
 
             MinPlayerReputation = -1501;
             MaxPlayerReputation = 1501;
@@ -297,6 +305,39 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                                     if(profile != null) {
 
                                         Spawner = profile;
+
+                                    }
+
+                                } catch(Exception) {
+
+
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    //Conditions
+                    if(tag.Contains("[Conditions:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            byte[] byteData = { };
+
+                            if(TagHelper.ConditionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+                                try {
+
+                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ConditionProfile>(byteData);
+
+                                    if(profile != null) {
+
+                                        this.Conditions = profile;
 
                                     }
 

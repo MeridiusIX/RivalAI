@@ -33,12 +33,12 @@ using RivalAI;
 
 namespace RivalAI.Behavior {
 
-    public class CoreBehavior{
-		
-		public IMyRemoteControl RemoteControl;
-		public IMyCubeGrid CubeGrid;
+    public class CoreBehavior {
 
-		//public BaseSystems Systems;
+        public IMyRemoteControl RemoteControl;
+        public IMyCubeGrid CubeGrid;
+
+        //public BaseSystems Systems;
 
         public AutoPilotSystem AutoPilot;
         public BroadcastSystem Broadcast;
@@ -58,40 +58,43 @@ namespace RivalAI.Behavior {
         public BehaviorMode PreviousMode;
 
         public bool SetupCompleted;
-		public bool SetupFailed;
+        public bool SetupFailed;
         public bool ConfigCheck;
         public bool EndScript;
 
-		public byte CoreCounter;
+        public bool IsWorking;
+        public bool PhysicsValid;
 
-		public CoreBehavior(){
-			
-			RemoteControl = null;
-			CubeGrid = null;
+        public byte CoreCounter;
+
+        public CoreBehavior() {
+
+            RemoteControl = null;
+            CubeGrid = null;
 
             Mode = BehaviorMode.Init;
             PreviousMode = BehaviorMode.Init;
 
             SetupCompleted = false;
-			SetupFailed = false;
+            SetupFailed = false;
             ConfigCheck = false;
             EndScript = false;
+
+            IsWorking = false;
+            PhysicsValid = false;
 
             CoreCounter = 0;
 
         }
-		
-		public void RunCoreAi(){
+
+        public void RunCoreAi() {
 
             //MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
 
-			if(Owner.NpcOwned == false || EndScript == true) {
-				
-				return;
-				
-			}
+            if(!IsAIReady())
+                return;
 
-			CoreCounter++;
+            CoreCounter++;
 
             /*
             Vector4 color = new Vector4(1, 1, 1, 1);
@@ -102,16 +105,16 @@ namespace RivalAI.Behavior {
             var endCoordsb = Targeting.Target.TargetDirection * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
             MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
             */
-            
+
             Vector4 colorb = new Vector4(0, 1, 1, 1);
             Vector4 colorc = new Vector4(0, 1, 0, 1);
             var endCoordsc = AutoPilot.WaypointCoords;
-            MySimpleObjectDraw.DrawLine(new Vector3D(0,0,0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
+            MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
             MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
-            
-            if((CoreCounter % 10) == 0){
-				
-				//TODO: Damage Alert Handlers
+
+            if((CoreCounter % 10) == 0) {
+
+                //TODO: Damage Alert Handlers
                 Weapons.BarrageFire();
 
             }
@@ -122,7 +125,7 @@ namespace RivalAI.Behavior {
                 AutoPilot.CollisionDetected = Collision.VelocityResult.CollisionImminent;
                 AutoPilot.TargetCoords = Targeting.GetTargetPosition();
                 AutoPilot.EngageAutoPilot();
-                
+
 
             }
 
@@ -173,15 +176,15 @@ namespace RivalAI.Behavior {
                     return;
 
                 }
- 
+
             }
-			
-		}
-		
-		
-		
-		
-        
+
+        }
+
+
+
+
+
 
         public void ChangeBehavior(string newBehaviorSubtypeID) {
 
@@ -195,18 +198,24 @@ namespace RivalAI.Behavior {
             this.Mode = newMode;
 
         }
-		
-		public void CoreSetup(IMyRemoteControl remoteControl){
-			
-			if(remoteControl == null){
-				
-				SetupFailed = true;
-				return;
-				
-			}
-			
-			this.RemoteControl = remoteControl;
-			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
+
+        public void CoreSetup(IMyRemoteControl remoteControl) {
+
+            if(remoteControl == null) {
+
+                SetupFailed = true;
+                return;
+
+            }
+
+            this.RemoteControl = remoteControl;
+            this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
+
+            this.RemoteControl.IsWorkingChanged += RemoteIsWorking;
+            RemoteIsWorking(this.RemoteControl);
+            
+            this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
+            PhysicsValidCheck(this.CubeGrid);
 
             AutoPilot = new AutoPilotSystem(remoteControl);
             Broadcast = new BroadcastSystem(remoteControl);
@@ -227,6 +236,7 @@ namespace RivalAI.Behavior {
 
             AutoPilot.SetupReferences(this.Collision, this.Rotation, this.Targeting, this.Thrust, this.Weapons);
             Collision.SetupReferences(this.Thrust);
+            Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
             Thrust.SetupReferences(this.AutoPilot, this.Collision);
             Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Targeting, this.Weapons);
             Weapons.SetupReferences(this.Targeting);
@@ -251,28 +261,35 @@ namespace RivalAI.Behavior {
 
         }
 
-        public void RegisterEligibleListeners() {
+        public void RemoteIsWorking(IMyCubeBlock cubeBlock) {
 
-            bool foundDamageListener = false;
+            if(this.RemoteControl.IsWorking && this.RemoteControl.IsFunctional) {
 
-            foreach(var trigger in Trigger.Triggers) {
-
-                if(trigger.Type == "Damage") {
-
-                    foundDamageListener = true;
-                    break;
-
-                }
+                this.IsWorking = true;
+                return;
 
             }
 
-
+            this.IsWorking = false;
 
         }
 
-        public void UnregisterEligibleListeners() {
+        public void PhysicsValidCheck(IMyEntity entity) {
 
-            Damage.UnregisterDamageHandler();
+            if(this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
+
+                this.PhysicsValid = false;
+                return;
+
+            }
+
+            this.PhysicsValid = true;
+
+        }
+
+        public bool IsAIReady() {
+
+            return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
 
         }
 

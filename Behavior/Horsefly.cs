@@ -70,11 +70,8 @@ namespace RivalAI.Behavior {
 
         public void RunAi() {
 
-            if(Owner.NpcOwned == false) {
-
+            if(!IsAIReady())
                 return;
-
-            }
 
             RunCoreAi();
 

@@ -64,7 +64,55 @@ namespace RivalAI.Helpers {
 
         }
 
-        
+        public static void ApplyDamageToTarget(long entityId, float amount, string particleEffect, string soundEffect) {
+
+            if(entityId == 0)
+                return;
+
+            IMyEntity entity = null;
+
+            if(MyAPIGateway.Entities.TryGetEntityById(entityId, out entity) == false)
+                return;
+
+            if(entity as IMyCubeGrid != null)
+                return;
+
+            var tool = entity as IMyEngineerToolBase;
+            var block = entity as IMyShipToolBase;
+            bool didDamage = false;
+
+            if(tool != null) {
+
+                IMyEntity characterEntity = null;
+
+                if(MyAPIGateway.Entities.TryGetEntityById(tool.OwnerId, out characterEntity)) {
+
+                    var character = characterEntity as IMyCharacter;
+
+                    if(character != null) {
+
+                        character.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+                        didDamage = true;
+
+                    }
+
+                }
+
+            }
+
+            if(block != null) {
+
+                block.SlimBlock.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+                didDamage = true;
+
+            }
+
+            if(didDamage == false)
+                return;
+
+
+
+        }
 
     }
 
