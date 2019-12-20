@@ -37,40 +37,40 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 	[ProtoContract]
 	public class ConditionProfile{
 		
-		[ProtoMember(1)]
+		//[ProtoMember()]
 		public bool UseConditions;
 		
-		[ProtoMember(2)]
+		//[ProtoMember()]
 		public bool MatchAnyCondition;
 		
-		[ProtoMember(3)]
+		//[ProtoMember()]
 		public bool CheckLoadedModIDs;
 		
-		[ProtoMember(4)]
+		//[ProtoMember()]
 		public List<long> ModIDsToCheck;
 		
-		[ProtoMember(5)]
+		//[ProtoMember()]
 		public bool CheckTrueBooleans;
 		
-		[ProtoMember(6)]
+		//[ProtoMember()]
 		public List<string> TrueBooleans;
 		
-		[ProtoMember(7)]
+		//[ProtoMember()]
 		public bool CheckCustomCounters;
 		
-		[ProtoMember(8)]
+		//[ProtoMember()]
 		public List<string> CustomCounters;
 		
-		[ProtoMember(9)]
+		//[ProtoMember()]
 		public List<string> CustomCountersTargets;
 		
-		[ProtoMember(10)]
+		//[ProtoMember()]
 		public bool CheckGridSpeed;
 		
-		[ProtoMember(11)]
+		//[ProtoMember()]
 		public float MinGridSpeed;
 		
-		[ProtoMember(12)]
+		//[ProtoMember()]
 		public float MaxGridSpeed;
 
         [ProtoMember(13)]
