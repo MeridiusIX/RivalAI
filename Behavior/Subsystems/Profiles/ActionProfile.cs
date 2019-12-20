@@ -64,7 +64,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public bool Retreat;
         
         //[ProtoMember()]
+        public bool BroadcastCurrentTarget;
+        
+        //[ProtoMember()]
         public bool SwitchToReceivedTarget;
+        
+        //[ProtoMember()]
+        public bool BroadcastDamagerTarget;
         
         //[ProtoMember()]
         public bool SwitchToDamagerTarget;
@@ -116,7 +122,36 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         //[ProtoMember()]
         public float DamageToolAttackerAmount;
-
+        
+        //[ProtoMember()]
+        public List<string> SetBooleansTrue;
+        
+        //[ProtoMember()]
+        public List<string> SetBooleansFalse;
+        
+        //[ProtoMember()]
+        public List<string> IncreaseCounters;
+        
+        //[ProtoMember()]
+        public List<string> DecreaseCounters;
+        
+        //[ProtoMember()]
+        public List<string> ResetCounters;
+        
+        //[ProtoMember()]
+        public List<string> SetSandboxBooleansTrue;
+        
+        //[ProtoMember()]
+        public List<string> SetSandboxBooleansFalse;
+        
+        //[ProtoMember()]
+        public List<string> IncreaseSandboxCounters;
+        
+        //[ProtoMember()]
+        public List<string> DecreaseSandboxCounters;
+        
+        //[ProtoMember()]
+        public List<string> ResetSandboxCounters;
 
         public ActionProfile(){
 
@@ -124,6 +159,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             ChatData = new ChatProfile();
 
             BarrelRoll = false;
+            Strafe = false;
             
             ChangeAutopilotSpeed = false;
             NewAutopilotSpeed = 0;
@@ -157,7 +193,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             KnownPlayerAreaRadius = 10000;
             KnownPlayerAreaTimer = 30;
             KnownPlayerAreaMaxSpawns = -1;
-
+            
+            DamageToolAttacker = false;
+            DamageToolAttackerAmount = 90;
+            
+            SetBooleansTrue = new List<string>();
+            SetBooleansFalse = new List<string>();
+            IncreaseCounters = new List<string>();
+            DecreaseCounters = new List<string>();
+            ResetCounters = new List<string>();
+            
+            SetSandboxBooleansTrue = new List<string>();
+            SetSandboxBooleansFalse = new List<string>();
+            IncreaseSandboxCounters = new List<string>();
+            DecreaseSandboxCounters = new List<string>();
+            ResetSandboxCounters = new List<string>();
 
         }
 
@@ -213,6 +263,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     if(tag.Contains("[BarrelRoll:") == true) {
 
                         this.BarrelRoll = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //Strafe
+                    if(tag.Contains("[Strafe:") == true) {
+
+                        this.Strafe = TagHelper.TagBoolCheck(tag);
 
                     }
                     
