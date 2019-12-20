@@ -73,13 +73,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		//[ProtoMember()]
 		public float MaxGridSpeed;
 
-        [ProtoMember(13)]
+        //[ProtoMember()]
         public bool CheckMESBlacklistedSpawnGroups;
 
-        [ProtoMember(14)]
+        //[ProtoMember()]
         public List<string> SpawnGroupBlacklistContainsAll;
 
-        [ProtoMember(15)]
+        //[ProtoMember()]
         public List<string> SpawnGroupBlacklistContainsAny;
 
         [ProtoIgnore]
