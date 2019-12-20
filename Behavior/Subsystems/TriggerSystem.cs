@@ -52,6 +52,7 @@ namespace RivalAI.Behavior.Subsystems {
         public List<TriggerProfile> CommandTriggers;
         public string CommandReceiveCode;
 
+        public bool CommandListenerRegistered;
         public bool DamageHandlerRegistered;
         public MyDamageInformation DamageInfo;
         public bool PendingDamage;
@@ -506,7 +507,12 @@ namespace RivalAI.Behavior.Subsystems {
         
         public void RegisterCommandListener(){
         
-        
+            if(this.CommandListenerRegistered)
+                return;
+            
+            this.CommandListenerRegistered = true;
+            
+            
         
         }
 
