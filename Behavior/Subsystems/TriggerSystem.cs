@@ -49,6 +49,8 @@ namespace RivalAI.Behavior.Subsystems {
 
         public List<TriggerProfile> Triggers;
         public List<TriggerProfile> DamageTriggers;
+        public List<TriggerProfile> CommandTriggers;
+        public string CommandReceiveCode;
 
         public bool DamageHandlerRegistered;
         public MyDamageInformation DamageInfo;
@@ -63,6 +65,8 @@ namespace RivalAI.Behavior.Subsystems {
 
             Triggers = new List<TriggerProfile>();
             DamageTriggers = new List<TriggerProfile>();
+            CommandTriggers = new List<TriggerProfile>();
+            CommandReceiveCode = "";
 
             DamageHandlerRegistered = false;
             DamageInfo = new MyDamageInformation();
@@ -422,33 +426,6 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void DamageHandler(object target, MyDamageInformation info) {
-
-            if(this.PendingDamage == true) {
-
-                return;
-
-            }
-
-            var block = target as IMySlimBlock;
-
-            if(block == null || this.RemoteControl?.SlimBlock == null) {
-
-                return;
-
-            }
-
-            if(this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false) {
-
-                return;
-
-            }
-
-            this.PendingDamage = true;
-            this.DamageInfo = info;
-
-        }
-
         public bool IsPlayerNearby(TriggerProfile control) {
 
             IMyPlayer player = null;
@@ -502,25 +479,6 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void RegisterDamageHandler() {
-
-            if(DamageHandlerRegistered == true) {
-
-                return;
-
-            }
-
-            MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(100, DamageHandler);
-
-        }
-
-        public void ResetDamage() {
-
-            this.DamageInfo = new MyDamageInformation();
-            this.PendingDamage = false;
-
-        }
-
         public void Setup(IMyRemoteControl remoteControl) {
 
             if(remoteControl?.SlimBlock == null) {
@@ -544,6 +502,12 @@ namespace RivalAI.Behavior.Subsystems {
             this._targeting = targeting;
             this._weapons = weapons;
 
+        }
+        
+        public void RegisterCommandListener(){
+        
+        
+        
         }
 
         public void InitTags() {
@@ -581,12 +545,19 @@ namespace RivalAI.Behavior.Subsystems {
                                     if(profile.Type == "Damage") {
 
                                         this.DamageTriggers.Add(profile);
-
-                                    } else {
-
-                                        this.Triggers.Add(profile);
+                                        continue;
 
                                     }
+                                    
+                                    if(profile.Type == "CommandReceived"){
+
+                                        this.CommandTriggers.Add(profile);
+                                        RegisterCommandListener();
+                                        continue;
+
+                                    }
+                                    
+                                    this.Triggers.Add(profile);
                                     
                                 }
 
