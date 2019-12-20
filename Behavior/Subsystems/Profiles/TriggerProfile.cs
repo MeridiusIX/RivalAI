@@ -58,7 +58,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public int MaxActions;
 
         [ProtoMember(9)]
-        public List<string> Actions;
+        public ActionProfile Actions;
 
         [ProtoMember(10)]
         public List<string> DamageTypes;
@@ -110,7 +110,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             MaxCooldownMs = 1;
             StartsReady = false;
             MaxActions = -1;
-            Actions = new List<string>();
+            Actions = new ActionProfile();
             DamageTypes = new List<string>();
             TimerNames = new List<string>();
             ChatMessage = new ChatProfile();
@@ -220,9 +220,29 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                         var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(Actions.Contains(tempValue) == false) {
+                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                            Actions.Add(tempValue);
+                            byte[] byteData = { };
+
+                            if(TagHelper.ActionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+                                try {
+
+                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ActionProfile>(byteData);
+
+                                    if(profile != null) {
+
+                                        Actions = profile;
+
+                                    }
+
+                                } catch(Exception) {
+
+
+
+                                }
+
+                            }
 
                         }
 

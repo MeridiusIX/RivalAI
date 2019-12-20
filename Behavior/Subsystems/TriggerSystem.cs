@@ -292,7 +292,7 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
 
-            if(trigger.Triggered == false) {
+            if(trigger.Triggered == false || trigger.Actions == null) {
 
                 return;
 
@@ -304,35 +304,35 @@ namespace RivalAI.Behavior.Subsystems {
             trigger.TriggerCount++;
 
             //ChatBroadcast
-            if(trigger.Actions.Contains("ChatBroadcast")) {
+            if(trigger.Actions.UseChatBroadcast == true) {
 
                 _broadcast.BroadcastRequest(trigger.ChatMessage);
 
             }
 
             //BarrellRoll
-            if(trigger.Actions.Contains("BarrelRoll") == true) {
+            if(trigger.Actions.BarrelRoll == true) {
 
                 _autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
 
             }
 
             //DamageAttacker
-            if(trigger.Actions.Contains("DamageAttacker") == true && attackerEntityId == 0) {
+            if(trigger.Actions.DamageToolAttacker == true && attackerEntityId == 0) {
 
                 //
 
             }
 
             //Retreat
-            if(trigger.Actions.Contains("Retreat") == true) {
+            if(trigger.Actions.Retreat == true) {
 
                 _despawn.Retreat();
 
             }
 
             //SelfDestruct
-            if(trigger.Actions.Contains("SelfDestruct") == true) {
+            if(trigger.Actions.SelfDestruct == true) {
 
                 var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
@@ -352,35 +352,42 @@ namespace RivalAI.Behavior.Subsystems {
             }
 
             //SpawnReinforcements
-            if(trigger.Actions.Contains("SpawnReinforcements") == true) {
+            if(trigger.Actions.SpawnEncounter == true) {
 
                 
 
             }
 
             //Strafe
-            if(trigger.Actions.Contains("Strafe") == true) {
+            if(trigger.Actions.Strafe == true) {
 
 
 
             }
 
-            //SwitchToTarget
-            if(trigger.Actions.Contains("SwitchToTarget") == true) {
+            //SwitchToReceivedTarget
+            if(trigger.Actions.SwitchToReceivedTarget == true) {
+
+
+
+            }
+
+            //SwitchToDamagerTarget
+            if(trigger.Actions.SwitchToDamagerTarget == true) {
 
 
 
             }
 
             //SwitchToBehavior
-            if(trigger.Actions.Contains("SwitchToBehavior") == true) {
+            if(trigger.Actions.SwitchToBehavior == true) {
 
 
 
             }
 
             //TriggerTimerBlock
-            if(trigger.Actions.Contains("TriggerTimerBlock") == true) {
+            if(trigger.Actions.TriggerTimerBlocks == true) {
 
                 var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.TimerNames);
 
@@ -398,15 +405,15 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            //FindNewTarget
-            if(trigger.Actions.Contains("FindNewTarget") == true) {
+            //RefreshTarget
+            if(trigger.Actions.RefreshTarget == true) {
 
                 _targeting.InvalidTarget = true;
 
             }
 
             //ActivateAssertiveAntennas
-            if(trigger.Actions.Contains("ActivateAssertiveAntennas") == true) {
+            if(trigger.Actions.ActivateAssertiveAntennas == true) {
 
                 _extras.SetAssertiveAntennas(true);
                 _extras.AssertiveEngage = true;

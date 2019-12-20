@@ -33,73 +33,103 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
     [ProtoContract]
     public class ActionProfile {
         
-        [ProtoMember(1)]
-        public bool BroadcastMessage;
-        
-        [ProtoMember(2)]
+        //[ProtoMember()]
+        public bool UseChatBroadcast;
+
+        //[ProtoMember()]
+        public ChatProfile ChatData;
+
+        //[ProtoMember()]
         public bool BarrelRoll;
-        
-        [ProtoMember(3)]
+
+        //[ProtoMember()]
+        public bool Strafe;
+
+        //[ProtoMember()]
         public bool ChangeAutopilotSpeed;
         
-        [ProtoMember(4)]
+        //[ProtoMember()]
         public float NewAutopilotSpeed;
         
-        [ProtoMember(5)]
+        //[ProtoMember()]
         public bool SpawnEncounter;
         
-        [ProtoMember(6)]
-        public List<string> SpawnGroups; //Unused
+        //[ProtoMember()]
+        public SpawnProfile Spawner;
         
-        [ProtoMember(7)]
+        //[ProtoMember()]
         public bool SelfDestruct;
         
-        [ProtoMember(8)]
+        //[ProtoMember()]
         public bool Retreat;
         
-        [ProtoMember(9)]
+        //[ProtoMember()]
         public bool SwitchToReceivedTarget;
         
-        [ProtoMember(10)]
+        //[ProtoMember()]
         public bool SwitchToDamagerTarget;
+
+        //[ProtoMember()]
+        public bool SwitchToBehavior;
         
-        [ProtoMember(11)]
+        //[ProtoMember()]
         public bool RefreshTarget;
         
-        [ProtoMember(12)]
+        //[ProtoMember()]
         public bool TriggerTimerBlocks;
         
-        [ProtoMember(13)]
+        //[ProtoMember()]
         public List<string> TimerBlockNames;
         
-        [ProtoMember(14)]
+        //[ProtoMember()]
         public bool ChangeReputationWithPlayers;
         
-        [ProtoMember(15)]
+        //[ProtoMember()]
         public double ReputationChangeRadius;
         
-        [ProtoMember(16)]
+        //[ProtoMember()]
         public int ReputationChangeAmount;
         
-        [ProtoMember(17)]
+        //[ProtoMember()]
         public bool ActivateAssertiveAntennas;
         
-        [ProtoMember(18)]
+        //[ProtoMember()]
         public bool ChangeAntennaOwnership;
         
-        [ProtoMember(19)]
+        //[ProtoMember()]
         public string AntennaFactionOwner;
-        
+
+        //[ProtoMember()]
+        public bool CreateKnownPlayerArea;
+
+        //[ProtoMember()]
+        public double KnownPlayerAreaRadius;
+
+        //[ProtoMember()]
+        public int KnownPlayerAreaTimer;
+
+        //[ProtoMember()]
+        public int KnownPlayerAreaMaxSpawns;
+
+        //[ProtoMember()]
+        public bool DamageToolAttacker;
+
+        //[ProtoMember()]
+        public float DamageToolAttackerAmount;
+
+
         public ActionProfile(){
-        
-            BroadcastMessage = false;
-            
+
+            UseChatBroadcast = false;
+            ChatData = new ChatProfile();
+
             BarrelRoll = false;
             
             ChangeAutopilotSpeed = false;
             NewAutopilotSpeed = 0;
             
             SpawnEncounter = false;
+            Spawner = new SpawnProfile();
 
             SelfDestruct = false;
             
@@ -122,7 +152,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             
             ChangeAntennaOwnership = false;
             AntennaFactionOwner = "Nobody";
-        
+
+            CreateKnownPlayerArea = false;
+            KnownPlayerAreaRadius = 10000;
+            KnownPlayerAreaTimer = 30;
+            KnownPlayerAreaMaxSpawns = -1;
+
+
         }
 
         public void InitTags(string customData) {
@@ -132,18 +168,51 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                 var descSplit = customData.Split('\n');
 
                 foreach(var tag in descSplit) {
-                    
-                    //BroadcastMessage
-                    if(tag.Contains("[BroadcastMessage:") == true) {
 
-                        this.BroadcastMessage = TagHelper.TagBoolCheck(tag);
+                    //UseChatBroadcast
+                    if(tag.Contains("[UseChatBroadcast:") == true) {
+
+                        this.UseChatBroadcast = TagHelper.TagBoolCheck(tag);
 
                     }
-                    
+
+                    //ChatData
+                    if(tag.Contains("[ChatData:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            byte[] byteData = { };
+
+                            if(TagHelper.ChatObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+                                try {
+
+                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ChatProfile>(byteData);
+
+                                    if(profile != null) {
+
+                                        ChatData = profile;
+
+                                    }
+
+                                } catch(Exception) {
+
+
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
                     //BarrelRoll
                     if(tag.Contains("[BarrelRoll:") == true) {
 
-                        this.BroadcastMessage = TagHelper.TagBoolCheck(tag);
+                        this.BarrelRoll = TagHelper.TagBoolCheck(tag);
 
                     }
                     
@@ -167,7 +236,40 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                         this.SpawnEncounter = TagHelper.TagBoolCheck(tag);
 
                     }
-                    
+
+                    //Spawner
+                    if(tag.Contains("[Spawner:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            byte[] byteData = { };
+
+                            if(TagHelper.SpawnerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+                                try {
+
+                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<SpawnProfile>(byteData);
+
+                                    if(profile != null) {
+
+                                        Spawner = profile;
+
+                                    }
+
+                                } catch(Exception) {
+
+
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
                     //SelfDestruct
                     if(tag.Contains("[SelfDestruct:") == true) {
 
@@ -217,7 +319,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                         if(string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-                            TimerBlockNames.Add(tempvalue);
+                            this.TimerBlockNames.Add(tempvalue);
 
                         }
 
@@ -233,14 +335,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     //ReputationChangeRadius
                     if(tag.Contains("[ReputationChangeRadius:") == true) {
 
-                        ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
+                        this.ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
 
                     }
                     
                     //ReputationChangeAmount
                     if(tag.Contains("[ReputationChangeAmount:") == true) {
 
-                        ReputationChangeAmount = TagHelper.TagIntCheck(tag, ReputationChangeAmount);
+                        this.ReputationChangeAmount = TagHelper.TagIntCheck(tag, ReputationChangeAmount);
 
                     }
                     
@@ -264,7 +366,35 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                         this.AntennaFactionOwner = TagHelper.TagStringCheck(tag);
 
                     }
-                    
+
+                    //CreateKnownPlayerArea
+                    if(tag.Contains("[CreateKnownPlayerArea:") == true) {
+
+                        this.CreateKnownPlayerArea = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //KnownPlayerAreaRadius
+                    if(tag.Contains("[KnownPlayerAreaRadius:") == true) {
+
+                        this.KnownPlayerAreaRadius = TagHelper.TagDoubleCheck(tag, KnownPlayerAreaRadius);
+
+                    }
+
+                    //KnownPlayerAreaTimer
+                    if(tag.Contains("[KnownPlayerAreaTimer:") == true) {
+
+                        this.KnownPlayerAreaTimer = TagHelper.TagIntCheck(tag, KnownPlayerAreaTimer);
+
+                    }
+
+                    //KnownPlayerAreaMaxSpawns
+                    if(tag.Contains("[KnownPlayerAreaMaxSpawns:") == true) {
+
+                        this.KnownPlayerAreaMaxSpawns = TagHelper.TagIntCheck(tag, KnownPlayerAreaMaxSpawns);
+
+                    }
+
                 }
 
             }
