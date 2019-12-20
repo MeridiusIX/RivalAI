@@ -79,6 +79,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public bool SwitchToBehavior;
         
         //[ProtoMember()]
+        public string NewBehavior;
+        
+        //[ProtoMember()]
+        public bool ClearSettingsOnBehaviorSwitch;
+        
+        //[ProtoMember()]
         public bool RefreshTarget;
         
         //[ProtoMember()]
@@ -174,6 +180,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             SwitchToReceivedTarget = false;
             
             SwitchToDamagerTarget = false;
+            
+            SwitchToBehavior = false;
+            NewBehavior = "";
+            ClearSettingsOnBehaviorSwitch = false;
             
             RefreshTarget = false;
             
