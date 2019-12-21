@@ -140,6 +140,24 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         //[ProtoMember()]
         public string DamageToolAttackerSound;
+        
+        //[ProtoMember()]
+        public bool PlayParticleEffectAtRemote;
+        
+        //[ProtoMember()]
+        public string ParticleEffectId;
+        
+        //[ProtoMember()]
+        public Vector3D ParticleEffectOffset;
+        
+        //[ProtoMember()]
+        public float ParticleEffectScale;
+        
+        //[ProtoMember()]
+        public float ParticleEffectMaxTime;
+        
+        //[ProtoMember()]
+        public Vector4 ParticleEffectColor;
 
         //[ProtoMember()]
         public List<string> SetBooleansTrue;
