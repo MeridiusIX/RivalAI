@@ -365,10 +365,24 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                     }
                     
+                    //BroadcastCurrentTarget
+                    if(tag.Contains("[BroadcastCurrentTarget:") == true) {
+
+                        this.BroadcastCurrentTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
                     //SwitchToReceivedTarget
                     if(tag.Contains("[SwitchToReceivedTarget:") == true) {
 
                         this.SwitchToReceivedTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //BroadcastDamagerTarget
+                    if(tag.Contains("[BroadcastDamagerTarget:") == true) {
+
+                        this.BroadcastDamagerTarget = TagHelper.TagBoolCheck(tag);
 
                     }
                     
@@ -379,10 +393,45 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                     }
                     
+                    //SwitchToBehavior
+                    if(tag.Contains("[SwitchToBehavior:") == true) {
+
+                        this.SwitchToBehavior = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //NewBehavior
+                    if(tag.Contains("[NewBehavior:") == true) {
+
+                        this.NewBehavior = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                    //ClearSettingsOnBehaviorSwitch
+                    if(tag.Contains("[ClearSettingsOnBehaviorSwitch:") == true) {
+
+                        this.ClearSettingsOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
                     //RefreshTarget
                     if(tag.Contains("[RefreshTarget:") == true) {
 
                         this.RefreshTarget = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //SwitchTargetProfile
+                    if(tag.Contains("[SwitchTargetProfile:") == true) {
+
+                        this.SwitchTargetProfile = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //NewTargetProfile
+                    if(tag.Contains("[NewTargetProfile:") == true) {
+
+                        this.NewTargetProfile = TagHelper.TagStringCheck(tag);
 
                     }
                     
@@ -473,6 +522,164 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     if(tag.Contains("[KnownPlayerAreaMaxSpawns:") == true) {
 
                         this.KnownPlayerAreaMaxSpawns = TagHelper.TagIntCheck(tag, KnownPlayerAreaMaxSpawns);
+
+                    }
+                    
+                    //DamageToolAttacker
+                    if(tag.Contains("[DamageToolAttacker:") == true) {
+
+                        this.DamageToolAttacker = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //DamageToolAttackerAmount
+                    if(tag.Contains("[DamageToolAttackerAmount:") == true) {
+
+                        this.DamageToolAttackerAmount = TagHelper.TagFloatCheck(tag, this.DamageToolAttackerAmount);
+
+                    }
+                    
+                    //DamageToolAttackerParticle
+                    if(tag.Contains("[DamageToolAttackerParticle:") == true) {
+
+                        this.DamageToolAttackerParticle = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                    //DamageToolAttackerSound
+                    if(tag.Contains("[DamageToolAttackerSound:") == true) {
+
+                        this.DamageToolAttackerSound = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                    //SetBooleansTrue
+                    if(tag.Contains("[SetBooleansTrue:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.SetBooleansTrue.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //SetBooleansFalse
+                    if(tag.Contains("[SetBooleansFalse:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.SetBooleansFalse.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //IncreaseCounters
+                    if(tag.Contains("[IncreaseCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.IncreaseCounters.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //DecreaseCounters
+                    if(tag.Contains("[DecreaseCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.DecreaseCounters.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //ResetCounters
+                    if(tag.Contains("[ResetCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.ResetCounters.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //SetSandboxBooleansTrue
+                    if(tag.Contains("[SetSandboxBooleansTrue:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.SetSandboxBooleansTrue.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //SetSandboxBooleansFalse
+                    if(tag.Contains("[SetSandboxBooleansFalse:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.SetSandboxBooleansFalse.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //IncreaseSandboxCounters
+                    if(tag.Contains("[IncreaseSandboxCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.IncreaseSandboxCounters.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //DecreaseSandboxCounters
+                    if(tag.Contains("[DecreaseSandboxCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.DecreaseSandboxCounters.Add(tempvalue);
+
+                        }
+
+                    }
+                    
+                    //ResetSandboxCounters
+                    if(tag.Contains("[ResetSandboxCounters:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.ResetSandboxCounters.Add(tempvalue);
+
+                        }
 
                     }
 
