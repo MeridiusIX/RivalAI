@@ -35,7 +35,7 @@ namespace RivalAI.Helpers {
 
     public static class CommandHelper {
 
-      public static event Action<string, IMyRemoteControl, double, string, long> CommandTrigger;
+      public static event Action<string, IMyRemoteControl, double, long> CommandTrigger;
     
     }
     

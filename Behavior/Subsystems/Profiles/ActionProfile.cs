@@ -33,22 +33,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
     [ProtoContract]
     public class ActionProfile {
         
-        //[ProtoMember()]
+        [ProtoMember(1)]
         public bool UseChatBroadcast;
 
-        //[ProtoMember()]
+        [ProtoMember(2)]
         public ChatProfile ChatData;
 
-        //[ProtoMember()]
+        [ProtoMember(3)]
         public bool BarrelRoll;
 
-        //[ProtoMember()]
+        [ProtoMember(4)]
         public bool Strafe;
 
-        //[ProtoMember()]
+        [ProtoMember(5)]
         public bool ChangeAutopilotSpeed;
         
-        //[ProtoMember()]
+        [ProtoMember(6)]
         public float NewAutopilotSpeed;
         
         //[ProtoMember()]
@@ -86,7 +86,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         
         //[ProtoMember()]
         public bool RefreshTarget;
-        
+
+        //[ProtoMember()]
+        public bool SwitchTargetProfile;
+
+        //[ProtoMember()]
+        public string NewTargetProfile;
+
         //[ProtoMember()]
         public bool TriggerTimerBlocks;
         
@@ -128,7 +134,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         //[ProtoMember()]
         public float DamageToolAttackerAmount;
-        
+
+        //[ProtoMember()]
+        public string DamageToolAttackerParticle;
+
+        //[ProtoMember()]
+        public string DamageToolAttackerSound;
+
         //[ProtoMember()]
         public List<string> SetBooleansTrue;
         
@@ -206,7 +218,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             
             DamageToolAttacker = false;
             DamageToolAttackerAmount = 90;
-            
+            DamageToolAttackerParticle = "";
+            DamageToolAttackerSound = "";
+
             SetBooleansTrue = new List<string>();
             SetBooleansFalse = new List<string>();
             IncreaseCounters = new List<string>();

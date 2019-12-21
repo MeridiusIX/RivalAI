@@ -96,6 +96,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         [ProtoMember(21)]
         public long DetectedEntityId;
 
+        [ProtoMember(22)]
+        public string CommandReceiveCode;
+
         [ProtoIgnore]
         public Random Rnd;
 
@@ -125,6 +128,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             MinPlayerReputation = -1501;
             MaxPlayerReputation = 1501;
+
+            CommandReceiveCode = "";
 
 
             Rnd = new Random();

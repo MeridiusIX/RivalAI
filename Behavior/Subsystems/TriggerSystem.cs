@@ -50,7 +50,6 @@ namespace RivalAI.Behavior.Subsystems {
         public List<TriggerProfile> Triggers;
         public List<TriggerProfile> DamageTriggers;
         public List<TriggerProfile> CommandTriggers;
-        public string CommandReceiveCode;
 
         public bool CommandListenerRegistered;
         public bool DamageHandlerRegistered;
@@ -67,7 +66,6 @@ namespace RivalAI.Behavior.Subsystems {
             Triggers = new List<TriggerProfile>();
             DamageTriggers = new List<TriggerProfile>();
             CommandTriggers = new List<TriggerProfile>();
-            CommandReceiveCode = "";
 
             DamageHandlerRegistered = false;
             DamageInfo = new MyDamageInformation();
@@ -232,22 +230,7 @@ namespace RivalAI.Behavior.Subsystems {
                         continue;
 
                     }
-
-                    //CommandReceive
-                    if(trigger.Type == "CommandReceive") {
-
-                        if(trigger.UseTrigger == true) {
-
-                            //Check if Command Received
-                            //Set Received Target if Eligible
-                            trigger.ActivateTrigger();
-
-                        }
-
-                        continue;
-
-                    }
-
+                
                 }
 
             }, () => {
@@ -259,8 +242,6 @@ namespace RivalAI.Behavior.Subsystems {
                         ProcessTrigger(this.Triggers[i]);
 
                     }
-
-                    ResetDamage();
 
                 });
 
@@ -295,6 +276,41 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
+        public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
+
+            if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null) {
+
+                return;
+
+            }
+
+            if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius) {
+
+                return;
+
+            }
+            
+
+            for(int i = 0;i < this.CommandTriggers.Count;i++) {
+
+                var trigger = this.CommandTriggers[i];
+
+                if(trigger.UseTrigger == true && commandCode == trigger.CommandReceiveCode) {
+
+                    trigger.ActivateTrigger();
+
+                    if(trigger.Triggered == true) {
+
+                        ProcessTrigger(trigger, entityId);
+
+                    }
+
+                }
+ 
+            }
+
+        }
+
         public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
 
             if(trigger.Triggered == false || trigger.Actions == null) {
@@ -315,24 +331,32 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            //BarrellRoll
+            //BarrellRoll - Implement Post Release
             if(trigger.Actions.BarrelRoll == true) {
 
-                _autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
+                //_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
 
             }
 
-            //DamageAttacker
-            if(trigger.Actions.DamageToolAttacker == true && attackerEntityId == 0) {
+            //Strafe - Implement Post Release
+            if(trigger.Actions.Strafe == true) {
 
-                //
+                //_autopilot.ChangeAutoPilotMode(AutoPilotMode.Strafe);
 
             }
 
-            //Retreat
-            if(trigger.Actions.Retreat == true) {
+            //ChangeAutopilotSpeed
+            if(trigger.Actions.ChangeAutopilotSpeed == true) {
 
-                _despawn.Retreat();
+                _autopilot.DesiredMaxSpeed = trigger.Actions.NewAutopilotSpeed;
+                this.RemoteControl.SpeedLimit = trigger.Actions.NewAutopilotSpeed;
+
+            }
+
+            //SpawnReinforcements
+            if(trigger.Actions.SpawnEncounter == true) {
+
+                SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
 
             }
 
@@ -348,6 +372,7 @@ namespace RivalAI.Behavior.Subsystems {
                     if(tBlock != null) {
 
                         tBlock.IsArmed = true;
+                        tBlock.DetonationTime = 0;
                         tBlock.Detonate();
 
                     }
@@ -356,17 +381,10 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            //SpawnReinforcements
-            if(trigger.Actions.SpawnEncounter == true) {
+            //Retreat
+            if(trigger.Actions.Retreat == true) {
 
-                
-
-            }
-
-            //Strafe
-            if(trigger.Actions.Strafe == true) {
-
-
+                _despawn.Retreat();
 
             }
 
@@ -391,6 +409,21 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
+            //RefreshTarget
+            if(trigger.Actions.RefreshTarget == true) {
+
+                _targeting.InvalidTarget = true;
+
+            }
+
+            //ChangeReputationWithPlayers
+            if(trigger.Actions.ChangeReputationWithPlayers == true) {
+
+                OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount);
+
+            }
+            
+
             //TriggerTimerBlock
             if(trigger.Actions.TriggerTimerBlocks == true) {
 
@@ -410,10 +443,10 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            //RefreshTarget
-            if(trigger.Actions.RefreshTarget == true) {
+            //DamageAttacker
+            if(trigger.Actions.DamageToolAttacker == true && attackerEntityId == 0) {
 
-                _targeting.InvalidTarget = true;
+                DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
 
             }
 
@@ -511,9 +544,8 @@ namespace RivalAI.Behavior.Subsystems {
                 return;
             
             this.CommandListenerRegistered = true;
-            
-            
-        
+            CommandHelper.CommandTrigger += ProcessCommandReceiveTriggerWatcher;
+
         }
 
         public void InitTags() {

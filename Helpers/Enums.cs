@@ -14,7 +14,8 @@ namespace RivalAI.Helpers {
         FlyToTarget,
         RotateToTarget, //Applies Gyro Rotation To Face Target. No Thrust.
         RotateToWaypoint, //Applies Gyro Rotation To Face Waypoint. No Thrust.
-        RotateToTargetAndStrafe //Applies Gyro Rotation To Face Target. Random Thruster Strafing Included.
+        RotateToTargetAndStrafe, //Applies Gyro Rotation To Face Target. Random Thruster Strafing Included.
+        Strafe
 
     }
 

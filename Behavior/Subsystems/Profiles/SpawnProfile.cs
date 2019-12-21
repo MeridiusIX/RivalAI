@@ -73,6 +73,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         
         public Vector3D RelativeSpawnVelocity;
 
+        public bool IgnoreSafetyChecks;
+
         [ProtoIgnore]
         public Random Rnd;
 
@@ -95,6 +97,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             MaxDistance = 1;
             RelativeSpawnOffset = Vector3D.Zero;
             RelativeSpawnVelocity = Vector3D.Zero;
+            IgnoreSafetyChecks = false;
 
             Rnd = new Random();
 

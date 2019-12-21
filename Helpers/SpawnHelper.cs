@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,24 +25,47 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
 using RivalAI.Behavior;
+using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
 
-    public class RivalAISpawn {
+    public static class SpawnHelper {
 
-        public List<string> SpawnGroupNames;
+        private static bool _spawnInProgress = false;
+        private static List<SpawnProfile> _pendingSpawns = new List<SpawnProfile>();
 
-        public bool IgnoreSpawnRules;
+        public static void SpawnRequest(SpawnProfile spawn = null) {
 
-        public RivalAISpawn() {
+            if(spawn != null) {
 
-            SpawnGroupNames = new List<string>();
+                _pendingSpawns.Add(spawn);
 
-            IgnoreSpawnRules = false;
+            }
+
+            if(_spawnInProgress == true) {
+
+                return;
+
+            }
+
+
+
+        }
+
+        private static void SpawningParallelChecks() {
+
+
+
+        }
+
+        private static void CompleteSpawning() {
+
+
 
         }
 

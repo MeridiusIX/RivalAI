@@ -30,6 +30,7 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior.Subsystems{
 	
@@ -110,7 +111,7 @@ namespace RivalAI.Behavior.Subsystems{
 			
 		}
 		
-		public void SpawnRequest(){
+		public void SpawnRequest(SpawnProfile spawn){
 			
 			if(this.SpawnInProgress == true){
 				

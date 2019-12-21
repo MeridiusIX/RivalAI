@@ -35,7 +35,7 @@ using RivalAI;
 
 namespace RivalAI.Behavior{
 	
-	[MyEntityComponentDescriptor(typeof(MyObjectBuilder_RemoteControl), false, "RivalAIRemoteControlSmall", "RivalAIRemoteControlLarge")]
+	[MyEntityComponentDescriptor(typeof(MyObjectBuilder_RemoteControl), false, "RivalAIRemoteControlSmall", "RivalAIRemoteControlLarge", "K_Imperial_Dropship_Guild_RC", "K_TIE_Fighter_RC", "K_Imperial_SpeederBike_FakePilot", "K_Imperial_ProbeDroid_Top_II", "K_Imperial_DroidCarrier_DroidBrain", "K_Imperial_DroidCarrier_DroidBrain_Aggressor")]
 	 
 	public class BehaviorManagerLogic : MyGameLogicComponent{
 

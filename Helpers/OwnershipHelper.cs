@@ -34,7 +34,44 @@ using RivalAI.Helpers;
 namespace RivalAI.Helpers {
     public class OwnershipHelper {
 
+        public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, int amountToChange) {
 
+            if(remoteControl?.SlimBlock?.CubeGrid == null)
+                return;
+
+            var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(remoteControl.OwnerId);
+
+            if(faction == null)
+                return;
+
+            var players = new List<IMyPlayer>();
+
+            string color = "Red";
+            string modifier = "Decreased";
+
+            if(amountToChange > 0) {
+
+                color = "Green";
+                modifier = "Increased";
+
+            }
+
+            foreach(var player in players) {
+
+                if(player.IsBot == true)
+                    continue;
+
+                if(Vector3D.Distance(player.GetPosition(), remoteControl.GetPosition()) > radius)
+                    continue;
+
+                var newRep = amountToChange + MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(player.IdentityId, faction.FactionId);
+                MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(player.IdentityId, faction.FactionId, newRep);
+                MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, amountToChange.ToString()), 2000, color, player.IdentityId);
+
+
+            }
+
+        }
         public static bool CompareAllowedOwnerTypes(TargetOwnerEnum allowedOwner, TargetOwnerEnum resultOwner) {
 
             //Owner: Unowned
