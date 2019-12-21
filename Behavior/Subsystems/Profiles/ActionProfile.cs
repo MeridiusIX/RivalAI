@@ -238,6 +238,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             DamageToolAttackerAmount = 90;
             DamageToolAttackerParticle = "";
             DamageToolAttackerSound = "";
+            
+            PlayParticleEffectAtRemote = false;
+            ParticleEffectId = "";
+            ParticleEffectOffset = Vector3D.Zero;
+            ParticleEffectScale = 1;
+            ParticleEffectMaxTime = -1;
+            ParticleEffectColor = Vector4.Zero;
 
             SetBooleansTrue = new List<string>();
             SetBooleansFalse = new List<string>();
@@ -568,6 +575,48 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     if(tag.Contains("[DamageToolAttackerSound:") == true) {
 
                         this.DamageToolAttackerSound = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                    //PlayParticleEffectAtRemote
+                    if(tag.Contains("[PlayParticleEffectAtRemote:") == true) {
+
+                        this.PlayParticleEffectAtRemote = TagHelper.TagBoolCheck(tag);
+
+                    }
+                    
+                    //ParticleEffectId
+                    if(tag.Contains("[ParticleEffectId:") == true) {
+
+                        this.ParticleEffectId = TagHelper.TagStringCheck(tag);
+
+                    }
+                    
+                    //ParticleEffectOffset
+                    if(tag.Contains("[ParticleEffectOffset:") == true) {
+
+                        this.ParticleEffectOffset = TagHelper.TagVector3DCheck(tag);
+
+                    }
+                    
+                    //ParticleEffectScale
+                    if(tag.Contains("[ParticleEffectScale:") == true) {
+
+                        this.ParticleEffectScale = TagHelper.TagFloatCheck(tag, this.ParticleEffectScale);
+
+                    }
+                    
+                    //ParticleEffectMaxTime
+                    if(tag.Contains("[ParticleEffectMaxTime:") == true) {
+
+                        this.ParticleEffectMaxTime = TagHelper.TagFloatCheck(tag, this.ParticleEffectMaxTime);
+
+                    }
+                    
+                    //ParticleEffectColor
+                    if(tag.Contains("[ParticleEffectColor:") == true) {
+
+                        this.ParticleEffectColor = TagHelper.TagVector4Check(tag);
 
                     }
                     
