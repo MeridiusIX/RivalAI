@@ -80,7 +80,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         [ProtoMember(16)]
         public bool IgnoreSafetyChecks;
-
+        
+        [ProtoIgnore]
+        public Vector3D CurrentPosition;
+        
         [ProtoIgnore]
         public Random Rnd;
 
@@ -104,7 +107,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             RelativeSpawnOffset = Vector3D.Zero;
             RelativeSpawnVelocity = Vector3D.Zero;
             IgnoreSafetyChecks = false;
-
+            
+            CurrentPosition = Vector3D.Zero;
             Rnd = new Random();
 
         }
