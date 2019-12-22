@@ -71,14 +71,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         [ProtoMember(13)]
         public double MaxDistance;
-
+        
         [ProtoMember(14)]
-        public Vector3D RelativeSpawnOffset;
+        public double MinAltitude;
 
         [ProtoMember(15)]
+        public double MaxAltitude;
+        
+        [ProtoMember(16)]
+        public Vector3D RelativeSpawnOffset;
+
+        [ProtoMember(17)]
         public Vector3D RelativeSpawnVelocity;
 
-        [ProtoMember(16)]
+        [ProtoMember(18)]
         public bool IgnoreSafetyChecks;
         
         [ProtoIgnore]
@@ -104,6 +110,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             UseRelativeSpawnPosition = false;
             MinDistance = 0;
             MaxDistance = 1;
+            MinAltitude = 0;
+            MaxAltitude = 1;
             RelativeSpawnOffset = Vector3D.Zero;
             RelativeSpawnVelocity = Vector3D.Zero;
             IgnoreSafetyChecks = false;
