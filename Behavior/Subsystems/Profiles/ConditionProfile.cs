@@ -37,20 +37,26 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 	[ProtoContract]
 	public class ConditionProfile{
 		
-		//[ProtoMember()]
+		[ProtoMember(1)]
 		public bool UseConditions;
 		
-		//[ProtoMember()]
+		[ProtoMember(2)]
 		public bool MatchAnyCondition;
 		
 		//[ProtoMember()]
-		public bool CheckLoadedModIDs;
+		public bool CheckAllLoadedModIDs;
 		
 		//[ProtoMember()]
-		public List<long> ModIDsToCheck;
-		
-		//[ProtoMember()]
-		public bool CheckTrueBooleans;
+		public List<long> AllModIDsToCheck;
+
+        //[ProtoMember()]
+        public bool CheckAnyLoadedModIDs;
+
+        //[ProtoMember()]
+        public List<long> AnyModIDsToCheck;
+
+        //[ProtoMember()]
+        public bool CheckTrueBooleans;
 		
 		//[ProtoMember()]
 		public List<string> TrueBooleans;
@@ -95,10 +101,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			UseConditions = false;
 			MatchAnyCondition = false;
 			
-			CheckLoadedModIDs = false;
-			ModIDsToCheck = new List<long>();
-			
-			CheckTrueBooleans = false;
+			CheckAllLoadedModIDs = false;
+			AllModIDsToCheck = new List<long>();
+
+            CheckAnyLoadedModIDs = false;
+            AnyModIDsToCheck = new List<long>();
+
+            CheckTrueBooleans = false;
 			TrueBooleans = new List<string>();
 			
 			CheckCustomCounters = false;
@@ -132,14 +141,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			int usedConditions = 0;
 			int satisfiedConditions = 0;
 			
-			if(this.CheckLoadedModIDs == true){
+			if(this.CheckAllLoadedModIDs == true){
 				
 				usedConditions++;
 				//Check Condition
 				
 			}
-			
-			if(this.CheckTrueBooleans == true){
+
+            if (this.CheckAnyLoadedModIDs == true) {
+
+                usedConditions++;
+                //Check Condition
+
+            }
+
+            if (this.CheckTrueBooleans == true){
 				
 				usedConditions++;
 				
@@ -198,17 +214,24 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
                     }
 
-                    //CheckLoadedModIDs
-                    if(tag.Contains("[CheckLoadedModIDs:") == true) {
+                    //CheckAllLoadedModIDs
+                    if(tag.Contains("[CheckAllLoadedModIDs:") == true) {
 
-                        this.CheckLoadedModIDs = TagHelper.TagBoolCheck(tag);
+                        this.CheckAllLoadedModIDs = TagHelper.TagBoolCheck(tag);
 
                     }
 
                     //ModIDsToCheck
 
+                    //CheckAnyLoadedModIDs
+                    if (tag.Contains("[CheckAnyLoadedModIDs:") == true) {
+
+                        this.CheckAnyLoadedModIDs = TagHelper.TagBoolCheck(tag);
+
+                    }
+
                     //CheckTrueBooleans
-                    if(tag.Contains("[CheckTrueBooleans:") == true) {
+                    if (tag.Contains("[CheckTrueBooleans:") == true) {
 
                         this.CheckTrueBooleans = TagHelper.TagBoolCheck(tag);
 

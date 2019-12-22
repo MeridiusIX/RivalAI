@@ -157,7 +157,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public float ParticleEffectMaxTime;
         
         //[ProtoMember()]
-        public Vector4 ParticleEffectColor;
+        public Vector3D ParticleEffectColor;
 
         //[ProtoMember()]
         public List<string> SetBooleansTrue;
@@ -244,7 +244,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             ParticleEffectOffset = Vector3D.Zero;
             ParticleEffectScale = 1;
             ParticleEffectMaxTime = -1;
-            ParticleEffectColor = Vector4.Zero;
+            ParticleEffectColor = Vector3D.Zero;
 
             SetBooleansTrue = new List<string>();
             SetBooleansFalse = new List<string>();
@@ -616,7 +616,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     //ParticleEffectColor
                     if(tag.Contains("[ParticleEffectColor:") == true) {
 
-                        this.ParticleEffectColor = TagHelper.TagVector4Check(tag);
+                        this.ParticleEffectColor = TagHelper.TagVector3DCheck(tag);
 
                     }
                     

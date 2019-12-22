@@ -62,17 +62,23 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         [ProtoMember(10)]
         public DateTime LastSpawnTime;
-        
+
+        [ProtoMember(11)]
         public bool UseRelativeSpawnPosition;
-        
+
+        [ProtoMember(12)]
         public double MinDistance;
-        
+
+        [ProtoMember(13)]
         public double MaxDistance;
-        
-        public Vector3D RelativeSpawnOffset; 
-        
+
+        [ProtoMember(14)]
+        public Vector3D RelativeSpawnOffset;
+
+        [ProtoMember(15)]
         public Vector3D RelativeSpawnVelocity;
 
+        [ProtoMember(16)]
         public bool IgnoreSafetyChecks;
 
         [ProtoIgnore]

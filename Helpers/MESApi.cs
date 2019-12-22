@@ -11,7 +11,7 @@ namespace RivalAI.Helpers {
 
         private static long _mesModId = 1521905890;
         private static Action<Vector3D, string, double, int, int> _addKnownPlayerLocation;
-        private static Action<List<string>, Vector3D, Vector3D, Vector3D, Vector3> _customSpawnRequest;
+        private static Func<List<string>, MatrixD, Vector3, bool, bool> _customSpawnRequest;
         private static Func<List<string>> _getSpawnGroupBlackList;
         private static Func<List<string>> _getNpcNameBlackList;
         private static Func<Vector3D, bool, string, bool> _isPositionInKnownPlayerLocation;
@@ -42,7 +42,7 @@ namespace RivalAI.Helpers {
         /// <param name="forwardDir">Forward Direction vector for the spawn</param>
         /// <param name="upDir">Up Direction Vector for the spawn</param>
         /// <param name="velocity">Velocity vector</param>
-        public static void CustomSpawnRequest(List<string> spawnGroups, Vector3D coords, Vector3D forwardDir, Vector3D upDir, Vector3 velocity) => _customSpawnRequest?.Invoke(spawnGroups, coords, forwardDir, upDir, velocity);
+        public static bool CustomSpawnRequest(List<string> spawnGroups, MatrixD spawningMatrix, Vector3 velocity, bool ignoreSafetyCheck) => _customSpawnRequest?.Invoke(spawnGroups, spawningMatrix, velocity, ignoreSafetyCheck) ?? false;
 
         /// <summary>
         /// Get a String List of all Current SpawnGroup SubtypeNames Currently in the MES Blacklist
@@ -70,7 +70,7 @@ namespace RivalAI.Helpers {
 
             var dict = data as Dictionary<string, Delegate>;
 
-            if(dict == null) {
+            if (dict == null) {
 
                 return;
 
@@ -78,7 +78,7 @@ namespace RivalAI.Helpers {
 
             MESApiReady = true;
             _addKnownPlayerLocation = (Action<Vector3D, string, double, int, int>)dict["AddKnownPlayerLocation"];
-            _customSpawnRequest = (Action<List<string>, Vector3D, Vector3D, Vector3D, Vector3>)dict["CustomSpawnRequest"];
+            _customSpawnRequest = (Func<List<string>, MatrixD, Vector3, bool, bool>)dict["CustomSpawnRequest"];
             _getSpawnGroupBlackList = (Func<List<string>>)dict["GetSpawnGroupBlackList"];
             _getNpcNameBlackList = (Func<List<string>>)dict["GetNpcNameBlackList"];
             _isPositionInKnownPlayerLocation = (Func<Vector3D, bool, string, bool>)dict["IsPositionInKnownPlayerLocation"];
