@@ -62,8 +62,30 @@ namespace RivalAI.Helpers {
         }
 
         private static void SpawningParallelChecks() {
+            
+            if(_currentSpawn.UseRelativeSpawnPosition){
+                
+                spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPosition);
+                _spawnMatrix = new MatrixD(spawnCoords, _currentSpawn.CurrentPosition.Forward, _currentSpawn.CurrentPosition.Up);
 
-            //Get MatrixD to Spawn With
+            }else{
+
+                if(VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPosition.Translation) == Vector3D.Zero){
+
+                    //Space Calculations
+
+                }else{
+
+                    //Planet Calculations
+                    var planet = MyGamePruningStructure.GetClosestPlanet(_currentSpawn.CurrentPosition.Translation);
+                    
+
+
+                }
+
+            }
+            
+                
 
         }
 
