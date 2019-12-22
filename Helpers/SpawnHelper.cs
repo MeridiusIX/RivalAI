@@ -38,6 +38,10 @@ namespace RivalAI.Helpers {
 
         private static bool _spawnInProgress = false;
         private static List<SpawnProfile> _pendingSpawns = new List<SpawnProfile>();
+        
+        private static SpawnProfile _currentSpawn;
+        private static MatrixD _spawnMatrix;
+        
 
         public static void SpawnRequest(SpawnProfile spawn = null) {
 
@@ -47,26 +51,41 @@ namespace RivalAI.Helpers {
 
             }
 
-            if(_spawnInProgress == true) {
-
+            if(_spawnInProgress == true || _pendingSpawns.Count == 0)
                 return;
-
-            }
-
-
+            
+            _currentSpawn = _pendingSpawns[0];
+            _pendingSpawns.RemoveAt(0);
+            _spawnInProgress = true;
+            MyAPIGateway.Parallel.Start(SpawningParallelChecks, CompleteSpawning);
 
         }
 
         private static void SpawningParallelChecks() {
 
-
+            //Get MatrixD to Spawn With
 
         }
 
         private static void CompleteSpawning() {
-
-
-
+            
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
+            
+                var result = MESApi.CustomSpawnRequest();
+                
+                if(result == true){
+                
+                    //Adjust Current Spawn Profile
+                
+                }
+                
+                _spawnInProgress = false;
+                
+                if(_pendingSpawns.Count > 0)
+                    SpawnRequest();
+            
+            });
+   
         }
 
     }
