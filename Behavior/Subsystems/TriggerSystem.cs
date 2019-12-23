@@ -313,6 +313,9 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
 
+            if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
+                return;
+
             if(trigger.Triggered == false || trigger.Actions == null) {
 
                 return;
@@ -356,6 +359,7 @@ namespace RivalAI.Behavior.Subsystems {
             //SpawnReinforcements
             if(trigger.Actions.SpawnEncounter == true) {
 
+                trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
                 SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
 
             }

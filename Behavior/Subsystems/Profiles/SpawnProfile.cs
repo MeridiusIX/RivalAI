@@ -88,7 +88,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public bool IgnoreSafetyChecks;
         
         [ProtoIgnore]
-        public MatrixD CurrentPosition;
+        public MatrixD CurrentPositionMatrix;
         
         [ProtoIgnore]
         public Random Rnd;
@@ -116,7 +116,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             RelativeSpawnVelocity = Vector3D.Zero;
             IgnoreSafetyChecks = false;
             
-            CurrentPosition = MatrixD.Identity;
+            CurrentPositionMatrix = MatrixD.Identity;
             Rnd = new Random();
 
         }

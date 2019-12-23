@@ -65,19 +65,19 @@ namespace RivalAI.Helpers {
             
             if(_currentSpawn.UseRelativeSpawnPosition){
                 
-                var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPosition);
-                _spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPosition.Forward, _currentSpawn.CurrentPosition.Up);
+                var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPositionMatrix);
+                _spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPositionMatrix.Forward, _currentSpawn.CurrentPositionMatrix.Up);
 
             }else{
 
-                if(VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPosition.Translation) == Vector3D.Zero){
+                if(VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPositionMatrix.Translation) == Vector3D.Zero){
 
                     //Space Calculations
 
                 }else{
 
                     //Planet Calculations
-                    var planet = MyGamePruningStructure.GetClosestPlanet(_currentSpawn.CurrentPosition.Translation);
+                    var planet = MyGamePruningStructure.GetClosestPlanet(_currentSpawn.CurrentPositionMatrix.Translation);
                     
 
 
