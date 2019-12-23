@@ -65,8 +65,8 @@ namespace RivalAI.Helpers {
             
             if(_currentSpawn.UseRelativeSpawnPosition){
                 
-                spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPosition);
-                _spawnMatrix = new MatrixD(spawnCoords, _currentSpawn.CurrentPosition.Forward, _currentSpawn.CurrentPosition.Up);
+                var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPosition);
+                _spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPosition.Forward, _currentSpawn.CurrentPosition.Up);
 
             }else{
 
@@ -92,13 +92,16 @@ namespace RivalAI.Helpers {
         private static void CompleteSpawning() {
             
             MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
-            
-                var result = MESApi.CustomSpawnRequest();
+
+                var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
+                var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
                 
                 if(result == true){
-                
-                    //Adjust Current Spawn Profile
-                
+
+                    _currentSpawn.SpawnCount++;
+
+
+
                 }
                 
                 _spawnInProgress = false;

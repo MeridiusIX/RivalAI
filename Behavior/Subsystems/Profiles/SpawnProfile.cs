@@ -43,10 +43,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public float FirstSpawnTimeMs;
 
         [ProtoMember(4)]
-        public float SpawnMinCooldownMs;
+        public float SpawnMinCooldown;
 
         [ProtoMember(5)]
-        public float SpawnMaxCooldownMs;
+        public float SpawnMaxCooldown;
 
         [ProtoMember(6)]
         public int MaxSpawns;
@@ -98,8 +98,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             UseSpawn = false;
             StartsReady = false;
             FirstSpawnTimeMs = 0;
-            SpawnMinCooldownMs = 0;
-            SpawnMaxCooldownMs = 1;
+            SpawnMinCooldown = 0;
+            SpawnMaxCooldown = 1;
             MaxSpawns = -1;
             SpawnGroups = new List<string>();
 
@@ -121,18 +121,19 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         }
 
-        public void ProcessSpawn() {
+        public void ProcessSuccessfulSpawn() {
 
-            if(MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
+            SpawnCount++;
+
+            if (MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
 
                 UseSpawn = false;
-                return;
 
             }
 
             TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastSpawnTime;
 
-            if(duration.TotalMilliseconds < CooldownTime) {
+            if(duration.TotalSeconds < CooldownTime) {
 
                 return;
 
@@ -167,14 +168,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     //SpawnMinCooldownMs
                     if(tag.Contains("[MinCooldownMs:") == true) {
 
-                        SpawnMinCooldownMs = TagHelper.TagFloatCheck(tag, SpawnMinCooldownMs);
+                        SpawnMinCooldown = TagHelper.TagFloatCheck(tag, SpawnMinCooldown);
 
                     }
 
                     //SpawnMaxCooldownMs
                     if(tag.Contains("[MaxCooldownMs:") == true) {
 
-                        SpawnMaxCooldownMs = TagHelper.TagFloatCheck(tag, SpawnMaxCooldownMs);
+                        SpawnMaxCooldown = TagHelper.TagFloatCheck(tag, SpawnMaxCooldown);
 
                     }
 
@@ -202,11 +203,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             }
 
-            if(SpawnMinCooldownMs > SpawnMaxCooldownMs) {
+            if(SpawnMinCooldown > SpawnMaxCooldown) {
 
-                SpawnMinCooldownMs = SpawnMaxCooldownMs;
+                SpawnMinCooldown = SpawnMaxCooldown;
 
             }
+
+
 
 
         }
