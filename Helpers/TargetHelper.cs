@@ -980,6 +980,43 @@ namespace RivalAI.Helpers {
 			return safezoneList;
 			
 		}
+
+        public static IMyEntity GetTargetFromId(long entityId, out TargetTypeEnum targetType) {
+
+            targetType = TargetTypeEnum.None;
+            IMyEntity result = null;
+
+            if (MyAPIGateway.Entities.TryGetEntityById(entityId, out result) == false)
+                return result;
+
+            if (result as IMyCubeBlock != null) {
+
+                targetType = TargetTypeEnum.Block;
+
+            }
+
+            if (result as IMyCubeGrid != null) {
+
+                targetType = TargetTypeEnum.Grid;
+
+            }
+
+            if (result as IMyEngineerToolBase != null) {
+
+                if (MyAPIGateway.Entities.TryGetEntityById((result as IMyEngineerToolBase).OwnerId, out result) == false)
+                    return null;
+
+                targetType = TargetTypeEnum.Player;
+            }
+
+            if (result as IMyGunBaseUser != null) {
+
+                result = (result as IMyGunBaseUser).Owner;
+                targetType = TargetTypeEnum.Player;
+            }
+
+            return result;
+        }
 		
 		public static Vector2 GetTargetGridPower(IMyCubeGrid cubeGrid){
 			
@@ -1221,6 +1258,14 @@ namespace RivalAI.Helpers {
 			}
 
 		}
+
+        public static List<IMyPlayer> GetPlayersWithinDistance(Vector3D coords, double radius) {
+
+            var playerList = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(playerList, x => x.IsBot == false && Vector3D.Distance(coords, x.GetPosition()) < radius);
+            return playerList;
+            
+        }
 
         //IsGridPowered
         public static bool IsGridPowered(IMyCubeGrid cubeGrid) {
@@ -1683,6 +1728,15 @@ namespace RivalAI.Helpers {
 			return false;
 			
 		}
+
+        public static IMyPlayer MatchPlayerToEntity(IMyEntity entity) {
+
+            if (entity == null)
+                return null;
+
+            return MyAPIGateway.Players.GetPlayerControllingEntity(entity);
+
+        }
 		
 		public static Vector3D SafeZoneIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, out IMyEntity zoneOutEntity){
 

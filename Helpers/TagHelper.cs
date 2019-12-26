@@ -48,8 +48,48 @@ namespace RivalAI.Helpers {
 
             var definitionList = MyDefinitionManager.Static.GetEntityComponentDefinitions();
 
-            //Get All Action, Chat, Spawner, and Target
-            foreach(var def in definitionList) {
+            //Get All Chat, Spawner
+            foreach (var def in definitionList) {
+
+                try {
+
+                    if (string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+
+                        continue;
+
+                    }
+
+                    if (def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var chatObject = new ChatProfile();
+                        chatObject.InitTags(def.DescriptionText);
+                        var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
+                        Logger.AddMsg("Chat Profile Added: " + def.Id.SubtypeName, true);
+                        ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
+                        continue;
+
+                    }
+
+                    if (def.DescriptionText.Contains("[RivalAI Spawner]") == true && SpawnerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+                        var spawnerObject = new SpawnProfile();
+                        spawnerObject.InitTags(def.DescriptionText);
+                        var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
+                        Logger.AddMsg("Spawner Profile Added: " + def.Id.SubtypeName, true);
+                        SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
+                        continue;
+
+                    }
+
+                } catch (Exception) {
+
+                    Logger.AddMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+
+                }
+
+            }
+
+            foreach (var def in definitionList) {
 
                 try {
 
@@ -70,17 +110,6 @@ namespace RivalAI.Helpers {
 
                     }
 			
-                    if(def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
-
-                        var chatObject = new ChatProfile();
-                        chatObject.InitTags(def.DescriptionText);
-                        var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
-                        Logger.AddMsg("Chat Profile Added: " + def.Id.SubtypeName, true);
-                        ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
-                        continue;
-
-                    }
-
                     if(def.DescriptionText.Contains("[RivalAI Condition]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
                         var conditionObject = new ConditionProfile();
@@ -92,17 +121,6 @@ namespace RivalAI.Helpers {
 
                     }
 
-                    if(def.DescriptionText.Contains("[RivalAI Spawner]") == true && SpawnerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
-
-                        var spawnerObject = new SpawnProfile();
-                        spawnerObject.InitTags(def.DescriptionText);
-                        var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
-                        Logger.AddMsg("Spawner Profile Added: " + def.Id.SubtypeName, true);
-                        SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
-                        continue;
-
-                    }
-			
 		            if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
                         var targetObject = new TargetProfile();

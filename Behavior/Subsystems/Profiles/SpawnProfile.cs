@@ -121,6 +121,39 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         }
 
+        public bool IsReadyToSpawn() {
+
+            if (this.UseSpawn == false) 
+                return false;
+
+            if (MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
+
+                UseSpawn = false;
+                return false;
+
+            }
+
+            TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastSpawnTime;
+
+            if (duration.TotalSeconds < CooldownTime) {
+
+                if (StartsReady == true) {
+
+                    if (SpawnCount > 0)
+                        return false;
+
+                } else {
+
+                    return false;
+
+                }
+
+            }
+
+            return true;
+
+        }
+
         public void ProcessSuccessfulSpawn() {
 
             SpawnCount++;
@@ -138,8 +171,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                 return;
 
             }
-
-            //Do Spawn Shit
 
         }
 

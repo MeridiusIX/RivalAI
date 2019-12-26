@@ -51,142 +51,142 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         [ProtoMember(6)]
         public float NewAutopilotSpeed;
         
-        //[ProtoMember()]
+        [ProtoMember(7)]
         public bool SpawnEncounter;
         
-        //[ProtoMember()]
+        [ProtoMember(8)]
         public SpawnProfile Spawner;
         
-        //[ProtoMember()]
+        [ProtoMember(9)]
         public bool SelfDestruct;
         
-        //[ProtoMember()]
+        [ProtoMember(10)]
         public bool Retreat;
         
-        //[ProtoMember()]
+        [ProtoMember(11)]
         public bool BroadcastCurrentTarget;
-        
-        //[ProtoMember()]
+
+        [ProtoMember(12)]
+        public bool BroadcastDamagerTarget;
+
+        [ProtoMember(13)]
+        public string BroadcastSendCode;
+
+        [ProtoMember(14)]
         public bool SwitchToReceivedTarget;
         
-        //[ProtoMember()]
-        public bool BroadcastDamagerTarget;
-        
-        //[ProtoMember()]
-        public bool SwitchToDamagerTarget;
-
-        //[ProtoMember()]
+        [ProtoMember(15)]
         public bool SwitchToBehavior;
         
-        //[ProtoMember()]
+        [ProtoMember(16)]
         public string NewBehavior;
         
-        //[ProtoMember()]
+        [ProtoMember(17)]
         public bool ClearSettingsOnBehaviorSwitch;
         
-        //[ProtoMember()]
+        [ProtoMember(18)]
         public bool RefreshTarget;
 
-        //[ProtoMember()]
+        [ProtoMember(19)]
         public bool SwitchTargetProfile;
 
-        //[ProtoMember()]
+        [ProtoMember(20)]
         public string NewTargetProfile;
 
-        //[ProtoMember()]
+        [ProtoMember(21)]
         public bool TriggerTimerBlocks;
         
-        //[ProtoMember()]
+        [ProtoMember(22)]
         public List<string> TimerBlockNames;
         
-        //[ProtoMember()]
+        [ProtoMember(23)]
         public bool ChangeReputationWithPlayers;
         
-        //[ProtoMember()]
+        [ProtoMember(24)]
         public double ReputationChangeRadius;
         
-        //[ProtoMember()]
+        [ProtoMember(25)]
         public int ReputationChangeAmount;
         
-        //[ProtoMember()]
+        [ProtoMember(26)]
         public bool ActivateAssertiveAntennas;
         
-        //[ProtoMember()]
+        [ProtoMember(27)]
         public bool ChangeAntennaOwnership;
         
-        //[ProtoMember()]
+        [ProtoMember(28)]
         public string AntennaFactionOwner;
 
-        //[ProtoMember()]
+        [ProtoMember(29)]
         public bool CreateKnownPlayerArea;
 
-        //[ProtoMember()]
+        [ProtoMember(30)]
         public double KnownPlayerAreaRadius;
 
-        //[ProtoMember()]
+        [ProtoMember(31)]
         public int KnownPlayerAreaTimer;
 
-        //[ProtoMember()]
+        [ProtoMember(32)]
         public int KnownPlayerAreaMaxSpawns;
 
-        //[ProtoMember()]
+        [ProtoMember(33)]
         public bool DamageToolAttacker;
 
-        //[ProtoMember()]
+        [ProtoMember(34)]
         public float DamageToolAttackerAmount;
 
-        //[ProtoMember()]
+        [ProtoMember(35)]
         public string DamageToolAttackerParticle;
 
-        //[ProtoMember()]
+        [ProtoMember(36)]
         public string DamageToolAttackerSound;
         
-        //[ProtoMember()]
+        [ProtoMember(37)]
         public bool PlayParticleEffectAtRemote;
         
-        //[ProtoMember()]
+        [ProtoMember(38)]
         public string ParticleEffectId;
         
-        //[ProtoMember()]
+        [ProtoMember(39)]
         public Vector3D ParticleEffectOffset;
         
-        //[ProtoMember()]
+        [ProtoMember(40)]
         public float ParticleEffectScale;
         
-        //[ProtoMember()]
+        [ProtoMember(41)]
         public float ParticleEffectMaxTime;
         
-        //[ProtoMember()]
+        [ProtoMember(42)]
         public Vector3D ParticleEffectColor;
 
-        //[ProtoMember()]
+        [ProtoMember(43)]
         public List<string> SetBooleansTrue;
         
-        //[ProtoMember()]
+        [ProtoMember(44)]
         public List<string> SetBooleansFalse;
         
-        //[ProtoMember()]
+        [ProtoMember(45)]
         public List<string> IncreaseCounters;
         
-        //[ProtoMember()]
+        [ProtoMember(46)]
         public List<string> DecreaseCounters;
         
-        //[ProtoMember()]
+        [ProtoMember(47)]
         public List<string> ResetCounters;
         
-        //[ProtoMember()]
+        [ProtoMember(48)]
         public List<string> SetSandboxBooleansTrue;
         
-        //[ProtoMember()]
+        [ProtoMember(49)]
         public List<string> SetSandboxBooleansFalse;
         
-        //[ProtoMember()]
+        [ProtoMember(50)]
         public List<string> IncreaseSandboxCounters;
         
-        //[ProtoMember()]
+        [ProtoMember(51)]
         public List<string> DecreaseSandboxCounters;
         
-        //[ProtoMember()]
+        [ProtoMember(52)]
         public List<string> ResetSandboxCounters;
 
         public ActionProfile(){
@@ -206,11 +206,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             SelfDestruct = false;
             
             Retreat = false;
-            
+
+            BroadcastCurrentTarget = false;
+            BroadcastDamagerTarget = false;
+            BroadcastSendCode = "";
             SwitchToReceivedTarget = false;
-            
-            SwitchToDamagerTarget = false;
-            
+
             SwitchToBehavior = false;
             NewBehavior = "";
             ClearSettingsOnBehaviorSwitch = false;
@@ -408,13 +409,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                     if(tag.Contains("[BroadcastDamagerTarget:") == true) {
 
                         this.BroadcastDamagerTarget = TagHelper.TagBoolCheck(tag);
-
-                    }
-                    
-                    //SwitchToDamagerTarget
-                    if(tag.Contains("[SwitchToDamagerTarget:") == true) {
-
-                        this.SwitchToDamagerTarget = TagHelper.TagBoolCheck(tag);
 
                     }
                     

@@ -34,6 +34,26 @@ using RivalAI.Helpers;
 namespace RivalAI.Helpers {
     public class OwnershipHelper {
 
+        public static void ChangeAntennaBlockOwnership(List<IMyRadioAntenna> blocks, string factionTag){
+
+            var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionTag);
+            long owner = 0;
+
+            if (faction != null)
+                owner = faction.FounderId;
+
+            foreach (var block in blocks) {
+
+                if (block == null)
+                    continue;
+
+                var cubeBlock = block as MyCubeBlock;
+                cubeBlock.ChangeBlockOwnerRequest(owner, MyOwnershipShareModeEnum.Faction);
+
+            }
+
+        }
+
         public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, int amountToChange) {
 
             if(remoteControl?.SlimBlock?.CubeGrid == null)

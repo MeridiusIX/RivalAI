@@ -56,6 +56,58 @@ namespace RivalAI.Sync {
 
             }
 
+            if (effectData.Mode == EffectSyncMode.Particle) {
+
+                ProcessParticleEffect(effectData);
+
+            }
+
+        }
+
+        public static void SendParticleEffectRequest(string id, MatrixD remoteMatrix, Vector3D offset, float scale, float maxTime, Vector3D color) {
+
+            var effect = new Effects();
+            effect.Mode = EffectSyncMode.Particle;
+            effect.Coords = Vector3D.Transform(offset, remoteMatrix);
+            effect.ParticleId = id;
+            effect.ParticleScale = scale;
+            effect.ParticleColor = color;
+            effect.ParticleMaxTime = maxTime;
+            effect.ParticleForwardDir = remoteMatrix.Forward;
+            effect.ParticleUpDir = remoteMatrix.Up;
+            var syncData = new SyncContainer(effect);
+
+            foreach (var player in TargetHelper.GetPlayersWithinDistance(effect.Coords, 15000)) {
+
+                SyncManager.SendSyncMesage(syncData, player.SteamUserId);
+
+            }
+
+        }
+
+        public static void ProcessParticleEffect(Effects effectData) {
+
+            MyParticleEffect effect;
+            var particleMatrix = MatrixD.CreateWorld(effectData.Coords, effectData.ParticleForwardDir, effectData.ParticleUpDir);
+            var particleCoords = effectData.Coords;
+
+            if (MyParticlesManager.TryCreateParticleEffect(effectData.ParticleId, ref particleMatrix, ref particleCoords, uint.MaxValue, out effect) == false) {
+
+                return;
+
+            }
+
+            effect.UserScale = effectData.ParticleScale;
+            effect.DurationMin = effectData.ParticleMaxTime;
+            effect.DurationMax = effectData.ParticleMaxTime;
+
+            if (effectData.ParticleColor != Vector3D.Zero) {
+
+                var newColor = new Vector4((float)effectData.ParticleColor.X, (float)effectData.ParticleColor.Y, (float)effectData.ParticleColor.Z, 1);
+                effect.UserColorMultiplier = newColor;
+
+            }
+
         }
 
         public static void ProcessPlayerSoundEffect() {

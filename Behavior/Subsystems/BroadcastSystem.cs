@@ -105,83 +105,7 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void InitTags() {
-
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
-
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
-
-                foreach(var tag in descSplit) {
-
-                    //UseChatSystem
-                    if(tag.Contains("[UseChatSystem:") == true) {
-
-                        this.UseChatSystem = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //UseNotificationSystem
-                    if(tag.Contains("[UseNotificationSystem:") == true) {
-
-                        this.UseNotificationSystem = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //DelayChatIfSoundPlaying
-                    if(tag.Contains("[DelayChatIfSoundPlaying:") == true) {
-
-                        this.DelayChatIfSoundPlaying = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //DelayChatIfSoundPlaying
-                    if(tag.Contains("[DelayChatIfSoundPlaying:") == true) {
-
-                        this.DelayChatIfSoundPlaying = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //SingleChatPerTrigger
-                    if(tag.Contains("[SingleChatPerTrigger:") == true) {
-
-                        this.SingleChatPerTrigger = TagHelper.TagBoolCheck(tag);
-
-                    }
-
-                    //ChatAuthor
-                    if(tag.Contains("[ChatAuthor:") == true) {
-
-                        this.ChatAuthor = TagHelper.TagStringCheck(tag);
-
-                    }
-
-                    //ChatAuthorColor
-                    if(tag.Contains("[ChatAuthorColor:") == true) {
-
-                        this.ChatAuthorColor = TagHelper.TagStringCheck(tag);
-
-                    }
-
-                }
-
-                foreach(var chatControl in this.ChatControlReference) {
-
-                    chatControl.InitTags(this.RemoteControl.CustomData);
-
-                }
-
-            }
-
-
-        }
-
         public void BroadcastRequest(ChatProfile chat) {
-
-            if(chat.UseChat == false) {
-
-                return;
-
-            }
 
             string message = "";
             string sound = "";
@@ -189,6 +113,7 @@ namespace RivalAI.Behavior.Subsystems {
 
             if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
 
+                Logger.AddMsg("Process Chat Fail", true);
                 return;
 
             }
@@ -250,20 +175,8 @@ namespace RivalAI.Behavior.Subsystems {
 
                 }
 
-                var authorName = this.ChatAuthor;
-                var authorColor = this.ChatAuthorColor;
-
-                if(string.IsNullOrWhiteSpace(chat.AuthorOverride) == false) {
-
-                    authorName = chat.AuthorOverride;
-
-                }
-
-                if(string.IsNullOrWhiteSpace(chat.ColorOverride) == false) {
-
-                    authorColor = chat.ColorOverride;
-
-                }
+                var authorName = chat.Author;
+                var authorColor = chat.Color;
 
                 if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
 

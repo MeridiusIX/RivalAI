@@ -230,7 +230,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(MinTimeout > MaxTimeout) {
 
-                MinTimeout = MaxTimeout;
+                MinTimeout = MaxTimeout + 1;
 
             }
 

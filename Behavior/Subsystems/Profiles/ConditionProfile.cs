@@ -43,49 +43,49 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(2)]
 		public bool MatchAnyCondition;
 		
-		//[ProtoMember()]
+		[ProtoMember(3)]
 		public bool CheckAllLoadedModIDs;
 		
-		//[ProtoMember()]
+		[ProtoMember(4)]
 		public List<long> AllModIDsToCheck;
 
-        //[ProtoMember()]
+        [ProtoMember(5)]
         public bool CheckAnyLoadedModIDs;
 
-        //[ProtoMember()]
+        [ProtoMember(6)]
         public List<long> AnyModIDsToCheck;
 
-        //[ProtoMember()]
+        [ProtoMember(7)]
         public bool CheckTrueBooleans;
 		
-		//[ProtoMember()]
+		[ProtoMember(8)]
 		public List<string> TrueBooleans;
 		
-		//[ProtoMember()]
+		[ProtoMember(9)]
 		public bool CheckCustomCounters;
 		
-		//[ProtoMember()]
+		[ProtoMember(10)]
 		public List<string> CustomCounters;
 		
-		//[ProtoMember()]
-		public List<string> CustomCountersTargets;
+		[ProtoMember(11)]
+		public List<int> CustomCountersTargets;
 		
-		//[ProtoMember()]
+		[ProtoMember(12)]
 		public bool CheckGridSpeed;
 		
-		//[ProtoMember()]
+		[ProtoMember(13)]
 		public float MinGridSpeed;
 		
-		//[ProtoMember()]
+		[ProtoMember(14)]
 		public float MaxGridSpeed;
 
-        //[ProtoMember()]
+        [ProtoMember(15)]
         public bool CheckMESBlacklistedSpawnGroups;
 
-        //[ProtoMember()]
+        [ProtoMember(16)]
         public List<string> SpawnGroupBlacklistContainsAll;
 
-        //[ProtoMember()]
+        [ProtoMember(17)]
         public List<string> SpawnGroupBlacklistContainsAny;
 
         [ProtoIgnore]
@@ -112,8 +112,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			
 			CheckCustomCounters = false;
 			CustomCounters = new List<string>();
-			
-			CheckGridSpeed = false;
+            CustomCountersTargets = new List<int>();
+
+            CheckGridSpeed = false;
 			MinGridSpeed = -1;
 			MaxGridSpeed = -1;
 
@@ -144,28 +145,90 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			if(this.CheckAllLoadedModIDs == true){
 				
 				usedConditions++;
-				//Check Condition
+                bool missingMod = false;
+
+                foreach (var mod in this.AllModIDsToCheck) {
+
+                    if (Utilities.ModIDs.Contains(mod) == false) {
+
+                        missingMod = true;
+                        break;
+
+                    }
+
+                }
+
+                if (!missingMod)
+                    satisfiedConditions++;
 				
 			}
 
             if (this.CheckAnyLoadedModIDs == true) {
 
                 usedConditions++;
-                //Check Condition
+
+                foreach (var mod in this.AllModIDsToCheck) {
+
+                    if (Utilities.ModIDs.Contains(mod)) {
+
+                        satisfiedConditions++;
+                        break;
+
+                    }
+
+                }
 
             }
 
             if (this.CheckTrueBooleans == true){
 				
 				usedConditions++;
-				
-			}
+                bool failedCheck = false;
+
+                foreach (var boolName in this.TrueBooleans) {
+
+                    if (!_settings.GetCustomBoolResult(boolName)) {
+
+                        failedCheck = true;
+                        break;
+
+                    }
+
+                }
+
+                if(!failedCheck)
+                    satisfiedConditions++;
+
+            }
 			
 			if(this.CheckCustomCounters == true){
-				
-				usedConditions++;
-				
-			}
+
+                usedConditions++;
+                bool failedCheck = false;
+
+                if (this.CustomCounters.Count == this.CustomCountersTargets.Count) {
+
+                    for (int i = 0; i < this.CustomCounters.Count; i++) {
+
+                        if (_settings.GetCustomCounterResult(this.CustomCounters[i], this.CustomCountersTargets[i]) == false) {
+
+                            failedCheck = true;
+                            break;
+
+                        } 
+
+                    }
+
+                } else {
+
+                    failedCheck = true;
+
+                }
+
+                if (!failedCheck)
+                    satisfiedConditions++;
+
+            }
 			
 			if(this.CheckGridSpeed == true){
 				
@@ -179,6 +242,49 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				}
 				
 			}
+
+            if (this.CheckMESBlacklistedSpawnGroups == true) {
+
+                var blackList = MESApi.GetSpawnGroupBlackList();
+
+                if (this.SpawnGroupBlacklistContainsAll.Count > 0) {
+
+                    usedConditions++;
+                    bool failedCheck = false;
+
+                    foreach (var group in this.SpawnGroupBlacklistContainsAll) {
+
+                        if (blackList.Contains(group) == false) {
+
+                            failedCheck = true;
+                            break;
+
+                        }
+
+                    }
+
+                    if (!failedCheck)
+                        satisfiedConditions++;
+
+                }
+
+                if (this.SpawnGroupBlacklistContainsAny.Count > 0) {
+
+                    usedConditions++;
+                    foreach (var group in this.SpawnGroupBlacklistContainsAll) {
+
+                        if (blackList.Contains(group) == true) {
+
+                            satisfiedConditions++;
+                            break;
+
+                        }
+
+                    }
+
+                }
+
+            }
 			
 			if(this.MatchAnyCondition == false){
 				
@@ -221,12 +327,36 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
                     }
 
-                    //ModIDsToCheck
+                    //AllModIDsToCheck
+                    if (tag.Contains("[AllModIDsToCheck:") == true) {
+
+                        var tempValue = TagHelper.TagLongCheck(tag, 0);
+
+                        if (tempValue != 0) {
+
+                            this.AllModIDsToCheck.Add(tempValue);
+
+                        }
+
+                    }
 
                     //CheckAnyLoadedModIDs
                     if (tag.Contains("[CheckAnyLoadedModIDs:") == true) {
 
                         this.CheckAnyLoadedModIDs = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //AnyModIDsToCheck
+                    if (tag.Contains("[AnyModIDsToCheck:") == true) {
+
+                        var tempValue = TagHelper.TagLongCheck(tag, 0);
+
+                        if (tempValue != 0) {
+
+                            this.AnyModIDsToCheck.Add(tempValue);
+
+                        }
 
                     }
 
@@ -238,20 +368,53 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
                     }
 
                     //TrueBooleans
+                    if (tag.Contains("[TrueBooleans:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            this.TrueBooleans.Add(tempValue);
+
+                        }
+
+                    }
 
                     //CheckCustomCounters
-                    if(tag.Contains("[CheckCustomCounters:") == true) {
+                    if (tag.Contains("[CheckCustomCounters:") == true) {
 
                         this.CheckCustomCounters = TagHelper.TagBoolCheck(tag);
 
                     }
 
                     //CustomCounters
+                    if (tag.Contains("[CustomCounters:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            this.CustomCounters.Add(tempValue);
+
+                        }
+
+                    }
 
                     //CustomCountersTargets
+                    if (tag.Contains("[CustomCountersTargets:") == true) {
+
+                        var tempValue = TagHelper.TagIntCheck(tag, 0);
+
+                        if (tempValue != 0) {
+
+                            this.CustomCountersTargets.Add(tempValue);
+
+                        }
+
+                    }
 
                     //CheckGridSpeed
-                    if(tag.Contains("[CheckGridSpeed:") == true) {
+                    if (tag.Contains("[CheckGridSpeed:") == true) {
 
                         this.CheckGridSpeed = TagHelper.TagBoolCheck(tag);
 
@@ -272,7 +435,37 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
                     }
 
                     //CheckMESBlacklistedSpawnGroups
+                    if (tag.Contains("[CheckMESBlacklistedSpawnGroups:") == true) {
 
+                        this.CheckMESBlacklistedSpawnGroups = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //SpawnGroupBlacklistContainsAll
+                    if (tag.Contains("[SpawnGroupBlacklistContainsAll:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            this.SpawnGroupBlacklistContainsAll.Add(tempValue);
+
+                        }
+
+                    }
+
+                    //SpawnGroupBlacklistContainsAny
+                    if (tag.Contains("[SpawnGroupBlacklistContainsAny:") == true) {
+
+                        var tempValue = TagHelper.TagStringCheck(tag);
+
+                        if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+                            this.SpawnGroupBlacklistContainsAny.Add(tempValue);
+
+                        }
+
+                    }
 
                 }
 

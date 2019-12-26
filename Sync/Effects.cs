@@ -49,28 +49,40 @@ namespace RivalAI.Sync {
         public EffectSyncMode Mode;
 
         [ProtoMember(2)]
-        public string SoundId;
+        public Vector3D Coords;
 
         [ProtoMember(3)]
-        public string ParticleId;
+        public string SoundId;
 
         [ProtoMember(4)]
-        public float ParticleScale;
+        public string ParticleId;
 
         [ProtoMember(5)]
-        public Vector3 ParticleColor;
+        public float ParticleScale;
 
         [ProtoMember(6)]
-        public Vector3D Coords;
+        public Vector3D ParticleColor;
+
+        [ProtoMember(7)]
+        public float ParticleMaxTime;
+
+        [ProtoMember(8)]
+        public Vector3D ParticleForwardDir;
+
+        [ProtoMember(9)]
+        public Vector3D ParticleUpDir;
 
         public Effects() {
 
             Mode = EffectSyncMode.None;
+            Coords = Vector3D.Zero;
             SoundId = "";
             ParticleId = "";
             ParticleScale = 1;
-            ParticleColor = Vector3.Zero;
-            Coords = Vector3D.Zero;
+            ParticleColor = Vector3D.Zero;
+            ParticleMaxTime = -1;
+            ParticleForwardDir = Vector3D.Forward;
+            ParticleUpDir = Vector3D.Up;
 
         }
 

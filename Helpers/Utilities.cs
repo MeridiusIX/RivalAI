@@ -40,6 +40,8 @@ namespace RivalAI.Helpers{
 		public static long BlockModMessageId = 0;
 		public static string ModName = "";
 
+        public static List<long> ModIDs = new List<long>();
+
         public static Dictionary<string, MyPhysicalItemDefinition> BehaviorProfiles = new Dictionary<string, MyPhysicalItemDefinition>();
 		
 		public static Random Rnd = new Random();
@@ -98,6 +100,20 @@ namespace RivalAI.Helpers{
             }
 
             return "";
+
+        }
+
+        public static void GetAllModIDs() {
+
+            foreach (var mod in MyAPIGateway.Session.Mods) {
+
+                if (mod.PublishedFileId != 0) {
+
+                    ModIDs.Add((long)mod.PublishedFileId);
+
+                }
+
+            }
 
         }
 		

@@ -30,6 +30,7 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Sync;
 
 namespace RivalAI.Behavior.Subsystems {
 
@@ -83,12 +84,11 @@ namespace RivalAI.Behavior.Subsystems {
 
                     var trigger = this.Triggers[i];
 
-                    //Damage
-                    if(trigger.Type == "Damage") {
+                    //Timer
+                    if (trigger.Type == "Timer") {
 
-                        if(trigger.UseTrigger == true && this.PendingDamage == true) {
+                        if (trigger.UseTrigger == true) {
 
-                            //TODO: Get Damage Data and Do Final If Check If Damage Type Matches
                             trigger.ActivateTrigger();
 
                         }
@@ -98,7 +98,7 @@ namespace RivalAI.Behavior.Subsystems {
                     }
 
                     //PlayerNear
-                    if(trigger.Type == "PlayerNear") {
+                    if (trigger.Type == "PlayerNear") {
 
                         if(trigger.UseTrigger == true) {
 
@@ -322,6 +322,15 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
+            long detectedEntity = attackerEntityId;
+
+            if (trigger.DetectedEntityId != 0 && detectedEntity != 0) {
+
+                detectedEntity = trigger.DetectedEntityId;
+
+            }
+
+            trigger.DetectedEntityId = 0;
             trigger.Triggered = false;
             trigger.CooldownTime = trigger.Rnd.Next((int)trigger.MinCooldownMs, (int)trigger.MaxCooldownMs);
             trigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
@@ -330,7 +339,8 @@ namespace RivalAI.Behavior.Subsystems {
             //ChatBroadcast
             if(trigger.Actions.UseChatBroadcast == true) {
 
-                _broadcast.BroadcastRequest(trigger.ChatMessage);
+                //Logger.AddMsg("Chat Broadcast", true);
+                _broadcast.BroadcastRequest(trigger.Actions.ChatData);
 
             }
 
@@ -357,10 +367,15 @@ namespace RivalAI.Behavior.Subsystems {
             }
 
             //SpawnReinforcements
-            if(trigger.Actions.SpawnEncounter == true) {
+            if(trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
 
-                trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
-                SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
+                if (trigger.Actions.Spawner.IsReadyToSpawn()) {
+
+                    //Logger.AddMsg("Do Spawn", true);
+                    trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
+                    SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
+
+                }
 
             }
 
@@ -368,7 +383,8 @@ namespace RivalAI.Behavior.Subsystems {
             if(trigger.Actions.SelfDestruct == true) {
 
                 var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
-
+                int totalWarheads = 0;
+                
                 foreach(var block in blockList.Where(x => x.FatBlock != null)) {
 
                     var tBlock = block as IMyWarhead;
@@ -378,10 +394,13 @@ namespace RivalAI.Behavior.Subsystems {
                         tBlock.IsArmed = true;
                         tBlock.DetonationTime = 0;
                         tBlock.Detonate();
+                        totalWarheads++;
 
                     }
 
                 }
+
+                //TODO: Shield EMP
 
             }
 
@@ -392,31 +411,31 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
-            //SwitchToReceivedTarget
-            if(trigger.Actions.SwitchToReceivedTarget == true) {
+            //BroadcastCurrentTarget
+            if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
 
-
+                //TODO:
 
             }
 
-            //SwitchToDamagerTarget
-            if(trigger.Actions.SwitchToDamagerTarget == true) {
+            //SwitchToReceivedTarget
+            if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
 
-
+                _targeting.UpdateSpecificTarget = detectedEntity;
 
             }
 
             //SwitchToBehavior
             if(trigger.Actions.SwitchToBehavior == true) {
 
-
+                //TODO:
 
             }
 
             //RefreshTarget
             if(trigger.Actions.RefreshTarget == true) {
 
-                _targeting.InvalidTarget = true;
+                _targeting.UpdateTargetRequested = true;
 
             }
 
@@ -431,7 +450,7 @@ namespace RivalAI.Behavior.Subsystems {
             //TriggerTimerBlock
             if(trigger.Actions.TriggerTimerBlocks == true) {
 
-                var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.TimerNames);
+                var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
 
                 foreach(var block in blockList) {
 
@@ -447,19 +466,41 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
+            //ActivateAssertiveAntennas
+            if(trigger.Actions.ActivateAssertiveAntennas == true) {
+
+                /*TODO:
+                _extras.SetAssertiveAntennas(true);
+                _extras.AssertiveEngage = true;
+                */
+            }
+
+            //ChangeAntennaOwnership
+            if (trigger.Actions.ChangeAntennaOwnership == true) {
+
+                OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, trigger.Actions.AntennaFactionOwner);
+
+            }
+
+            //CreateKnownPlayerArea
+            if (trigger.Actions.CreateKnownPlayerArea == true) {
+
+                MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, trigger.Actions.KnownPlayerAreaRadius, trigger.Actions.KnownPlayerAreaTimer, trigger.Actions.KnownPlayerAreaMaxSpawns);
+
+            }
+
             //DamageAttacker
-            if(trigger.Actions.DamageToolAttacker == true && attackerEntityId == 0) {
+            if (trigger.Actions.DamageToolAttacker == true && detectedEntity == 0) {
 
                 DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
 
             }
 
-            //ActivateAssertiveAntennas
-            if(trigger.Actions.ActivateAssertiveAntennas == true) {
+            //PlayParticleEffectAtRemote
+            if (trigger.Actions.PlayParticleEffectAtRemote == true) {
 
-                _extras.SetAssertiveAntennas(true);
-                _extras.AssertiveEngage = true;
-
+                EffectManager.SendParticleEffectRequest(trigger.Actions.ParticleEffectId, this.RemoteControl.WorldMatrix, trigger.Actions.ParticleEffectOffset, trigger.Actions.ParticleEffectScale, trigger.Actions.ParticleEffectMaxTime, trigger.Actions.ParticleEffectColor);
+                    
             }
 
         }
@@ -531,12 +572,13 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, TargetingSystem targeting, WeaponsSystem weapons) {
+        public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, TargetingSystem targeting, WeaponsSystem weapons) {
 
             this._autopilot = autopilot;
             this._broadcast = broadcast;
             this._despawn = despawn;
             this._extras = extras;
+            this._owner = owners;
             this._targeting = targeting;
             this._weapons = weapons;
 
@@ -598,7 +640,7 @@ namespace RivalAI.Behavior.Subsystems {
                                         continue;
 
                                     }
-                                    
+
                                     this.Triggers.Add(profile);
                                     
                                 }

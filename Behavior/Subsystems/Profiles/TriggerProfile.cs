@@ -64,39 +64,33 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public List<string> DamageTypes;
 
         [ProtoMember(11)]
-        public List<string> TimerNames;
-
-        [ProtoMember(12)]
-        public ChatProfile ChatMessage;
-
-        [ProtoMember(13)]
-        public SpawnProfile Spawner;
-
-        [ProtoMember(14)]
         public bool Triggered;
 
-        [ProtoMember(15)]
+        [ProtoMember(12)]
         public int CooldownTime;
 
-        [ProtoMember(16)]
+        [ProtoMember(13)]
         public int TriggerCount;
 
-        [ProtoMember(17)]
+        [ProtoMember(14)]
         public DateTime LastTriggerTime;
 
-        [ProtoMember(18)]
+        [ProtoMember(15)]
         public int MinPlayerReputation;
 
-        [ProtoMember(19)]
+        [ProtoMember(16)]
         public int MaxPlayerReputation;
 
-        [ProtoMember(20)]
+        [ProtoMember(17)]
         public ConditionProfile Conditions;
 
-        [ProtoMember(21)]
+        [ProtoMember(18)]
+        public bool ConditionCheckResetsTimer;
+
+        [ProtoMember(19)]
         public long DetectedEntityId;
 
-        [ProtoMember(22)]
+        [ProtoMember(20)]
         public string CommandReceiveCode;
 
         [ProtoIgnore]
@@ -115,9 +109,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             MaxActions = -1;
             Actions = new ActionProfile();
             DamageTypes = new List<string>();
-            TimerNames = new List<string>();
-            ChatMessage = new ChatProfile();
-            Spawner = new SpawnProfile();
             Conditions = new ConditionProfile();
 
             Triggered = false;
@@ -125,6 +116,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             TriggerCount = 0;
             LastTriggerTime = MyAPIGateway.Session.GameDateTime;
             DetectedEntityId = 0;
+
+            Conditions = new ConditionProfile();
+            ConditionCheckResetsTimer = false;
 
             MinPlayerReputation = -1501;
             MaxPlayerReputation = 1501;
@@ -147,11 +141,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(CooldownTime > 0) {
 
-                TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastTriggerTime;
+                TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastTriggerTime;
 
                 if(duration.TotalMilliseconds >= CooldownTime) {
 
-                    Triggered = true;
+                    if (Conditions.UseConditions == true) {
+
+                        if (Conditions.AreConditionsMets()) {
+
+                            Triggered = true;
+
+                        } else if(this.ConditionCheckResetsTimer) {
+
+                            this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+                            CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
+
+                        }
+
+                    } else {
+
+                        Triggered = true;
+
+                    }
 
                 }
 
@@ -220,8 +231,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                     }
 
+                    //MaxActions
+                    if (tag.Contains("[MaxActions:") == true) {
+
+                        MaxActions = TagHelper.TagIntCheck(tag, MaxActions);
+
+                    }
+
                     //Actions
-                    if(tag.Contains("[Actions:") == true) {
+                    if (tag.Contains("[Actions:") == true) {
 
                         var tempValue = TagHelper.TagStringCheck(tag);
 
@@ -261,85 +279,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                         if(DamageTypes.Contains(tempValue) == false) {
 
                             DamageTypes.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //TimerNames
-                    if(tag.Contains("[TimerNames:") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-
-                        if(TimerNames.Contains(tempValue) == false) {
-
-                            TimerNames.Add(tempValue);
-
-                        }
-
-                    }
-
-                    //ChatMessage
-                    if(tag.Contains("[ChatMessage:") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            byte[] byteData = { };
-
-                            if(TagHelper.ChatObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
-
-                                try {
-
-                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ChatProfile>(byteData);
-
-                                    if(profile != null) {
-
-                                        ChatMessage = profile;
-
-                                    }
-
-                                } catch(Exception) {
-
-
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    //Spawner
-                    if(tag.Contains("[Spawner:") == true) {
-
-                        var tempValue = TagHelper.TagStringCheck(tag);
-
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
-
-                            byte[] byteData = { };
-
-                            if(TagHelper.SpawnerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
-
-                                try {
-
-                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<SpawnProfile>(byteData);
-
-                                    if(profile != null) {
-
-                                        Spawner = profile;
-
-                                    }
-
-                                } catch(Exception) {
-
-
-
-                                }
-
-                            }
 
                         }
 

@@ -75,12 +75,10 @@ namespace RivalAI {
 
         public override void BeforeStart() {
 
+            Utilities.GetAllModIDs();
             TagHelper.Setup();
 
         }
-
-        
-        
 
         public override void UpdateBeforeSimulation() {
 

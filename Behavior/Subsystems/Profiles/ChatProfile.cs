@@ -76,10 +76,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public int MessageIndex;
 
         [ProtoMember(15)]
-        public string AuthorOverride;
+        public string Author;
 
         [ProtoMember(16)]
-        public string ColorOverride;
+        public string Color;
 
         [ProtoIgnore]
         public Random Rnd;
@@ -96,8 +96,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             ChatMessages = new List<string>();
             ChatAudio = new List<string>();
             BroadcastChatType = new List<BroadcastType>();
-            AuthorOverride = "";
-            ColorOverride = "";
+            Author = "";
+            Color = "";
 
             SecondsUntilChat = 0;
             ChatSentCount = 0;
@@ -112,12 +112,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(UseChat == false) {
 
+                //Logger.AddMsg("UseChat False", true);
                 return false;
 
             }
 
             if(MaxChats >= 0 && ChatSentCount >= MaxChats) {
 
+                //Logger.AddMsg("Max Chats Sent", true);
                 UseChat = false;
                 return false;
 
@@ -127,6 +129,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(duration.TotalSeconds < SecondsUntilChat) {
 
+                //Logger.AddMsg("Chat Timer Not Ready", true);
                 return false;
 
             }
@@ -139,6 +142,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
+                //Logger.AddMsg("Message Null or Broadcast None", true);
                 return false;
 
             }
@@ -242,17 +246,17 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                     }
 
-                    //AuthorOverride
-                    if(tag.Contains("[AuthorOverride:") == true) {
+                    //Author
+                    if (tag.Contains("[Author:") == true) {
 
-                        AuthorOverride = TagHelper.TagStringCheck(tag);
+                        Author = TagHelper.TagStringCheck(tag);
 
                     }
 
-                    //ColorOverride
-                    if(tag.Contains("[ColorOverride:") == true) {
+                    //Color
+                    if (tag.Contains("[Color:") == true) {
 
-                        ColorOverride = TagHelper.TagStringCheck(tag);
+                        Color = TagHelper.TagStringCheck(tag);
 
                     }
 

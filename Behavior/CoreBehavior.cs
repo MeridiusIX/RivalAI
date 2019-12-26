@@ -238,7 +238,7 @@ namespace RivalAI.Behavior {
             Collision.SetupReferences(this.Thrust);
             Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
             Thrust.SetupReferences(this.AutoPilot, this.Collision);
-            Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Targeting, this.Weapons);
+            Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Targeting, this.Weapons);
             Weapons.SetupReferences(this.Targeting);
 
             //Setup Alert Systems
@@ -252,7 +252,6 @@ namespace RivalAI.Behavior {
             Collision.InitTags();
             Targeting.InitTags();
             Weapons.InitTags();
-            Broadcast.InitTags();
             Damage.InitTags();
             Despawn.InitTags();
             Extras.InitTags();

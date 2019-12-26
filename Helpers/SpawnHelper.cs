@@ -71,22 +71,49 @@ namespace RivalAI.Helpers {
             }else{
                 
                 var upDir = VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPositionMatrix.Translation);
-                
-                if(upDir == Vector3D.Zero){
+                var playerList = new List<IMyPlayer>();
+                MyAPIGateway.Players.GetPlayers(playerList);
 
-                    //Space Calculations
+                for (int i = 0; i < 15; i++) {
 
-                }else{
+                    if (upDir == Vector3D.Zero) {
 
-                    //Planet Calculations - Move To VectorHelper
-                    var planet = MyGamePruningStructure.GetClosestPlanet(_currentSpawn.CurrentPositionMatrix.Translation);
-                    var perpDir = VectorHelper.RandomPerpendicular(upDir);
-                    var roughArea = perpDir * VectorHelper.RandomDistance(_currentSpawn.MinDistance, _currentSpawn.MaxDistance) + _currentSpawn.CurrentPositionMatrix.Translation;
-                    var surfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(roughArea, planet);
-                    
+                        var spawnCoords = VectorHelper.RandomDirection() * VectorHelper.RandomDistance(_currentSpawn.MinDistance, _currentSpawn.MaxDistance) + _currentSpawn.CurrentPositionMatrix.Translation;
+                        var forwardDir = Vector3D.Normalize(spawnCoords - _currentSpawn.CurrentPositionMatrix.Translation);
+                        var upPerpDir = Vector3D.CalculatePerpendicularVector(forwardDir);
+                        _spawnMatrix = MatrixD.CreateWorld(spawnCoords, forwardDir, upPerpDir);
+
+                    } else {
+
+                        _spawnMatrix = VectorHelper.GetPlanetRandomSpawnMatrix(_currentSpawn.CurrentPositionMatrix.Translation, _currentSpawn.MinDistance, _currentSpawn.MaxDistance, _currentSpawn.MinAltitude, _currentSpawn.MaxAltitude);
+
+                    }
+
+                    foreach (var player in playerList) {
+
+                        if (player.IsBot || player.Controller?.ControlledEntity?.Entity == null) {
+
+                            continue;
+
+                        }
+
+                        if (Vector3D.Distance(_spawnMatrix.Translation, player.GetPosition()) < 100) {
+
+                            _spawnMatrix = MatrixD.Identity;
+                            break;
+
+                        }
+
+                    }
+
+                    if (_spawnMatrix != MatrixD.Identity) {
+
+                        break;
+
+                    }
 
                 }
-
+                
             }
             
                 
@@ -96,6 +123,13 @@ namespace RivalAI.Helpers {
         private static void CompleteSpawning() {
             
             MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
+
+                if (_spawnMatrix == MatrixD.Identity) {
+
+                    PerformNextSpawn();
+                    return;
+
+                }
 
                 var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
                 var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
@@ -107,14 +141,20 @@ namespace RivalAI.Helpers {
 
 
                 }
-                
-                _spawnInProgress = false;
-                
-                if(_pendingSpawns.Count > 0)
-                    SpawnRequest();
-            
+
+                PerformNextSpawn();
+
             });
    
+        }
+
+        private static void PerformNextSpawn() {
+
+            _spawnInProgress = false;
+
+            if (_pendingSpawns.Count > 0)
+                SpawnRequest();
+
         }
 
     }

@@ -451,8 +451,28 @@ namespace RivalAI.Helpers{
             return Vector3D.Zero;
 
         }
-		
-		/*
+
+        public static MatrixD GetPlanetRandomSpawnMatrix(Vector3D coords, double minDist, double maxDist, double minAltitude, double maxAltitude) {
+
+            MatrixD result = MatrixD.Identity;
+            var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+            var upDir = GetPlanetUpDirection(coords);
+
+            if (planet == null)
+                return result;
+
+            var perpDir = RandomPerpendicular(upDir);
+            var roughArea = perpDir * RandomDistance(minDist, maxDist) + coords;
+            var surfaceCoords = GetPlanetSurfaceCoordsAtPosition(roughArea, planet);
+            var upAtSurface = Vector3D.Normalize(surfaceCoords - planet.PositionComp.WorldAABB.Center);
+            var spawnCoords = upAtSurface * RandomDistance(minAltitude, maxAltitude) + surfaceCoords;
+            var perpSurfaceDir = RandomPerpendicular(upAtSurface);
+            result = MatrixD.CreateWorld(spawnCoords, perpSurfaceDir, upAtSurface);
+            return result;
+
+        }
+
+        /*
 		The intent of this method is to calculate whether or not the approach to a target
 		on a planet is safe, and to return coordinates that properly avoid terrain obstacles.
 		
@@ -558,7 +578,7 @@ namespace RivalAI.Helpers{
 					
 				}
 
-                Logger.AddMsg(string.Format("Higher Terrain Near NPC"), true);
+                //Logger.AddMsg(string.Format("Higher Terrain Near NPC"), true);
                 var forwardStep = dirToTarget * 50 + myCoords;
                 return Vector3D.Normalize(forwardStep - planetCoords) * (currentHighestDistance + minAltitude) + planetCoords;
 
@@ -567,7 +587,7 @@ namespace RivalAI.Helpers{
 			//If NPC is Higher Than Highest Detected Terrain, but Target is Not
 			if((currentHighestTerrain - targetDistToCore) > minAltitude) {
 
-                Logger.AddMsg(string.Format("Higher Terrain Near Target"), true);
+                //Logger.AddMsg(string.Format("Higher Terrain Near Target"), true);
                 return targetUp * (currentHighestTerrain + minAltitude) + planetCoords;
 
 			}

@@ -52,10 +52,12 @@ namespace RivalAI.Behavior.Subsystems{
         //Non-Configurable
         public IMyRemoteControl RemoteControl;
 
-        public DateTime LastValidTarget;
         public DateTime LastNewTargetCheck;
+        public int TimeUntilNewTarget;
 
         public bool NeedsTarget;
+        public bool UpdateTargetRequested;
+        public long UpdateSpecificTarget;
         public bool SearchingForTarget;
 		public bool InvalidTarget;
         public bool TargetIsShielded;
@@ -79,7 +81,7 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			RemoteControl = null;
 
-            LastValidTarget = MyAPIGateway.Session.GameDateTime;
+            LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
 
             NeedsTarget = false;
             SearchingForTarget = false;
@@ -197,9 +199,53 @@ namespace RivalAI.Behavior.Subsystems{
 
                 try {
 
-                    if(this.NeedsTarget == true && this.InvalidTarget == true) {
+                    if (this.TargetData.UseTimeout && !this.InvalidTarget) {
+
+                        var duration = MyAPIGateway.Session.GameDateTime - this.LastNewTargetCheck;
+
+                        if (duration.TotalSeconds > this.TimeUntilNewTarget) {
+
+                            this.InvalidTarget = false;
+                            this.TimeUntilNewTarget = Rnd.Next(this.TargetData.MinTimeout, this.TargetData.MaxTimeout);
+                            this.LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
+
+                        }
+
+                    }
+
+                    if (this.UpdateSpecificTarget != 0) {
+
+                        TargetTypeEnum targetType = TargetTypeEnum.None;
+                        var targetEntity = TargetHelper.GetTargetFromId(this.UpdateSpecificTarget, out targetType);
+                        this.UpdateSpecificTarget = 0;
+
+                        if (targetEntity != null) {
+
+                            this.TargetEntity = targetEntity;
+                            this.Target = new TargetEvaluation(this.TargetEntity, targetType);
+
+                            if (targetType == TargetTypeEnum.Player) {
+
+                                this.Target.TargetPlayer = TargetHelper.MatchPlayerToEntity(targetEntity);
+
+                            }
+
+                            if (targetType == TargetTypeEnum.Block) {
+
+                                this.Target.TargetBlock = targetEntity as IMyTerminalBlock;
+                                this.Target.Target = this.Target.TargetBlock?.SlimBlock?.CubeGrid;
+
+                            }
+
+                            this.InvalidTarget = false;
+
+                        }
+
+                    } else if((this.NeedsTarget == true && this.InvalidTarget == true) || this.UpdateTargetRequested) {
 
                         //Logger.AddMsg("Get New Target", true);
+
+                        this.UpdateTargetRequested = false;
                         AcquireTarget();
                         this.Target = new TargetEvaluation(this.TargetEntity, this.TargetData.Target);
                         this.Target.TargetPlayer = this.TargetPlayer;
@@ -246,7 +292,7 @@ namespace RivalAI.Behavior.Subsystems{
 		}
 
 		//Parallel
-		public void AcquireTarget(){
+		public void AcquireTarget(long UpdateSpecificTarget = 0) {
 
             this.SearchingForTarget = true;
             this.InvalidTarget = false;
@@ -275,7 +321,6 @@ namespace RivalAI.Behavior.Subsystems{
                 }
 
                 //Logger.AddMsg("Got Player", true);
-                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
                 this.TargetEntity = this.TargetPlayer.Controller.ControlledEntity.Entity;
  
             }
@@ -293,7 +338,6 @@ namespace RivalAI.Behavior.Subsystems{
 
                 }
 
-                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
                 this.TargetEntity = this.TargetGrid;
 
             }
@@ -311,7 +355,6 @@ namespace RivalAI.Behavior.Subsystems{
 
                 }
 
-                this.LastValidTarget = MyAPIGateway.Session.GameDateTime;
                 this.TargetEntity = this.TargetBlock.SlimBlock.CubeGrid;
 
             }
