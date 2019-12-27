@@ -64,7 +64,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public int MaxTimeout;
 
         [ProtoMember(11)]
-        public double NonBroadcastingMaxDistance;
+        public double NonBroadcastingMaxDistance; //TODO: Build Feature For This First
 
         [ProtoMember(12)]
         public double MaxDistance;

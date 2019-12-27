@@ -538,8 +538,15 @@ namespace RivalAI.Behavior.Subsystems{
 
                     //Thrust Settings
 
+                    //EngageThrustWithinAngle
+                    if (tag.Contains("[EngageThrustWithinAngle:") == true) {
+
+                        this.EngageThrustWithinAngle = TagHelper.TagDoubleCheck(tag, this.EngageThrustWithinAngle);
+
+                    }
+
                     //AllowStrafing
-                    if(tag.Contains("[AllowStrafing:") == true) {
+                    if (tag.Contains("[AllowStrafing:") == true) {
 
                         this.Thrust.AllowStrafing = TagHelper.TagBoolCheck(tag);
 

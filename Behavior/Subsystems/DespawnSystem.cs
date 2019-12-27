@@ -107,7 +107,71 @@ namespace RivalAI.Behavior.Subsystems{
 
         public void InitTags() {
 
+            if (string.IsNullOrWhiteSpace(RemoteControl.CustomData) == false) {
 
+                var descSplit = RemoteControl.CustomData.Split('\n');
+
+                foreach (var tag in descSplit) {
+
+                    //UsePlayerDistanceTimer
+                    if (tag.Contains("[UsePlayerDistanceTimer:") == true) {
+
+                        this.UsePlayerDistanceTimer = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //PlayerDistanceTimerTrigger
+                    if (tag.Contains("[PlayerDistanceTimerTrigger:") == true) {
+
+                        this.PlayerDistanceTimerTrigger = TagHelper.TagIntCheck(tag, this.PlayerDistanceTimerTrigger);
+
+                    }
+
+                    //PlayerDistanceTrigger
+                    if (tag.Contains("[PlayerDistanceTrigger:") == true) {
+
+                        this.PlayerDistanceTrigger = TagHelper.TagDoubleCheck(tag, this.PlayerDistanceTrigger);
+
+                    }
+
+                    //UseNoTargetTimer
+                    if (tag.Contains("[UseNoTargetTimer:") == true) {
+
+                        this.UseNoTargetTimer = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //NoTargetTimerTrigger
+                    if (tag.Contains("[NoTargetTimerTrigger:") == true) {
+
+                        this.NoTargetTimerTrigger = TagHelper.TagIntCheck(tag, this.NoTargetTimerTrigger);
+
+                    }
+
+                    //UseRetreatTimer
+                    if (tag.Contains("[UseRetreatTimer:") == true) {
+
+                        this.UseRetreatTimer = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                    //RetreatTimerTrigger
+                    if (tag.Contains("[RetreatTimerTrigger:") == true) {
+
+                        this.RetreatTimerTrigger = TagHelper.TagIntCheck(tag, this.RetreatTimerTrigger);
+
+                    }
+
+                    //RetreatDespawnDistance
+                    if (tag.Contains("[RetreatDespawnDistance:") == true) {
+
+                        this.RetreatDespawnDistance = TagHelper.TagDoubleCheck(tag, this.RetreatDespawnDistance);
+
+                    }
+
+                }
+
+            }
 
         }
 
