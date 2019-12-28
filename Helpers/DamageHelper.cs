@@ -113,6 +113,76 @@ namespace RivalAI.Helpers {
 
 
         }
+        
+        public static long GetAttackOwnerId(long attackingEntity){
+			
+			IMyEntity entity = null;
+			
+			if(!MyAPIGateway.Entities.TryGetEntityById(attackingEntity, out entity))
+				return 0;
+			
+			var handGun = entity as IMyGunBaseUser;
+			var handTool = entity as IMyEngineerToolBase;
+			
+			if(handGun != null){
+				
+				return handGun.xOwnerId;
+				
+			}
+			
+			if(handTool != null){
+				
+				return handTool.xOwnerIdentity;
+				
+			}
+			
+			var cubeGrid = entity as IMyCubeGrid;
+			var block = entity as IMyCubeBlock;
+			
+			if(block != null){
+				
+				cubeGrid = block.SlimBlock.CubeGrid;
+				
+			}
+			
+			if(cubeGrid == null)
+				return 0;
+			
+			var shipControllers = BlockHelper.GetGridControllers(cubeGrid);
+			
+			IMyPlayer controlPlayer = null;
+			bool mainController = false;
+			bool isControlling = false;
+			
+			foreach(var controller in shipControllers){
+				
+				var player = MyAPIGateway.Players.GetPlayerControllingEntity(controller);
+				
+				if(player == null)
+					continue;
+				
+				controlPlayer = player;
+				mainController = controller.IsMainCockpit;
+				isControlling = controller.IsControllingShip;
+				
+			}
+			
+			long owner = 0;
+			
+			if(controlPlayer != null){
+				
+				owner = controlPlayer.IdentityId;
+				
+			}else{
+				
+				if(cubeGrid.BigOwners.Count > 0)
+					owner = cubeGrid.BigOwners[0];
+				
+			}
+			
+			return owner;
+			
+		}
 
     }
 
