@@ -145,6 +145,28 @@ namespace RivalAI.Helpers {
             return resultAntenna;
 
         }
+        
+        public static List<IMyShipController> GetGridControllers(IMyCubeGrid cubeGrid){
+        
+            var resultList = new List<IMyShipController>();
+
+            var blockList = TargetHelper.GetAllBlocks(cubeGrid);
+
+            foreach(var block in blockList.Where(x => x.FatBlock != null)) {
+
+                var controller = block.FatBlock as IMyShipController;
+
+                if(controller != null) {
+
+                    resultList.Add(antenna);
+
+                }
+
+            }
+
+            return resultList;
+        
+        }
 
         public static IMyEntity TurretHasTarget(List<IMyLargeTurretBase> turretList) {
 
