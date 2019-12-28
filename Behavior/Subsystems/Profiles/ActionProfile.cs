@@ -188,6 +188,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         
         [ProtoMember(52)]
         public List<string> ResetSandboxCounters;
+        
+        [ProtoMember(53)]
+        public bool ChangeAttackerReputation;
+        
+        [ProtoMember(54)]
+        public List<string> ChangeAttackerReputationFaction;
+        
+        [ProtoMember(55)]
+        public List<int> ChangeAttackerReputationAmount;
 
         public ActionProfile(){
 
@@ -258,6 +267,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             IncreaseSandboxCounters = new List<string>();
             DecreaseSandboxCounters = new List<string>();
             ResetSandboxCounters = new List<string>();
+            
+            ChangeAttackerReputation = false;
+            ChangeAttackerReputationFaction = new List<string>();
+            ChangeAttackerReputationAmount = new List<int>();
 
         }
 
