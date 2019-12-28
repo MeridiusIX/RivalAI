@@ -53,6 +53,71 @@ namespace RivalAI.Helpers {
             }
 
         }
+        
+        public static void ChangeDamageOwnerReputation(string factionTag, long attackingEntity, int amount, bool applyChangeToAttackerFaction){
+			
+			var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionTag);
+			
+			if(faction == null || amount == 0)
+				return;
+			
+			var owner = GetAttackOwner(attackingEntity);
+			
+			if(owner == 0)
+				return;
+			
+			var ownerList = new List<long>();
+			ownerList.Add(owner);
+			
+			if(applyChangeToAttackerFaction){
+				
+				var ownerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(owner);
+				
+				if(ownerFaction != null){
+					
+					foreach(var member in ownerFaction.Members.Keys){
+						
+						if(member != owner && member != 0)
+							ownerList.Add(member);
+						
+					}
+					
+				}
+				
+			}
+			
+			string notifyColor = "Green";
+			string modifierText = "Increased";
+			
+			if(amount < 0){
+				
+				notifyColor = "Red";
+				modifierText = "Decreased";
+				
+			}
+			
+			foreach(var targetOwner in ownerList){
+				
+				var existingRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(targetOwner, faction.FactionId);
+				
+				if(amount > 0 && existingRep >= 1500){
+					
+					continue;
+					
+				}
+				
+				if(amount < 0 && existingRep <= -1500){
+					
+					continue;
+					
+				}
+				
+				MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(targetOwner, faction.FactionId, existingRep + amount);
+                MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifierText, (existingRep + amount).ToString()), 2000, notifyColor, targetOwner);
+				
+			}
+			
+		}
 
         public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, int amountToChange) {
 
