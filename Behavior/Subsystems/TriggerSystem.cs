@@ -278,19 +278,17 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
 
-            if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null) {
-
+            if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
                 return;
-
-            }
-
-            if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius) {
-
-                return;
-
-            }
             
-
+            var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
+            
+            if(antenna == null)
+                return;
+            
+            if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius)
+                return;
+            
             for(int i = 0;i < this.CommandTriggers.Count;i++) {
 
                 var trigger = this.CommandTriggers[i];
@@ -414,7 +412,10 @@ namespace RivalAI.Behavior.Subsystems {
             //BroadcastCurrentTarget
             if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
 
-                //TODO:
+                var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+                
+                if(antenna != null)
+                    CommandHelper.CommandTrigger?.Invoke(trigger.Actions.BroadcastSendCode, this.RemoteControl, (double)antenna.Radius, detectedEntity);
 
             }
 
