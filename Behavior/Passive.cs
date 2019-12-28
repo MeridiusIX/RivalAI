@@ -35,69 +35,71 @@ namespace RivalAI.Behavior{
 	
 	public class Passive : CoreBehavior{
 
-        //Configurable
-        public double FighterEngageDistanceSpace;
-        public double FighterEngageDistancePlanet;
+		//Configurable
+		public double FighterEngageDistanceSpace;
+		public double FighterEngageDistancePlanet;
 		
 		public bool ReceivedEvadeSignal;
 		public bool ReceivedRetreatSignal;
 		public bool ReceivedExternalTarget;
 		
-        public byte Counter;
+		public byte Counter;
 
-        public Fighter() {
+		public Passive() {
 
-            FighterEngageDistanceSpace = 300;
-            FighterEngageDistancePlanet = 600;
+			FighterEngageDistanceSpace = 300;
+			FighterEngageDistancePlanet = 600;
 			
 			ReceivedEvadeSignal = false;
 			ReceivedRetreatSignal = false;
 			ReceivedExternalTarget = false;
 			
-            Counter = 0;
+			Counter = 0;
 
-        }
+		}
 
-        public void RunAi() {
+		public void RunAi() {
 
-            if(!IsAIReady())
-                return;
+			if(!IsAIReady())
+				return;
 
-            RunCoreAi();
+			RunCoreAi();
 
-            if(EndScript == true) {
+			if(EndScript == true) {
 
-                return;
+				return;
 
-            }
+			}
 
-        }
+		}
 
-        public void BehaviorInit(IMyRemoteControl remoteControl) {
+		public void BehaviorInit(IMyRemoteControl remoteControl) {
 
-            //Core Setup
-            CoreSetup(remoteControl);
+			//Core Setup
+			CoreSetup(remoteControl);
 
-            //Behavior Specific Defaults
-            Despawn.UseNoTargetTimer = false;
-            Targeting.NeedsTarget = false;
+			//Behavior Specific Defaults
+			Collision.UseCollisionDetection = false;
+			AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+			Despawn.UseNoTargetTimer = false;
+			Targeting.NeedsTarget = false;
 
-            //Get Settings From Custom Data
-            InitCoreTags();
+			//Get Settings From Custom Data
+			InitCoreTags();
 
-        }
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            //Core Tags
-            
+			//Core Tags
+			
 
-            //Behavior Tags
-            
+			//Behavior Tags
+			
 
-        }
+		}
 
-    }
+	}
 
 }
 	
