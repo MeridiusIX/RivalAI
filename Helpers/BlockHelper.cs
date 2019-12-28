@@ -113,6 +113,33 @@ namespace RivalAI.Helpers {
             return resultList;
 
         }
+        
+        public static IMyRadioAntenna GetActiveAntenna(List<IMyRadioAntenna> antennaList) {
+
+            IMyRadioAntenna resultAntenna = null;
+            float range = 0;
+
+            foreach(var antenna in antennaList) {
+
+                if(antenna == null || MyAPIGateway.Entities.Exist(antenna?.SlimBlock?.CubeGrid) == false) {
+
+                    continue;
+
+                }
+
+                if(antenna.IsWorking == false || antenna.IsFunctional == false) {
+
+                    continue;
+
+                }
+
+                return antenna;
+
+            }
+
+            return resultAntenna;
+
+        }
 
         public static IMyRadioAntenna GetAntennaWithHighestRange(List<IMyRadioAntenna> antennaList) {
 
