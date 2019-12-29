@@ -32,445 +32,454 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 
 namespace RivalAI.Helpers {
-    public class OwnershipHelper {
+	public class OwnershipHelper {
 
-        public static void ChangeAntennaBlockOwnership(List<IMyRadioAntenna> blocks, string factionTag){
+		public static void ChangeAntennaBlockOwnership(List<IMyRadioAntenna> blocks, string factionTag){
 
-            var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionTag);
-            long owner = 0;
+			var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionTag);
+			long owner = 0;
 
-            if (faction != null)
-                owner = faction.FounderId;
+			if (faction != null)
+				owner = faction.FounderId;
 
-            foreach (var block in blocks) {
+			foreach (var block in blocks) {
 
-                if (block == null)
-                    continue;
+				if (block == null)
+					continue;
 
-                var cubeBlock = block as MyCubeBlock;
-                cubeBlock.ChangeBlockOwnerRequest(owner, MyOwnershipShareModeEnum.Faction);
+				var cubeBlock = block as MyCubeBlock;
+				cubeBlock.ChangeBlockOwnerRequest(owner, MyOwnershipShareModeEnum.Faction);
+
+			}
+
+		}
+		
+		public static void ChangeDamageOwnerReputation(List<string> factions, long attackingEntity, List<int> amounts, bool applyChangeToAttackerFaction){
+
+            if (amounts.Count != factions.Count) {
+
+                Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
+                return;
 
             }
 
-        }
-        
-        public static void ChangeDamageOwnerReputation(string factionTag, long attackingEntity, int amount, bool applyChangeToAttackerFaction){
-			
-			var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionTag);
-			
-			if(faction == null || amount == 0)
-				return;
-			
-			var owner = GetAttackOwner(attackingEntity);
+			var owner = DamageHelper.GetAttackOwnerId(attackingEntity);
 			
 			if(owner == 0)
 				return;
 			
 			var ownerList = new List<long>();
 			ownerList.Add(owner);
-			
-			if(applyChangeToAttackerFaction){
-				
-				var ownerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(owner);
-				
-				if(ownerFaction != null){
-					
-					foreach(var member in ownerFaction.Members.Keys){
-						
-						if(member != owner && member != 0)
-							ownerList.Add(member);
-						
-					}
-					
-				}
-				
-			}
-			
-			string notifyColor = "Green";
-			string modifierText = "Increased";
-			
-			if(amount < 0){
-				
-				notifyColor = "Red";
-				modifierText = "Decreased";
-				
-			}
-			
-			foreach(var targetOwner in ownerList){
-				
-				var existingRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(targetOwner, faction.FactionId);
-				
-				if(amount > 0 && existingRep >= 1500){
-					
-					continue;
-					
-				}
-				
-				if(amount < 0 && existingRep <= -1500){
-					
-					continue;
-					
-				}
-				
-				MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(targetOwner, faction.FactionId, existingRep + amount);
-                MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifierText, (existingRep + amount).ToString()), 2000, notifyColor, targetOwner);
-				
-			}
-			
+			ChangePlayerReputationWithFactions(amounts, ownerList, factions, applyChangeToAttackerFaction);
+
 		}
 
-        public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, int amountToChange) {
+		public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, List<int> amounts, List<string> factions, bool applyReputationChangeToFactionMembers) {
 
-            if(remoteControl?.SlimBlock?.CubeGrid == null)
+            if (amounts.Count != factions.Count) {
+
+                Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
                 return;
 
-            var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(remoteControl.OwnerId);
-
-            if(faction == null)
-                return;
-
-            var players = new List<IMyPlayer>();
-
-            string color = "Red";
-            string modifier = "Decreased";
-
-            if(amountToChange > 0) {
-
-                color = "Green";
-                modifier = "Increased";
-
             }
 
-            foreach(var player in players) {
+			var playerList = new List<IMyPlayer>();
+			var playerIds = new List<long>();
+			MyAPIGateway.Players.GetPlayers(playerList);
 
-                if(player.IsBot == true)
-                    continue;
+			foreach(var player in playerList) {
 
-                if(Vector3D.Distance(player.GetPosition(), remoteControl.GetPosition()) > radius)
-                    continue;
+				if(player.IsBot == true)
+					continue;
 
-                var newRep = amountToChange + MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(player.IdentityId, faction.FactionId);
-                MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(player.IdentityId, faction.FactionId, newRep);
-                MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, amountToChange.ToString()), 2000, color, player.IdentityId);
+				if(Vector3D.Distance(player.GetPosition(), remoteControl.GetPosition()) > radius)
+					continue;
 
+				if (player.IdentityId != 0 && !playerIds.Contains(player.IdentityId))
+					playerIds.Add(player.IdentityId);
 
-            }
 
-        }
-        public static bool CompareAllowedOwnerTypes(TargetOwnerEnum allowedOwner, TargetOwnerEnum resultOwner) {
+			}
 
-            //Owner: Unowned
-            if(allowedOwner.HasFlag(TargetOwnerEnum.Unowned) && resultOwner.HasFlag(TargetOwnerEnum.Unowned)) {
+			ChangePlayerReputationWithFactions(amounts, playerIds, factions, applyReputationChangeToFactionMembers);
 
-                return true;
+		}
 
-            }
+		public static void ChangePlayerReputationWithFactions(List<int> amounts, List<long> players, List<string> factionTags, bool applyReputationChangeToFactionMembers) {
 
-            //Owner: Owned
-            if(allowedOwner.HasFlag(TargetOwnerEnum.Owned) && resultOwner.HasFlag(TargetOwnerEnum.Owned)) {
+			var allPlayerIds = new List<long>(players.ToList());
 
-                return true;
+			if (applyReputationChangeToFactionMembers) {
 
-            }
+				foreach (var owner in players) {
 
-            //Owner: Player
-            if(allowedOwner.HasFlag(TargetOwnerEnum.Player) && resultOwner.HasFlag(TargetOwnerEnum.Player)) {
+					var ownerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(owner);
 
-                return true;
+					if (ownerFaction != null) {
 
-            }
+						foreach (var member in ownerFaction.Members.Keys) {
 
-            //Owner: NPC
-            if(allowedOwner.HasFlag(TargetOwnerEnum.NPC) && resultOwner.HasFlag(TargetOwnerEnum.NPC)) {
+							if (member != owner && member != 0 && !allPlayerIds.Contains(member))
+								allPlayerIds.Add(member);
 
-                return true;
+						}
 
-            }
+					}
 
-            return false;
+				}
 
-        }
+			}
 
-        public static bool CompareAllowedReputation(TargetRelationEnum allowedRelations, TargetRelationEnum resultRelation) {
+			for (int i = 0; i < factionTags.Count; i++) {
 
-            if(allowedRelations.HasFlag(TargetRelationEnum.Faction) && resultRelation.HasFlag(TargetRelationEnum.Faction)) {
+                var tag = factionTags[i];
+                var amount = amounts[i];
 
-                return true;
+                var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(tag);
 
-            }
+				if (faction == null)
+					continue;
 
-            //Relation: Neutral
-            if(allowedRelations.HasFlag(TargetRelationEnum.Neutral) && resultRelation.HasFlag(TargetRelationEnum.Neutral)) {
+				foreach (var playerId in players) {
 
-                return true;
+					string color = "Red";
+					string modifier = "Decreased";
+					var oldRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(playerId, faction.FactionId);
 
-            }
+					if (oldRep <= -1500 || oldRep >= 1500)
+						continue;
 
-            //Relation: Enemy
-            if(allowedRelations.HasFlag(TargetRelationEnum.Enemy) && resultRelation.HasFlag(TargetRelationEnum.Enemy)) {
+					if (amount > 0) {
 
-                return true;
+						color = "Green";
+						modifier = "Increased";
 
-            }
+					}
 
-            //Relation: Friend
-            if(allowedRelations.HasFlag(TargetRelationEnum.Friend) && resultRelation.HasFlag(TargetRelationEnum.Friend)) {
+					var newRep = oldRep + amount;
+					MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(playerId, faction.FactionId, newRep);
+					MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, newRep.ToString()), 2000, color, playerId);
 
-                return true;
+				}
 
-            }
+			}
 
-            //Relation: Unowned
-            if(allowedRelations.HasFlag(TargetRelationEnum.Unowned) && resultRelation.HasFlag(TargetRelationEnum.Unowned)) {
+		}
 
-                return true;
+		public static bool CompareAllowedOwnerTypes(TargetOwnerEnum allowedOwner, TargetOwnerEnum resultOwner) {
 
-            }
+			//Owner: Unowned
+			if(allowedOwner.HasFlag(TargetOwnerEnum.Unowned) && resultOwner.HasFlag(TargetOwnerEnum.Unowned)) {
 
-            return false;
+				return true;
 
-        }
+			}
 
-        public static bool DoesGridHaveHostileOwnership(IMyCubeGrid targetGrid, long myIdentity, bool includeNpcOwnership = false) {
+			//Owner: Owned
+			if(allowedOwner.HasFlag(TargetOwnerEnum.Owned) && resultOwner.HasFlag(TargetOwnerEnum.Owned)) {
 
-            var gridGroup = MyAPIGateway.GridGroups.GetGroup(targetGrid, GridLinkTypeEnum.Logical);
-            var ownerList = new List<long>();
+				return true;
 
-            foreach(var grid in gridGroup) {
+			}
 
-                var tempList = new List<long>(grid.BigOwners.ToList());
-                tempList = tempList.Concat(grid.SmallOwners).ToList();
-                var resultList = tempList.Except(ownerList).ToList();
-                ownerList = ownerList.Concat(resultList).ToList();
+			//Owner: Player
+			if(allowedOwner.HasFlag(TargetOwnerEnum.Player) && resultOwner.HasFlag(TargetOwnerEnum.Player)) {
 
-            }
+				return true;
 
-            foreach(var owner in ownerList) {
+			}
 
-                if(owner == 0) {
+			//Owner: NPC
+			if(allowedOwner.HasFlag(TargetOwnerEnum.NPC) && resultOwner.HasFlag(TargetOwnerEnum.NPC)) {
 
-                    continue;
+				return true;
 
-                }
+			}
 
-                if(includeNpcOwnership == false && IsNPC(owner) == true) {
+			return false;
 
-                    continue;
+		}
 
-                }
+		public static bool CompareAllowedReputation(TargetRelationEnum allowedRelations, TargetRelationEnum resultRelation) {
 
-                if(GetReputation(myIdentity, owner) < -500) {
+			if(allowedRelations.HasFlag(TargetRelationEnum.Faction) && resultRelation.HasFlag(TargetRelationEnum.Faction)) {
 
-                    return true;
+				return true;
 
-                }
+			}
 
-            }
+			//Relation: Neutral
+			if(allowedRelations.HasFlag(TargetRelationEnum.Neutral) && resultRelation.HasFlag(TargetRelationEnum.Neutral)) {
 
-            return false;
+				return true;
 
-        }
+			}
 
-        public static TargetOwnerEnum GetOwnershipTypes(IMyCubeGrid cubeGrid, bool includeSmallOwners) {
+			//Relation: Enemy
+			if(allowedRelations.HasFlag(TargetRelationEnum.Enemy) && resultRelation.HasFlag(TargetRelationEnum.Enemy)) {
 
-            if(cubeGrid.BigOwners.Count == 0) {
+				return true;
 
-                return GetOwnershipTypes(new List<long> { 0 });
+			}
 
-            }
+			//Relation: Friend
+			if(allowedRelations.HasFlag(TargetRelationEnum.Friend) && resultRelation.HasFlag(TargetRelationEnum.Friend)) {
 
-            var ownerList = new List<long>(cubeGrid.BigOwners.ToList());
+				return true;
 
-            if(includeSmallOwners == true) {
+			}
 
-                ownerList = ownerList.Concat(cubeGrid.SmallOwners.ToList()).ToList();
+			//Relation: Unowned
+			if(allowedRelations.HasFlag(TargetRelationEnum.Unowned) && resultRelation.HasFlag(TargetRelationEnum.Unowned)) {
 
-            }
+				return true;
 
-            return GetOwnershipTypes(ownerList);
+			}
 
-        }
+			return false;
 
-        public static TargetOwnerEnum GetOwnershipTypes(IMyTerminalBlock block) {
+		}
 
-            return GetOwnershipTypes(new List<long> { block.OwnerId });
+		public static bool DoesGridHaveHostileOwnership(IMyCubeGrid targetGrid, long myIdentity, bool includeNpcOwnership = false) {
 
-        }
+			var gridGroup = MyAPIGateway.GridGroups.GetGroup(targetGrid, GridLinkTypeEnum.Logical);
+			var ownerList = new List<long>();
 
-        private static TargetOwnerEnum GetOwnershipTypes(List<long> identities) {
+			foreach(var grid in gridGroup) {
 
-            TargetOwnerEnum result = 0;
+				var tempList = new List<long>(grid.BigOwners.ToList());
+				tempList = tempList.Concat(grid.SmallOwners).ToList();
+				var resultList = tempList.Except(ownerList).ToList();
+				ownerList = ownerList.Concat(resultList).ToList();
 
-            foreach(var identity in identities) {
+			}
 
-                if(identity == 0 && result.HasFlag(TargetOwnerEnum.Unowned) == false) {
+			foreach(var owner in ownerList) {
 
-                    result |= TargetOwnerEnum.Unowned;
-                    continue;
+				if(owner == 0) {
 
-                }
+					continue;
 
-                if(IsNPC(identity) == true && result.HasFlag(TargetOwnerEnum.NPC) == false) {
+				}
 
-                    result |= TargetOwnerEnum.NPC;
-                    continue;
+				if(includeNpcOwnership == false && IsNPC(owner) == true) {
 
-                }
+					continue;
 
-                if(IsNPC(identity) == false && result.HasFlag(TargetOwnerEnum.Player) == false) {
+				}
 
-                    result |= TargetOwnerEnum.Player;
-                    continue;
+				if(GetReputation(myIdentity, owner) < -500) {
 
-                }
+					return true;
 
-            }
+				}
 
-            return result;
+			}
 
-        }
+			return false;
 
-        public static TargetRelationEnum GetTargetReputation(long myIdentity, IMyTerminalBlock block) {
+		}
 
-            if(block.OwnerId == 0) {
+		public static TargetOwnerEnum GetOwnershipTypes(IMyCubeGrid cubeGrid, bool includeSmallOwners) {
 
-                return GetTargetReputation(myIdentity, new List<long> { 0 });
+			if(cubeGrid.BigOwners.Count == 0) {
 
-            }
+				return GetOwnershipTypes(new List<long> { 0 });
 
-            return GetTargetReputation(myIdentity, new List<long> { block.OwnerId });
+			}
 
-        }
+			var ownerList = new List<long>(cubeGrid.BigOwners.ToList());
 
-        public static TargetRelationEnum GetTargetReputation(long myIdentity, IMyCubeGrid cubeGrid, bool includeSmallOwners = false) {
+			if(includeSmallOwners == true) {
 
-            if(cubeGrid.BigOwners.Count == 0) {
+				ownerList = ownerList.Concat(cubeGrid.SmallOwners.ToList()).ToList();
 
-                return GetTargetReputation(myIdentity, new List<long> { 0 });
+			}
 
-            }
+			return GetOwnershipTypes(ownerList);
 
-            var ownerList = new List<long>(cubeGrid.BigOwners.ToList());
+		}
 
-            if(includeSmallOwners == true) {
+		public static TargetOwnerEnum GetOwnershipTypes(IMyTerminalBlock block) {
 
-                ownerList = ownerList.Concat(cubeGrid.SmallOwners.ToList()).ToList();
+			return GetOwnershipTypes(new List<long> { block.OwnerId });
 
-            }
+		}
 
-            return GetTargetReputation(myIdentity, ownerList);
+		private static TargetOwnerEnum GetOwnershipTypes(List<long> identities) {
 
-        }
+			TargetOwnerEnum result = 0;
 
-        public static TargetRelationEnum GetTargetReputation(long myIdentity, List<long> identities) {
+			foreach(var identity in identities) {
 
-            var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
+				if(identity == 0 && result.HasFlag(TargetOwnerEnum.Unowned) == false) {
 
-            if(myFaction == null) {
+					result |= TargetOwnerEnum.Unowned;
+					continue;
 
-                return TargetRelationEnum.None;
+				}
 
-            }
+				if(IsNPC(identity) == true && result.HasFlag(TargetOwnerEnum.NPC) == false) {
 
-            var result = TargetRelationEnum.None;
+					result |= TargetOwnerEnum.NPC;
+					continue;
 
-            if(identities.Count == 0) {
+				}
 
-                result |= TargetRelationEnum.Unowned;
+				if(IsNPC(identity) == false && result.HasFlag(TargetOwnerEnum.Player) == false) {
 
-            }
+					result |= TargetOwnerEnum.Player;
+					continue;
 
-            foreach(var identity in identities) {
+				}
 
-                if(myFaction.IsMember(identity) == true && result.HasFlag(TargetRelationEnum.Faction) == false) {
+			}
 
-                    result |= TargetRelationEnum.Faction;
-                    continue;
+			return result;
 
-                }
+		}
 
-                if(identity == 0) {
+		public static TargetRelationEnum GetTargetReputation(long myIdentity, IMyTerminalBlock block) {
 
-                    result |= TargetRelationEnum.Unowned;
-                    continue;
+			if(block.OwnerId == 0) {
 
-                }
+				return GetTargetReputation(myIdentity, new List<long> { 0 });
 
-                var repScore = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(identity, myFaction.FactionId);
+			}
 
-                if(repScore < -500 && result.HasFlag(TargetRelationEnum.Enemy) == false) {
+			return GetTargetReputation(myIdentity, new List<long> { block.OwnerId });
 
-                    result |= TargetRelationEnum.Enemy;
-                    continue;
+		}
 
-                }
+		public static TargetRelationEnum GetTargetReputation(long myIdentity, IMyCubeGrid cubeGrid, bool includeSmallOwners = false) {
 
-                if(repScore >= -500 && repScore <= 500 && result.HasFlag(TargetRelationEnum.Neutral) == false) {
+			if(cubeGrid.BigOwners.Count == 0) {
 
-                    result |= TargetRelationEnum.Neutral;
-                    continue;
+				return GetTargetReputation(myIdentity, new List<long> { 0 });
 
-                }
+			}
 
-                if(repScore > 500 && result.HasFlag(TargetRelationEnum.Friend) == false) {
+			var ownerList = new List<long>(cubeGrid.BigOwners.ToList());
 
-                    result |= TargetRelationEnum.Friend;
-                    continue;
+			if(includeSmallOwners == true) {
 
-                }
+				ownerList = ownerList.Concat(cubeGrid.SmallOwners.ToList()).ToList();
 
-            }
+			}
 
-            return result;
+			return GetTargetReputation(myIdentity, ownerList);
 
-        }
+		}
 
-        public static int GetReputation(long myIdentity, long theirIdentity) {
+		public static TargetRelationEnum GetTargetReputation(long myIdentity, List<long> identities) {
 
-            var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
+			var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
 
-            if(myFaction == null) {
+			if(myFaction == null) {
 
-                return -1500;
+				return TargetRelationEnum.None;
 
-            }
+			}
 
-            if(myFaction.IsMember(myIdentity) == true || theirIdentity == 0) {
+			var result = TargetRelationEnum.None;
 
-                return 0;
+			if(identities.Count == 0) {
 
-            }
+				result |= TargetRelationEnum.Unowned;
 
-            return MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(theirIdentity, myFaction.FactionId);
+			}
 
-        }
+			foreach(var identity in identities) {
 
-        public static bool IsFactionMember(long myIdentity, long theirIdentity) {
+				if(myFaction.IsMember(identity) == true && result.HasFlag(TargetRelationEnum.Faction) == false) {
 
-            var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
+					result |= TargetRelationEnum.Faction;
+					continue;
 
-            if(myFaction == null) {
+				}
 
-                return false;
+				if(identity == 0) {
 
-            }
+					result |= TargetRelationEnum.Unowned;
+					continue;
 
-            return myFaction.IsMember(theirIdentity);
+				}
 
-        }
+				var repScore = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(identity, myFaction.FactionId);
 
-        public static bool IsNPC(long identity) {
+				if(repScore < -500 && result.HasFlag(TargetRelationEnum.Enemy) == false) {
 
-            if(MyAPIGateway.Players.TryGetSteamId(identity) > 0 || identity == 0) {
+					result |= TargetRelationEnum.Enemy;
+					continue;
 
-                return false;
+				}
 
-            }
+				if(repScore >= -500 && repScore <= 500 && result.HasFlag(TargetRelationEnum.Neutral) == false) {
 
-            return true;
+					result |= TargetRelationEnum.Neutral;
+					continue;
 
-        }
+				}
 
-    }
+				if(repScore > 500 && result.HasFlag(TargetRelationEnum.Friend) == false) {
+
+					result |= TargetRelationEnum.Friend;
+					continue;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static int GetReputation(long myIdentity, long theirIdentity) {
+
+			var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
+
+			if(myFaction == null) {
+
+				return -1500;
+
+			}
+
+			if(myFaction.IsMember(myIdentity) == true || theirIdentity == 0) {
+
+				return 0;
+
+			}
+
+			return MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(theirIdentity, myFaction.FactionId);
+
+		}
+
+		public static bool IsFactionMember(long myIdentity, long theirIdentity) {
+
+			var myFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(myIdentity);
+
+			if(myFaction == null) {
+
+				return false;
+
+			}
+
+			return myFaction.IsMember(theirIdentity);
+
+		}
+
+		public static bool IsNPC(long identity) {
+
+			if(MyAPIGateway.Players.TryGetSteamId(identity) > 0 || identity == 0) {
+
+				return false;
+
+			}
+
+			return true;
+
+		}
+
+	}
 
 }

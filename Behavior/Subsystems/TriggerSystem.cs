@@ -443,7 +443,7 @@ namespace RivalAI.Behavior.Subsystems {
             //ChangeReputationWithPlayers
             if(trigger.Actions.ChangeReputationWithPlayers == true) {
 
-                OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount);
+                OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
 
             }
             

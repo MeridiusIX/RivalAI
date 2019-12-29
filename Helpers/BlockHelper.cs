@@ -185,7 +185,7 @@ namespace RivalAI.Helpers {
 
                 if(controller != null) {
 
-                    resultList.Add(antenna);
+                    resultList.Add(controller);
 
                 }
 

@@ -32,89 +32,89 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Helpers {
 
-    public static class DamageHelper {
+	public static class DamageHelper {
 
-        public static HashSet<IMyCubeGrid> MonitoredGrids = new HashSet<IMyCubeGrid>();
-        public static Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>> RegisteredDamageHandlers = new Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>>();
+		public static HashSet<IMyCubeGrid> MonitoredGrids = new HashSet<IMyCubeGrid>();
+		public static Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>> RegisteredDamageHandlers = new Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>>();
 
-        public static void DamageHandler(object target, MyDamageInformation info) {
+		public static void DamageHandler(object target, MyDamageInformation info) {
 
-            var block = target as IMySlimBlock;
+			var block = target as IMySlimBlock;
 
-            if(block == null) {
+			if(block == null) {
 
-                return;
+				return;
 
-            }
+			}
 
-            var grid = block.CubeGrid;
+			var grid = block.CubeGrid;
 
-            if(MonitoredGrids.Contains(grid)) {
+			if(MonitoredGrids.Contains(grid)) {
 
-                Action<object, MyDamageInformation> action = null;
+				Action<object, MyDamageInformation> action = null;
 
-                if(RegisteredDamageHandlers.TryGetValue(grid, out action)) {
+				if(RegisteredDamageHandlers.TryGetValue(grid, out action)) {
 
-                    action?.Invoke(target, info);
-                    return;
+					action?.Invoke(target, info);
+					return;
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public static void ApplyDamageToTarget(long entityId, float amount, string particleEffect, string soundEffect) {
+		public static void ApplyDamageToTarget(long entityId, float amount, string particleEffect, string soundEffect) {
 
-            if(entityId == 0)
-                return;
+			if(entityId == 0)
+				return;
 
-            IMyEntity entity = null;
+			IMyEntity entity = null;
 
-            if(MyAPIGateway.Entities.TryGetEntityById(entityId, out entity) == false)
-                return;
+			if(MyAPIGateway.Entities.TryGetEntityById(entityId, out entity) == false)
+				return;
 
-            if(entity as IMyCubeGrid != null)
-                return;
+			if(entity as IMyCubeGrid != null)
+				return;
 
-            var tool = entity as IMyEngineerToolBase;
-            var block = entity as IMyShipToolBase;
-            bool didDamage = false;
+			var tool = entity as IMyEngineerToolBase;
+			var block = entity as IMyShipToolBase;
+			bool didDamage = false;
 
-            if(tool != null) {
+			if(tool != null) {
 
-                IMyEntity characterEntity = null;
+				IMyEntity characterEntity = null;
 
-                if(MyAPIGateway.Entities.TryGetEntityById(tool.OwnerId, out characterEntity)) {
+				if(MyAPIGateway.Entities.TryGetEntityById(tool.OwnerId, out characterEntity)) {
 
-                    var character = characterEntity as IMyCharacter;
+					var character = characterEntity as IMyCharacter;
 
-                    if(character != null) {
+					if(character != null) {
 
-                        character.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
-                        didDamage = true;
+						character.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+						didDamage = true;
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-            if(block != null) {
+			if(block != null) {
 
-                block.SlimBlock.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
-                didDamage = true;
+				block.SlimBlock.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+				didDamage = true;
 
-            }
+			}
 
-            if(didDamage == false)
-                return;
+			if(didDamage == false)
+				return;
 
 
 
-        }
-        
-        public static long GetAttackOwnerId(long attackingEntity){
+		}
+		
+		public static long GetAttackOwnerId(long attackingEntity){
 			
 			IMyEntity entity = null;
 			
@@ -126,13 +126,13 @@ namespace RivalAI.Helpers {
 			
 			if(handGun != null){
 				
-				return handGun.xOwnerId;
+				return handGun.OwnerId;
 				
 			}
 			
 			if(handTool != null){
 				
-				return handTool.xOwnerIdentity;
+				return handTool.OwnerIdentityId;
 				
 			}
 			
@@ -151,9 +151,7 @@ namespace RivalAI.Helpers {
 			var shipControllers = BlockHelper.GetGridControllers(cubeGrid);
 			
 			IMyPlayer controlPlayer = null;
-			bool mainController = false;
-			bool isControlling = false;
-			
+
 			foreach(var controller in shipControllers){
 				
 				var player = MyAPIGateway.Players.GetPlayerControllingEntity(controller);
@@ -162,8 +160,9 @@ namespace RivalAI.Helpers {
 					continue;
 				
 				controlPlayer = player;
-				mainController = controller.IsMainCockpit;
-				isControlling = controller.IsControllingShip;
+
+                if (controller.IsMainCockpit || (controller.CanControlShip && controller.IsUnderControl))
+                    break;
 				
 			}
 			
@@ -184,6 +183,6 @@ namespace RivalAI.Helpers {
 			
 		}
 
-    }
+	}
 
 }

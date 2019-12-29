@@ -106,7 +106,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public double ReputationChangeRadius;
         
         [ProtoMember(25)]
-        public int ReputationChangeAmount;
+        public List<int> ReputationChangeAmount;
         
         [ProtoMember(26)]
         public bool ActivateAssertiveAntennas;
@@ -198,6 +198,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         [ProtoMember(55)]
         public List<int> ChangeAttackerReputationAmount;
 
+        [ProtoMember(56)]
+        public List<string> ReputationChangeFactions;
+
+        [ProtoMember(57)]
+        public bool ReputationChangesForAllRadiusPlayerFactionMembers;
+
+        [ProtoMember(58)]
+        public bool ReputationChangesForAllAttackPlayerFactionMembers;
+
         public ActionProfile(){
 
             UseChatBroadcast = false;
@@ -232,8 +241,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             
             ChangeReputationWithPlayers = false;
             ReputationChangeRadius = 0;
-            ReputationChangeAmount = 0;
-            
+            ReputationChangeFactions = new List<string>();
+            ReputationChangeAmount = new List<int>();
+            ReputationChangesForAllRadiusPlayerFactionMembers = false;
+
             ActivateAssertiveAntennas = false;
             
             ChangeAntennaOwnership = false;
@@ -271,6 +282,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             ChangeAttackerReputation = false;
             ChangeAttackerReputationFaction = new List<string>();
             ChangeAttackerReputationAmount = new List<int>();
+            ReputationChangesForAllAttackPlayerFactionMembers = false;
 
         }
 
@@ -500,11 +512,25 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
                         this.ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
 
                     }
-                    
-                    //ReputationChangeAmount
-                    if(tag.Contains("[ReputationChangeAmount:") == true) {
 
-                        this.ReputationChangeAmount = TagHelper.TagIntCheck(tag, ReputationChangeAmount);
+                    //ReputationChangeFactions
+                    if (tag.Contains("[ReputationChangeFactions:") == true) {
+
+                        var tempvalue = TagHelper.TagStringCheck(tag);
+
+                        if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+                            this.ReputationChangeFactions.Add(tempvalue);
+
+                        }
+
+                    }
+
+                    //ReputationChangeAmount
+                    if (tag.Contains("[ReputationChangeAmount:") == true) {
+
+                        int tempValue = TagHelper.TagIntCheck(tag, 0);
+                        this.ReputationChangeAmount.Add(tempValue);
 
                     }
                     
