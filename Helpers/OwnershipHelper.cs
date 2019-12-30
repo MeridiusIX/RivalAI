@@ -56,12 +56,12 @@ namespace RivalAI.Helpers {
 		
 		public static void ChangeDamageOwnerReputation(List<string> factions, long attackingEntity, List<int> amounts, bool applyChangeToAttackerFaction){
 
-            if (amounts.Count != factions.Count) {
+			if (amounts.Count != factions.Count) {
 
-                Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
-                return;
+				Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
+				return;
 
-            }
+			}
 
 			var owner = DamageHelper.GetAttackOwnerId(attackingEntity);
 			
@@ -76,12 +76,12 @@ namespace RivalAI.Helpers {
 
 		public static void ChangeReputationWithPlayersInRadius(IMyRemoteControl remoteControl, double radius, List<int> amounts, List<string> factions, bool applyReputationChangeToFactionMembers) {
 
-            if (amounts.Count != factions.Count) {
+			if (amounts.Count != factions.Count) {
 
-                Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
-                return;
+				Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
+				return;
 
-            }
+			}
 
 			var playerList = new List<IMyPlayer>();
 			var playerIds = new List<long>();
@@ -132,10 +132,10 @@ namespace RivalAI.Helpers {
 
 			for (int i = 0; i < factionTags.Count; i++) {
 
-                var tag = factionTags[i];
-                var amount = amounts[i];
+				var tag = factionTags[i];
+				var amount = amounts[i];
 
-                var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(tag);
+				var faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(tag);
 
 				if (faction == null)
 					continue;

@@ -68,9 +68,7 @@ namespace RivalAI.Behavior.Subsystems {
             DamageTriggers = new List<TriggerProfile>();
             CommandTriggers = new List<TriggerProfile>();
 
-            DamageHandlerRegistered = false;
-            DamageInfo = new MyDamageInformation();
-            PendingDamage = false;
+            CommandListenerRegistered = false;
 
             Setup(remoteControl);
 
@@ -252,11 +250,15 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
 
-            for(int i = 0;i < this.DamageTriggers.Count;i++) {
+            //Logger.AddMsg("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), true);
+
+            for (int i = 0;i < this.DamageTriggers.Count;i++) {
+
+                //Logger.AddMsg("Got Trigger Profile", true);
 
                 var trigger = this.DamageTriggers[i];
 
-                if(trigger.DamageTypes.Contains(info.Type.ToString())) {
+                if(trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
 
                     if(trigger.UseTrigger == true) {
 
@@ -264,6 +266,7 @@ namespace RivalAI.Behavior.Subsystems {
 
                         if(trigger.Triggered == true) {
 
+                            //Logger.AddMsg("Process Damage Actions", true);
                             ProcessTrigger(trigger, info.AttackerId);
 
                         }
@@ -446,10 +449,17 @@ namespace RivalAI.Behavior.Subsystems {
                 OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
 
             }
-            
+
+            //ChangeAttackerReputation
+            if (trigger.Actions.ChangeAttackerReputation == true && detectedEntity != 0) {
+
+                OwnershipHelper.ChangeDamageOwnerReputation(trigger.Actions.ChangeAttackerReputationFaction, detectedEntity, trigger.Actions.ChangeAttackerReputationAmount, trigger.Actions.ReputationChangesForAllAttackPlayerFactionMembers);
+
+            }
+
 
             //TriggerTimerBlock
-            if(trigger.Actions.TriggerTimerBlocks == true) {
+            if (trigger.Actions.TriggerTimerBlocks == true) {
 
                 var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
 

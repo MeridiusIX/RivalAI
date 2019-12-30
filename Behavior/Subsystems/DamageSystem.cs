@@ -55,8 +55,10 @@ namespace RivalAI.Behavior.Subsystems {
         public IMyRemoteControl RemoteControl;
         public IMyCubeGrid CurrentCubeGrid;
         public List<IMyCubeGrid> CurrentGrids;
+        public bool SetupHandler;
 
         public Func<bool> IsRemoteWorking;
+        private TriggerSystem _trigger;
 
         public DamageSystem(IMyRemoteControl remoteControl = null) {
 
@@ -64,6 +66,7 @@ namespace RivalAI.Behavior.Subsystems {
 
             RemoteControl = null;
             CurrentGrids = new List<IMyCubeGrid>();
+            SetupHandler = false;
 
             Setup(remoteControl);
 
@@ -81,17 +84,22 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
+        public void SetupReferences(TriggerSystem trigger) {
+
+            _trigger = trigger;
+
+        }
+
         public void SetupDamageHandler() {
 
-            if(this.UseDamageDetection == true) {
+            if(this.UseDamageDetection == false || this.SetupHandler == true) {
 
                 return;
 
             }
 
-            this.UseDamageDetection = true;
-            this.CurrentCubeGrid = this.RemoteControl.SlimBlock.CubeGrid;
-            this.CurrentCubeGrid.OnGridSplit += GridSplit;
+            this.SetupHandler = true;
+            RegisterGridOnWatcher(this.RemoteControl?.SlimBlock?.CubeGrid);
 
         }
 
@@ -105,8 +113,10 @@ namespace RivalAI.Behavior.Subsystems {
             if(target == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
                 return;
 
-            if(this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false)
+            if (this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false)
                 return;
+
+            _trigger.ProcessDamageTriggerWatchers(target, info);
 
         }
 
@@ -123,6 +133,12 @@ namespace RivalAI.Behavior.Subsystems {
         }
 
         public void GridSplit(IMyCubeGrid gridA, IMyCubeGrid gridB) {
+
+            if (!this.CurrentGrids.Contains(gridA))
+                this.CurrentGrids.Add(gridA);
+
+            if (!this.CurrentGrids.Contains(gridB))
+                this.CurrentGrids.Add(gridB);
 
             UnregisterGridOnWatcher();
 

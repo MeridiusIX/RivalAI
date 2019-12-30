@@ -161,8 +161,8 @@ namespace RivalAI.Helpers {
 				
 				controlPlayer = player;
 
-                if (controller.IsMainCockpit || (controller.CanControlShip && controller.IsUnderControl))
-                    break;
+				if (controller.IsMainCockpit || (controller.CanControlShip && controller.IsUnderControl))
+					break;
 				
 			}
 			

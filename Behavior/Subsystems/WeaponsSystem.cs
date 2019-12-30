@@ -34,335 +34,335 @@ using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior.Subsystems {
 
-    public enum WeaponEngageModeEnum{
+	public enum WeaponEngageModeEnum{
 		
 		Angle,
 		Raycast,
-        RaycastAndAngle,
+		RaycastAndAngle,
 		PredictionAndAngle
 		
 	}
 	
 	public class WeaponsSystem{
 
-        //Configurable
-        public bool UseStaticGuns;
-        public double WeaponMaxAngleFromTarget;
-        public bool UseBarrageFire;
-        public int MaxFireRateForBarrageWeapons;
-        public bool KeepWeaponsLoaded;
-        public bool WeaponsAttackVoxels;
-        public bool WeaponsAttackAnyGrids;
+		//Configurable
+		public bool UseStaticGuns;
+		public double WeaponMaxAngleFromTarget;
+		public bool UseBarrageFire;
+		public int MaxFireRateForBarrageWeapons;
+		public bool KeepWeaponsLoaded;
+		public bool WeaponsAttackVoxels;
+		public bool WeaponsAttackAnyGrids;
 
-        //Non-Configurable
-        public bool InitComplete;
+		//Non-Configurable
+		public bool InitComplete;
 
-        public IMyRemoteControl RemoteControl;
-        public List<WeaponProfile> StaticWeapons;
-        public List<IMyLargeTurretBase> Turrets;
-        public List<IMyUserControllableGun> AllWeapons;
-        public double HighestRangeStaticGun;
+		public IMyRemoteControl RemoteControl;
+		public List<WeaponProfile> StaticWeapons;
+		public List<IMyLargeTurretBase> Turrets;
+		public List<IMyUserControllableGun> AllWeapons;
+		public double HighestRangeStaticGun;
 
-        public IMyEntity TurretTarget;
+		public IMyEntity TurretTarget;
 
-        public int BarrageInt;
-        public bool EngageTargets;
-        public bool UsingProjectileLead;
-        public Vector3D TargetCoords;
-        private TargetingSystem _targeting;
-        public TargetEvaluation TargetEval;
-        public double DistanceToTarget;
+		public int BarrageInt;
+		public bool EngageTargets;
+		public bool UsingProjectileLead;
+		public Vector3D TargetCoords;
+		private TargetingSystem _targeting;
+		public TargetEvaluation TargetEval;
+		public double DistanceToTarget;
 
-        public bool CanAnyWeaponFire;
+		public bool CanAnyWeaponFire;
  
 		public WeaponsSystem(IMyRemoteControl remoteControl = null) {
 
-            UseStaticGuns = false;
-            WeaponMaxAngleFromTarget = 2;
-            UseBarrageFire = false;
-            MaxFireRateForBarrageWeapons = 300;
-            KeepWeaponsLoaded = false;
-            WeaponsAttackVoxels = false;
-            WeaponsAttackAnyGrids = false;
+			UseStaticGuns = false;
+			WeaponMaxAngleFromTarget = 2;
+			UseBarrageFire = false;
+			MaxFireRateForBarrageWeapons = 300;
+			KeepWeaponsLoaded = false;
+			WeaponsAttackVoxels = false;
+			WeaponsAttackAnyGrids = false;
 
-            InitComplete = false;
+			InitComplete = false;
 			
 			RemoteControl = null;
 			StaticWeapons = new List<WeaponProfile>();
 			Turrets = new List<IMyLargeTurretBase>();
-            HighestRangeStaticGun = 0;
+			HighestRangeStaticGun = 0;
 
-            TurretTarget = null;
+			TurretTarget = null;
 
-            BarrageInt = 0;
-            EngageTargets = false;
-            UsingProjectileLead = false;
-            TargetCoords = Vector3D.Zero;
-            TargetEval = new TargetEvaluation(null, TargetTypeEnum.None);
-            DistanceToTarget = -1;
+			BarrageInt = 0;
+			EngageTargets = false;
+			UsingProjectileLead = false;
+			TargetCoords = Vector3D.Zero;
+			TargetEval = new TargetEvaluation(null, TargetTypeEnum.None);
+			DistanceToTarget = -1;
 
-            CanAnyWeaponFire = true;
+			CanAnyWeaponFire = true;
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
-        }
+		}
 
-        public void AllowFire() {
+		public void AllowFire() {
 
-            this.EngageTargets = true;
+			this.EngageTargets = true;
 
-        }
+		}
 
-        public void CeaseFire() {
+		public void CeaseFire() {
 
-            this.EngageTargets = false;
+			this.EngageTargets = false;
 
-            foreach(var weapon in this.StaticWeapons.ToList()) {
+			foreach(var weapon in this.StaticWeapons.ToList()) {
 
-                if(weapon.CurrentlyFiring == true) {
+				if(weapon.CurrentlyFiring == true) {
 
-                    if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+					if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
 
-                        weapon.CurrentlyFiring = false;
-                        weapon.ToggleFiring();
+						weapon.CurrentlyFiring = false;
+						weapon.ToggleFiring();
 
-                    } else {
+					} else {
 
-                        this.StaticWeapons.Remove(weapon);
+						this.StaticWeapons.Remove(weapon);
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public void BarrageFire() {
+		public void BarrageFire() {
 
-            if(this.EngageTargets == false || this.UseBarrageFire == false || this.StaticWeapons.Count == 0) {
+			if(this.EngageTargets == false || this.UseBarrageFire == false || this.StaticWeapons.Count == 0) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.BarrageInt++;
+			this.BarrageInt++;
 
-            if(this.BarrageInt >= this.StaticWeapons.Count) {
+			if(this.BarrageInt >= this.StaticWeapons.Count) {
 
-                this.BarrageInt = 0;
+				this.BarrageInt = 0;
 
-            }
+			}
 
-            if(this.StaticWeapons.Count > 0) {
+			if(this.StaticWeapons.Count > 0) {
 
-                var weapon = this.StaticWeapons[this.BarrageInt];
+				var weapon = this.StaticWeapons[this.BarrageInt];
 
-                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != false) {
+				if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != false) {
 
-                    weapon.SingleShot();
+					weapon.SingleShot();
 
-                }
+				}
 
-            }
-            
+			}
+			
 
-        }
+		}
 
-        public void FireEligibleWeapons(TargetEvaluation target){
+		public void FireEligibleWeapons(TargetEvaluation target){
 
-            if(this.UseStaticGuns == false || this.HighestRangeStaticGun == 0 || this.EngageTargets == false) {
+			if(this.UseStaticGuns == false || this.HighestRangeStaticGun == 0 || this.EngageTargets == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.TargetEval = target;
+			this.TargetEval = target;
 
-            bool hasTarget = false;
-            double targetDistance = this.TargetEval.Distance;
+			bool hasTarget = false;
+			double targetDistance = this.TargetEval.Distance;
 
-            if(this.TargetEval.TargetExists == true) {
+			if(this.TargetEval.TargetExists == true) {
 
-                if(this._targeting.TargetData.UseProjectileLead == true || this.TargetEval.TargetType == TargetTypeEnum.Player) {
+				if(this._targeting.TargetData.UseProjectileLead == true || this.TargetEval.TargetType == TargetTypeEnum.Player) {
 
-                    if(this.TargetEval.TargetAngle <= this.WeaponMaxAngleFromTarget && this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone) {
+					if(this.TargetEval.TargetAngle <= this.WeaponMaxAngleFromTarget && this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone) {
 
-                        hasTarget = true;
-                        this.TargetEval.Distance = this.TargetEval.TargetObstructionDistance;
+						hasTarget = true;
+						this.TargetEval.Distance = this.TargetEval.TargetObstructionDistance;
 
-                    }
+					}
 
-                } else {
+				} else {
 
-                    if(this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone && this.TargetEval.TargetObstruction != TargetObstructionEnum.None) {
+					if(this.TargetEval.TargetObstruction != TargetObstructionEnum.Safezone && this.TargetEval.TargetObstruction != TargetObstructionEnum.None) {
 
-                        hasTarget = true;
-                        targetDistance = this.TargetEval.TargetObstructionDistance;
+						hasTarget = true;
+						targetDistance = this.TargetEval.TargetObstructionDistance;
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-            foreach(var weapon in this.StaticWeapons.ToList()) {
+			foreach(var weapon in this.StaticWeapons.ToList()) {
 
-                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+				if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
 
-                    try {
+					try {
 
-                        weapon.CheckWeaponReadiness(hasTarget, targetDistance, this.KeepWeaponsLoaded);
+						weapon.CheckWeaponReadiness(hasTarget, targetDistance, this.KeepWeaponsLoaded);
 
-                    } catch(Exception exc) {
+					} catch(Exception exc) {
 
-                        Logger.AddMsg("Exception Detected Checking Weapon Readiness");
-                        Logger.AddMsg(exc.ToString(), true);
+						Logger.AddMsg("Exception Detected Checking Weapon Readiness");
+						Logger.AddMsg(exc.ToString(), true);
 
-                    }
-                    
+					}
+					
 
-                } else {
+				} else {
 
-                    this.StaticWeapons.Remove(weapon);
+					this.StaticWeapons.Remove(weapon);
 
-                }
+				}
 
-            }
+			}
 
-            foreach(var weapon in this.StaticWeapons.ToList()) {
+			foreach(var weapon in this.StaticWeapons.ToList()) {
 
-                if(this.UseBarrageFire == true && weapon.RateOfFire < this.MaxFireRateForBarrageWeapons) {
+				if(this.UseBarrageFire == true && weapon.RateOfFire < this.MaxFireRateForBarrageWeapons) {
 
-                    continue;
+					continue;
 
-                }
+				}
 
-                if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
+				if(weapon.WeaponBlock != null && MyAPIGateway.Entities.Exist(weapon.WeaponBlock?.SlimBlock?.CubeGrid) != null) {
 
-                    if(weapon.ReadyToFire == true && weapon.CurrentlyFiring == false) {
+					if(weapon.ReadyToFire == true && weapon.CurrentlyFiring == false) {
 
-                        weapon.ToggleFiring();
+						weapon.ToggleFiring();
 
-                    }
+					}
 
-                    if(weapon.ReadyToFire == false && weapon.CurrentlyFiring == true) {
+					if(weapon.ReadyToFire == false && weapon.CurrentlyFiring == true) {
 
-                        weapon.ToggleFiring();
+						weapon.ToggleFiring();
 
-                    }
+					}
 
-                } else {
+				} else {
 
-                    this.StaticWeapons.Remove(weapon);
+					this.StaticWeapons.Remove(weapon);
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        private void Setup(IMyRemoteControl remoteControl){
+		private void Setup(IMyRemoteControl remoteControl){
 
-            if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
+			if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.RemoteControl = remoteControl;
+			this.RemoteControl = remoteControl;
 
-            var allBlocks = TargetHelper.GetAllBlocks(remoteControl.SlimBlock.CubeGrid);
-            this.StaticWeapons.Clear();
+			var allBlocks = TargetHelper.GetAllBlocks(remoteControl.SlimBlock.CubeGrid);
+			this.StaticWeapons.Clear();
 
-            foreach(var block in allBlocks.Where(x => x.FatBlock != null)) {
+			foreach(var block in allBlocks.Where(x => x.FatBlock != null)) {
 
-                if((block.FatBlock as IMyLargeTurretBase) != null) {
+				if((block.FatBlock as IMyLargeTurretBase) != null) {
 
-                    Turrets.Add(block.FatBlock as IMyLargeTurretBase);
-                    continue;
+					Turrets.Add(block.FatBlock as IMyLargeTurretBase);
+					continue;
 
-                }
+				}
 
-                if((block.FatBlock as IMyUserControllableGun) != null) {
+				if((block.FatBlock as IMyUserControllableGun) != null) {
 
-                    var weaponProfile = new WeaponProfile(block.FatBlock as IMyUserControllableGun);
-                    this.StaticWeapons.Add(weaponProfile);
+					var weaponProfile = new WeaponProfile(block.FatBlock as IMyUserControllableGun);
+					this.StaticWeapons.Add(weaponProfile);
 
-                    if(weaponProfile.AmmoRange > this.HighestRangeStaticGun) {
+					if(weaponProfile.AmmoRange > this.HighestRangeStaticGun) {
 
-                        this.HighestRangeStaticGun = weaponProfile.AmmoRange;
+						this.HighestRangeStaticGun = weaponProfile.AmmoRange;
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public void SetupReferences(TargetingSystem targeting) {
+		public void SetupReferences(TargetingSystem targeting) {
 
-            _targeting = targeting;
-            
-        }
+			_targeting = targeting;
+			
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //UseStaticGuns
-                    if(tag.Contains("[UseStaticGuns:") == true) {
+					//UseStaticGuns
+					if(tag.Contains("[UseStaticGuns:") == true) {
 
-                        this.UseStaticGuns = TagHelper.TagBoolCheck(tag);
+						this.UseStaticGuns = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //WeaponMaxAngleFromTarget
-                    if(tag.Contains("[WeaponMaxAngleFromTarget:") == true) {
+					//WeaponMaxAngleFromTarget
+					if(tag.Contains("[WeaponMaxAngleFromTarget:") == true) {
 
-                        this.WeaponMaxAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.WeaponMaxAngleFromTarget);
+						this.WeaponMaxAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.WeaponMaxAngleFromTarget);
 
-                    }
+					}
 
-                    //UseBarrageFire
-                    if(tag.Contains("[UseBarrageFire:") == true) {
+					//UseBarrageFire
+					if(tag.Contains("[UseBarrageFire:") == true) {
 
-                        this.UseBarrageFire = TagHelper.TagBoolCheck(tag);
+						this.UseBarrageFire = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //KeepWeaponsLoaded
-                    if(tag.Contains("[KeepWeaponsLoaded:") == true) {
+					//KeepWeaponsLoaded
+					if(tag.Contains("[KeepWeaponsLoaded:") == true) {
 
-                        this.KeepWeaponsLoaded = TagHelper.TagBoolCheck(tag);
+						this.KeepWeaponsLoaded = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //WeaponsAttackVoxels
-                    if(tag.Contains("[WeaponsAttackVoxels:") == true) {
+					//WeaponsAttackVoxels
+					if(tag.Contains("[WeaponsAttackVoxels:") == true) {
 
-                        this.WeaponsAttackVoxels = TagHelper.TagBoolCheck(tag);
+						this.WeaponsAttackVoxels = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //WeaponsAttackAnyGrids
-                    if(tag.Contains("[WeaponsAttackAnyGrids:") == true) {
+					//WeaponsAttackAnyGrids
+					if(tag.Contains("[WeaponsAttackAnyGrids:") == true) {
 
-                        this.WeaponsAttackAnyGrids = TagHelper.TagBoolCheck(tag);
+						this.WeaponsAttackAnyGrids = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-    }
+	}
 	
 }

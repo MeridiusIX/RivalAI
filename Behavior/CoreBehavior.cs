@@ -33,265 +33,275 @@ using RivalAI;
 
 namespace RivalAI.Behavior {
 
-    public class CoreBehavior {
+	public class CoreBehavior {
 
-        public IMyRemoteControl RemoteControl;
-        public IMyCubeGrid CubeGrid;
+		public IMyRemoteControl RemoteControl;
+		public IMyCubeGrid CubeGrid;
 
-        //public BaseSystems Systems;
+		//public BaseSystems Systems;
 
-        public AutoPilotSystem AutoPilot;
-        public BroadcastSystem Broadcast;
-        public CollisionSystem Collision;
-        public DamageSystem Damage;
-        public DespawnSystem Despawn;
-        public ExtrasSystem Extras;
-        public OwnerSystem Owner;
-        public RotationSystem Rotation;
-        public SpawningSystem Spawning;
-        public TargetingSystem Targeting;
-        public ThrustSystem Thrust;
-        public TriggerSystem Trigger;
-        public WeaponsSystem Weapons;
+		public AutoPilotSystem AutoPilot;
+		public BroadcastSystem Broadcast;
+		public CollisionSystem Collision;
+		public DamageSystem Damage;
+		public DespawnSystem Despawn;
+		public ExtrasSystem Extras;
+		public OwnerSystem Owner;
+		public RotationSystem Rotation;
+		public SpawningSystem Spawning;
+		public TargetingSystem Targeting;
+		public ThrustSystem Thrust;
+		public TriggerSystem Trigger;
+		public WeaponsSystem Weapons;
 
-        public BehaviorMode Mode;
-        public BehaviorMode PreviousMode;
+		public BehaviorMode Mode;
+		public BehaviorMode PreviousMode;
 
-        public bool SetupCompleted;
-        public bool SetupFailed;
-        public bool ConfigCheck;
-        public bool EndScript;
+		public bool SetupCompleted;
+		public bool SetupFailed;
+		public bool ConfigCheck;
+		public bool EndScript;
 
-        public bool IsWorking;
-        public bool PhysicsValid;
+		public bool IsWorking;
+		public bool PhysicsValid;
 
-        public byte CoreCounter;
+		public byte CoreCounter;
 
-        public CoreBehavior() {
+		public CoreBehavior() {
 
-            RemoteControl = null;
-            CubeGrid = null;
+			RemoteControl = null;
+			CubeGrid = null;
 
-            Mode = BehaviorMode.Init;
-            PreviousMode = BehaviorMode.Init;
+			Mode = BehaviorMode.Init;
+			PreviousMode = BehaviorMode.Init;
 
-            SetupCompleted = false;
-            SetupFailed = false;
-            ConfigCheck = false;
-            EndScript = false;
+			SetupCompleted = false;
+			SetupFailed = false;
+			ConfigCheck = false;
+			EndScript = false;
 
-            IsWorking = false;
-            PhysicsValid = false;
+			IsWorking = false;
+			PhysicsValid = false;
 
-            CoreCounter = 0;
+			CoreCounter = 0;
 
-        }
+		}
 
-        public void RunCoreAi() {
+		public void RunCoreAi() {
 
-            //MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
+			//MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
 
-            if(!IsAIReady())
-                return;
+			if(!IsAIReady())
+				return;
 
-            CoreCounter++;
+			CoreCounter++;
 
-            /*
-            Vector4 color = new Vector4(1, 1, 1, 1);
-            var endCoords = this.RemoteControl.WorldMatrix.Forward * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
-            MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoords, MyStringId.GetOrCompute("WeaponLaser"), ref color, 0.1f);
-            
-            
-            var endCoordsb = Targeting.Target.TargetDirection * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
-            MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
-            */
+			/*
+			Vector4 color = new Vector4(1, 1, 1, 1);
+			var endCoords = this.RemoteControl.WorldMatrix.Forward * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
+			MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoords, MyStringId.GetOrCompute("WeaponLaser"), ref color, 0.1f);
+			
+			
+			var endCoordsb = Targeting.Target.TargetDirection * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
+			MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
+			*/
 
-            Vector4 colorb = new Vector4(0, 1, 1, 1);
-            Vector4 colorc = new Vector4(0, 1, 0, 1);
-            var endCoordsc = AutoPilot.WaypointCoords;
-            MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
-            MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
+			Vector4 colorb = new Vector4(0, 1, 1, 1);
+			Vector4 colorc = new Vector4(0, 1, 0, 1);
+			var endCoordsc = AutoPilot.WaypointCoords;
+			MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
+			MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
 
-            if((CoreCounter % 10) == 0) {
+			if((CoreCounter % 10) == 0) {
 
-                //TODO: Damage Alert Handlers
-                Weapons.BarrageFire();
+				//TODO: Damage Alert Handlers
+				Weapons.BarrageFire();
 
-            }
+			}
 
-            if((CoreCounter % 20) == 0) {
+			if((CoreCounter % 20) == 0) {
 
-                //Internalize Collision To AutoPilot Class
-                AutoPilot.CollisionDetected = Collision.VelocityResult.CollisionImminent;
-                AutoPilot.TargetCoords = Targeting.GetTargetPosition();
-                AutoPilot.EngageAutoPilot();
+				//Internalize Collision To AutoPilot Class
+				AutoPilot.CollisionDetected = Collision.VelocityResult.CollisionImminent;
+				AutoPilot.TargetCoords = Targeting.GetTargetPosition();
+				AutoPilot.EngageAutoPilot();
 
 
-            }
+			}
 
-            if((CoreCounter % 25) == 0) {
+			if((CoreCounter % 25) == 0) {
 
-                Collision.RequestVelocityCheckCollisions();
+				Collision.RequestVelocityCheckCollisions();
 
-            }
+			}
 
-            if((CoreCounter % 30) == 0) {
+			if((CoreCounter % 30) == 0) {
 
-                Trigger.ProcessTriggerWatchers();
+				Trigger.ProcessTriggerWatchers();
 
-            }
+			}
 
-            //50 Tick - Target Check
-            if((CoreCounter % 50) == 0) {
+			//50 Tick - Target Check
+			if((CoreCounter % 50) == 0) {
 
-                Targeting.RequestTarget();
+				Targeting.RequestTarget();
 
-            }
+			}
 
-            if((CoreCounter % 60) == 0) {
+			if((CoreCounter % 60) == 0) {
 
-                CoreCounter = 0;
-                AutoPilot.ProcessEvasionCounter();
-                Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
+				CoreCounter = 0;
+				AutoPilot.ProcessEvasionCounter();
+				Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
 
-                if(this.ConfigCheck == false) {
+				if(this.ConfigCheck == false) {
 
-                    this.ConfigCheck = true;
+					this.ConfigCheck = true;
 
-                    if(RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) == false) {
+					if(RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) == false) {
 
-                        this.EndScript = true;
-                        return;
+						this.EndScript = true;
+						return;
 
-                    }
+					}
 
-                }
+				}
 
-                Broadcast.ProcessAutoMessages();
+				Broadcast.ProcessAutoMessages();
 
-                if(Despawn.DoDespawn == true) {
+				if(Despawn.DoDespawn == true) {
 
-                    this.EndScript = true;
-                    Despawn.DespawnGrid();
-                    return;
+					this.EndScript = true;
+					Despawn.DespawnGrid();
+					return;
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
 
 
 
 
 
-        public void ChangeBehavior(string newBehaviorSubtypeID) {
+		public void ChangeBehavior(string newBehaviorSubtypeID) {
 
 
 
-        }
+		}
 
-        public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
+		public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-            Logger.AddMsg("Changed Core Mode To: " + newMode.ToString(), true);
-            this.Mode = newMode;
+			Logger.AddMsg("Changed Core Mode To: " + newMode.ToString(), true);
+			this.Mode = newMode;
 
-        }
+		}
 
-        public void CoreSetup(IMyRemoteControl remoteControl) {
+		public void CoreSetup(IMyRemoteControl remoteControl) {
 
-            if(remoteControl == null) {
+			if(remoteControl == null) {
 
-                SetupFailed = true;
-                return;
+				SetupFailed = true;
+				return;
 
-            }
+			}
 
-            this.RemoteControl = remoteControl;
-            this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
+			this.RemoteControl = remoteControl;
+			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
 
-            this.RemoteControl.IsWorkingChanged += RemoteIsWorking;
-            RemoteIsWorking(this.RemoteControl);
-            
-            this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
-            PhysicsValidCheck(this.CubeGrid);
+			this.RemoteControl.IsWorkingChanged += RemoteIsWorking;
+			RemoteIsWorking(this.RemoteControl);
+			
+			this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
+			PhysicsValidCheck(this.CubeGrid);
 
-            AutoPilot = new AutoPilotSystem(remoteControl);
-            Broadcast = new BroadcastSystem(remoteControl);
-            Collision = new CollisionSystem(remoteControl);
-            Damage = new DamageSystem(remoteControl);
-            Despawn = new DespawnSystem(remoteControl);
-            Extras = new ExtrasSystem(remoteControl);
-            Rotation = new RotationSystem(remoteControl);
-            Owner = new OwnerSystem(remoteControl);
-            Spawning = new SpawningSystem(remoteControl);
-            Targeting = new TargetingSystem(remoteControl);
-            Thrust = new ThrustSystem(remoteControl);
-            Trigger = new TriggerSystem(remoteControl);
-            Weapons = new WeaponsSystem(remoteControl);
+			AutoPilot = new AutoPilotSystem(remoteControl);
+			Broadcast = new BroadcastSystem(remoteControl);
+			Collision = new CollisionSystem(remoteControl);
+			Damage = new DamageSystem(remoteControl);
+			Despawn = new DespawnSystem(remoteControl);
+			Extras = new ExtrasSystem(remoteControl);
+			Rotation = new RotationSystem(remoteControl);
+			Owner = new OwnerSystem(remoteControl);
+			Spawning = new SpawningSystem(remoteControl);
+			Targeting = new TargetingSystem(remoteControl);
+			Thrust = new ThrustSystem(remoteControl);
+			Trigger = new TriggerSystem(remoteControl);
+			Weapons = new WeaponsSystem(remoteControl);
 
-            Targeting.WeaponTrigger += Weapons.FireEligibleWeapons;
-            Collision.TriggerWarning += Thrust.InvertStrafe;
+			Targeting.WeaponTrigger += Weapons.FireEligibleWeapons;
+			Collision.TriggerWarning += Thrust.InvertStrafe;
 
-            AutoPilot.SetupReferences(this.Collision, this.Rotation, this.Targeting, this.Thrust, this.Weapons);
-            Collision.SetupReferences(this.Thrust);
-            Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
-            Thrust.SetupReferences(this.AutoPilot, this.Collision);
-            Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Targeting, this.Weapons);
-            Weapons.SetupReferences(this.Targeting);
+			AutoPilot.SetupReferences(this.Collision, this.Rotation, this.Targeting, this.Thrust, this.Weapons);
+			Collision.SetupReferences(this.Thrust);
+			Damage.SetupReferences(this.Trigger);
+			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
+			Thrust.SetupReferences(this.AutoPilot, this.Collision);
+			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Targeting, this.Weapons);
+			Weapons.SetupReferences(this.Targeting);
 
-            //Setup Alert Systems
-            //Register Damage Handler if Eligible
+			//Setup Alert Systems
+			//Register Damage Handler if Eligible
 
-        }
+		}
 
-        public void InitCoreTags() {
+		public void InitCoreTags() {
 
-            AutoPilot.InitTags();
-            Collision.InitTags();
-            Targeting.InitTags();
-            Weapons.InitTags();
-            Damage.InitTags();
-            Despawn.InitTags();
-            Extras.InitTags();
-            Owner.InitTags();
-            Trigger.InitTags();
+			AutoPilot.InitTags();
+			Collision.InitTags();
+			Targeting.InitTags();
+			Weapons.InitTags();
+			Damage.InitTags();
+			Despawn.InitTags();
+			Extras.InitTags();
+			Owner.InitTags();
+			Trigger.InitTags();
 
-        }
+			PostTagsSetup();
 
-        public void RemoteIsWorking(IMyCubeBlock cubeBlock) {
 
-            if(this.RemoteControl.IsWorking && this.RemoteControl.IsFunctional) {
+		}
 
-                this.IsWorking = true;
-                return;
+		public void PostTagsSetup() {
 
-            }
+			Damage.SetupDamageHandler();
 
-            this.IsWorking = false;
+		}
 
-        }
+		public void RemoteIsWorking(IMyCubeBlock cubeBlock) {
 
-        public void PhysicsValidCheck(IMyEntity entity) {
+			if(this.RemoteControl.IsWorking && this.RemoteControl.IsFunctional) {
 
-            if(this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
+				this.IsWorking = true;
+				return;
 
-                this.PhysicsValid = false;
-                return;
+			}
 
-            }
+			this.IsWorking = false;
 
-            this.PhysicsValid = true;
+		}
 
-        }
+		public void PhysicsValidCheck(IMyEntity entity) {
 
-        public bool IsAIReady() {
+			if(this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
 
-            return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
+				this.PhysicsValid = false;
+				return;
 
-        }
+			}
 
-    }
+			this.PhysicsValid = true;
+
+		}
+
+		public bool IsAIReady() {
+
+			return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
+
+		}
+
+	}
 	
 }

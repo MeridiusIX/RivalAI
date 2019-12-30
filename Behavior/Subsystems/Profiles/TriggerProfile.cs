@@ -276,7 +276,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                         var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(DamageTypes.Contains(tempValue) == false) {
+                        if(!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
 
                             DamageTypes.Add(tempValue);
 
