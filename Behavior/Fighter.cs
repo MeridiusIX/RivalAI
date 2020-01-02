@@ -309,6 +309,7 @@ namespace RivalAI.Behavior{
 
             //Get Settings From Custom Data
             InitCoreTags();
+		InitTags();
 
             if(Targeting.TargetData.UseCustomTargeting == false) {
 
@@ -324,11 +325,29 @@ namespace RivalAI.Behavior{
 
         public void InitTags() {
 
-            //Core Tags
-            
+            if(string.IsNullOrWhiteSpace(this.RemoteControl?.CustomData) == false) {
 
-            //Behavior Tags
-            
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
+
+                foreach(var tag in descSplit) {
+					
+			//FighterEngageDistanceSpace
+			if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
+
+                        	this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
+
+                    	}	
+			
+			//FighterEngageDistancePlanet
+			if(tag.Contains("[FighterEngageDistancePlanet:") == true) {
+
+                        	this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
+
+                    	}
+					
+		}
+				
+	    }
 
         }
 
