@@ -53,6 +53,7 @@ namespace RivalAI.Behavior{
         private CoreBehavior CoreBehaviorInstance;
         private Fighter FighterBehaviorInstance;
         private Horsefly HorseflyBehaviorInstance;
+        private Passive PassiveBehaviorInstance;
         private Strike StrikeBehaviorInstance;
 
         //Behavior Change
@@ -169,8 +170,20 @@ namespace RivalAI.Behavior{
 
                     }
 
+                    //Passive
+                    if (RemoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
+
+                        ValidBehavior = true;
+                        PassiveBehaviorInstance = new Passive();
+                        BehaviorName = "Passive";
+                        GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+                        PassiveBehaviorInstance.BehaviorInit(RemoteControl);
+                        BehaviorRun += PassiveBehaviorInstance.RunAi;
+
+                    }
+
                     //Strike
-                    if(RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
+                    if (RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
 
                         ValidBehavior = true;
                         StrikeBehaviorInstance = new Strike();

@@ -49,6 +49,7 @@ namespace RivalAI.Behavior {
 		public OwnerSystem Owner;
 		public RotationSystem Rotation;
 		public SpawningSystem Spawning;
+		public StoredSettings Settings;
 		public TargetingSystem Targeting;
 		public ThrustSystem Thrust;
 		public TriggerSystem Trigger;
@@ -226,6 +227,7 @@ namespace RivalAI.Behavior {
 			Rotation = new RotationSystem(remoteControl);
 			Owner = new OwnerSystem(remoteControl);
 			Spawning = new SpawningSystem(remoteControl);
+			Settings = new StoredSettings();
 			Targeting = new TargetingSystem(remoteControl);
 			Thrust = new ThrustSystem(remoteControl);
 			Trigger = new TriggerSystem(remoteControl);
@@ -239,7 +241,7 @@ namespace RivalAI.Behavior {
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
 			Thrust.SetupReferences(this.AutoPilot, this.Collision);
-			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Targeting, this.Weapons);
+			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this.Targeting, this.Weapons);
 			Weapons.SetupReferences(this.Targeting);
 
 			//Setup Alert Systems
@@ -267,6 +269,15 @@ namespace RivalAI.Behavior {
 		public void PostTagsSetup() {
 
 			Damage.SetupDamageHandler();
+
+			foreach (var trigger in Trigger.Triggers)
+				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
+
+			foreach (var trigger in Trigger.DamageTriggers)
+				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
+
+			foreach (var trigger in Trigger.CommandTriggers)
+				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
 
 		}
 

@@ -29,6 +29,8 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Sync;
 
 namespace RivalAI.Helpers {
 
@@ -37,11 +39,13 @@ namespace RivalAI.Helpers {
 		public static HashSet<IMyCubeGrid> MonitoredGrids = new HashSet<IMyCubeGrid>();
 		public static Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>> RegisteredDamageHandlers = new Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>>();
 
+		public static List<MissileProfile> CurrentMissiles = new List<MissileProfile>();
+
 		public static void DamageHandler(object target, MyDamageInformation info) {
 
 			var block = target as IMySlimBlock;
 
-			if(block == null) {
+			if (block == null) {
 
 				return;
 
@@ -49,13 +53,71 @@ namespace RivalAI.Helpers {
 
 			var grid = block.CubeGrid;
 
-			if(MonitoredGrids.Contains(grid)) {
+			if (MonitoredGrids.Contains(grid)) {
+
+				var newInfo = info;
+
+				if (info.Type.ToString() == "Explosion") {
+
+					try {
+
+						//Logger.AddMsg("Missile List Count: " + CurrentMissiles.Count.ToString(), true);
+
+						for (int i = CurrentMissiles.Count - 1; i >= 0; i--) {
+
+							if (!CurrentMissiles[i].Removed) {
+
+								continue;
+
+							}
+
+							var duration = MyAPIGateway.Session.GameDateTime - CurrentMissiles[i].RemovalTime;
+
+							//Logger.AddMsg("TimeDiff: " + duration, true);
+
+							if (duration.TotalMilliseconds > 1000) {
+
+								//Logger.AddMsg("Removing Dead Missile", true);
+								CurrentMissiles.RemoveAt(i);
+								continue;
+
+							}
+
+							var dist = Vector3D.Distance(CurrentMissiles[i].RemovalCoords, grid.GridIntegerToWorld(block.Min));
+
+							if (dist > CurrentMissiles[i].ExplodeRadius * 2) {
+
+								//Logger.AddMsg("Distance Fail: " + dist + " vs " + CurrentMissiles[i].ExplodeRadius.ToString(), true);
+								continue;
+
+							}
+
+							if (CurrentMissiles[i].HitObjects.Contains(target)) {
+
+								//Logger.AddMsg("Object Already Hit", true);
+								continue;
+
+							}
+
+							//Logger.AddMsg("AttackerId Set: " + CurrentMissiles[i].LauncherId, true);
+							newInfo.AttackerId = CurrentMissiles[i].LauncherId;
+							CurrentMissiles[i].HitObjects.Add(target);
+
+						}
+
+					} catch (Exception) {
+
+						//Logger.AddMsg("Got Crash in Damage Handler For Missiles", true);
+
+					}
+
+				} 
 
 				Action<object, MyDamageInformation> action = null;
 
-				if(RegisteredDamageHandlers.TryGetValue(grid, out action)) {
+				if (RegisteredDamageHandlers.TryGetValue(grid, out action)) {
 
-					action?.Invoke(target, info);
+					action?.Invoke(target, newInfo);
 					return;
 
 				}
@@ -66,32 +128,39 @@ namespace RivalAI.Helpers {
 
 		public static void ApplyDamageToTarget(long entityId, float amount, string particleEffect, string soundEffect) {
 
-			if(entityId == 0)
+			if (entityId == 0)
 				return;
 
 			IMyEntity entity = null;
 
-			if(MyAPIGateway.Entities.TryGetEntityById(entityId, out entity) == false)
+			if (MyAPIGateway.Entities.TryGetEntityById(entityId, out entity) == false)
 				return;
 
-			if(entity as IMyCubeGrid != null)
+			if (entity as IMyCubeGrid != null)
 				return;
 
 			var tool = entity as IMyEngineerToolBase;
 			var block = entity as IMyShipToolBase;
 			bool didDamage = false;
+			MatrixD damagePositionMatrix = MatrixD.Identity;
+			Vector3 damagerVelocity = Vector3.Zero;
 
-			if(tool != null) {
+			if (tool != null) {
 
 				IMyEntity characterEntity = null;
 
-				if(MyAPIGateway.Entities.TryGetEntityById(tool.OwnerId, out characterEntity)) {
+				if (MyAPIGateway.Entities.TryGetEntityById(tool.OwnerId, out characterEntity)) {
 
 					var character = characterEntity as IMyCharacter;
 
-					if(character != null) {
+					if (character != null) {
 
 						character.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+						damagePositionMatrix = character.WorldMatrix;
+
+						if (character.Physics != null)
+							damagerVelocity = character.Physics.LinearVelocity;
+
 						didDamage = true;
 
 					}
@@ -100,87 +169,188 @@ namespace RivalAI.Helpers {
 
 			}
 
-			if(block != null) {
+			if (block != null) {
 
 				block.SlimBlock.DoDamage(amount, MyStringHash.GetOrCompute("Electrocution"), true);
+				damagePositionMatrix = block.WorldMatrix;
+
+				if (block?.SlimBlock?.CubeGrid?.Physics != null)
+					damagerVelocity = block.SlimBlock.CubeGrid.Physics.LinearVelocity;
+
 				didDamage = true;
 
 			}
 
-			if(didDamage == false)
+			if (didDamage == false)
 				return;
 
+			if (!string.IsNullOrWhiteSpace(soundEffect)) {
 
+				var effect = new Effects();
+				effect.Mode = EffectSyncMode.PositionSound;
+				effect.SoundId = soundEffect;
+				effect.Coords = damagePositionMatrix.Translation;
+				var syncContainer = new SyncContainer(effect);
+				SyncManager.SendSyncMesage(syncContainer, 0, true, true);
+
+			}
+
+			if (!string.IsNullOrWhiteSpace(particleEffect)) {
+
+				var effect = new Effects();
+				effect.Mode = EffectSyncMode.Particle;
+				effect.ParticleId = particleEffect;
+				effect.Coords = damagePositionMatrix.Translation;
+				effect.ParticleForwardDir = damagePositionMatrix.Forward;
+				effect.ParticleUpDir = damagePositionMatrix.Up;
+				var syncContainer = new SyncContainer(effect);
+				SyncManager.SendSyncMesage(syncContainer, 0, true, true);
+
+			}
 
 		}
-		
-		public static long GetAttackOwnerId(long attackingEntity){
-			
+
+		public static long GetAttackOwnerId(long attackingEntity) {
+
 			IMyEntity entity = null;
-			
-			if(!MyAPIGateway.Entities.TryGetEntityById(attackingEntity, out entity))
+
+			if (!MyAPIGateway.Entities.TryGetEntityById(attackingEntity, out entity))
 				return 0;
-			
+
 			var handGun = entity as IMyGunBaseUser;
 			var handTool = entity as IMyEngineerToolBase;
-			
-			if(handGun != null){
-				
+
+			if (handGun != null) {
+
 				return handGun.OwnerId;
-				
+
 			}
-			
-			if(handTool != null){
-				
+
+			if (handTool != null) {
+
 				return handTool.OwnerIdentityId;
-				
+
 			}
-			
+
 			var cubeGrid = entity as IMyCubeGrid;
 			var block = entity as IMyCubeBlock;
-			
-			if(block != null){
-				
+
+			if (block != null) {
+
 				cubeGrid = block.SlimBlock.CubeGrid;
-				
+
 			}
-			
-			if(cubeGrid == null)
+
+			if (cubeGrid == null)
 				return 0;
-			
+
 			var shipControllers = BlockHelper.GetGridControllers(cubeGrid);
-			
+
 			IMyPlayer controlPlayer = null;
 
-			foreach(var controller in shipControllers){
-				
+			foreach (var controller in shipControllers) {
+
 				var player = MyAPIGateway.Players.GetPlayerControllingEntity(controller);
-				
-				if(player == null)
+
+				if (player == null)
 					continue;
-				
+
 				controlPlayer = player;
 
 				if (controller.IsMainCockpit || (controller.CanControlShip && controller.IsUnderControl))
 					break;
-				
+
 			}
-			
+
 			long owner = 0;
-			
-			if(controlPlayer != null){
-				
+
+			if (controlPlayer != null) {
+
 				owner = controlPlayer.IdentityId;
-				
-			}else{
-				
-				if(cubeGrid.BigOwners.Count > 0)
+
+			} else {
+
+				if (cubeGrid.BigOwners.Count > 0)
 					owner = cubeGrid.BigOwners[0];
-				
+
 			}
-			
+
+			if (owner == 0) {
+
+				var identityList = new List<IMyIdentity>();
+				MyAPIGateway.Players.GetAllIdentites(identityList, x => x.IdentityId == attackingEntity);
+				if (identityList.Count > 0)
+					owner = attackingEntity;
+
+			}
+
 			return owner;
-			
+
+		}
+
+		public static void NewEntityDetected(IMyEntity entity) {
+
+			var ob = new MyObjectBuilder_Missile();
+
+			try {
+
+				ob = entity.GetObjectBuilder() as MyObjectBuilder_Missile;
+
+			} catch (Exception) {
+
+				return;
+
+			}
+
+			if (ob == null) {
+
+				return;
+
+			}
+
+			CurrentMissiles.Add(new MissileProfile(entity, ob));
+
+		}
+
+		public static void EntityRemoved(IMyEntity entity) {
+
+			try {
+
+				for (int i = 0; i < CurrentMissiles.Count; i++) {
+
+					if (CurrentMissiles[i].EntityId == entity.EntityId) {
+
+						CurrentMissiles[i].Removed = true;
+						CurrentMissiles[i].RemovalCoords = entity.GetPosition();
+						CurrentMissiles[i].RemovalTime = MyAPIGateway.Session.GameDateTime;
+						//Logger.AddMsg("Missile Removed: " + CurrentMissiles[i].EntityId.ToString(), true);
+						//Logger.AddMsg("Missile Removed Time: " + CurrentMissiles[i].RemovalTime, true);
+						break;
+
+					}
+
+				}
+
+			} catch (Exception) {
+
+
+
+			}
+
+		}
+
+		public static void RegisterEntityWatchers() {
+
+			MyAPIGateway.Entities.OnEntityAdd += NewEntityDetected;
+			MyAPIGateway.Entities.OnEntityRemove += EntityRemoved;
+
+		}
+
+		public static void UnregisterEntityWatchers() {
+
+			MyAPIGateway.Entities.OnEntityAdd -= NewEntityDetected;
+			MyAPIGateway.Entities.OnEntityRemove -= EntityRemoved;
+
 		}
 
 	}

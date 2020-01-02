@@ -72,7 +72,7 @@ namespace RivalAI.Helpers {
 
             foreach(var block in blockList.Where(x => x.FatBlock != null)) {
 
-                var tBlock = block as IMyTerminalBlock;
+                var tBlock = block.FatBlock as IMyTerminalBlock;
 
                 if(tBlock == null) {
 

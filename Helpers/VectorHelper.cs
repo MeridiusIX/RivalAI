@@ -33,204 +33,204 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Helpers{
 
-    public static class VectorHelper {
+	public static class VectorHelper {
 
-        public static Random Rnd = new Random();
+		public static Random Rnd = new Random();
 
-        //ClosestDirection
-        public static Vector3D ClosestDirection(MatrixD matrix, Vector3D checkCoords, Vector3D ignoreDirectionA, Vector3D ignoreDirectionB) {
+		//ClosestDirection
+		public static Vector3D ClosestDirection(MatrixD matrix, Vector3D checkCoords, Vector3D ignoreDirectionA, Vector3D ignoreDirectionB) {
 
-            Vector3D closestVector = Vector3D.Zero;
-            double closestDistance = 0;
+			Vector3D closestVector = Vector3D.Zero;
+			double closestDistance = 0;
 
-            //Forward
-            if(matrix.Forward != ignoreDirectionA && matrix.Forward != ignoreDirectionB) {
+			//Forward
+			if(matrix.Forward != ignoreDirectionA && matrix.Forward != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Forward;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Forward;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            //Backward
-            if(matrix.Backward != ignoreDirectionA && matrix.Backward != ignoreDirectionB) {
+			//Backward
+			if(matrix.Backward != ignoreDirectionA && matrix.Backward != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Backward;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Backward;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            //Up
-            if(matrix.Up != ignoreDirectionA && matrix.Up != ignoreDirectionB) {
+			//Up
+			if(matrix.Up != ignoreDirectionA && matrix.Up != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Up;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Up;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            //Down
-            if(matrix.Down != ignoreDirectionA && matrix.Down != ignoreDirectionB) {
+			//Down
+			if(matrix.Down != ignoreDirectionA && matrix.Down != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Down;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Down;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            //Left
-            if(matrix.Left != ignoreDirectionA && matrix.Left != ignoreDirectionB) {
+			//Left
+			if(matrix.Left != ignoreDirectionA && matrix.Left != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Left;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Left;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            //Right
-            if(matrix.Right != ignoreDirectionA && matrix.Right != ignoreDirectionB) {
+			//Right
+			if(matrix.Right != ignoreDirectionA && matrix.Right != ignoreDirectionB) {
 
-                var vectorPos = matrix.Translation + matrix.Right;
-                var distance = Vector3D.Distance(vectorPos, checkCoords);
-                bool gotCloser = false;
+				var vectorPos = matrix.Translation + matrix.Right;
+				var distance = Vector3D.Distance(vectorPos, checkCoords);
+				bool gotCloser = false;
 
-                if(closestVector == Vector3D.Zero) {
+				if(closestVector == Vector3D.Zero) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
-                    gotCloser = true;
+					closestDistance = distance;
+					closestVector = vectorPos;
+					gotCloser = true;
 
-                }
+				}
 
-                if(gotCloser == false && distance < closestDistance) {
+				if(gotCloser == false && distance < closestDistance) {
 
-                    closestDistance = distance;
-                    closestVector = vectorPos;
+					closestDistance = distance;
+					closestVector = vectorPos;
 
-                }
+				}
 
-            }
+			}
 
-            return closestVector;
+			return closestVector;
 
-        }
+		}
 
-        public static double CompareDistanceAtSealevel(MyPlanet planet, Vector3D pointA, Vector3D pointB) {
+		public static double CompareDistanceAtSealevel(MyPlanet planet, Vector3D pointA, Vector3D pointB) {
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return -1;
+				return -1;
 
-            }
+			}
 
-            var seaLevelA = GetPlanetSealevelAtPosition(pointA, planet);
-            var seaLevelB = GetPlanetSealevelAtPosition(pointB, planet);
-            return Vector3D.Distance(seaLevelA, seaLevelB);
+			var seaLevelA = GetPlanetSealevelAtPosition(pointA, planet);
+			var seaLevelB = GetPlanetSealevelAtPosition(pointB, planet);
+			return Vector3D.Distance(seaLevelA, seaLevelB);
 
-        }
+		}
 
-        //CreateDirectionAndTarget
-        public static Vector3D CreateDirectionAndTarget(Vector3D startDir, Vector3D endDir, Vector3D startCoords, double distance) {
+		//CreateDirectionAndTarget
+		public static Vector3D CreateDirectionAndTarget(Vector3D startDir, Vector3D endDir, Vector3D startCoords, double distance) {
 
-            var direction = Vector3D.Normalize(endDir - startDir);
-            return direction * distance + startCoords;
+			var direction = Vector3D.Normalize(endDir - startDir);
+			return direction * distance + startCoords;
 
-        }
+		}
 
-        //GetAngleBetweenDirections
-        public static double GetAngleBetweenDirections(Vector3D dirA, Vector3D dirB) {
+		//GetAngleBetweenDirections
+		public static double GetAngleBetweenDirections(Vector3D dirA, Vector3D dirB) {
 
-            var radians = MyUtils.GetAngleBetweenVectors(dirA, dirB);
-            return (180 / Math.PI) * radians;
+			var radians = MyUtils.GetAngleBetweenVectors(dirA, dirB);
+			return (180 / Math.PI) * radians;
 
-        }
+		}
 		
 		//GetDirectionAwayFromTarget
 		public static Vector3D GetDirectionAwayFromTarget(Vector3D myPosition, Vector3D targetPosition){
 			
 			var planet = MyGamePruningStructure.GetClosestPlanet(myPosition);
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return Vector3D.Normalize(myPosition - targetPosition);
+				return Vector3D.Normalize(myPosition - targetPosition);
 
-            }else{
+			}else{
 				
 				var mySealevel = GetPlanetSealevelAtPosition(myPosition, planet);
 				var targetSealevel = GetPlanetSealevelAtPosition(targetPosition, planet);
@@ -240,239 +240,239 @@ namespace RivalAI.Helpers{
 			
 		}
 
-        //GetThrustDirectionsAwayFromPosition
-        public static Vector3I GetThrustDirectionsAwayFromPosition(MatrixD myMatrix, Vector3D targetPosition) {
+		//GetThrustDirectionsAwayFromPosition
+		public static Vector3I GetThrustDirectionsAwayFromPosition(MatrixD myMatrix, Vector3D targetPosition) {
 
-            var dist = Vector3D.Distance(myMatrix.Translation, targetPosition) / 2;
-            Vector3I directions = new Vector3I(1, 1, 1);
+			var dist = Vector3D.Distance(myMatrix.Translation, targetPosition) / 2;
+			Vector3I directions = new Vector3I(1, 1, 1);
 
-            //X
-            var leftDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Left);
-            var rightDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Right);
+			//X
+			var leftDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Left);
+			var rightDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Right);
 
-            if(rightDist < leftDist) {
+			if(rightDist < leftDist) {
 
-                directions.X = -1;
+				directions.X = -1;
 
-            }
+			}
 
-            //Y
-            var upDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
-            var downDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
+			//Y
+			var upDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
+			var downDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
 
-            if(upDist < downDist) {
+			if(upDist < downDist) {
 
-                directions.Y = -1;
+				directions.Y = -1;
 
-            }
+			}
 
-            //Z
-            var forwardDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
-            var backDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
+			//Z
+			var forwardDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
+			var backDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
 
-            if(forwardDist < backDist) {
+			if(forwardDist < backDist) {
 
-                directions.Z = -1;
+				directions.Z = -1;
 
-            }
+			}
 
-            return directions;
+			return directions;
 
 
-        }
+		}
 
-        public static Vector3I GetThrustDirectionsAwayFromSurface(MatrixD myMatrix, Vector3D upDirection, Vector3I oldDirections) {
+		public static Vector3I GetThrustDirectionsAwayFromSurface(MatrixD myMatrix, Vector3D upDirection, Vector3I oldDirections) {
 
-            Vector3I directions = new Vector3I(0, 0, 0);
-            Vector3I newDirections = oldDirections;
-            double closestAngle = 180;
+			Vector3I directions = new Vector3I(0, 0, 0);
+			Vector3I newDirections = oldDirections;
+			double closestAngle = 180;
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Forward) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Forward) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Forward);
-                directions = new Vector3I(0, 0, -1);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Forward);
+				directions = new Vector3I(0, 0, -1);
 
-            }
+			}
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Backward) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Backward) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Backward);
-                directions = new Vector3I(0, 0, 1);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Backward);
+				directions = new Vector3I(0, 0, 1);
 
-            }
+			}
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Up) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Up) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Up);
-                directions = new Vector3I(0, -1, 0);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Up);
+				directions = new Vector3I(0, -1, 0);
 
-            }
+			}
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Down) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Down) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Down);
-                directions = new Vector3I(0, 1, 0);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Down);
+				directions = new Vector3I(0, 1, 0);
 
-            }
+			}
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Right) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Right) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Right);
-                directions = new Vector3I(-1, 0, 0);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Right);
+				directions = new Vector3I(-1, 0, 0);
 
-            }
+			}
 
-            if(GetAngleBetweenDirections(-upDirection, myMatrix.Left) < closestAngle) {
+			if(GetAngleBetweenDirections(-upDirection, myMatrix.Left) < closestAngle) {
 
-                closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Left);
-                directions = new Vector3I(1, 0, 0);
+				closestAngle = GetAngleBetweenDirections(-upDirection, myMatrix.Left);
+				directions = new Vector3I(1, 0, 0);
 
-            }
+			}
 
-            if(directions.X != 0) {
+			if(directions.X != 0) {
 
-                newDirections.X = directions.X;
+				newDirections.X = directions.X;
 
-            }
+			}
 
-            if(directions.Y != 0) {
+			if(directions.Y != 0) {
 
-                newDirections.Y = directions.Y;
+				newDirections.Y = directions.Y;
 
-            }
+			}
 
-            if(directions.Z != 0) {
+			if(directions.Z != 0) {
 
-                newDirections.Z = directions.Z;
+				newDirections.Z = directions.Z;
 
-            }
+			}
 
-            return newDirections;
+			return newDirections;
 
 
-        }
+		}
 
-        //GetPlanetSealevelAtPosition
-        public static Vector3D GetPlanetSealevelAtPosition(Vector3D coords, MyPlanet planet = null) {
+		//GetPlanetSealevelAtPosition
+		public static Vector3D GetPlanetSealevelAtPosition(Vector3D coords, MyPlanet planet = null) {
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return Vector3D.Zero;
+				return Vector3D.Zero;
 
-            }
+			}
 
-            var planetEntity = planet as IMyEntity;
-            var direction = Vector3D.Normalize(coords - planetEntity.GetPosition());
-            return direction * (double)planet.MinimumRadius + planetEntity.GetPosition();
+			var planetEntity = planet as IMyEntity;
+			var direction = Vector3D.Normalize(coords - planetEntity.GetPosition());
+			return direction * (double)planet.MinimumRadius + planetEntity.GetPosition();
 
-        }
+		}
 
-        public static Vector3D GetPositionCenter(IMyEntity entity) {
+		public static Vector3D GetPositionCenter(IMyEntity entity) {
 
-            if(MyAPIGateway.Entities.Exist(entity) == false) {
+			if(MyAPIGateway.Entities.Exist(entity) == false) {
 
-                return Vector3D.Zero;
+				return Vector3D.Zero;
 
-            }
+			}
 
-            if(entity?.PositionComp == null) {
+			if(entity?.PositionComp == null) {
 
-                return Vector3D.Zero;
+				return Vector3D.Zero;
 
-            }
+			}
 
-            return entity.PositionComp.WorldAABB.Center;
+			return entity.PositionComp.WorldAABB.Center;
 
-        }
+		}
 
-        //GetPlanetSurfaceCoordsAtPosition
-        public static Vector3D GetPlanetSurfaceCoordsAtPosition(Vector3D coords, MyPlanet planet = null) {
+		//GetPlanetSurfaceCoordsAtPosition
+		public static Vector3D GetPlanetSurfaceCoordsAtPosition(Vector3D coords, MyPlanet planet = null) {
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return Vector3D.Zero;
+				return Vector3D.Zero;
 
-            }
+			}
 
-            var checkCoords = coords;
+			var checkCoords = coords;
 
-            return planet.GetClosestSurfacePointGlobal(ref checkCoords);
+			return planet.GetClosestSurfacePointGlobal(ref checkCoords);
 
-        }
+		}
 
-        public static Vector3D GetPlanetSurfaceCoordsAtPosition(Vector3D coords) {
+		public static Vector3D GetPlanetSurfaceCoordsAtPosition(Vector3D coords) {
 
-            var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
 
-            if(planet == null)
-                return Vector3D.Zero;
+			if(planet == null)
+				return Vector3D.Zero;
 
-            return GetPlanetSurfaceCoordsAtPosition(coords, planet);
+			return GetPlanetSurfaceCoordsAtPosition(coords, planet);
 
-        }
+		}
 
-        //GetPlanetSurfaceDifference
-        public static double GetPlanetSurfaceDifference(Vector3D myCoords, Vector3D testCoords, MyPlanet planet = null) {
+		//GetPlanetSurfaceDifference
+		public static double GetPlanetSurfaceDifference(Vector3D myCoords, Vector3D testCoords, MyPlanet planet = null) {
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return 0;
+				return 0;
 
-            }
+			}
 
-            var testSurfaceCoords = GetPlanetSurfaceCoordsAtPosition(testCoords, planet);
-            var mySealevelCoords = GetPlanetSealevelAtPosition(myCoords, planet);
-            var testSealevelCoords = GetPlanetSealevelAtPosition(testSurfaceCoords, planet);
-            var myDistance = Vector3D.Distance(mySealevelCoords, myCoords);
-            var testDistance = Vector3D.Distance(testSealevelCoords, testSurfaceCoords);
-            return myDistance - testDistance;
+			var testSurfaceCoords = GetPlanetSurfaceCoordsAtPosition(testCoords, planet);
+			var mySealevelCoords = GetPlanetSealevelAtPosition(myCoords, planet);
+			var testSealevelCoords = GetPlanetSealevelAtPosition(testSurfaceCoords, planet);
+			var myDistance = Vector3D.Distance(mySealevelCoords, myCoords);
+			var testDistance = Vector3D.Distance(testSealevelCoords, testSurfaceCoords);
+			return myDistance - testDistance;
 
-        }
+		}
 
-        public static Vector3D GetPlanetUpDirection(Vector3D position) {
+		public static Vector3D GetPlanetUpDirection(Vector3D position) {
 
-            var planet = MyGamePruningStructure.GetClosestPlanet(position);
+			var planet = MyGamePruningStructure.GetClosestPlanet(position);
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return Vector3D.Zero;
+				return Vector3D.Zero;
 
-            }
+			}
 
-            var planetEntity = planet as IMyEntity;
-            var gravityProvider = planetEntity.Components.Get<MyGravityProviderComponent>();
+			var planetEntity = planet as IMyEntity;
+			var gravityProvider = planetEntity.Components.Get<MyGravityProviderComponent>();
 
-            if(gravityProvider.IsPositionInRange(position) == true) {
+			if(gravityProvider.IsPositionInRange(position) == true) {
 
-                return Vector3D.Normalize(position - planetEntity.GetPosition());
+				return Vector3D.Normalize(position - planetEntity.GetPosition());
 
-            }
+			}
 
-            return Vector3D.Zero;
+			return Vector3D.Zero;
 
-        }
+		}
 
-        public static MatrixD GetPlanetRandomSpawnMatrix(Vector3D coords, double minDist, double maxDist, double minAltitude, double maxAltitude) {
+		public static MatrixD GetPlanetRandomSpawnMatrix(Vector3D coords, double minDist, double maxDist, double minAltitude, double maxAltitude) {
 
-            MatrixD result = MatrixD.Identity;
-            var planet = MyGamePruningStructure.GetClosestPlanet(coords);
-            var upDir = GetPlanetUpDirection(coords);
+			MatrixD result = MatrixD.Identity;
+			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+			var upDir = GetPlanetUpDirection(coords);
 
-            if (planet == null)
-                return result;
+			if (planet == null)
+				return result;
 
-            var perpDir = RandomPerpendicular(upDir);
-            var roughArea = perpDir * RandomDistance(minDist, maxDist) + coords;
-            var surfaceCoords = GetPlanetSurfaceCoordsAtPosition(roughArea, planet);
-            var upAtSurface = Vector3D.Normalize(surfaceCoords - planet.PositionComp.WorldAABB.Center);
-            var spawnCoords = upAtSurface * RandomDistance(minAltitude, maxAltitude) + surfaceCoords;
-            var perpSurfaceDir = RandomPerpendicular(upAtSurface);
-            result = MatrixD.CreateWorld(spawnCoords, perpSurfaceDir, upAtSurface);
-            return result;
+			var perpDir = RandomPerpendicular(upDir);
+			var roughArea = perpDir * RandomDistance(minDist, maxDist) + coords;
+			var surfaceCoords = GetPlanetSurfaceCoordsAtPosition(roughArea, planet);
+			var upAtSurface = Vector3D.Normalize(surfaceCoords - planet.PositionComp.WorldAABB.Center);
+			var spawnCoords = upAtSurface * RandomDistance(minAltitude, maxAltitude) + surfaceCoords;
+			var perpSurfaceDir = RandomPerpendicular(upAtSurface);
+			result = MatrixD.CreateWorld(spawnCoords, perpSurfaceDir, upAtSurface);
+			return result;
 
-        }
+		}
 
-        /*
+		/*
 		The intent of this method is to calculate whether or not the approach to a target
 		on a planet is safe, and to return coordinates that properly avoid terrain obstacles.
 		
@@ -491,73 +491,73 @@ namespace RivalAI.Helpers{
 		
 		*/
 
-        public static Vector3D GetPlanetWaypointPathing(Vector3D myCoords, Vector3D targetCoords, double minAltitude = 200, double maxDistanceToCheck = 1000, bool returnOriginalTarget = false) {
+		public static Vector3D GetPlanetWaypointPathing(Vector3D myCoords, Vector3D targetCoords, double minAltitude = 200, double maxDistanceToCheck = 1000, bool returnOriginalTarget = false) {
 			
 			double minAltitudeRelaxation = 0.75;
-            var planet = MyGamePruningStructure.GetClosestPlanet(targetCoords);
+			var planet = MyGamePruningStructure.GetClosestPlanet(targetCoords);
 
-            if(planet == null) {
+			if(planet == null) {
 
-                return targetCoords;
+				return targetCoords;
 
-            }
+			}
 
-            var planetCoords = planet.PositionComp.WorldAABB.Center; 
-            var targetUp = Vector3D.Normalize(targetCoords - planetCoords);
-            
-            var dirToTarget = Vector3D.Normalize(targetCoords - myCoords);
-            var distToTarget = Vector3D.Distance(targetCoords, myCoords);
-            double distanceToUse = distToTarget;
+			var planetCoords = planet.PositionComp.WorldAABB.Center; 
+			var targetUp = Vector3D.Normalize(targetCoords - planetCoords);
+			
+			var dirToTarget = Vector3D.Normalize(targetCoords - myCoords);
+			var distToTarget = Vector3D.Distance(targetCoords, myCoords);
+			double distanceToUse = distToTarget;
 
-            if(distToTarget > maxDistanceToCheck) {
+			if(distToTarget > maxDistanceToCheck) {
 
-                distanceToUse = maxDistanceToCheck;
+				distanceToUse = maxDistanceToCheck;
 
-            }
+			}
 
-            List<Vector3D> pathSteps = new List<Vector3D>();
-            double currentPathDistance = 0;
+			List<Vector3D> pathSteps = new List<Vector3D>();
+			double currentPathDistance = 0;
 
-            while(currentPathDistance < distanceToUse) {
+			while(currentPathDistance < distanceToUse) {
 
-                if((distanceToUse - currentPathDistance) < 50) {
+				if((distanceToUse - currentPathDistance) < 50) {
 
-                    currentPathDistance = distanceToUse;
+					currentPathDistance = distanceToUse;
 
-                } else {
+				} else {
 
-                    currentPathDistance += 50;
+					currentPathDistance += 50;
 
-                }
+				}
 
-                pathSteps.Add(dirToTarget * currentPathDistance + myCoords);
+				pathSteps.Add(dirToTarget * currentPathDistance + myCoords);
 
-            }
+			}
 
-            var myDistToCore = Vector3D.Distance(myCoords, planetCoords);
+			var myDistToCore = Vector3D.Distance(myCoords, planetCoords);
 			var targetDistToCore = Vector3D.Distance(targetCoords, planetCoords);
 			
-            double currentHighestDistance = myDistToCore;
-            double currentHighestTerrain = 0;
+			double currentHighestDistance = myDistToCore;
+			double currentHighestTerrain = 0;
 			Vector3D highestTerrainPoint = Vector3D.Zero;
-            Vector3D closestHigherNPCTerrain = Vector3D.Zero;
+			Vector3D closestHigherNPCTerrain = Vector3D.Zero;
 
-            foreach(var pathPoint in pathSteps) {
+			foreach(var pathPoint in pathSteps) {
 
-                Vector3D pathPointRef = pathPoint;
-                Vector3D surfacePoint = planet.GetClosestSurfacePointGlobal(ref pathPointRef);
-                double surfacePointToCore = Vector3D.Distance(surfacePoint, planetCoords);
+				Vector3D pathPointRef = pathPoint;
+				Vector3D surfacePoint = planet.GetClosestSurfacePointGlobal(ref pathPointRef);
+				double surfacePointToCore = Vector3D.Distance(surfacePoint, planetCoords);
 
-                if(currentHighestTerrain < surfacePointToCore) {
+				if(currentHighestTerrain < surfacePointToCore) {
 
-                    currentHighestTerrain = surfacePointToCore;
+					currentHighestTerrain = surfacePointToCore;
 					highestTerrainPoint = surfacePoint;
 					
-                }
+				}
 
-                if(currentHighestDistance < surfacePointToCore) {
+				if(currentHighestDistance < surfacePointToCore) {
 
-                    currentHighestDistance = surfacePointToCore;
+					currentHighestDistance = surfacePointToCore;
 					
 					if(closestHigherNPCTerrain == Vector3D.Zero){
 						
@@ -565,12 +565,12 @@ namespace RivalAI.Helpers{
 						
 					}
  
-                }
+				}
 
-            }
+			}
 			
 			//If Highest Terrain + minAltitude Is Higher Than NPC
-            if(currentHighestTerrain + (minAltitude * minAltitudeRelaxation) > myDistToCore) {
+			if(currentHighestTerrain + (minAltitude * minAltitudeRelaxation) > myDistToCore) {
 				
 				if(closestHigherNPCTerrain == Vector3D.Zero){
 					
@@ -578,17 +578,17 @@ namespace RivalAI.Helpers{
 					
 				}
 
-                //Logger.AddMsg(string.Format("Higher Terrain Near NPC"), true);
-                var forwardStep = dirToTarget * 50 + myCoords;
-                return Vector3D.Normalize(forwardStep - planetCoords) * (currentHighestDistance + minAltitude) + planetCoords;
+				//Logger.AddMsg(string.Format("Higher Terrain Near NPC"), true);
+				var forwardStep = dirToTarget * 50 + myCoords;
+				return Vector3D.Normalize(forwardStep - planetCoords) * (currentHighestDistance + minAltitude) + planetCoords;
 
-            }
+			}
 			
 			//If NPC is Higher Than Highest Detected Terrain, but Target is Not
 			if((currentHighestTerrain - targetDistToCore) > minAltitude) {
 
-                //Logger.AddMsg(string.Format("Higher Terrain Near Target"), true);
-                return targetUp * (currentHighestTerrain + minAltitude) + planetCoords;
+				//Logger.AddMsg(string.Format("Higher Terrain Near Target"), true);
+				return targetUp * (currentHighestTerrain + minAltitude) + planetCoords;
 
 			}
 			
@@ -603,211 +603,211 @@ namespace RivalAI.Helpers{
 
 			}
 
-        }
+		}
 
-        public static Dictionary<string, Vector3D> GetTransformedGyroRotations(MatrixD refBlock, MatrixD gyro){
+		public static Dictionary<string, Vector3D> GetTransformedGyroRotations(MatrixD refBlock, MatrixD gyro){
 
-            //Get Reference Rotation Directions
-            var refPitchDirections = new Dictionary<Vector3D, Vector3D>();
-            var refYawDirections = new Dictionary<Vector3D, Vector3D>();
-            var refRollDirections = new Dictionary<Vector3D, Vector3D>();
+			//Get Reference Rotation Directions
+			var refPitchDirections = new Dictionary<Vector3D, Vector3D>();
+			var refYawDirections = new Dictionary<Vector3D, Vector3D>();
+			var refRollDirections = new Dictionary<Vector3D, Vector3D>();
 
-            refPitchDirections.Add(refBlock.Forward, refBlock.Up);
-            refPitchDirections.Add(refBlock.Up, refBlock.Backward);
-            refPitchDirections.Add(refBlock.Backward, refBlock.Down);
-            refPitchDirections.Add(refBlock.Down, refBlock.Forward);
-            var refPitchDirectionsList = refPitchDirections.Keys.ToList();
+			refPitchDirections.Add(refBlock.Forward, refBlock.Up);
+			refPitchDirections.Add(refBlock.Up, refBlock.Backward);
+			refPitchDirections.Add(refBlock.Backward, refBlock.Down);
+			refPitchDirections.Add(refBlock.Down, refBlock.Forward);
+			var refPitchDirectionsList = refPitchDirections.Keys.ToList();
 
-            refYawDirections.Add(refBlock.Forward, refBlock.Right);
-            refYawDirections.Add(refBlock.Right, refBlock.Backward);
-            refYawDirections.Add(refBlock.Backward, refBlock.Left);
-            refYawDirections.Add(refBlock.Left, refBlock.Forward);
-            var refYawDirectionsList = refYawDirections.Keys.ToList();
+			refYawDirections.Add(refBlock.Forward, refBlock.Right);
+			refYawDirections.Add(refBlock.Right, refBlock.Backward);
+			refYawDirections.Add(refBlock.Backward, refBlock.Left);
+			refYawDirections.Add(refBlock.Left, refBlock.Forward);
+			var refYawDirectionsList = refYawDirections.Keys.ToList();
 
-            refRollDirections.Add(refBlock.Up, refBlock.Right);
-            refRollDirections.Add(refBlock.Right, refBlock.Down);
-            refRollDirections.Add(refBlock.Down, refBlock.Left);
-            refRollDirections.Add(refBlock.Left, refBlock.Up);
-            var refRollDirectionsList = refRollDirections.Keys.ToList();
+			refRollDirections.Add(refBlock.Up, refBlock.Right);
+			refRollDirections.Add(refBlock.Right, refBlock.Down);
+			refRollDirections.Add(refBlock.Down, refBlock.Left);
+			refRollDirections.Add(refBlock.Left, refBlock.Up);
+			var refRollDirectionsList = refRollDirections.Keys.ToList();
 
-            //Gyro Rotation Directions
-            var gyroPitchDirections = new Dictionary<Vector3D, Vector3D>();
-            var gyroYawDirections = new Dictionary<Vector3D, Vector3D>();
-            var gyroRollDirections = new Dictionary<Vector3D, Vector3D>();
+			//Gyro Rotation Directions
+			var gyroPitchDirections = new Dictionary<Vector3D, Vector3D>();
+			var gyroYawDirections = new Dictionary<Vector3D, Vector3D>();
+			var gyroRollDirections = new Dictionary<Vector3D, Vector3D>();
 
-            gyroPitchDirections.Add(gyro.Forward, gyro.Up);
-            gyroPitchDirections.Add(gyro.Up, gyro.Backward);
-            gyroPitchDirections.Add(gyro.Backward, gyro.Down);
-            gyroPitchDirections.Add(gyro.Down, gyro.Forward);
+			gyroPitchDirections.Add(gyro.Forward, gyro.Up);
+			gyroPitchDirections.Add(gyro.Up, gyro.Backward);
+			gyroPitchDirections.Add(gyro.Backward, gyro.Down);
+			gyroPitchDirections.Add(gyro.Down, gyro.Forward);
 
-            gyroYawDirections.Add(gyro.Forward, gyro.Right);
-            gyroYawDirections.Add(gyro.Right, gyro.Backward);
-            gyroYawDirections.Add(gyro.Backward, gyro.Left);
-            gyroYawDirections.Add(gyro.Left, gyro.Forward);
+			gyroYawDirections.Add(gyro.Forward, gyro.Right);
+			gyroYawDirections.Add(gyro.Right, gyro.Backward);
+			gyroYawDirections.Add(gyro.Backward, gyro.Left);
+			gyroYawDirections.Add(gyro.Left, gyro.Forward);
 
-            gyroRollDirections.Add(gyro.Up, gyro.Right);
-            gyroRollDirections.Add(gyro.Right, gyro.Down);
-            gyroRollDirections.Add(gyro.Down, gyro.Left);
-            gyroRollDirections.Add(gyro.Left, gyro.Up);
+			gyroRollDirections.Add(gyro.Up, gyro.Right);
+			gyroRollDirections.Add(gyro.Right, gyro.Down);
+			gyroRollDirections.Add(gyro.Down, gyro.Left);
+			gyroRollDirections.Add(gyro.Left, gyro.Up);
 
-            var localPitchDirections = new Dictionary<Vector3D, Vector3D>();
-            var localYawDirections = new Dictionary<Vector3D, Vector3D>();
-            var localRollDirections = new Dictionary<Vector3D, Vector3D>();
-            var result = new Dictionary<string, Vector3D>();
+			var localPitchDirections = new Dictionary<Vector3D, Vector3D>();
+			var localYawDirections = new Dictionary<Vector3D, Vector3D>();
+			var localRollDirections = new Dictionary<Vector3D, Vector3D>();
+			var result = new Dictionary<string, Vector3D>();
 
-            //Calculate Pitch Axis
-            while(true) {
+			//Calculate Pitch Axis
+			while(true) {
 
-                var checkPitchPitch = refPitchDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
-                if(checkPitchPitch.Count == 0) {
+				var checkPitchPitch = refPitchDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
+				if(checkPitchPitch.Count == 0) {
 
-                    //Logger.AddMsg("PitchPitch", true);
-                    localPitchDirections = gyroPitchDirections;
-                    var sign = GetSignForRotationDirection(refPitchDirections, gyroPitchDirections, refBlock.Forward);
-                    result.Add("Pitch", new Vector3D(-sign, 0, 0));
-                    break;
+					//Logger.AddMsg("PitchPitch", true);
+					localPitchDirections = gyroPitchDirections;
+					var sign = GetSignForRotationDirection(refPitchDirections, gyroPitchDirections, refBlock.Forward);
+					result.Add("Pitch", new Vector3D(-sign, 0, 0));
+					break;
 
-                }
+				}
 
-                var checkPitchYaw = refPitchDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
-                if(checkPitchYaw.Count == 0) {
+				var checkPitchYaw = refPitchDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
+				if(checkPitchYaw.Count == 0) {
 
-                    //Logger.AddMsg("PitchYaw", true);
-                    localPitchDirections = gyroYawDirections;
-                    var sign = GetSignForRotationDirection(refPitchDirections, gyroYawDirections, refBlock.Forward);
-                    result.Add("Pitch", new Vector3D(0, sign, 0));
-                    break;
+					//Logger.AddMsg("PitchYaw", true);
+					localPitchDirections = gyroYawDirections;
+					var sign = GetSignForRotationDirection(refPitchDirections, gyroYawDirections, refBlock.Forward);
+					result.Add("Pitch", new Vector3D(0, sign, 0));
+					break;
 
-                }
+				}
 
-                var checkPitchRoll = refPitchDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
-                if(checkPitchRoll.Count == 0) {
+				var checkPitchRoll = refPitchDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
+				if(checkPitchRoll.Count == 0) {
 
-                    //Logger.AddMsg("PitchRoll", true);
-                    localPitchDirections = gyroRollDirections;
-                    var sign = GetSignForRotationDirection(refPitchDirections, gyroRollDirections, refBlock.Forward);
-                    result.Add("Pitch", new Vector3D(0, 0, sign));
-                    break;
+					//Logger.AddMsg("PitchRoll", true);
+					localPitchDirections = gyroRollDirections;
+					var sign = GetSignForRotationDirection(refPitchDirections, gyroRollDirections, refBlock.Forward);
+					result.Add("Pitch", new Vector3D(0, 0, sign));
+					break;
 
-                }
+				}
 
-                break;
+				break;
 
-            }
+			}
 
 
-            //Calculate Yaw Axis
-            while(true) {
+			//Calculate Yaw Axis
+			while(true) {
 
-                var checkYawPitch = refYawDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
-                if(checkYawPitch.Count == 0) {
+				var checkYawPitch = refYawDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
+				if(checkYawPitch.Count == 0) {
 
-                    //Logger.AddMsg("YawPitch", true);
-                    localYawDirections = gyroPitchDirections;
-                    var sign = GetSignForRotationDirection(refYawDirections, gyroPitchDirections, refBlock.Forward);
-                    result.Add("Yaw", new Vector3D(-sign, 0, 0));
-                    break;
+					//Logger.AddMsg("YawPitch", true);
+					localYawDirections = gyroPitchDirections;
+					var sign = GetSignForRotationDirection(refYawDirections, gyroPitchDirections, refBlock.Forward);
+					result.Add("Yaw", new Vector3D(-sign, 0, 0));
+					break;
 
-                }
+				}
 
-                var checkYawYaw = refYawDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
-                if(checkYawYaw.Count == 0) {
+				var checkYawYaw = refYawDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
+				if(checkYawYaw.Count == 0) {
 
-                    //Logger.AddMsg("YawYaw", true);
-                    localYawDirections = gyroYawDirections;
-                    var sign = GetSignForRotationDirection(refYawDirections, gyroYawDirections, refBlock.Forward);
-                    result.Add("Yaw", new Vector3D(0, sign, 0));
-                    break;
+					//Logger.AddMsg("YawYaw", true);
+					localYawDirections = gyroYawDirections;
+					var sign = GetSignForRotationDirection(refYawDirections, gyroYawDirections, refBlock.Forward);
+					result.Add("Yaw", new Vector3D(0, sign, 0));
+					break;
 
-                }
+				}
 
-                var checkYawRoll = refYawDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
-                if(checkYawRoll.Count == 0) {
+				var checkYawRoll = refYawDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
+				if(checkYawRoll.Count == 0) {
 
-                    //Logger.AddMsg("YawRoll", true);
-                    localYawDirections = gyroRollDirections;
-                    var sign = GetSignForRotationDirection(refYawDirections, gyroRollDirections, refBlock.Forward); 
-                    result.Add("Yaw", new Vector3D(0, 0, sign));
-                    break;
+					//Logger.AddMsg("YawRoll", true);
+					localYawDirections = gyroRollDirections;
+					var sign = GetSignForRotationDirection(refYawDirections, gyroRollDirections, refBlock.Forward); 
+					result.Add("Yaw", new Vector3D(0, 0, sign));
+					break;
 
-                }
+				}
 
-                break;
+				break;
 
-            }
+			}
 
-            //Calculate Roll Axis
-            while(true) {
+			//Calculate Roll Axis
+			while(true) {
 
-                var checkRollPitch = refRollDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
-                if(checkRollPitch.Count == 0) {
+				var checkRollPitch = refRollDirectionsList.Except(gyroPitchDirections.Keys.ToList()).ToList();
+				if(checkRollPitch.Count == 0) {
 
-                    //Logger.AddMsg("RollPitch", true);
-                    localRollDirections = gyroPitchDirections;
-                    var sign = GetSignForRotationDirection(refRollDirections, gyroPitchDirections, refBlock.Up);
-                    result.Add("Roll", new Vector3D(-sign, 0, 0));
-                    break;
+					//Logger.AddMsg("RollPitch", true);
+					localRollDirections = gyroPitchDirections;
+					var sign = GetSignForRotationDirection(refRollDirections, gyroPitchDirections, refBlock.Up);
+					result.Add("Roll", new Vector3D(-sign, 0, 0));
+					break;
 
-                }
+				}
 
-                var checkRollYaw = refRollDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
-                if(checkRollYaw.Count == 0) {
+				var checkRollYaw = refRollDirectionsList.Except(gyroYawDirections.Keys.ToList()).ToList();
+				if(checkRollYaw.Count == 0) {
 
-                    //Logger.AddMsg("RollYaw", true);
-                    localRollDirections = gyroYawDirections;
-                    var sign = GetSignForRotationDirection(refRollDirections, gyroYawDirections, refBlock.Up);
-                    result.Add("Roll", new Vector3D(0, sign, 0));
-                    break;
+					//Logger.AddMsg("RollYaw", true);
+					localRollDirections = gyroYawDirections;
+					var sign = GetSignForRotationDirection(refRollDirections, gyroYawDirections, refBlock.Up);
+					result.Add("Roll", new Vector3D(0, sign, 0));
+					break;
 
-                }
+				}
 
-                var checkRollRoll = refRollDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
-                if(checkRollRoll.Count == 0) {
+				var checkRollRoll = refRollDirectionsList.Except(gyroRollDirections.Keys.ToList()).ToList();
+				if(checkRollRoll.Count == 0) {
 
-                    //Logger.AddMsg("RollRoll", true);
-                    localRollDirections = gyroRollDirections;
-                    var sign = GetSignForRotationDirection(refRollDirections, gyroRollDirections, refBlock.Up);
-                    result.Add("Roll", new Vector3D(0, 0, sign));
-                    break;
+					//Logger.AddMsg("RollRoll", true);
+					localRollDirections = gyroRollDirections;
+					var sign = GetSignForRotationDirection(refRollDirections, gyroRollDirections, refBlock.Up);
+					result.Add("Roll", new Vector3D(0, 0, sign));
+					break;
 
-                }
+				}
 
-                break;
+				break;
 
-            }
+			}
 
-            Logger.AddMsg("End Getting Rotations");
+			Logger.AddMsg("End Getting Rotations");
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static double GetSignForRotationDirection(Dictionary<Vector3D, Vector3D> refDict, Dictionary<Vector3D, Vector3D> gyroDict, Vector3D dir) {
+		public static double GetSignForRotationDirection(Dictionary<Vector3D, Vector3D> refDict, Dictionary<Vector3D, Vector3D> gyroDict, Vector3D dir) {
 
-            try {
+			try {
 
-                if(refDict[dir] == gyroDict[dir]) {
+				if(refDict[dir] == gyroDict[dir]) {
 
-                    return 1; //
+					return 1; //
 
-                }
+				}
 
-                return -1;
+				return -1;
 
-            } catch(Exception e) {
+			} catch(Exception e) {
 
-                Logger.AddMsg("Caught Exception: ", true);
-                Logger.AddMsg(e.ToString(), true);
+				Logger.AddMsg("Caught Exception: ", true);
+				Logger.AddMsg(e.ToString(), true);
 
-            }
+			}
 
-            return 0;
-            
+			return 0;
+			
 
-        }
+		}
 
-        //IsPositionUnderground
-        public static bool IsPositionUnderground(Vector3D coords, MyPlanet planet){
+		//IsPositionUnderground
+		public static bool IsPositionUnderground(Vector3D coords, MyPlanet planet){
 			
 			if(planet == null){
 				
@@ -828,11 +828,11 @@ namespace RivalAI.Helpers{
 			
 		}
 
-        public static double RandomDistance(double a, double b) {
+		public static double RandomDistance(double a, double b) {
 
-            return Rnd.Next((int)a, (int)b);
+			return Rnd.Next((int)a, (int)b);
 
-        }
+		}
 		
 		//RandomDirection
 		public static Vector3D RandomDirection(){
@@ -894,98 +894,98 @@ namespace RivalAI.Helpers{
 		}
 
 
-        //License Details For FirstOrderIntercept and FirstOrderInterceptTime
+		//License Details For FirstOrderIntercept and FirstOrderInterceptTime
 
-        /*The MIT License (MIT)
+		/*The MIT License (MIT)
 
-        Copyright (c) 2008 Daniel Brauer
+		Copyright (c) 2008 Daniel Brauer
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy 
-        of this software and associated documentation files (the "Software"), to deal 
-        in the Software without restriction, including without limitation the rights 
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-        copies of the Software, and to permit persons to whom the Software is furnished 
-        to do so, subject to the following conditions:
+		Permission is hereby granted, free of charge, to any person obtaining a copy 
+		of this software and associated documentation files (the "Software"), to deal 
+		in the Software without restriction, including without limitation the rights 
+		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+		copies of the Software, and to permit persons to whom the Software is furnished 
+		to do so, subject to the following conditions:
 
-        The above copyright notice and this permission notice shall be included in all 
-        copies or substantial portions of the Software.
+		The above copyright notice and this permission notice shall be included in all 
+		copies or substantial portions of the Software.
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
-        CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+		WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+		CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-        public static Vector3 FirstOrderIntercept(Vector3 shooterPosition, Vector3 shooterVelocity, float shotSpeed, Vector3 targetPosition, Vector3 targetVelocity) {
+		public static Vector3 FirstOrderIntercept(Vector3 shooterPosition, Vector3 shooterVelocity, float shotSpeed, Vector3 targetPosition, Vector3 targetVelocity) {
 
-            Vector3 targetRelativePosition = targetPosition - shooterPosition;
-            Vector3 targetRelativeVelocity = targetVelocity - shooterVelocity;
-            float t = FirstOrderInterceptTime(shotSpeed, targetRelativePosition, targetRelativeVelocity);
-            return targetPosition + t * (targetRelativeVelocity);
+			Vector3 targetRelativePosition = targetPosition - shooterPosition;
+			Vector3 targetRelativeVelocity = targetVelocity - shooterVelocity;
+			float t = FirstOrderInterceptTime(shotSpeed, targetRelativePosition, targetRelativeVelocity);
+			return targetPosition + t * (targetRelativeVelocity);
 
-        }
+		}
 
-        //first-order intercept using relative target position
-        public static float FirstOrderInterceptTime(float shotSpeed, Vector3 targetRelativePosition, Vector3 targetRelativeVelocity) {
+		//first-order intercept using relative target position
+		public static float FirstOrderInterceptTime(float shotSpeed, Vector3 targetRelativePosition, Vector3 targetRelativeVelocity) {
 
-            float velocitySquared = (float)Math.Pow(targetRelativePosition.Length(), 2);
+			float velocitySquared = (float)Math.Pow(targetRelativePosition.Length(), 2);
 
-            if(velocitySquared < 0.001f) {
+			if(velocitySquared < 0.001f) {
 
-                return 0f;
+				return 0f;
 
-            }
+			}
 
-            float a = velocitySquared - shotSpeed * shotSpeed;
+			float a = velocitySquared - shotSpeed * shotSpeed;
 
-            //handle similar velocities
-            if((float)Math.Abs(a) < 0.001f) {
+			//handle similar velocities
+			if((float)Math.Abs(a) < 0.001f) {
 
-                float t = -(float)Math.Pow(targetRelativePosition.Length(), 2) / (2f * Vector3.Dot(targetRelativeVelocity, targetRelativePosition));
-                return (float)Math.Max(t, 0f); //don't shoot back in time
+				float t = -(float)Math.Pow(targetRelativePosition.Length(), 2) / (2f * Vector3.Dot(targetRelativeVelocity, targetRelativePosition));
+				return (float)Math.Max(t, 0f); //don't shoot back in time
 
-            }
+			}
 
-            float b = 2f * Vector3.Dot(targetRelativeVelocity, targetRelativePosition);
-            float c = (float)Math.Pow(targetRelativePosition.Length(), 2);
-            float determinant = b * b - 4f * a * c;
+			float b = 2f * Vector3.Dot(targetRelativeVelocity, targetRelativePosition);
+			float c = (float)Math.Pow(targetRelativePosition.Length(), 2);
+			float determinant = b * b - 4f * a * c;
 
-            if(determinant > 0f) { //determinant > 0; two intercept paths (most common)
+			if(determinant > 0f) { //determinant > 0; two intercept paths (most common)
 
-                float t1 = (-b + (float)Math.Sqrt(determinant)) / (2f * a);
-                float t2 = (-b - (float)Math.Sqrt(determinant)) / (2f * a);
+				float t1 = (-b + (float)Math.Sqrt(determinant)) / (2f * a);
+				float t2 = (-b - (float)Math.Sqrt(determinant)) / (2f * a);
 
-                if(t1 > 0f) {
+				if(t1 > 0f) {
 
-                    if(t2 > 0f) {
+					if(t2 > 0f) {
 
-                        return (float)Math.Min(t1, t2); //both are positive
+						return (float)Math.Min(t1, t2); //both are positive
 
-                    } else {
+					} else {
 
-                        return t1; //only t1 is positive
+						return t1; //only t1 is positive
 
-                    }
+					}
 
-                } else {
+				} else {
 
-                    return (float)Math.Max(t2, 0f); //don't shoot back in time
+					return (float)Math.Max(t2, 0f); //don't shoot back in time
 
-                }
+				}
 
-            } else if(determinant < 0f) {
+			} else if(determinant < 0f) {
 
-                return 0f; //determinant < 0; no intercept path
+				return 0f; //determinant < 0; no intercept path
 
-            } else { //determinant = 0; one intercept path, pretty much never happens
+			} else { //determinant = 0; one intercept path, pretty much never happens
 
-                return (float)Math.Max(-b / (2f * a), 0f); //don't shoot back in time
+				return (float)Math.Max(-b / (2f * a), 0f); //don't shoot back in time
 
-            }
+			}
 
-        }
+		}
 
-    }
+	}
 	
 }

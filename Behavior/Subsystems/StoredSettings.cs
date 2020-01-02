@@ -54,24 +54,38 @@ namespace RivalAI.Behavior.Subsystems{
 		}
 		
 		public bool GetCustomBoolResult(string name){
-			
-			bool result = false;
+
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            bool result = false;
 			this.StoredCustomBooleans.TryGetValue(name, out result);
 			return result;
 			
 		}
 		
-		public bool GetCustomCounterResult(string name, int target){
-			
-			int result = 0;
-			this.StoredCustomCounters.TryGetValue(name, out result);
+		public bool GetCustomCounterResult(string varName, int target){
+
+			if (string.IsNullOrWhiteSpace(varName)) {
+
+				//Logger.AddMsg("Counter Name Null", true);
+				return false;
+
+			}
+                
+
+            int result = 0;
+			this.StoredCustomCounters.TryGetValue(varName, out result);
 			return (result >= target);
 			
 		}
 		
 		public void SetCustomBool(string name, bool value){
-			
-			if(this.StoredCustomBooleans.ContainsKey(name)){
+
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+
+            if (this.StoredCustomBooleans.ContainsKey(name)){
 				
 				this.StoredCustomBooleans[name] = value;
 				
@@ -83,15 +97,28 @@ namespace RivalAI.Behavior.Subsystems{
 			
 		}
 		
-		public void SetCustomCounter(string name, int value){
-			
+		public void SetCustomCounter(string name, int value, bool reset = false){
+
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+
 			if(this.StoredCustomCounters.ContainsKey(name)){
-				
-				this.StoredCustomCounters[name] += value;
-				
+
+                if (reset) {
+
+                    this.StoredCustomCounters[name] = 0;
+
+                } else {
+
+                    //Logger.AddMsg("Increased Counter", true);
+                    this.StoredCustomCounters[name] += value;
+
+                }
+
 			}else{
-				
-				this.StoredCustomCounters.Add(name, value);
+
+                //Logger.AddMsg("Increased Counter", true);
+                this.StoredCustomCounters.Add(name, value);
 				
 			}
 			

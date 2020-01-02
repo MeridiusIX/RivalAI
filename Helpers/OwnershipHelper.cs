@@ -64,10 +64,14 @@ namespace RivalAI.Helpers {
 			}
 
 			var owner = DamageHelper.GetAttackOwnerId(attackingEntity);
-			
-			if(owner == 0)
+
+			if (owner == 0) {
+
+				Logger.AddMsg("No Owner From Provided Id: " + attackingEntity);
 				return;
-			
+
+			}
+
 			var ownerList = new List<long>();
 			ownerList.Add(owner);
 			ChangePlayerReputationWithFactions(amounts, ownerList, factions, applyChangeToAttackerFaction);
@@ -158,7 +162,7 @@ namespace RivalAI.Helpers {
 
 					var newRep = oldRep + amount;
 					MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(playerId, faction.FactionId, newRep);
-					MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, newRep.ToString()), 2000, color, playerId);
+					MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, amount.ToString()), 2000, color, playerId);
 
 				}
 

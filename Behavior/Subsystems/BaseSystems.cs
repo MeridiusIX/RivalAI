@@ -43,7 +43,6 @@ namespace RivalAI.Behavior.Subsystems{
         public DespawnSystem Despawn;
         public ExtrasSystem Extras;
         public OwnerSystem Owner;
-        public StoredSettings Settings;
 
         //Base Status
         bool IsWorking = false;
@@ -59,7 +58,6 @@ namespace RivalAI.Behavior.Subsystems{
             Despawn = new DespawnSystem(remoteControl);
             Extras = new ExtrasSystem(remoteControl);
             Owner = new OwnerSystem(remoteControl);
-            Settings = new StoredSettings();
 
         }
 		

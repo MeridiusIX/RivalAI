@@ -36,576 +36,576 @@ namespace RivalAI.Behavior.Subsystems{
 
 	public class AutoPilotSystem{
 
-        //Configurable
-        public bool AutoPilotUseSafePlanetPathing;
-        public bool AutoPilotCollisionAvoidance;
-        public bool AutoPilotPrecisionMode;
-        public Base6Directions.Direction AutoPilotForwardDirection;
-        public double SpaceTargetPaddingDistance;
-        public float DesiredMaxSpeed;
-        public double MinimumAltitudeAboveTarget;
-        public double PlanetSafePathingCheckDistance;
-        public int EvasionModeMaxTime;
+		//Configurable
+		public bool AutoPilotUseSafePlanetPathing;
+		public bool AutoPilotCollisionAvoidance;
+		public bool AutoPilotPrecisionMode;
+		public Base6Directions.Direction AutoPilotForwardDirection;
+		public double SpaceTargetPaddingDistance;
+		public float DesiredMaxSpeed;
+		public double MinimumAltitudeAboveTarget;
+		public double PlanetSafePathingCheckDistance;
+		public int EvasionModeMaxTime;
 
-        public double EngageThrustWithinAngle;
+		public double EngageThrustWithinAngle;
 
-        public int BarrelRollMinTimeMs;
-        public int BarrelRollMaxTimeMs;
+		public int BarrelRollMinTimeMs;
+		public int BarrelRollMaxTimeMs;
 
-        public IMyRemoteControl RemoteControl;
+		public IMyRemoteControl RemoteControl;
 
-        private CollisionSystem Collision;
-        private RotationSystem Rotation;
-        private TargetingSystem Targeting;
-        private ThrustSystem Thrust;
-        private WeaponsSystem Weapons;
+		private CollisionSystem Collision;
+		private RotationSystem Rotation;
+		private TargetingSystem Targeting;
+		private ThrustSystem Thrust;
+		private WeaponsSystem Weapons;
 
-        public AutoPilotMode Mode;
-        public AutoPilotMode PreviousMode;
-        public AutoPilotMode RevertMode;
-    
-        public bool WaypointChanged;
-        public Vector3D WaypointCoords;
-        public Vector3D PlanetSafeWaypointCoords;
-        public Vector3D TargetCoords;
+		public AutoPilotMode Mode;
+		public AutoPilotMode PreviousMode;
+		public AutoPilotMode RevertMode;
+	
+		public bool WaypointChanged;
+		public Vector3D WaypointCoords;
+		public Vector3D PlanetSafeWaypointCoords;
+		public Vector3D TargetCoords;
 		public Vector3D UpDirection;
-        public MyPlanet Planet;
-        public Vector3D PlanetCore;
+		public MyPlanet Planet;
+		public Vector3D PlanetCore;
 
-        public int EvasionModeTimer;
-        public int BarrelRollTimer;
+		public int EvasionModeTimer;
+		public int BarrelRollTimer;
 
-        public bool AutoPilotCorrectionEnabled;
-        public DateTime AutoPilotCorrectionTimer;
-        public DateTime AutoPilotCorrectionCooldownTimer;
+		public bool AutoPilotCorrectionEnabled;
+		public DateTime AutoPilotCorrectionTimer;
+		public DateTime AutoPilotCorrectionCooldownTimer;
 
-        public DateTime BarrelRollLastActivation;
-        
-        public bool CollisionDetected;
+		public DateTime BarrelRollLastActivation;
+		
+		public bool CollisionDetected;
 
-        public Random Rnd;
+		public Random Rnd;
 		
 		public AutoPilotSystem(IMyRemoteControl remoteControl = null) {
 
-            AutoPilotUseSafePlanetPathing = true;
-            AutoPilotCollisionAvoidance = true;
-            AutoPilotPrecisionMode = false;
-            AutoPilotForwardDirection = Base6Directions.Direction.Forward;
-            SpaceTargetPaddingDistance = 100;
-            DesiredMaxSpeed = 100;
-            MinimumAltitudeAboveTarget = 200;
-            PlanetSafePathingCheckDistance = 1000;
-            EvasionModeMaxTime = 6;
+			AutoPilotUseSafePlanetPathing = true;
+			AutoPilotCollisionAvoidance = true;
+			AutoPilotPrecisionMode = false;
+			AutoPilotForwardDirection = Base6Directions.Direction.Forward;
+			SpaceTargetPaddingDistance = 100;
+			DesiredMaxSpeed = 100;
+			MinimumAltitudeAboveTarget = 200;
+			PlanetSafePathingCheckDistance = 1000;
+			EvasionModeMaxTime = 6;
 
-            EngageThrustWithinAngle = 90;
+			EngageThrustWithinAngle = 90;
 
-            BarrelRollMinTimeMs = 2000;
-            BarrelRollMaxTimeMs = 3000;
+			BarrelRollMinTimeMs = 2000;
+			BarrelRollMaxTimeMs = 3000;
 
-            RemoteControl = null;
+			RemoteControl = null;
 
-            /*
-            Collision = new CollisionSystem(remoteControl);
-            Rotation = new RotationSystem(remoteControl);
-            Targeting = new TargetingSystem(remoteControl);
+			/*
+			Collision = new CollisionSystem(remoteControl);
+			Rotation = new RotationSystem(remoteControl);
+			Targeting = new TargetingSystem(remoteControl);
 			Thrust = new ThrustSystem(remoteControl);
-            Weapons = new WeaponsSystem(remoteControl);
-            */
+			Weapons = new WeaponsSystem(remoteControl);
+			*/
 
-            Mode = AutoPilotMode.None;
-            PreviousMode = AutoPilotMode.None;
-            RevertMode = AutoPilotMode.None;
+			Mode = AutoPilotMode.None;
+			PreviousMode = AutoPilotMode.None;
+			RevertMode = AutoPilotMode.None;
 
-            WaypointChanged = false;
-            WaypointCoords = Vector3D.Zero;
-            PlanetSafeWaypointCoords = Vector3D.Zero;
-            TargetCoords = Vector3D.Zero;
+			WaypointChanged = false;
+			WaypointCoords = Vector3D.Zero;
+			PlanetSafeWaypointCoords = Vector3D.Zero;
+			TargetCoords = Vector3D.Zero;
 			UpDirection = Vector3D.Zero;
-            Planet = null;
-            PlanetCore = Vector3D.Zero;
+			Planet = null;
+			PlanetCore = Vector3D.Zero;
 
-            EvasionModeTimer = 0;
-            BarrelRollTimer = 0;
+			EvasionModeTimer = 0;
+			BarrelRollTimer = 0;
 
-            AutoPilotCorrectionEnabled = false;
-            AutoPilotCorrectionTimer = MyAPIGateway.Session.GameDateTime;
-            AutoPilotCorrectionCooldownTimer = MyAPIGateway.Session.GameDateTime;
+			AutoPilotCorrectionEnabled = false;
+			AutoPilotCorrectionTimer = MyAPIGateway.Session.GameDateTime;
+			AutoPilotCorrectionCooldownTimer = MyAPIGateway.Session.GameDateTime;
 
-            BarrelRollLastActivation = MyAPIGateway.Session.GameDateTime;
+			BarrelRollLastActivation = MyAPIGateway.Session.GameDateTime;
 
-            CollisionDetected = false;
+			CollisionDetected = false;
 
-            Rnd = new Random();
+			Rnd = new Random();
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
 
-        }
+		}
 
-        public void ChangeAutoPilotMode(AutoPilotMode newMode) {
+		public void ChangeAutoPilotMode(AutoPilotMode newMode) {
 
-            //Handle Previous Mode First
-            if(this.Mode == AutoPilotMode.LegacyAutoPilotTarget || this.Mode == AutoPilotMode.LegacyAutoPilotWaypoint) {
+			//Handle Previous Mode First
+			if(this.Mode == AutoPilotMode.LegacyAutoPilotTarget || this.Mode == AutoPilotMode.LegacyAutoPilotWaypoint) {
 
-                SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
+				SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.BarrelRoll || this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTarget || this.Mode == AutoPilotMode.RotateToTargetAndStrafe || this.Mode == AutoPilotMode.RotateToWaypoint) {
+			if(this.Mode == AutoPilotMode.BarrelRoll || this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTarget || this.Mode == AutoPilotMode.RotateToTargetAndStrafe || this.Mode == AutoPilotMode.RotateToWaypoint) {
 
-                Rotation.StopAllRotation();
+				Rotation.StopAllRotation();
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
+			if(this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
 
-                Thrust.StopAllThrust();
+				Thrust.StopAllThrust();
 
-            }
+			}
 
-            if(newMode == AutoPilotMode.BarrelRoll) {
+			if(newMode == AutoPilotMode.BarrelRoll) {
 
-                BarrelRollTimer = Rnd.Next(this.BarrelRollMinTimeMs, this.BarrelRollMaxTimeMs);
-                BarrelRollLastActivation = MyAPIGateway.Session.GameDateTime; //
+				BarrelRollTimer = Rnd.Next(this.BarrelRollMinTimeMs, this.BarrelRollMaxTimeMs);
+				BarrelRollLastActivation = MyAPIGateway.Session.GameDateTime; //
 
-            }
+			}
 
-            Logger.AddMsg("Autopilot Mode Changed To: " + newMode.ToString(), true);
-            this.RevertMode = this.Mode;
-            this.Mode = newMode;
-            EngageAutoPilot();
+			Logger.AddMsg("Autopilot Mode Changed To: " + newMode.ToString(), true);
+			this.RevertMode = this.Mode;
+			this.Mode = newMode;
+			EngageAutoPilot();
 
-        }
+		}
 
-        public void EngageAutoPilot() {
+		public void EngageAutoPilot() {
 
-            this.UpDirection = VectorHelper.GetPlanetUpDirection(this.RemoteControl.GetPosition());
+			this.UpDirection = VectorHelper.GetPlanetUpDirection(this.RemoteControl.GetPosition());
 
-            if(this.UpDirection != Vector3D.Zero && this.Planet == null) {
+			if(this.UpDirection != Vector3D.Zero && this.Planet == null) {
 
-                this.Planet = MyGamePruningStructure.GetClosestPlanet(this.RemoteControl.GetPosition());
-                this.PlanetCore = this.Planet.PositionComp.GetPosition();
+				this.Planet = MyGamePruningStructure.GetClosestPlanet(this.RemoteControl.GetPosition());
+				this.PlanetCore = this.Planet.PositionComp.GetPosition();
 
-            } else if(this.UpDirection == Vector3D.Zero && this.Planet != null) {
+			} else if(this.UpDirection == Vector3D.Zero && this.Planet != null) {
 
-                this.Planet = null;
-                this.PlanetCore = Vector3D.Zero;
+				this.Planet = null;
+				this.PlanetCore = Vector3D.Zero;
 
-            }
+			}
 
-            if(Thrust.Mode == ThrustMode.Strafe) {
+			if(Thrust.Mode == ThrustMode.Strafe) {
 
-                if(this.UpDirection == Vector3D.Zero) {
+				if(this.UpDirection == Vector3D.Zero) {
 
-                    Thrust.CurrentAllowedStrafeDirections = Thrust.AllowedStrafingDirectionsSpace;
+					Thrust.CurrentAllowedStrafeDirections = Thrust.AllowedStrafingDirectionsSpace;
 
-                } else {
+				} else {
 
-                    Thrust.CurrentAllowedStrafeDirections = Thrust.AllowedStrafingDirectionsPlanet;
+					Thrust.CurrentAllowedStrafeDirections = Thrust.AllowedStrafingDirectionsPlanet;
 
-                }
+				}
 
-            }
+			}
 
-            if(this.Mode != this.PreviousMode) {
+			if(this.Mode != this.PreviousMode) {
 
-                if(this.PreviousMode == AutoPilotMode.LegacyAutoPilotTarget || this.PreviousMode == AutoPilotMode.LegacyAutoPilotWaypoint) {
+				if(this.PreviousMode == AutoPilotMode.LegacyAutoPilotTarget || this.PreviousMode == AutoPilotMode.LegacyAutoPilotWaypoint) {
 
-                    SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
+					SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
 
-                }
+				}
 
-                if(this.Mode == AutoPilotMode.BarrelRoll || this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTarget || this.Mode == AutoPilotMode.RotateToTargetAndStrafe || this.Mode == AutoPilotMode.RotateToWaypoint) {
+				if(this.Mode == AutoPilotMode.BarrelRoll || this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTarget || this.Mode == AutoPilotMode.RotateToTargetAndStrafe || this.Mode == AutoPilotMode.RotateToWaypoint) {
 
-                    Rotation.StopAllRotation();
+					Rotation.StopAllRotation();
 
-                }
+				}
 
-                if(this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
+				if(this.Mode == AutoPilotMode.FlyToTarget || this.Mode == AutoPilotMode.FlyToWaypoint || this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
 
-                    Thrust.StopAllThrust();
+					Thrust.StopAllThrust();
 
-                }
+				}
 
-                this.PreviousMode = this.Mode;
+				this.PreviousMode = this.Mode;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.None) {
+			if(this.Mode == AutoPilotMode.None) {
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.LegacyAutoPilotTarget) {
+			if(this.Mode == AutoPilotMode.LegacyAutoPilotTarget) {
 
-                if(AutoPilotCorrection() == false) {
+				if(AutoPilotCorrection() == false) {
 
-                    return;
+					return;
 
-                }
+				}
 
-                if(this.WaypointCoords != this.TargetCoords) {
+				if(this.WaypointCoords != this.TargetCoords) {
 
-                    this.WaypointCoords = this.TargetCoords;
-                    this.WaypointChanged = true;
+					this.WaypointCoords = this.TargetCoords;
+					this.WaypointChanged = true;
 
-                    if(this.UpDirection != Vector3D.Zero && this.AutoPilotUseSafePlanetPathing == true) {
+					if(this.UpDirection != Vector3D.Zero && this.AutoPilotUseSafePlanetPathing == true) {
 
-                        this.WaypointCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), this.WaypointCoords, this.MinimumAltitudeAboveTarget);
+						this.WaypointCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), this.WaypointCoords, this.MinimumAltitudeAboveTarget);
 
-                    } else {
+					} else {
 
-                        this.WaypointCoords = VectorHelper.CreateDirectionAndTarget(this.WaypointCoords, this.RemoteControl.GetPosition(), this.WaypointCoords, this.SpaceTargetPaddingDistance);
+						this.WaypointCoords = VectorHelper.CreateDirectionAndTarget(this.WaypointCoords, this.RemoteControl.GetPosition(), this.WaypointCoords, this.SpaceTargetPaddingDistance);
 
-                    }
+					}
 
-                }
+				}
 
-                if(this.WaypointChanged == true) {
+				if(this.WaypointChanged == true) {
 
-                    this.WaypointChanged = false;
-                    SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
+					this.WaypointChanged = false;
+					SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
 
-                }
+				}
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.LegacyAutoPilotWaypoint) {
+			if(this.Mode == AutoPilotMode.LegacyAutoPilotWaypoint) {
 
-                if(AutoPilotCorrection() == false) {
+				if(AutoPilotCorrection() == false) {
 
-                    return;
+					return;
 
-                }
+				}
 
-                bool planetPathUsed = false;
+				bool planetPathUsed = false;
 
-                if(this.UpDirection != Vector3D.Zero && this.AutoPilotUseSafePlanetPathing == true) {
+				if(this.UpDirection != Vector3D.Zero && this.AutoPilotUseSafePlanetPathing == true) {
 
-                    planetPathUsed = true;
-                    this.WaypointChanged = true;
-                    this.PlanetSafeWaypointCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), this.WaypointCoords, this.MinimumAltitudeAboveTarget);
+					planetPathUsed = true;
+					this.WaypointChanged = true;
+					this.PlanetSafeWaypointCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), this.WaypointCoords, this.MinimumAltitudeAboveTarget);
 
-                }
+				}
 
-                if(this.WaypointChanged == true) {
+				if(this.WaypointChanged == true) {
 
-                    this.WaypointChanged = false;
+					this.WaypointChanged = false;
 
-                    if(planetPathUsed == false) {
+					if(planetPathUsed == false) {
 
-                        SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
+						SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
 
-                    } else {
+					} else {
 
-                        SetRemoteControl(this.RemoteControl, true, this.PlanetSafeWaypointCoords);
+						SetRemoteControl(this.RemoteControl, true, this.PlanetSafeWaypointCoords);
 
-                    }
-                    
+					}
+					
 
-                }
+				}
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.BarrelRoll) {
+			if(this.Mode == AutoPilotMode.BarrelRoll) {
 
-                Rotation.BarrelRollEnabled = true;
-                Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
-                TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.BarrelRollLastActivation;
+				Rotation.BarrelRollEnabled = true;
+				Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
+				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.BarrelRollLastActivation;
 
-                if(duration.TotalMilliseconds >= this.BarrelRollTimer) {
+				if(duration.TotalMilliseconds >= this.BarrelRollTimer) {
 
-                    ChangeAutoPilotMode(this.RevertMode);
+					ChangeAutoPilotMode(this.RevertMode);
 
-                }
+				}
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.RotateToTarget) {
+			if(this.Mode == AutoPilotMode.RotateToTarget) {
 
-                Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
-                return;
+				Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
+			if(this.Mode == AutoPilotMode.RotateToTargetAndStrafe) {
 
-                //RemoteControl.SlimBlock.CubeGrid.Physics.AngularVelocity = RemoteControl.WorldMatrix.Forward;
-                Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
-                Thrust.ChangeMode(ThrustMode.Strafe);
+				//RemoteControl.SlimBlock.CubeGrid.Physics.AngularVelocity = RemoteControl.WorldMatrix.Forward;
+				Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
+				Thrust.ChangeMode(ThrustMode.Strafe);
 
-                if(this.Collision.VelocityResult.CollisionImminent == true) {
+				if(this.Collision.VelocityResult.CollisionImminent == true) {
 
-                    Thrust.InvertStrafe(this.Collision.VelocityResult.Coords);
+					Thrust.InvertStrafe(this.Collision.VelocityResult.Coords);
 
-                }
+				}
 
-                Thrust.ProcessThrust(this.UpDirection, this.TargetCoords, this.MinimumAltitudeAboveTarget, this.SpaceTargetPaddingDistance);
-                return;
+				Thrust.ProcessThrust(this.UpDirection, this.TargetCoords, this.MinimumAltitudeAboveTarget, this.SpaceTargetPaddingDistance);
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.RotateToWaypoint) {
+			if(this.Mode == AutoPilotMode.RotateToWaypoint) {
 
-                Rotation.StartCalculation(this.WaypointCoords, this.RemoteControl, this.UpDirection);
-                return;
+				Rotation.StartCalculation(this.WaypointCoords, this.RemoteControl, this.UpDirection);
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.FlyToTarget) {
+			if(this.Mode == AutoPilotMode.FlyToTarget) {
 
-                Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
+				Rotation.StartCalculation(this.TargetCoords, this.RemoteControl, this.UpDirection);
 
-                if(VectorHelper.GetAngleBetweenDirections(this.RemoteControl.WorldMatrix.Forward, Vector3D.Normalize(this.TargetCoords - this.RemoteControl.GetPosition())) <= this.EngageThrustWithinAngle) {
+				if(VectorHelper.GetAngleBetweenDirections(this.RemoteControl.WorldMatrix.Forward, Vector3D.Normalize(this.TargetCoords - this.RemoteControl.GetPosition())) <= this.EngageThrustWithinAngle) {
 
-                    this.Thrust.CurrentAllowedThrust = new Vector3I(0,0,1);
-                    this.Thrust.CurrentRequiredThrust = new Vector3I(0, 0, 1);
+					this.Thrust.CurrentAllowedThrust = new Vector3I(0,0,1);
+					this.Thrust.CurrentRequiredThrust = new Vector3I(0, 0, 1);
 
-                } else {
+				} else {
 
-                    this.Thrust.CurrentAllowedThrust = Vector3I.Zero;
-                    this.Thrust.CurrentRequiredThrust = Vector3I.Zero;
+					this.Thrust.CurrentAllowedThrust = Vector3I.Zero;
+					this.Thrust.CurrentRequiredThrust = Vector3I.Zero;
 
-                }
+				}
 
-                Thrust.ChangeMode(ThrustMode.ConstantForward);
-                Thrust.ProcessThrust(this.UpDirection);
+				Thrust.ChangeMode(ThrustMode.ConstantForward);
+				Thrust.ProcessThrust(this.UpDirection);
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.Mode == AutoPilotMode.FlyToWaypoint) {
+			if(this.Mode == AutoPilotMode.FlyToWaypoint) {
 
-                Rotation.StartCalculation(this.WaypointCoords, this.RemoteControl, this.UpDirection);
+				Rotation.StartCalculation(this.WaypointCoords, this.RemoteControl, this.UpDirection);
 
-                if(VectorHelper.GetAngleBetweenDirections(this.RemoteControl.WorldMatrix.Forward, Vector3D.Normalize(this.WaypointCoords - this.RemoteControl.GetPosition())) <= this.EngageThrustWithinAngle) {
+				if(VectorHelper.GetAngleBetweenDirections(this.RemoteControl.WorldMatrix.Forward, Vector3D.Normalize(this.WaypointCoords - this.RemoteControl.GetPosition())) <= this.EngageThrustWithinAngle) {
 
-                    this.Thrust.CurrentAllowedThrust = new Vector3I(0, 0, 1);
-                    this.Thrust.CurrentRequiredThrust = new Vector3I(0, 0, 1);
+					this.Thrust.CurrentAllowedThrust = new Vector3I(0, 0, 1);
+					this.Thrust.CurrentRequiredThrust = new Vector3I(0, 0, 1);
 
-                } else {
+				} else {
 
-                    this.Thrust.CurrentAllowedThrust = Vector3I.Zero;
-                    this.Thrust.CurrentRequiredThrust = Vector3I.Zero;
+					this.Thrust.CurrentAllowedThrust = Vector3I.Zero;
+					this.Thrust.CurrentRequiredThrust = Vector3I.Zero;
 
-                }
+				}
 
-                Thrust.ChangeMode(ThrustMode.ConstantForward);
-                Thrust.ProcessThrust(this.UpDirection);
+				Thrust.ChangeMode(ThrustMode.ConstantForward);
+				Thrust.ProcessThrust(this.UpDirection);
 
-                return;
+				return;
 
-            }
+			}
 
-        }
+		}
 
-        public bool AutoPilotCorrection() {
+		public bool AutoPilotCorrection() {
 
-            if(this.UpDirection == Vector3D.Zero || this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
+			if(this.UpDirection == Vector3D.Zero || this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
 
-                return true;
+				return true;
 
-            }
+			}
 
-            if(this.AutoPilotCorrectionEnabled == false) {
+			if(this.AutoPilotCorrectionEnabled == false) {
 
-                TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.AutoPilotCorrectionCooldownTimer;
+				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.AutoPilotCorrectionCooldownTimer;
 
-                if(duration.TotalSeconds >= 5) {
+				if(duration.TotalSeconds >= 5) {
 
-                    Vector3D velocity = this.RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity;
-                    //Logger.AddMsg(string.Format("Velocity {0}", velocity.Length()), true);
-                    //Logger.AddMsg(string.Format("Angle {0}", VectorHelper.GetAngleBetweenDirections(this.UpDirection, Vector3D.Normalize(velocity))), true);
+					Vector3D velocity = this.RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity;
+					//Logger.AddMsg(string.Format("Velocity {0}", velocity.Length()), true);
+					//Logger.AddMsg(string.Format("Angle {0}", VectorHelper.GetAngleBetweenDirections(this.UpDirection, Vector3D.Normalize(velocity))), true);
 
-                    if(VectorHelper.GetAngleBetweenDirections(this.UpDirection, Vector3D.Normalize(velocity)) <= 1 && velocity.Length() < 7) {
+					if(VectorHelper.GetAngleBetweenDirections(this.UpDirection, Vector3D.Normalize(velocity)) <= 1 && velocity.Length() < 7) {
 
-                        this.AutoPilotCorrectionTimer = MyAPIGateway.Session.GameDateTime;
-                        this.AutoPilotCorrectionEnabled = true;
-                        SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
-                        return false;
+						this.AutoPilotCorrectionTimer = MyAPIGateway.Session.GameDateTime;
+						this.AutoPilotCorrectionEnabled = true;
+						SetRemoteControl(this.RemoteControl, false, Vector3D.Zero);
+						return false;
 
-                    }
+					}
 
-                }
+				}
 
-            } else {
+			} else {
 
-                TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.AutoPilotCorrectionTimer;
+				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.AutoPilotCorrectionTimer;
 
-                if(duration.TotalSeconds > 2) {
+				if(duration.TotalSeconds > 2) {
 
-                    this.AutoPilotCorrectionCooldownTimer = MyAPIGateway.Session.GameDateTime;
-                    this.AutoPilotCorrectionEnabled = false;
-                    SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
+					this.AutoPilotCorrectionCooldownTimer = MyAPIGateway.Session.GameDateTime;
+					this.AutoPilotCorrectionEnabled = false;
+					SetRemoteControl(this.RemoteControl, true, this.WaypointCoords);
 
-                }
+				}
 
-                return false;
+				return false;
 
-            }
+			}
 
-            return true;
+			return true;
 
-        }
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //AutoPilotUseSafePlanetPathing
-                    if(tag.Contains("[AutoPilotUseSafePlanetPathing:") == true) {
+					//AutoPilotUseSafePlanetPathing
+					if(tag.Contains("[AutoPilotUseSafePlanetPathing:") == true) {
 
-                        this.AutoPilotUseSafePlanetPathing = TagHelper.TagBoolCheck(tag);
+						this.AutoPilotUseSafePlanetPathing = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //AutoPilotCollisionAvoidance
-                    if(tag.Contains("[AutoPilotCollisionAvoidance:") == true) {
+					//AutoPilotCollisionAvoidance
+					if(tag.Contains("[AutoPilotCollisionAvoidance:") == true) {
 
-                        this.AutoPilotCollisionAvoidance = TagHelper.TagBoolCheck(tag);
+						this.AutoPilotCollisionAvoidance = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //AutoPilotPrecisionMode
-                    if(tag.Contains("[AutoPilotPrecisionMode:") == true) {
+					//AutoPilotPrecisionMode
+					if(tag.Contains("[AutoPilotPrecisionMode:") == true) {
 
-                        this.AutoPilotPrecisionMode = TagHelper.TagBoolCheck(tag);
+						this.AutoPilotPrecisionMode = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //AutoPilotForwardDirection
-                    if(tag.Contains("[AutoPilotForwardDirection:") == true) {
+					//AutoPilotForwardDirection
+					if(tag.Contains("[AutoPilotForwardDirection:") == true) {
 
-                        this.AutoPilotForwardDirection = TagHelper.TagBase6DirectionCheck(tag);
+						this.AutoPilotForwardDirection = TagHelper.TagBase6DirectionCheck(tag);
 
-                    }
+					}
 
-                    //DesiredMaxSpeed
-                    if(tag.Contains("[DesiredMaxSpeed:") == true) {
+					//DesiredMaxSpeed
+					if(tag.Contains("[DesiredMaxSpeed:") == true) {
 
-                        this.DesiredMaxSpeed = TagHelper.TagFloatCheck(tag, this.DesiredMaxSpeed);
+						this.DesiredMaxSpeed = TagHelper.TagFloatCheck(tag, this.DesiredMaxSpeed);
 
-                    }
+					}
 
-                    //MinimumAltitudeAboveTarget
-                    if(tag.Contains("[MinimumAltitudeAboveTarget:") == true) {
+					//MinimumAltitudeAboveTarget
+					if(tag.Contains("[MinimumAltitudeAboveTarget:") == true) {
 
-                        this.MinimumAltitudeAboveTarget = TagHelper.TagDoubleCheck(tag, this.MinimumAltitudeAboveTarget);
+						this.MinimumAltitudeAboveTarget = TagHelper.TagDoubleCheck(tag, this.MinimumAltitudeAboveTarget);
 
-                    }
+					}
 
-                    //PlanetSafePathingCheckDistance
-                    if(tag.Contains("[PlanetSafePathingCheckDistance:") == true) {
+					//PlanetSafePathingCheckDistance
+					if(tag.Contains("[PlanetSafePathingCheckDistance:") == true) {
 
-                        this.PlanetSafePathingCheckDistance = TagHelper.TagDoubleCheck(tag, this.PlanetSafePathingCheckDistance);
+						this.PlanetSafePathingCheckDistance = TagHelper.TagDoubleCheck(tag, this.PlanetSafePathingCheckDistance);
 
-                    }
+					}
 
-                    //SpaceTargetPaddingDistance
-                    if(tag.Contains("[SpaceTargetPaddingDistance:") == true) {
+					//SpaceTargetPaddingDistance
+					if(tag.Contains("[SpaceTargetPaddingDistance:") == true) {
 
-                        this.SpaceTargetPaddingDistance = TagHelper.TagDoubleCheck(tag, this.SpaceTargetPaddingDistance);
+						this.SpaceTargetPaddingDistance = TagHelper.TagDoubleCheck(tag, this.SpaceTargetPaddingDistance);
 
-                    }
+					}
 
-                    //EvasionModeMaxTime
-                    if(tag.Contains("[EvasionModeMaxTime:") == true) {
+					//EvasionModeMaxTime
+					if(tag.Contains("[EvasionModeMaxTime:") == true) {
 
-                        this.EvasionModeMaxTime = TagHelper.TagIntCheck(tag, this.EvasionModeMaxTime);
+						this.EvasionModeMaxTime = TagHelper.TagIntCheck(tag, this.EvasionModeMaxTime);
 
-                    }
+					}
 			
-		    //Rotation Settings
+			//Rotation Settings
 			
-                    //RotationMultiplier
-                    if(tag.Contains("[RotationMultiplier:") == true) {
+					//RotationMultiplier
+					if(tag.Contains("[RotationMultiplier:") == true) {
 
-                        this.Rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.Rotation.RotationMultiplier);
+						this.Rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.Rotation.RotationMultiplier);
 
-                    }
+					}
 
-                    //Thrust Settings
+					//Thrust Settings
 
-                    //EngageThrustWithinAngle
-                    if (tag.Contains("[EngageThrustWithinAngle:") == true) {
+					//EngageThrustWithinAngle
+					if (tag.Contains("[EngageThrustWithinAngle:") == true) {
 
-                        this.EngageThrustWithinAngle = TagHelper.TagDoubleCheck(tag, this.EngageThrustWithinAngle);
+						this.EngageThrustWithinAngle = TagHelper.TagDoubleCheck(tag, this.EngageThrustWithinAngle);
 
-                    }
+					}
 
-                    //AllowStrafing
-                    if (tag.Contains("[AllowStrafing:") == true) {
+					//AllowStrafing
+					if (tag.Contains("[AllowStrafing:") == true) {
 
-                        this.Thrust.AllowStrafing = TagHelper.TagBoolCheck(tag);
+						this.Thrust.AllowStrafing = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //StrafeMinDurationMs
-                    if(tag.Contains("[StrafeMinDurationMs:") == true) {
+					//StrafeMinDurationMs
+					if(tag.Contains("[StrafeMinDurationMs:") == true) {
 
-                        this.Thrust.StrafeMinDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinDurationMs);
+						this.Thrust.StrafeMinDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinDurationMs);
 
-                    }
+					}
 
-                    //StrafeMaxDurationMs
-                    if(tag.Contains("[StrafeMaxDurationMs:") == true) {
+					//StrafeMaxDurationMs
+					if(tag.Contains("[StrafeMaxDurationMs:") == true) {
 
-                        this.Thrust.StrafeMaxDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxDurationMs);
+						this.Thrust.StrafeMaxDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxDurationMs);
 
-                    }
+					}
 
-                    //StrafeMinCooldownMs
-                    if(tag.Contains("[StrafeMinCooldownMs:") == true) {
+					//StrafeMinCooldownMs
+					if(tag.Contains("[StrafeMinCooldownMs:") == true) {
 
-                        this.Thrust.StrafeMinCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinCooldownMs);
+						this.Thrust.StrafeMinCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinCooldownMs);
 
-                    }
+					}
 
-                    //StrafeMaxCooldownMs
-                    if(tag.Contains("[StrafeMaxCooldownMs:") == true) {
+					//StrafeMaxCooldownMs
+					if(tag.Contains("[StrafeMaxCooldownMs:") == true) {
 
-                        this.Thrust.StrafeMaxCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxCooldownMs);
+						this.Thrust.StrafeMaxCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxCooldownMs);
 
-                    }
+					}
 
-                    //StrafeSpeedCutOff
-                    if(tag.Contains("[StrafeSpeedCutOff:") == true) {
+					//StrafeSpeedCutOff
+					if(tag.Contains("[StrafeSpeedCutOff:") == true) {
 
-                        this.Thrust.StrafeSpeedCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeSpeedCutOff);
+						this.Thrust.StrafeSpeedCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeSpeedCutOff);
 
-                    }
+					}
 
-                    //StrafeDistanceCutOff
-                    if(tag.Contains("[StrafeDistanceCutOff:") == true) {
+					//StrafeDistanceCutOff
+					if(tag.Contains("[StrafeDistanceCutOff:") == true) {
 
-                        this.Thrust.StrafeDistanceCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeDistanceCutOff);
+						this.Thrust.StrafeDistanceCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeDistanceCutOff);
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public void UpdateWaypoint(Vector3D coords) {
+		public void UpdateWaypoint(Vector3D coords) {
 
-            this.WaypointCoords = coords;
-            this.WaypointChanged = true;
+			this.WaypointCoords = coords;
+			this.WaypointChanged = true;
 
-        }
+		}
 		
 		private void Setup(IMyRemoteControl remoteControl){
 			
@@ -617,17 +617,17 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			this.RemoteControl = remoteControl;
 
-        }
+		}
 
-        public void SetupReferences(CollisionSystem collision, RotationSystem rotation, TargetingSystem targeting, ThrustSystem thrust, WeaponsSystem weapons) {
+		public void SetupReferences(CollisionSystem collision, RotationSystem rotation, TargetingSystem targeting, ThrustSystem thrust, WeaponsSystem weapons) {
 
-            this.Collision = collision;
-            this.Rotation = rotation;
-            this.Targeting = targeting;
-            this.Thrust = thrust;
-            this.Weapons = weapons;
+			this.Collision = collision;
+			this.Rotation = rotation;
+			this.Targeting = targeting;
+			this.Thrust = thrust;
+			this.Weapons = weapons;
 
-        }
+		}
 		
 		//SetRemoteControl
 		public void SetRemoteControl(IMyRemoteControl remoteControl, bool enabled, Vector3D targetCoords, float speedLimit = 100, bool collisionAvoidance = false, bool precisionMode = false, Sandbox.ModAPI.Ingame.FlightMode flightMode = Sandbox.ModAPI.Ingame.FlightMode.OneWay, Base6Directions.Direction direction = Base6Directions.Direction.Forward){
@@ -656,22 +656,22 @@ namespace RivalAI.Behavior.Subsystems{
 			
 		}
 
-        public void ProcessEvasionCounter(bool reset = false) {
+		public void ProcessEvasionCounter(bool reset = false) {
 
-            if(reset == true) {
+			if(reset == true) {
 
-                this.EvasionModeTimer = 0;
-                return;
+				this.EvasionModeTimer = 0;
+				return;
 
-            }
+			}
 
-            if(this.EvasionModeTimer < this.EvasionModeMaxTime) {
+			if(this.EvasionModeTimer < this.EvasionModeMaxTime) {
 
-                this.EvasionModeTimer++;
+				this.EvasionModeTimer++;
 
-            }
+			}
 
-        }
+		}
 		
 	}
 	

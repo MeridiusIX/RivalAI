@@ -34,644 +34,687 @@ using RivalAI.Sync;
 
 namespace RivalAI.Behavior.Subsystems {
 
-    public class TriggerSystem{
+	public class TriggerSystem{
 
-        public IMyRemoteControl RemoteControl;
-        public List<IMyRadioAntenna> AntennaList = new List<IMyRadioAntenna>();
-        public List<IMyLargeTurretBase> TurretList = new List<IMyLargeTurretBase>();
+		public IMyRemoteControl RemoteControl;
+		public List<IMyRadioAntenna> AntennaList = new List<IMyRadioAntenna>();
+		public List<IMyLargeTurretBase> TurretList = new List<IMyLargeTurretBase>();
 
-        private AutoPilotSystem _autopilot;
-        private BroadcastSystem _broadcast;
-        private DespawnSystem _despawn;
-        private ExtrasSystem _extras;
-        private OwnerSystem _owner;
-        private TargetingSystem _targeting;
-        private WeaponsSystem _weapons;
+		private AutoPilotSystem _autopilot;
+		private BroadcastSystem _broadcast;
+		private DespawnSystem _despawn;
+		private ExtrasSystem _extras;
+		private OwnerSystem _owner;
+		private StoredSettings _settings;
+		private TargetingSystem _targeting;
+		private WeaponsSystem _weapons;
 
-        public List<TriggerProfile> Triggers;
-        public List<TriggerProfile> DamageTriggers;
-        public List<TriggerProfile> CommandTriggers;
+		public List<TriggerProfile> Triggers;
+		public List<TriggerProfile> DamageTriggers;
+		public List<TriggerProfile> CommandTriggers;
 
-        public bool CommandListenerRegistered;
-        public bool DamageHandlerRegistered;
-        public MyDamageInformation DamageInfo;
-        public bool PendingDamage;
+		public bool CommandListenerRegistered;
+		public bool DamageHandlerRegistered;
+		public MyDamageInformation DamageInfo;
+		public bool PendingDamage;
 
 
-        public TriggerSystem(IMyRemoteControl remoteControl){
+		public TriggerSystem(IMyRemoteControl remoteControl){
 
-            RemoteControl = null;
-            AntennaList = new List<IMyRadioAntenna>();
-            TurretList = new List<IMyLargeTurretBase>();
+			RemoteControl = null;
+			AntennaList = new List<IMyRadioAntenna>();
+			TurretList = new List<IMyLargeTurretBase>();
 
-            Triggers = new List<TriggerProfile>();
-            DamageTriggers = new List<TriggerProfile>();
-            CommandTriggers = new List<TriggerProfile>();
+			Triggers = new List<TriggerProfile>();
+			DamageTriggers = new List<TriggerProfile>();
+			CommandTriggers = new List<TriggerProfile>();
 
-            CommandListenerRegistered = false;
+			CommandListenerRegistered = false;
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
-        }
+		}
 
-        public void ProcessTriggerWatchers() {
+		public void ProcessTriggerWatchers() {
 
-            MyAPIGateway.Parallel.Start(() => {
+			MyAPIGateway.Parallel.Start(() => {
 
-                for(int i = 0;i < this.Triggers.Count;i++) {
+				for(int i = 0;i < this.Triggers.Count;i++) {
 
-                    var trigger = this.Triggers[i];
+					var trigger = this.Triggers[i];
 
-                    //Timer
-                    if (trigger.Type == "Timer") {
+					//Timer
+					if (trigger.Type == "Timer") {
 
-                        if (trigger.UseTrigger == true) {
+						if (trigger.UseTrigger == true) {
 
-                            trigger.ActivateTrigger();
+							trigger.ActivateTrigger();
 
-                        }
+						}
 
-                        continue;
+						continue;
 
-                    }
+					}
 
-                    //PlayerNear
-                    if (trigger.Type == "PlayerNear") {
+					//PlayerNear
+					if (trigger.Type == "PlayerNear") {
 
-                        if(trigger.UseTrigger == true) {
+						if(trigger.UseTrigger == true) {
 
-                            if(IsPlayerNearby(trigger)) {
+							if(IsPlayerNearby(trigger)) {
 
-                                trigger.ActivateTrigger();
+								trigger.ActivateTrigger();
 
-                            }
+							}
 
-                        }
+						}
 
-                        continue;
+						continue;
 
-                    }
+					}
 
-                    //TurretTarget
-                    if(trigger.Type == "TurretTarget") {
+					//TurretTarget
+					if(trigger.Type == "TurretTarget") {
 
-                        if(trigger.UseTrigger == true) {
+						if(trigger.UseTrigger == true) {
 
-                            _weapons.TurretTarget = null;
+							_weapons.TurretTarget = null;
 
-                            foreach(var turret in _weapons.Turrets) {
+							foreach(var turret in _weapons.Turrets) {
 
-                                if(turret == null) {
+								if(turret == null) {
 
-                                    continue;
+									continue;
 
-                                }
+								}
 
-                                if(turret.Target != null) {
+								if(turret.Target != null && turret.IsShooting) {
 
-                                    _weapons.TurretTarget = turret.Target;
-                                    break;
+									_weapons.TurretTarget = turret.Target;
+									break;
 
-                                }
+								}
 
-                            }
+							}
 
-                            if(_weapons.TurretTarget != null) {
+							if(_weapons.TurretTarget != null) {
 
-                                trigger.ActivateTrigger();
+								trigger.ActivateTrigger();
 
-                                if(trigger.Triggered == true) {
+								if(trigger.Triggered == true) {
 
-                                    trigger.DetectedEntityId = _weapons.TurretTarget.EntityId;
+									trigger.DetectedEntityId = _weapons.TurretTarget.EntityId;
 
-                                }
+								}
 
-                            }
+							}
 
-                        }
+						}
 
-                        continue;
+						continue;
 
-                    }
+					}
 
-                    //NoWeapon
-                    if(trigger.Type == "NoWeapon") {
+					//NoWeapon
+					if(trigger.Type == "NoWeapon") {
 
-                        if(trigger.UseTrigger == true) {
+						if(trigger.UseTrigger == true && _weapons.AllWeaponCollectionDone == true) {
 
-                            bool validWeapon = false;
+							bool validWeapon = false;
 
-                            foreach(var weapon in _weapons.AllWeapons) {
+							if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
+								continue;
 
-                                if(weapon == null) {
+							foreach(var weapon in _weapons.AllWeapons) {
 
-                                    continue;
+								if(weapon == null) {
 
-                                }
+									continue;
 
-                                if(weapon.IsFunctional == false || weapon.IsWorking == false) {
+								}
 
-                                    continue;
+								if(weapon.IsFunctional == false || weapon.IsWorking == false) {
 
-                                }
+									continue;
 
-                                if(weapon.GetInventory().Empty() == true) {
+								}
 
-                                    continue;
+								if (!this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(weapon.SlimBlock.CubeGrid))
+									continue;
 
-                                }
+								if(!_weapons.KeepWeaponsLoaded && weapon.GetInventory().Empty() == true) {
 
-                                validWeapon = true;
-                                break;
+									continue;
 
-                            }
+								}
 
-                            if(validWeapon == false) {
+								validWeapon = true;
+								break;
 
-                                trigger.ActivateTrigger();
+							}
 
-                            }
+							if(validWeapon == false) {
 
-                        }
+								trigger.ActivateTrigger();
 
-                        continue;
+							}
 
-                    }
+						}
 
-                    //TargetInSafezone
-                    if(trigger.Type == "TargetInSafezone") {
+						continue;
 
-                        if(trigger.UseTrigger == true) {
+					}
 
-                            if(_targeting.Target.TargetExists == true && _targeting.Target.InSafeZone == true) {
+					//TargetInSafezone
+					if(trigger.Type == "TargetInSafezone") {
 
-                                trigger.ActivateTrigger();
+						if(trigger.UseTrigger == true) {
 
-                            }
+							if(_targeting.Target.TargetExists == true && _targeting.Target.InSafeZone == true) {
 
-                        }
+								trigger.ActivateTrigger();
 
-                        continue;
+							}
 
-                    }
+						}
 
-                    //Grounded
-                    if(trigger.Type == "Grounded") {
+						continue;
 
-                        if(trigger.UseTrigger == true) {
+					}
 
-                            //Check if Grounded
-                            trigger.ActivateTrigger();
+					//Grounded
+					if(trigger.Type == "Grounded") {
 
-                        }
+						if(trigger.UseTrigger == true) {
 
-                        continue;
+							//Check if Grounded
+							trigger.ActivateTrigger();
 
-                    }
-                
-                }
+						}
 
-            }, () => {
+						continue;
 
-                MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+					}
+				
+				}
 
-                    for(int i = 0;i < this.Triggers.Count;i++) {
+			}, () => {
 
-                        ProcessTrigger(this.Triggers[i]);
+				MyAPIGateway.Utilities.InvokeOnGameThread(() => {
 
-                    }
+					for(int i = 0;i < this.Triggers.Count;i++) {
 
-                });
+						ProcessTrigger(this.Triggers[i]);
 
-            });
+					}
 
+				});
 
-        }
+			});
 
-        public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
 
-            //Logger.AddMsg("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), true);
+		}
 
-            for (int i = 0;i < this.DamageTriggers.Count;i++) {
+		public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
 
-                //Logger.AddMsg("Got Trigger Profile", true);
+			//Logger.AddMsg("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), true);
 
-                var trigger = this.DamageTriggers[i];
+			for (int i = 0;i < this.DamageTriggers.Count;i++) {
 
-                if(trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
+				//Logger.AddMsg("Got Trigger Profile", true);
 
-                    if(trigger.UseTrigger == true) {
+				var trigger = this.DamageTriggers[i];
 
-                        trigger.ActivateTrigger();
+				if(trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
 
-                        if(trigger.Triggered == true) {
+					if(trigger.UseTrigger == true) {
 
-                            //Logger.AddMsg("Process Damage Actions", true);
-                            ProcessTrigger(trigger, info.AttackerId);
+						trigger.ActivateTrigger();
 
-                        }
+						if(trigger.Triggered == true) {
 
-                    }
+							//Logger.AddMsg("Process Damage Actions", true);
+							ProcessTrigger(trigger, info.AttackerId);
 
-                }
+						}
 
-            }
+					}
 
-        }
+				}
 
-        public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
+			}
 
-            if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
-                return;
-            
-            var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
-            
-            if(antenna == null)
-                return;
-            
-            if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius)
-                return;
-            
-            for(int i = 0;i < this.CommandTriggers.Count;i++) {
+		}
 
-                var trigger = this.CommandTriggers[i];
+		public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
 
-                if(trigger.UseTrigger == true && commandCode == trigger.CommandReceiveCode) {
+			if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
+				return;
+			
+			var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
+			
+			if(antenna == null)
+				return;
+			
+			if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius)
+				return;
+			
+			for(int i = 0;i < this.CommandTriggers.Count;i++) {
 
-                    trigger.ActivateTrigger();
+				var trigger = this.CommandTriggers[i];
 
-                    if(trigger.Triggered == true) {
+				if(trigger.UseTrigger == true && commandCode == trigger.CommandReceiveCode) {
 
-                        ProcessTrigger(trigger, entityId);
+					trigger.ActivateTrigger();
 
-                    }
+					if(trigger.Triggered == true) {
 
-                }
+						ProcessTrigger(trigger, entityId);
+
+					}
+
+				}
  
-            }
+			}
 
-        }
+		}
 
-        public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
+		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
 
-            if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
-                return;
+			if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
+				return;
 
-            if(trigger.Triggered == false || trigger.Actions == null) {
+			if(trigger.Triggered == false || trigger.Actions == null) {
 
-                return;
+				return;
 
-            }
+			}
 
-            long detectedEntity = attackerEntityId;
+			long detectedEntity = attackerEntityId;
 
-            if (trigger.DetectedEntityId != 0 && detectedEntity != 0) {
+			if (trigger.DetectedEntityId != 0 && detectedEntity != 0) {
 
-                detectedEntity = trigger.DetectedEntityId;
+				detectedEntity = trigger.DetectedEntityId;
 
-            }
+			}
 
-            trigger.DetectedEntityId = 0;
-            trigger.Triggered = false;
-            trigger.CooldownTime = trigger.Rnd.Next((int)trigger.MinCooldownMs, (int)trigger.MaxCooldownMs);
-            trigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
-            trigger.TriggerCount++;
+			trigger.DetectedEntityId = 0;
+			trigger.Triggered = false;
+			trigger.CooldownTime = trigger.Rnd.Next((int)trigger.MinCooldownMs, (int)trigger.MaxCooldownMs);
+			trigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+			trigger.TriggerCount++;
 
-            //ChatBroadcast
-            if(trigger.Actions.UseChatBroadcast == true) {
+			//ChatBroadcast
+			if(trigger.Actions.UseChatBroadcast == true) {
 
-                //Logger.AddMsg("Chat Broadcast", true);
-                _broadcast.BroadcastRequest(trigger.Actions.ChatData);
+				//Logger.AddMsg("Chat Broadcast", true);
+				_broadcast.BroadcastRequest(trigger.Actions.ChatData);
 
-            }
+			}
 
-            //BarrellRoll - Implement Post Release
-            if(trigger.Actions.BarrelRoll == true) {
+			//BarrellRoll - Implement Post Release
+			if(trigger.Actions.BarrelRoll == true) {
 
-                //_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
+				//_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
 
-            }
+			}
 
-            //Strafe - Implement Post Release
-            if(trigger.Actions.Strafe == true) {
+			//Strafe - Implement Post Release
+			if(trigger.Actions.Strafe == true) {
 
-                //_autopilot.ChangeAutoPilotMode(AutoPilotMode.Strafe);
+				//_autopilot.ChangeAutoPilotMode(AutoPilotMode.Strafe);
 
-            }
+			}
 
-            //ChangeAutopilotSpeed
-            if(trigger.Actions.ChangeAutopilotSpeed == true) {
+			//ChangeAutopilotSpeed
+			if(trigger.Actions.ChangeAutopilotSpeed == true) {
 
-                _autopilot.DesiredMaxSpeed = trigger.Actions.NewAutopilotSpeed;
-                this.RemoteControl.SpeedLimit = trigger.Actions.NewAutopilotSpeed;
+				_autopilot.DesiredMaxSpeed = trigger.Actions.NewAutopilotSpeed;
+				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
-            }
+				foreach (var block in blockList.Where(x => x.FatBlock != null)) {
 
-            //SpawnReinforcements
-            if(trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
+					var tBlock = block.FatBlock as IMyRemoteControl;
 
-                if (trigger.Actions.Spawner.IsReadyToSpawn()) {
+					if (tBlock != null) {
 
-                    //Logger.AddMsg("Do Spawn", true);
-                    trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
-                    SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
+						tBlock.SpeedLimit = trigger.Actions.NewAutopilotSpeed;
 
-                }
+					}
 
-            }
+				}
 
-            //SelfDestruct
-            if(trigger.Actions.SelfDestruct == true) {
+			}
 
-                var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
-                int totalWarheads = 0;
-                
-                foreach(var block in blockList.Where(x => x.FatBlock != null)) {
+			//SpawnReinforcements
+			if(trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
 
-                    var tBlock = block as IMyWarhead;
+				if (trigger.Actions.Spawner.IsReadyToSpawn()) {
 
-                    if(tBlock != null) {
+					//Logger.AddMsg("Do Spawn", true);
+					trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
+					SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
 
-                        tBlock.IsArmed = true;
-                        tBlock.DetonationTime = 0;
-                        tBlock.Detonate();
-                        totalWarheads++;
+				}
 
-                    }
+			}
 
-                }
+			//SelfDestruct
+			if(trigger.Actions.SelfDestruct == true) {
 
-                //TODO: Shield EMP
+				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
+				int totalWarheads = 0;
+				
+				foreach(var block in blockList.Where(x => x.FatBlock != null)) {
 
-            }
+					var tBlock = block.FatBlock as IMyWarhead;
 
-            //Retreat
-            if(trigger.Actions.Retreat == true) {
+					if(tBlock != null) {
 
-                _despawn.Retreat();
+						tBlock.IsArmed = true;
+						tBlock.DetonationTime = 0;
+						tBlock.Detonate();
+						totalWarheads++;
 
-            }
+					}
 
-            //BroadcastCurrentTarget
-            if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
+				}
 
-                var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
-                
-                if(antenna != null)
-                    CommandHelper.CommandTrigger?.Invoke(trigger.Actions.BroadcastSendCode, this.RemoteControl, (double)antenna.Radius, detectedEntity);
+				//Logger.AddMsg("TotalBlocks:  " + blockList.Count.ToString(), true);
+				//Logger.AddMsg("TotalWarheads: " + totalWarheads.ToString(), true);
 
-            }
+				//TODO: Shield EMP
 
-            //SwitchToReceivedTarget
-            if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
+			}
 
-                _targeting.UpdateSpecificTarget = detectedEntity;
+			//Retreat
+			if(trigger.Actions.Retreat == true) {
 
-            }
+				_despawn.Retreat();
 
-            //SwitchToBehavior
-            if(trigger.Actions.SwitchToBehavior == true) {
+			}
 
-                //TODO:
+			//BroadcastCurrentTarget
+			if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
 
-            }
+				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+				
+				if(antenna != null)
+					CommandHelper.CommandTrigger?.Invoke(trigger.Actions.BroadcastSendCode, this.RemoteControl, (double)antenna.Radius, detectedEntity);
 
-            //RefreshTarget
-            if(trigger.Actions.RefreshTarget == true) {
+			}
 
-                _targeting.UpdateTargetRequested = true;
+			//SwitchToReceivedTarget
+			if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
 
-            }
+				_targeting.UpdateSpecificTarget = detectedEntity;
 
-            //ChangeReputationWithPlayers
-            if(trigger.Actions.ChangeReputationWithPlayers == true) {
+			}
 
-                OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
+			//SwitchToBehavior
+			if(trigger.Actions.SwitchToBehavior == true) {
 
-            }
+				//TODO:
 
-            //ChangeAttackerReputation
-            if (trigger.Actions.ChangeAttackerReputation == true && detectedEntity != 0) {
+			}
 
-                OwnershipHelper.ChangeDamageOwnerReputation(trigger.Actions.ChangeAttackerReputationFaction, detectedEntity, trigger.Actions.ChangeAttackerReputationAmount, trigger.Actions.ReputationChangesForAllAttackPlayerFactionMembers);
+			//RefreshTarget
+			if(trigger.Actions.RefreshTarget == true) {
 
-            }
+				_targeting.UpdateTargetRequested = true;
 
+			}
 
-            //TriggerTimerBlock
-            if (trigger.Actions.TriggerTimerBlocks == true) {
+			//ChangeReputationWithPlayers
+			if(trigger.Actions.ChangeReputationWithPlayers == true) {
 
-                var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
+				OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
 
-                foreach(var block in blockList) {
+			}
 
-                    var tBlock = block as IMyTimerBlock;
+			//ChangeAttackerReputation
+			if (trigger.Actions.ChangeAttackerReputation == true && detectedEntity != 0) {
 
-                    if(tBlock != null) {
+				OwnershipHelper.ChangeDamageOwnerReputation(trigger.Actions.ChangeAttackerReputationFaction, detectedEntity, trigger.Actions.ChangeAttackerReputationAmount, trigger.Actions.ReputationChangesForAllAttackPlayerFactionMembers);
 
-                        tBlock.Trigger();
+			}
 
-                    }
 
-                }
+			//TriggerTimerBlock
+			if (trigger.Actions.TriggerTimerBlocks == true) {
 
-            }
+				var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
 
-            //ActivateAssertiveAntennas
-            if(trigger.Actions.ActivateAssertiveAntennas == true) {
+				foreach(var block in blockList) {
 
-                /*TODO:
-                _extras.SetAssertiveAntennas(true);
-                _extras.AssertiveEngage = true;
-                */
-            }
+					var tBlock = block as IMyTimerBlock;
 
-            //ChangeAntennaOwnership
-            if (trigger.Actions.ChangeAntennaOwnership == true) {
+					if(tBlock != null) {
 
-                OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, trigger.Actions.AntennaFactionOwner);
+						tBlock.Trigger();
 
-            }
+					}
 
-            //CreateKnownPlayerArea
-            if (trigger.Actions.CreateKnownPlayerArea == true) {
+				}
 
-                MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, trigger.Actions.KnownPlayerAreaRadius, trigger.Actions.KnownPlayerAreaTimer, trigger.Actions.KnownPlayerAreaMaxSpawns);
+			}
 
-            }
+			//ActivateAssertiveAntennas
+			if(trigger.Actions.ActivateAssertiveAntennas == true) {
 
-            //DamageAttacker
-            if (trigger.Actions.DamageToolAttacker == true && detectedEntity == 0) {
+				/*TODO:
+				_extras.SetAssertiveAntennas(true);
+				_extras.AssertiveEngage = true;
+				*/
+			}
 
-                DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
+			//ChangeAntennaOwnership
+			if (trigger.Actions.ChangeAntennaOwnership == true) {
 
-            }
+				OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, trigger.Actions.AntennaFactionOwner);
 
-            //PlayParticleEffectAtRemote
-            if (trigger.Actions.PlayParticleEffectAtRemote == true) {
+			}
 
-                EffectManager.SendParticleEffectRequest(trigger.Actions.ParticleEffectId, this.RemoteControl.WorldMatrix, trigger.Actions.ParticleEffectOffset, trigger.Actions.ParticleEffectScale, trigger.Actions.ParticleEffectMaxTime, trigger.Actions.ParticleEffectColor);
-                    
-            }
+			//CreateKnownPlayerArea
+			if (trigger.Actions.CreateKnownPlayerArea == true) {
 
-        }
+				MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, trigger.Actions.KnownPlayerAreaRadius, trigger.Actions.KnownPlayerAreaTimer, trigger.Actions.KnownPlayerAreaMaxSpawns);
 
-        public bool IsPlayerNearby(TriggerProfile control) {
+			}
 
-            IMyPlayer player = null;
+			//DamageAttacker
+			if (trigger.Actions.DamageToolAttacker == true && detectedEntity != 0) {
 
-            if(control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
+				DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
 
-                player = TargetHelper.GetClosestPlayerWithReputation(this.RemoteControl.GetPosition(), _owner.FactionId, control.MinPlayerReputation, control.MaxPlayerReputation);
+			}
 
-            } else {
+			//PlayParticleEffectAtRemote
+			if (trigger.Actions.PlayParticleEffectAtRemote == true) {
 
-                player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
+				EffectManager.SendParticleEffectRequest(trigger.Actions.ParticleEffectId, this.RemoteControl.WorldMatrix, trigger.Actions.ParticleEffectOffset, trigger.Actions.ParticleEffectScale, trigger.Actions.ParticleEffectMaxTime, trigger.Actions.ParticleEffectColor);
+					
+			}
 
-            }
+			//SetBooleansTrue
+			foreach (var variable in trigger.Actions.SetBooleansTrue)
+				_settings.SetCustomBool(variable, true);
 
-            if(player == null) {
+			//SetBooleansFalse
+			foreach (var variable in trigger.Actions.SetBooleansFalse)
+				_settings.SetCustomBool(variable, false);
 
-                return false;
+			//IncreaseCounters
+			foreach (var variable in trigger.Actions.IncreaseCounters)
+				_settings.SetCustomCounter(variable, 1);
 
-            }
+			//DecreaseCounters
+			foreach (var variable in trigger.Actions.DecreaseCounters)
+				_settings.SetCustomCounter(variable, -1);
 
-            var playerDist = Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition());
+			//ResetCounters
+			foreach (var variable in trigger.Actions.ResetCounters)
+				_settings.SetCustomCounter(variable, 0, true);
 
-            if(playerDist > control.TargetDistance) {
+		}
 
-                return false;
+		public bool IsPlayerNearby(TriggerProfile control) {
 
-            }
+			IMyPlayer player = null;
 
-            if(control.InsideAntenna == true) {
+			if(control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
 
-                var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+				player = TargetHelper.GetClosestPlayerWithReputation(this.RemoteControl.GetPosition(), _owner.FactionId, control.MinPlayerReputation, control.MaxPlayerReputation);
 
-                if(antenna != null) {
+			} else {
 
-                    playerDist = Vector3D.Distance(player.GetPosition(), antenna.GetPosition());
-                    if(playerDist > antenna.Radius) {
+				player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
 
-                        return false;
+			}
 
-                    }
+			if(player == null) {
 
-                } else {
+				return false;
 
-                    return false;
+			}
 
-                }
+			var playerDist = Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition());
 
-            }
+			if(playerDist > control.TargetDistance) {
 
-            return true;
+				return false;
 
-        }
+			}
 
-        public void Setup(IMyRemoteControl remoteControl) {
+			if(control.InsideAntenna == true) {
 
-            if(remoteControl?.SlimBlock == null) {
+				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
 
-                return;
+				if(antenna != null) {
 
-            }
+					playerDist = Vector3D.Distance(player.GetPosition(), antenna.GetPosition());
+					if(playerDist > antenna.Radius) {
 
-            this.RemoteControl = remoteControl;
+						return false;
 
-            this.AntennaList = BlockHelper.GetGridAntennas(this.RemoteControl.SlimBlock.CubeGrid);
+					}
 
-        }
+				} else {
 
-        public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, TargetingSystem targeting, WeaponsSystem weapons) {
+					return false;
 
-            this._autopilot = autopilot;
-            this._broadcast = broadcast;
-            this._despawn = despawn;
-            this._extras = extras;
-            this._owner = owners;
-            this._targeting = targeting;
-            this._weapons = weapons;
+				}
 
-        }
-        
-        public void RegisterCommandListener(){
-        
-            if(this.CommandListenerRegistered)
-                return;
-            
-            this.CommandListenerRegistered = true;
-            CommandHelper.CommandTrigger += ProcessCommandReceiveTriggerWatcher;
+			}
 
-        }
+			return true;
 
-        public void InitTags() {
+		}
 
-            //TODO: Try To Get Triggers From Block Storage At Start
+		public void Setup(IMyRemoteControl remoteControl) {
 
-            //Start With This Class
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == true) {
+			if(remoteControl?.SlimBlock == null) {
 
-                return;
+				return;
 
-            }
+			}
 
-            var descSplit = this.RemoteControl.CustomData.Split('\n');
+			this.RemoteControl = remoteControl;
 
-            foreach(var tag in descSplit) {
+			this.AntennaList = BlockHelper.GetGridAntennas(this.RemoteControl.SlimBlock.CubeGrid);
 
-                //Triggers
-                if(tag.Contains("[Triggers:") == true) {
+		}
 
-                    var tempValue = TagHelper.TagStringCheck(tag);
+		public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, TargetingSystem targeting, WeaponsSystem weapons) {
 
-                    if(string.IsNullOrWhiteSpace(tempValue) == false) {
+			this._autopilot = autopilot;
+			this._broadcast = broadcast;
+			this._despawn = despawn;
+			this._extras = extras;
+			this._owner = owners;
+			this._settings = settings;
+			this._targeting = targeting;
+			this._weapons = weapons;
 
-                        byte[] byteData = { };
+		}
+		
+		public void RegisterCommandListener(){
+		
+			if(this.CommandListenerRegistered)
+				return;
+			
+			this.CommandListenerRegistered = true;
+			CommandHelper.CommandTrigger += ProcessCommandReceiveTriggerWatcher;
 
-                        if(TagHelper.TriggerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+		}
 
-                            try {
+		public void InitTags() {
 
-                                var profile = MyAPIGateway.Utilities.SerializeFromBinary<TriggerProfile>(byteData);
+			//TODO: Try To Get Triggers From Block Storage At Start
 
-                                if(profile != null) {
+			//Start With This Class
+			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == true) {
 
-                                    if(profile.Type == "Damage") {
+				return;
 
-                                        this.DamageTriggers.Add(profile);
-                                        continue;
+			}
 
-                                    }
-                                    
-                                    if(profile.Type == "CommandReceived"){
+			var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                                        this.CommandTriggers.Add(profile);
-                                        RegisterCommandListener();
-                                        continue;
+			foreach(var tag in descSplit) {
 
-                                    }
+				//Triggers
+				if(tag.Contains("[Triggers:") == true) {
 
-                                    this.Triggers.Add(profile);
-                                    
-                                }
+					var tempValue = TagHelper.TagStringCheck(tag);
 
-                            } catch(Exception) {
+					if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
+						byte[] byteData = { };
 
+						if(TagHelper.TriggerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
-                            }
+							try {
 
-                        }
+								var profile = MyAPIGateway.Utilities.SerializeFromBinary<TriggerProfile>(byteData);
 
-                    }
+								if(profile != null) {
 
-                }
+									if(profile.Type == "Damage") {
 
-            }
+										this.DamageTriggers.Add(profile);
+										continue;
 
-        }
+									}
+									
+									if(profile.Type == "CommandReceived"){
 
-    }
+										this.CommandTriggers.Add(profile);
+										RegisterCommandListener();
+										continue;
+
+									}
+
+									this.Triggers.Add(profile);
+									
+								}
+
+							} catch(Exception) {
+
+
+
+							}
+
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
 
 }

@@ -61,6 +61,7 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<WeaponProfile> StaticWeapons;
 		public List<IMyLargeTurretBase> Turrets;
 		public List<IMyUserControllableGun> AllWeapons;
+		public bool AllWeaponCollectionDone;
 		public double HighestRangeStaticGun;
 
 		public IMyEntity TurretTarget;
@@ -90,6 +91,8 @@ namespace RivalAI.Behavior.Subsystems {
 			RemoteControl = null;
 			StaticWeapons = new List<WeaponProfile>();
 			Turrets = new List<IMyLargeTurretBase>();
+			AllWeapons = new List<IMyUserControllableGun>();
+			AllWeaponCollectionDone = false;
 			HighestRangeStaticGun = 0;
 
 			TurretTarget = null;
@@ -279,6 +282,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if((block.FatBlock as IMyLargeTurretBase) != null) {
 
+					this.AllWeapons.Add(block.FatBlock as IMyUserControllableGun);
 					Turrets.Add(block.FatBlock as IMyLargeTurretBase);
 					continue;
 
@@ -286,6 +290,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if((block.FatBlock as IMyUserControllableGun) != null) {
 
+					this.AllWeapons.Add(block.FatBlock as IMyUserControllableGun);
 					var weaponProfile = new WeaponProfile(block.FatBlock as IMyUserControllableGun);
 					this.StaticWeapons.Add(weaponProfile);
 
@@ -298,6 +303,8 @@ namespace RivalAI.Behavior.Subsystems {
 				}
 
 			}
+
+			AllWeaponCollectionDone = true;
 
 		}
 

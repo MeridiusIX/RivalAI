@@ -34,132 +34,134 @@ using RivalAI.Sync;
 
 namespace RivalAI {
 
-    [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
+	[MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
 
-    public class RAI_SessionCore:MySessionComponentBase {
+	public class RAI_SessionCore:MySessionComponentBase {
 
-        public static bool IsServer = false;
-        public static bool IsDedicated = false;
+		public static bool IsServer = false;
+		public static bool IsDedicated = false;
 
-        //ShieldApi Support
-        internal static RAI_SessionCore Instance { get; private set; } // allow access from gamelogic
-        public bool ShieldMod { get; set; }
-        public bool ShieldApiLoaded { get; set; }
-        public ShieldApi SApi = new ShieldApi();
-        public static string ConfigInstance = "";
+		//ShieldApi Support
+		internal static RAI_SessionCore Instance { get; private set; } // allow access from gamelogic
+		public bool ShieldMod { get; set; }
+		public bool ShieldApiLoaded { get; set; }
+		public ShieldApi SApi = new ShieldApi();
+		public static string ConfigInstance = "";
 
-        public int Ticks = 0;
+		public int Ticks = 0;
 
-        public static bool SetupComplete = false;
+		public static bool SetupComplete = false;
 
-        public override void LoadData() {
+		public override void LoadData() {
 
-            if(MyAPIGateway.Multiplayer.IsServer == false)
-                return;
+			if(MyAPIGateway.Multiplayer.IsServer == false)
+				return;
 
-            Instance = this;
+			Instance = this;
 
-            foreach(var mod in MyAPIGateway.Session.Mods) {
+			foreach(var mod in MyAPIGateway.Session.Mods) {
 
-                if(mod.PublishedFileId == 1365616918) {
+				if(mod.PublishedFileId == 1365616918) {
 
-                    ShieldMod = true;
+					ShieldMod = true;
 
-                }
+				}
 
-            }
+			}
 
-            MESApi.RegisterAPIListener();
+			MESApi.RegisterAPIListener();
 
-        }
+		}
 
-        public override void BeforeStart() {
+		public override void BeforeStart() {
 
-            Utilities.GetAllModIDs();
-            TagHelper.Setup();
+			Utilities.GetAllModIDs();
+			TagHelper.Setup();
+			DamageHelper.RegisterEntityWatchers();
 
-        }
+		}
 
-        public override void UpdateBeforeSimulation() {
+		public override void UpdateBeforeSimulation() {
 
-            if(SetupComplete == false) {
+			if(SetupComplete == false) {
 
-                SetupComplete = true;
-                Setup();
-                Logger.AddMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
+				SetupComplete = true;
+				Setup();
+				Logger.AddMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
 
-            }
+			}
 
-            if(ShieldMod && !ShieldApiLoaded && SApi.Load()) {
+			if(ShieldMod && !ShieldApiLoaded && SApi.Load()) {
 
-                ShieldApiLoaded = true;
+				ShieldApiLoaded = true;
 
-            }
+			}
 
-            Ticks++;
+			Ticks++;
 
-            if(Ticks % 10 == 0) {
+			if(Ticks % 10 == 0) {
 
-                if(EffectManager.SoundsPending == true) {
+				if(EffectManager.SoundsPending == true) {
 
-                    EffectManager.ProcessPlayerSoundEffect();
+					EffectManager.ProcessPlayerSoundEffect();
 
-                }
+				}
 
-            }
+			}
 
-            if(Ticks % 60 == 0) {
+			if(Ticks % 60 == 0) {
 
-                Ticks = 0;
+				Ticks = 0;
 
-            }
+			}
 
-        }
+		}
 
-        public static void Setup() {
+		public static void Setup() {
 
-            IsServer = MyAPIGateway.Multiplayer.IsServer;
-            IsDedicated = MyAPIGateway.Utilities.IsDedicated;
-            ConfigInstance = MyAPIGateway.Utilities.GamePaths.ModScopeName;
-            SyncManager.Setup();
+			IsServer = MyAPIGateway.Multiplayer.IsServer;
+			IsDedicated = MyAPIGateway.Utilities.IsDedicated;
+			ConfigInstance = MyAPIGateway.Utilities.GamePaths.ModScopeName;
+			SyncManager.Setup();
 
-            //Add ShieldBlocks To TargetHelper
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterSA"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterLA"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterST"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterS"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterL"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "DS_Supergen"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "LargeShipSmallShieldGeneratorBase"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "LargeShipLargeShieldGeneratorBase"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "SmallShipSmallShieldGeneratorBase"));
-            TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "SmallShipMicroShieldGeneratorBase"));
+			//Add ShieldBlocks To TargetHelper
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterSA"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterLA"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterST"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterS"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterL"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "DS_Supergen"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "LargeShipSmallShieldGeneratorBase"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "LargeShipLargeShieldGeneratorBase"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "SmallShipSmallShieldGeneratorBase"));
+			TargetHelper.ShieldBlockIDs.Add(new MyDefinitionId(typeof(MyObjectBuilder_Refinery), "SmallShipMicroShieldGeneratorBase"));
 
-            //LogicManager.Setup();
+			//LogicManager.Setup();
 
-            if(IsServer == false) {
+			if(IsServer == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
+			MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
 
-        }
+		}
 
-        protected override void UnloadData() {
+		protected override void UnloadData() {
 
-            if(ShieldApiLoaded) {
+			if(ShieldApiLoaded) {
 
-                SApi.Unload();
-                Instance = null;
+				SApi.Unload();
+				Instance = null;
 
-            }
+			}
 
-            SyncManager.Close();
+			SyncManager.Close();
+			DamageHelper.UnregisterEntityWatchers();
 
-        }
+		}
 
-    }
+	}
 
 }

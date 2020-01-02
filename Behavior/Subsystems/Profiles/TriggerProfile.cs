@@ -30,315 +30,315 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Profiles {
 
-    [ProtoContract]
-    public class TriggerProfile {
+	[ProtoContract]
+	public class TriggerProfile {
 
-        [ProtoMember(1)]
-        public string Type;
+		[ProtoMember(1)]
+		public string Type;
 
-        [ProtoMember(2)]
-        public bool UseTrigger;
+		[ProtoMember(2)]
+		public bool UseTrigger;
 
-        [ProtoMember(3)]
-        public double TargetDistance;
+		[ProtoMember(3)]
+		public double TargetDistance;
 
-        [ProtoMember(4)]
-        public bool InsideAntenna;
+		[ProtoMember(4)]
+		public bool InsideAntenna;
 
-        [ProtoMember(5)]
-        public float MinCooldownMs;
+		[ProtoMember(5)]
+		public float MinCooldownMs;
 
-        [ProtoMember(6)]
-        public float MaxCooldownMs;
+		[ProtoMember(6)]
+		public float MaxCooldownMs;
 
-        [ProtoMember(7)]
-        public bool StartsReady;
+		[ProtoMember(7)]
+		public bool StartsReady;
 
-        [ProtoMember(8)]
-        public int MaxActions;
+		[ProtoMember(8)]
+		public int MaxActions;
 
-        [ProtoMember(9)]
-        public ActionProfile Actions;
+		[ProtoMember(9)]
+		public ActionProfile Actions;
 
-        [ProtoMember(10)]
-        public List<string> DamageTypes;
+		[ProtoMember(10)]
+		public List<string> DamageTypes;
 
-        [ProtoMember(11)]
-        public bool Triggered;
+		[ProtoMember(11)]
+		public bool Triggered;
 
-        [ProtoMember(12)]
-        public int CooldownTime;
+		[ProtoMember(12)]
+		public int CooldownTime;
 
-        [ProtoMember(13)]
-        public int TriggerCount;
+		[ProtoMember(13)]
+		public int TriggerCount;
 
-        [ProtoMember(14)]
-        public DateTime LastTriggerTime;
+		[ProtoMember(14)]
+		public DateTime LastTriggerTime;
 
-        [ProtoMember(15)]
-        public int MinPlayerReputation;
+		[ProtoMember(15)]
+		public int MinPlayerReputation;
 
-        [ProtoMember(16)]
-        public int MaxPlayerReputation;
+		[ProtoMember(16)]
+		public int MaxPlayerReputation;
 
-        [ProtoMember(17)]
-        public ConditionProfile Conditions;
+		[ProtoMember(17)]
+		public ConditionProfile Conditions;
 
-        [ProtoMember(18)]
-        public bool ConditionCheckResetsTimer;
+		[ProtoMember(18)]
+		public bool ConditionCheckResetsTimer;
 
-        [ProtoMember(19)]
-        public long DetectedEntityId;
+		[ProtoMember(19)]
+		public long DetectedEntityId;
 
-        [ProtoMember(20)]
-        public string CommandReceiveCode;
+		[ProtoMember(20)]
+		public string CommandReceiveCode;
 
-        [ProtoIgnore]
-        public Random Rnd;
+		[ProtoIgnore]
+		public Random Rnd;
 
-        public TriggerProfile() {
+		public TriggerProfile() {
 
-            Type = "";
+			Type = "";
 
-            UseTrigger = false;
-            TargetDistance = 3000;
-            InsideAntenna = false;
-            MinCooldownMs = 0;
-            MaxCooldownMs = 1;
-            StartsReady = false;
-            MaxActions = -1;
-            Actions = new ActionProfile();
-            DamageTypes = new List<string>();
-            Conditions = new ConditionProfile();
+			UseTrigger = false;
+			TargetDistance = 3000;
+			InsideAntenna = false;
+			MinCooldownMs = 0;
+			MaxCooldownMs = 1;
+			StartsReady = false;
+			MaxActions = -1;
+			Actions = new ActionProfile();
+			DamageTypes = new List<string>();
+			Conditions = new ConditionProfile();
 
-            Triggered = false;
-            CooldownTime = 0;
-            TriggerCount = 0;
-            LastTriggerTime = MyAPIGateway.Session.GameDateTime;
-            DetectedEntityId = 0;
+			Triggered = false;
+			CooldownTime = 0;
+			TriggerCount = 0;
+			LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+			DetectedEntityId = 0;
 
-            Conditions = new ConditionProfile();
-            ConditionCheckResetsTimer = false;
+			Conditions = new ConditionProfile();
+			ConditionCheckResetsTimer = false;
 
-            MinPlayerReputation = -1501;
-            MaxPlayerReputation = 1501;
+			MinPlayerReputation = -1501;
+			MaxPlayerReputation = 1501;
 
-            CommandReceiveCode = "";
+			CommandReceiveCode = "";
 
 
-            Rnd = new Random();
+			Rnd = new Random();
 
-        }
+		}
 
-        public void ActivateTrigger() {
+		public void ActivateTrigger() {
 
-            if(MaxActions >= 0 && TriggerCount >= MaxActions) {
+			if(MaxActions >= 0 && TriggerCount >= MaxActions) {
 
-                UseTrigger = false;
-                return;
+				UseTrigger = false;
+				return;
 
-            }
+			}
 
-            if(CooldownTime > 0) {
+			if(CooldownTime > 0) {
 
-                TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastTriggerTime;
+				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastTriggerTime;
 
-                if(duration.TotalMilliseconds >= CooldownTime) {
+				if(duration.TotalMilliseconds >= CooldownTime) {
 
-                    if (Conditions.UseConditions == true) {
+					if (Conditions.UseConditions == true) {
 
-                        if (Conditions.AreConditionsMets()) {
+						if (Conditions.AreConditionsMets()) {
 
-                            Triggered = true;
+							Triggered = true;
 
-                        } else if(this.ConditionCheckResetsTimer) {
+						} else if(this.ConditionCheckResetsTimer) {
 
-                            this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
-                            CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
+							this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+							CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
 
-                        }
+						}
 
-                    } else {
+					} else {
 
-                        Triggered = true;
+						Triggered = true;
 
-                    }
+					}
 
-                }
+				}
 
-            } else {
+			} else {
 
-                Triggered = true;
+				Triggered = true;
 
-            }
+			}
 
-        }
+		}
 
-        public void InitTags(string customData) {
+		public void InitTags(string customData) {
 
-            if(string.IsNullOrWhiteSpace(customData) == false) {
+			if(string.IsNullOrWhiteSpace(customData) == false) {
 
-                var descSplit = customData.Split('\n');
+				var descSplit = customData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //Type
-                    if(tag.Contains("[Type:") == true) {
+					//Type
+					if(tag.Contains("[Type:") == true) {
 
-                        Type = TagHelper.TagStringCheck(tag);
+						Type = TagHelper.TagStringCheck(tag);
 
-                    }
+					}
 
-                    //UseTrigger
-                    if(tag.Contains("[UseTrigger:") == true) {
+					//UseTrigger
+					if(tag.Contains("[UseTrigger:") == true) {
 
-                        UseTrigger = TagHelper.TagBoolCheck(tag);
+						UseTrigger = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //InsideAntenna
-                    if(tag.Contains("[InsideAntenna:") == true) {
+					//InsideAntenna
+					if(tag.Contains("[InsideAntenna:") == true) {
 
-                        InsideAntenna = TagHelper.TagBoolCheck(tag);
+						InsideAntenna = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //TargetDistance
-                    if(tag.Contains("[TargetDistance:") == true) {
+					//TargetDistance
+					if(tag.Contains("[TargetDistance:") == true) {
 
-                        TargetDistance = TagHelper.TagDoubleCheck(tag, TargetDistance);
+						TargetDistance = TagHelper.TagDoubleCheck(tag, TargetDistance);
 
-                    }
+					}
 
-                    //MinCooldown
-                    if(tag.Contains("[MinCooldownMs:") == true) {
+					//MinCooldown
+					if(tag.Contains("[MinCooldownMs:") == true) {
 
-                        MinCooldownMs = TagHelper.TagFloatCheck(tag, MinCooldownMs);
+						MinCooldownMs = TagHelper.TagFloatCheck(tag, MinCooldownMs);
 
-                    }
+					}
 
-                    //MaxCooldown
-                    if(tag.Contains("[MaxCooldownMs:") == true) {
+					//MaxCooldown
+					if(tag.Contains("[MaxCooldownMs:") == true) {
 
-                        MaxCooldownMs = TagHelper.TagFloatCheck(tag, MaxCooldownMs);
+						MaxCooldownMs = TagHelper.TagFloatCheck(tag, MaxCooldownMs);
 
-                    }
+					}
 
-                    //StartsReady
-                    if(tag.Contains("[StartsReady:") == true) {
+					//StartsReady
+					if(tag.Contains("[StartsReady:") == true) {
 
-                        StartsReady = TagHelper.TagBoolCheck(tag);
+						StartsReady = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                    //MaxActions
-                    if (tag.Contains("[MaxActions:") == true) {
+					//MaxActions
+					if (tag.Contains("[MaxActions:") == true) {
 
-                        MaxActions = TagHelper.TagIntCheck(tag, MaxActions);
+						MaxActions = TagHelper.TagIntCheck(tag, MaxActions);
 
-                    }
+					}
 
-                    //Actions
-                    if (tag.Contains("[Actions:") == true) {
+					//Actions
+					if (tag.Contains("[Actions:") == true) {
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
+						var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                            byte[] byteData = { };
+							byte[] byteData = { };
 
-                            if(TagHelper.ActionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if(TagHelper.ActionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
-                                try {
+								try {
 
-                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ActionProfile>(byteData);
+									var profile = MyAPIGateway.Utilities.SerializeFromBinary<ActionProfile>(byteData);
 
-                                    if(profile != null) {
+									if(profile != null) {
 
-                                        Actions = profile;
+										Actions = profile;
 
-                                    }
+									}
 
-                                } catch(Exception) {
+								} catch(Exception) {
 
 
 
-                                }
+								}
 
-                            }
+							}
 
-                        }
+						}
 
-                    }
+					}
 
-                    //DamageTypes
-                    if(tag.Contains("[DamageTypes:") == true) {
+					//DamageTypes
+					if(tag.Contains("[DamageTypes:") == true) {
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
+						var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
+						if(!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
 
-                            DamageTypes.Add(tempValue);
+							DamageTypes.Add(tempValue);
 
-                        }
+						}
 
-                    }
+					}
 
-                    //Conditions
-                    if(tag.Contains("[Conditions:") == true) {
+					//Conditions
+					if(tag.Contains("[Conditions:") == true) {
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
+						var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                            byte[] byteData = { };
+							byte[] byteData = { };
 
-                            if(TagHelper.ConditionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if(TagHelper.ConditionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
-                                try {
+								try {
 
-                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<ConditionProfile>(byteData);
+									var profile = MyAPIGateway.Utilities.SerializeFromBinary<ConditionProfile>(byteData);
 
-                                    if(profile != null) {
+									if(profile != null) {
 
-                                        this.Conditions = profile;
+										this.Conditions = profile;
 
-                                    }
+									}
 
-                                } catch(Exception) {
+								} catch(Exception) {
 
 
 
-                                }
+								}
 
-                            }
+							}
 
-                        }
+						}
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-            if(MinCooldownMs > MaxCooldownMs) {
+			if(MinCooldownMs > MaxCooldownMs) {
 
-                MinCooldownMs = MaxCooldownMs;
+				MinCooldownMs = MaxCooldownMs;
 
-            }
+			}
 
-            if(StartsReady == true) {
+			if(StartsReady == true) {
 
-                CooldownTime = 0;
+				CooldownTime = 0;
 
-            } else {
+			} else {
 
-                CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
+				CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
 
-            }
+			}
 
 
-        }
+		}
 
-    }
+	}
 }

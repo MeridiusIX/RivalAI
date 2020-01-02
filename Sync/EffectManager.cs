@@ -32,150 +32,160 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 
 namespace RivalAI.Sync {
-    
-    public static class EffectManager {
+	
+	public static class EffectManager {
 
-        public static bool SoundsPending = false;
-        public static List<string> SoundsPendingList = new List<string>();
+		public static bool SoundsPending = false;
+		public static List<string> SoundsPendingList = new List<string>();
 
-        public static IMyCharacter CurrentPlayerCharacter;
-        public static MyEntity3DSoundEmitter SoundEmitter;
+		public static IMyCharacter CurrentPlayerCharacter;
+		public static MyEntity3DSoundEmitter SoundEmitter;
 
-        public static void ClientReceiveEffect(Effects effectData) {
+		public static void ClientReceiveEffect(Effects effectData) {
 
-            if(effectData.Mode == EffectSyncMode.PlayerSound) {
-                
-                SoundsPendingList.Add(effectData.SoundId);
-                SoundsPending = true;
+			if(effectData.Mode == EffectSyncMode.PlayerSound) {
+				
+				SoundsPendingList.Add(effectData.SoundId);
+				SoundsPending = true;
 
-            }
+			}
 
-            if(effectData.Mode == EffectSyncMode.PositionSound) {
+			if(effectData.Mode == EffectSyncMode.PositionSound) {
 
-                ProcessPositionSoundEffect(effectData);
+				Logger.AddMsg("Process Position Sound");
+				ProcessPositionSoundEffect(effectData);
 
-            }
+			}
 
-            if (effectData.Mode == EffectSyncMode.Particle) {
+			if (effectData.Mode == EffectSyncMode.Particle) {
 
-                ProcessParticleEffect(effectData);
+				Logger.AddMsg("Process Particle");
+				ProcessParticleEffect(effectData);
 
-            }
+			}
 
-        }
+		}
 
-        public static void SendParticleEffectRequest(string id, MatrixD remoteMatrix, Vector3D offset, float scale, float maxTime, Vector3D color) {
+		public static void SendParticleEffectRequest(string id, MatrixD remoteMatrix, Vector3D offset, float scale, float maxTime, Vector3D color) {
 
-            var effect = new Effects();
-            effect.Mode = EffectSyncMode.Particle;
-            effect.Coords = Vector3D.Transform(offset, remoteMatrix);
-            effect.ParticleId = id;
-            effect.ParticleScale = scale;
-            effect.ParticleColor = color;
-            effect.ParticleMaxTime = maxTime;
-            effect.ParticleForwardDir = remoteMatrix.Forward;
-            effect.ParticleUpDir = remoteMatrix.Up;
-            var syncData = new SyncContainer(effect);
+			var effect = new Effects();
+			effect.Mode = EffectSyncMode.Particle;
+			effect.Coords = Vector3D.Transform(offset, remoteMatrix);
+			effect.ParticleId = id;
+			effect.ParticleScale = scale;
+			effect.ParticleColor = color;
+			effect.ParticleMaxTime = maxTime;
+			effect.ParticleForwardDir = remoteMatrix.Forward;
+			effect.ParticleUpDir = remoteMatrix.Up;
+			var syncData = new SyncContainer(effect);
 
-            foreach (var player in TargetHelper.GetPlayersWithinDistance(effect.Coords, 15000)) {
+			foreach (var player in TargetHelper.GetPlayersWithinDistance(effect.Coords, 15000)) {
 
-                SyncManager.SendSyncMesage(syncData, player.SteamUserId);
+				SyncManager.SendSyncMesage(syncData, player.SteamUserId);
 
-            }
+			}
 
-        }
+		}
 
-        public static void ProcessParticleEffect(Effects effectData) {
+		public static void ProcessParticleEffect(Effects effectData) {
 
-            MyParticleEffect effect;
-            var particleMatrix = MatrixD.CreateWorld(effectData.Coords, effectData.ParticleForwardDir, effectData.ParticleUpDir);
-            var particleCoords = effectData.Coords;
+			MyParticleEffect effect;
+			var particleMatrix = MatrixD.CreateWorld(effectData.Coords, effectData.ParticleForwardDir, effectData.ParticleUpDir);
+			var particleCoords = effectData.Coords;
 
-            if (MyParticlesManager.TryCreateParticleEffect(effectData.ParticleId, ref particleMatrix, ref particleCoords, uint.MaxValue, out effect) == false) {
+			if (MyParticlesManager.TryCreateParticleEffect(effectData.ParticleId, ref particleMatrix, ref particleCoords, uint.MaxValue, out effect) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            effect.UserScale = effectData.ParticleScale;
-            effect.DurationMin = effectData.ParticleMaxTime;
-            effect.DurationMax = effectData.ParticleMaxTime;
+			effect.UserScale = effectData.ParticleScale;
 
-            if (effectData.ParticleColor != Vector3D.Zero) {
+			if (effectData.ParticleMaxTime > 0) {
 
-                var newColor = new Vector4((float)effectData.ParticleColor.X, (float)effectData.ParticleColor.Y, (float)effectData.ParticleColor.Z, 1);
-                effect.UserColorMultiplier = newColor;
+				effect.DurationMin = effectData.ParticleMaxTime;
+				effect.DurationMax = effectData.ParticleMaxTime;
 
-            }
+			}
 
-        }
+			if (effectData.ParticleColor != Vector3D.Zero) {
 
-        public static void ProcessPlayerSoundEffect() {
+				var newColor = new Vector4((float)effectData.ParticleColor.X, (float)effectData.ParticleColor.Y, (float)effectData.ParticleColor.Z, 1);
+				effect.UserColorMultiplier = newColor;
 
-            if(SoundsPending == false) {
+			}
 
-                return;
+			effect.Velocity = effectData.Velocity;
+			effect.Loop = false;
 
-            }
+		}
 
-            if(CheckPlayerSoundEmitter() == false) {
+		public static void ProcessPlayerSoundEffect() {
 
-                return;
+			if(SoundsPending == false) {
 
-            }
+				return;
 
-            if(SoundEmitter.IsPlaying == true) {
+			}
 
-                return;
+			if(CheckPlayerSoundEmitter() == false) {
 
-            }
-            
-            if(SoundsPendingList.Count == 0){
-            
-                SoundsPending = false;
-                return;
-            
-            }
-            
-            var soundPair = new MySoundPair(SoundsPendingList[0]);
-            SoundsPendingList.RemoveAt(0);
-            SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
-            
-            if(SoundsPendingList.Count == 0){
-            
-                SoundsPending = false;
-            
-            }
+				return;
 
-        }
+			}
 
-        public static bool CheckPlayerSoundEmitter() {
+			if(SoundEmitter.IsPlaying == true) {
 
-            if(MyAPIGateway.Session.LocalHumanPlayer?.Character == null) {
+				return;
 
-                CurrentPlayerCharacter = null;
-                SoundEmitter = null;
-                return false;
+			}
+			
+			if(SoundsPendingList.Count == 0){
+			
+				SoundsPending = false;
+				return;
+			
+			}
+			
+			var soundPair = new MySoundPair(SoundsPendingList[0]);
+			SoundsPendingList.RemoveAt(0);
+			SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
+			
+			if(SoundsPendingList.Count == 0){
+			
+				SoundsPending = false;
+			
+			}
 
-            }
+		}
 
-            if(MyAPIGateway.Session.LocalHumanPlayer.Character == CurrentPlayerCharacter) {
+		public static bool CheckPlayerSoundEmitter() {
 
-                return true;
+			if(MyAPIGateway.Session.LocalHumanPlayer?.Character == null) {
 
-            }
+				CurrentPlayerCharacter = null;
+				SoundEmitter = null;
+				return false;
 
-            CurrentPlayerCharacter = MyAPIGateway.Session.LocalHumanPlayer.Character;
-            SoundEmitter = new MyEntity3DSoundEmitter(CurrentPlayerCharacter as MyEntity);
-            return true;
+			}
 
-        }
+			if(MyAPIGateway.Session.LocalHumanPlayer.Character == CurrentPlayerCharacter) {
 
-        public static void ProcessPositionSoundEffect(Effects effectData) {
+				return true;
 
-            MyVisualScriptLogicProvider.PlaySingleSoundAtPosition(effectData.SoundId, effectData.Coords);
+			}
 
-        }
+			CurrentPlayerCharacter = MyAPIGateway.Session.LocalHumanPlayer.Character;
+			SoundEmitter = new MyEntity3DSoundEmitter(CurrentPlayerCharacter as MyEntity);
+			return true;
 
-    }
+		}
+
+		public static void ProcessPositionSoundEffect(Effects effectData) {
+
+			MyVisualScriptLogicProvider.PlaySingleSoundAtPosition(effectData.SoundId, effectData.Coords);
+
+		}
+
+	}
 }
