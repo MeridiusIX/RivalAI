@@ -35,7 +35,7 @@ namespace RivalAI.Helpers{
 	
 	public static class Logger{
 		
-		public static bool LoggerDebugMode = true;
+		public static bool LoggerDebugMode = false;
 		public static bool SkipNextMessage = false;
 		public static string LogDefaultIdentifier = "RivalAI: ";
 		public static Stopwatch PerformanceTimer = new Stopwatch();
