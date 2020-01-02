@@ -87,6 +87,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(18)]
 		public bool IgnoreSafetyChecks;
 		
+		[ProtoMember(19)]
+		public bool InheritNpcAltitude;
+		
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
 		
@@ -115,6 +118,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			RelativeSpawnOffset = Vector3D.Zero;
 			RelativeSpawnVelocity = Vector3D.Zero;
 			IgnoreSafetyChecks = false;
+			InheritNpcAltitude = false;
 			
 			CurrentPositionMatrix = MatrixD.Identity;
 			Rnd = new Random();
@@ -283,6 +287,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[IgnoreSafetyChecks:") == true) {
 
 						IgnoreSafetyChecks = TagHelper.TagBoolCheck(tag);
+
+					}
+					
+					//InheritNpcAltitude
+					if (tag.Contains("[InheritNpcAltitude:") == true) {
+
+						InheritNpcAltitude = TagHelper.TagBoolCheck(tag);
 
 					}
 
