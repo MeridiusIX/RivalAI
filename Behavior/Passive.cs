@@ -81,7 +81,7 @@ namespace RivalAI.Behavior{
 			//Behavior Specific Defaults
 			Collision.UseCollisionDetection = false;
 			AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-			Despawn.UseNoTargetTimer = false;
+			Despawn.UsePlayerDistanceTimer = false;
 			Targeting.NeedsTarget = false;
 
 			//Get Settings From Custom Data
