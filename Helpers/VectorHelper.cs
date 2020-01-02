@@ -452,7 +452,7 @@ namespace RivalAI.Helpers{
 
 		}
 
-		public static MatrixD GetPlanetRandomSpawnMatrix(Vector3D coords, double minDist, double maxDist, double minAltitude, double maxAltitude) {
+		public static MatrixD GetPlanetRandomSpawnMatrix(Vector3D coords, double minDist, double maxDist, double minAltitude, double maxAltitude, bool inheritAltitude = false) {
 
 			MatrixD result = MatrixD.Identity;
 			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
@@ -460,12 +460,21 @@ namespace RivalAI.Helpers{
 
 			if (planet == null)
 				return result;
-
+			
+			double inheritedAltitude = 0;
+			
+			if(inheritAltitude){
+			
+				var npcSurface = GetPlanetSurfaceCoordsAtPosition(coords, planet);
+				inheritedAltitude = Vector3D.Distance(npcSurface, coords);
+			
+			}
+			
 			var perpDir = RandomPerpendicular(upDir);
 			var roughArea = perpDir * RandomDistance(minDist, maxDist) + coords;
 			var surfaceCoords = GetPlanetSurfaceCoordsAtPosition(roughArea, planet);
 			var upAtSurface = Vector3D.Normalize(surfaceCoords - planet.PositionComp.WorldAABB.Center);
-			var spawnCoords = upAtSurface * RandomDistance(minAltitude, maxAltitude) + surfaceCoords;
+			var spawnCoords = upAtSurface * (RandomDistance(minAltitude, maxAltitude) + inheritedAltitude) + surfaceCoords;
 			var perpSurfaceDir = RandomPerpendicular(upAtSurface);
 			result = MatrixD.CreateWorld(spawnCoords, perpSurfaceDir, upAtSurface);
 			return result;
