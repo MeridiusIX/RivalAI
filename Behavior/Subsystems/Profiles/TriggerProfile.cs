@@ -194,6 +194,18 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			}
 
 		}
+		
+		public void ResetTime(){
+		
+			this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+			
+			if(this.Actions?.Spawner != null)
+				this.Actions.Spawner.SpawnerLastSpawnTime = MyAPIGateway.Session.GameDateTime;
+				
+			if(this.Actions?.ChatData != null)
+				this.Actions..ChatData.SpawnerLastSpawnTime = MyAPIGateway.Session.GameDateTime;
+		
+		}
 
 		public void InitTags(string customData) {
 
