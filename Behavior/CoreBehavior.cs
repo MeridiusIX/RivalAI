@@ -107,11 +107,19 @@ namespace RivalAI.Behavior {
 			MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
 			*/
 
-			Vector4 colorb = new Vector4(0, 1, 1, 1);
-			Vector4 colorc = new Vector4(0, 1, 0, 1);
-			var endCoordsc = AutoPilot.WaypointCoords;
-			MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
-			MySimpleObjectDraw.DrawLine(new Vector3D(0, 0, 0), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
+			if (Logger.LoggerDebugMode) {
+
+				if (this.RemoteControl?.PositionComp != null) {
+
+					Vector4 colorb = new Vector4(0, 1, 1, 1);
+					Vector4 colorc = new Vector4(0, 1, 0, 1);
+					var endCoordsc = AutoPilot.WaypointCoords;
+					MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
+					MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
+
+				}
+
+			}
 
 			if((CoreCounter % 10) == 0) {
 
@@ -155,19 +163,6 @@ namespace RivalAI.Behavior {
 				AutoPilot.ProcessEvasionCounter();
 				Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
 
-				if(this.ConfigCheck == false) {
-
-					this.ConfigCheck = true;
-
-					if(RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) == false) {
-
-						this.EndScript = true;
-						return;
-
-					}
-
-				}
-
 				Broadcast.ProcessAutoMessages();
 
 				if(Despawn.DoDespawn == true) {
@@ -195,7 +190,7 @@ namespace RivalAI.Behavior {
 
 		public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-			Logger.AddMsg("Changed Core Mode To: " + newMode.ToString(), true);
+			Logger.DebugMsg("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
 			this.Mode = newMode;
 
 		}
@@ -206,6 +201,19 @@ namespace RivalAI.Behavior {
 
 				SetupFailed = true;
 				return;
+
+			}
+
+			if (this.ConfigCheck == false) {
+
+				this.ConfigCheck = true;
+
+				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTk1NzU4Mjc1OQ=="))) == false)) {
+
+					this.EndScript = true;
+					return;
+
+				}
 
 			}
 

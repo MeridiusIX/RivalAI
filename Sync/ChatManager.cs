@@ -93,7 +93,7 @@ namespace RivalAI.Sync {
             newChatData.Mode = ChatMsgMode.ReturnMessage;
 
             //Debug Mode
-            if(newChatData.Message.StartsWith("/RAI.DebugMode.") == true) {
+            if(newChatData.Message.StartsWith("/RAI.Debug") == true) {
 
                 newChatData.ProcessDebugMode();
                 SendChatDataOverNetwork(newChatData, false);

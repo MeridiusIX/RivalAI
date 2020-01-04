@@ -120,7 +120,7 @@ namespace RivalAI.Behavior{
 
                 if(string.IsNullOrEmpty(RemoteControl?.CustomData) == true){
 				
-					Logger.AddMsg("Remote Control Null Or Has No Behavior Data In CustomData.", true);
+					Logger.DebugMsg("Remote Control Null Or Has No Behavior Data In CustomData.", DebugTypeEnum.General);
                     NeedsUpdate = MyEntityUpdateEnum.NONE;
                     return;
 					
@@ -128,7 +128,7 @@ namespace RivalAI.Behavior{
 
                 if(RemoteControl.CustomData.Contains("[RivalAI Behavior]") == false && RemoteControl.CustomData.Contains("[Rival AI Behavior]") == false) {
 
-                    Logger.AddMsg("Remote Control CustomData Does Not Contain Initializer.", true);
+                    Logger.DebugMsg("Remote Control CustomData Does Not Contain Initializer.", DebugTypeEnum.General);
                     NeedsUpdate = MyEntityUpdateEnum.NONE;
                     return;
 
@@ -206,7 +206,7 @@ namespace RivalAI.Behavior{
 
                 } catch(Exception exc) {
 
-                    Logger.AddMsg("Exception Found In Behavior: " + BehaviorName + " / " + GridName, true);
+                    Logger.DebugMsg("Exception Found In Behavior: " + BehaviorName + " / " + GridName, DebugTypeEnum.General);
 
                 }
 

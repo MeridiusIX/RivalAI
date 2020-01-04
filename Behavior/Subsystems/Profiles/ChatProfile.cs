@@ -30,312 +30,316 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Profiles {
 
-    [ProtoContract]
-    public class ChatProfile {
+	[ProtoContract]
+	public class ChatProfile {
 
-        [ProtoMember(1)]
-        public bool UseChat;
+		[ProtoMember(1)]
+		public bool UseChat;
 
-        [ProtoMember(2)]
-        public int MinTime;
+		[ProtoMember(2)]
+		public int MinTime;
 
-        [ProtoMember(3)]
-        public int MaxTime;
+		[ProtoMember(3)]
+		public int MaxTime;
 
-        [ProtoMember(4)]
-        public bool StartsReady;
+		[ProtoMember(4)]
+		public bool StartsReady;
 
-        [ProtoMember(5)]
-        public int Chance;
+		[ProtoMember(5)]
+		public int Chance;
 
-        [ProtoMember(6)]
-        public int MaxChats;
+		[ProtoMember(6)]
+		public int MaxChats;
 
-        [ProtoMember(7)]
-        public bool BroadcastRandomly;
+		[ProtoMember(7)]
+		public bool BroadcastRandomly;
 
-        [ProtoMember(8)]
-        public List<string> ChatMessages;
+		[ProtoMember(8)]
+		public List<string> ChatMessages;
 
-        [ProtoMember(9)]
-        public List<string> ChatAudio;
+		[ProtoMember(9)]
+		public List<string> ChatAudio;
 
-        [ProtoMember(10)]
-        public List<BroadcastType> BroadcastChatType;
+		[ProtoMember(10)]
+		public List<BroadcastType> BroadcastChatType;
 
-        [ProtoMember(11)]
-        public int SecondsUntilChat;
+		[ProtoMember(11)]
+		public int SecondsUntilChat;
 
-        [ProtoMember(12)]
-        public int ChatSentCount;
+		[ProtoMember(12)]
+		public int ChatSentCount;
 
-        [ProtoMember(13)]
-        public DateTime LastChatTime;
+		[ProtoMember(13)]
+		public DateTime LastChatTime;
 
-        [ProtoMember(14)]
-        public int MessageIndex;
+		[ProtoMember(14)]
+		public int MessageIndex;
 
-        [ProtoMember(15)]
-        public string Author;
+		[ProtoMember(15)]
+		public string Author;
 
-        [ProtoMember(16)]
-        public string Color;
+		[ProtoMember(16)]
+		public string Color;
 
-        [ProtoIgnore]
-        public Random Rnd;
+		[ProtoMember(17)]
+		public string ProfileSubtypeId;
 
-        public ChatProfile() {
+		[ProtoIgnore]
+		public Random Rnd;
 
-            UseChat = false;
-            MinTime = 0;
-            MaxTime = 1;
-            StartsReady = false;
-            Chance = 100;
-            MaxChats = -1;
-            BroadcastRandomly = false;
-            ChatMessages = new List<string>();
-            ChatAudio = new List<string>();
-            BroadcastChatType = new List<BroadcastType>();
-            Author = "";
-            Color = "";
+		public ChatProfile() {
 
-            SecondsUntilChat = 0;
-            ChatSentCount = 0;
-            LastChatTime = MyAPIGateway.Session.GameDateTime;
-            MessageIndex = 0;
+			UseChat = false;
+			MinTime = 0;
+			MaxTime = 1;
+			StartsReady = false;
+			Chance = 100;
+			MaxChats = -1;
+			BroadcastRandomly = false;
+			ChatMessages = new List<string>();
+			ChatAudio = new List<string>();
+			BroadcastChatType = new List<BroadcastType>();
+			Author = "";
+			Color = "";
+			ProfileSubtypeId = "";
 
-            Rnd = new Random();
+			SecondsUntilChat = 0;
+			ChatSentCount = 0;
+			LastChatTime = MyAPIGateway.Session.GameDateTime;
+			MessageIndex = 0;
 
-        }
+			Rnd = new Random();
 
-        public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type) {
+		}
 
-            if(UseChat == false) {
+		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type) {
 
-                //Logger.AddMsg("UseChat False", true);
-                return false;
+			if(UseChat == false) {
 
-            }
+				//Logger.AddMsg("UseChat False", true);
+				return false;
 
-            if(MaxChats >= 0 && ChatSentCount >= MaxChats) {
+			}
 
-                //Logger.AddMsg("Max Chats Sent", true);
-                UseChat = false;
-                return false;
+			if(MaxChats >= 0 && ChatSentCount >= MaxChats) {
 
-            }
+				//Logger.AddMsg("Max Chats Sent", true);
+				UseChat = false;
+				return false;
 
-            TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastChatTime;
+			}
 
-            if(duration.TotalSeconds < SecondsUntilChat) {
+			TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastChatTime;
 
-                //Logger.AddMsg("Chat Timer Not Ready", true);
-                return false;
+			if(duration.TotalSeconds < SecondsUntilChat) {
 
-            }
+				//Logger.AddMsg("Chat Timer Not Ready", true);
+				return false;
 
-            string thisMsg = "";
-            string thisSound = "";
-            BroadcastType thisType = BroadcastType.None;
+			}
 
-            GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType);
+			string thisMsg = "";
+			string thisSound = "";
+			BroadcastType thisType = BroadcastType.None;
 
-            if(string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
+			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType);
 
-                //Logger.AddMsg("Message Null or Broadcast None", true);
-                return false;
+			if(string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
-            }
+				//Logger.AddMsg("Message Null or Broadcast None", true);
+				return false;
 
-            LastChatTime = MyAPIGateway.Session.GameDateTime;
-            SecondsUntilChat = Rnd.Next(MinTime, MaxTime);
-            ChatSentCount++;
+			}
 
-            msg = thisMsg;
-            audio = thisSound;
-            type = thisType;
-            return true;
+			LastChatTime = MyAPIGateway.Session.GameDateTime;
+			SecondsUntilChat = Rnd.Next(MinTime, MaxTime);
+			ChatSentCount++;
 
-        }
+			msg = thisMsg;
+			audio = thisSound;
+			type = thisType;
+			return true;
 
-        public void InitTags(string customData) {
+		}
 
-            if(string.IsNullOrWhiteSpace(customData) == false) {
+		public void InitTags(string customData) {
 
-                var descSplit = customData.Split('\n');
+			if(string.IsNullOrWhiteSpace(customData) == false) {
 
-                foreach(var tag in descSplit) {
+				var descSplit = customData.Split('\n');
 
-                    //UseChat
-                    if(tag.Contains("[UseChat:") == true) {
+				foreach(var tag in descSplit) {
 
-                        UseChat = TagHelper.TagBoolCheck(tag);
+					//UseChat
+					if(tag.Contains("[UseChat:") == true) {
 
-                    }
+						UseChat = TagHelper.TagBoolCheck(tag);
 
-                    //ChatMinTime
-                    if(tag.Contains("[MinTime:") == true) {
+					}
 
-                        MinTime = TagHelper.TagIntCheck(tag, MinTime);
+					//ChatMinTime
+					if(tag.Contains("[MinTime:") == true) {
 
-                    }
+						MinTime = TagHelper.TagIntCheck(tag, MinTime);
 
-                    //ChatMaxTime
-                    if(tag.Contains("[MaxTime:") == true) {
+					}
 
-                        MaxTime = TagHelper.TagIntCheck(tag, MaxTime);
+					//ChatMaxTime
+					if(tag.Contains("[MaxTime:") == true) {
 
-                    }
+						MaxTime = TagHelper.TagIntCheck(tag, MaxTime);
 
-                    //ChatStartsReady
-                    if(tag.Contains("[StartsReady:") == true) {
+					}
 
-                        StartsReady = TagHelper.TagBoolCheck(tag);
+					//ChatStartsReady
+					if(tag.Contains("[StartsReady:") == true) {
 
-                    }
+						StartsReady = TagHelper.TagBoolCheck(tag);
 
-                    //ChatChance
-                    if(tag.Contains("[Chance:") == true) {
+					}
 
-                        Chance = TagHelper.TagIntCheck(tag, Chance);
+					//ChatChance
+					if(tag.Contains("[Chance:") == true) {
 
-                    }
+						Chance = TagHelper.TagIntCheck(tag, Chance);
 
-                    //MaxChats
-                    if(tag.Contains("[MaxChats:") == true) {
+					}
 
-                        MaxChats = TagHelper.TagIntCheck(tag, MaxChats);
+					//MaxChats
+					if(tag.Contains("[MaxChats:") == true) {
 
-                    }
+						MaxChats = TagHelper.TagIntCheck(tag, MaxChats);
 
-                    //BroadcastRandomly
-                    if(tag.Contains("[BroadcastRandomly:") == true) {
+					}
 
-                        BroadcastRandomly = TagHelper.TagBoolCheck(tag);
+					//BroadcastRandomly
+					if(tag.Contains("[BroadcastRandomly:") == true) {
 
-                    }
+						BroadcastRandomly = TagHelper.TagBoolCheck(tag);
 
-                    //ChatMessages
-                    if(tag.Contains("[ChatMessages:") == true) {
+					}
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+					//ChatMessages
+					if(tag.Contains("[ChatMessages:") == true) {
 
-                            ChatMessages.Add(tempValue);
+						var tempValue = TagHelper.TagStringCheck(tag);
+						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                        }
+							ChatMessages.Add(tempValue);
 
-                    }
+						}
 
-                    //ChatAudio
-                    if(tag.Contains("[ChatAudio:") == true) {
+					}
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+					//ChatAudio
+					if(tag.Contains("[ChatAudio:") == true) {
 
-                            ChatAudio.Add(tempValue);
+						var tempValue = TagHelper.TagStringCheck(tag);
+						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                        }
+							ChatAudio.Add(tempValue);
 
-                    }
+						}
 
-                    //BroadcastChatType
-                    if(tag.Contains("[BroadcastChatType:") == true) {
+					}
 
-                        BroadcastChatType.Add(TagHelper.TagBroadcastTypeEnumCheck(tag));
+					//BroadcastChatType
+					if(tag.Contains("[BroadcastChatType:") == true) {
 
-                    }
+						BroadcastChatType.Add(TagHelper.TagBroadcastTypeEnumCheck(tag));
 
-                    //Author
-                    if (tag.Contains("[Author:") == true) {
+					}
 
-                        Author = TagHelper.TagStringCheck(tag);
+					//Author
+					if (tag.Contains("[Author:") == true) {
 
-                    }
+						Author = TagHelper.TagStringCheck(tag);
 
-                    //Color
-                    if (tag.Contains("[Color:") == true) {
+					}
 
-                        Color = TagHelper.TagStringCheck(tag);
+					//Color
+					if (tag.Contains("[Color:") == true) {
 
-                    }
+						Color = TagHelper.TagStringCheck(tag);
 
-                }
+					}
 
-            }
+				}
 
-            if(MinTime > MaxTime) {
+			}
 
-                MinTime = MaxTime;
+			if(MinTime > MaxTime) {
 
-            }
+				MinTime = MaxTime;
 
-            if(StartsReady == true) {
+			}
 
-                SecondsUntilChat = 0;
+			if(StartsReady == true) {
 
-            } else {
+				SecondsUntilChat = 0;
 
-                SecondsUntilChat = Rnd.Next(MinTime, MaxTime);
+			} else {
 
-            }
+				SecondsUntilChat = Rnd.Next(MinTime, MaxTime);
 
+			}
 
-        }
 
-        private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type) {
+		}
 
-            if(ChatMessages.Count == 0) {
+		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type) {
 
-                return;
+			if(ChatMessages.Count == 0) {
 
-            }
+				return;
 
-            if(BroadcastRandomly == true) {
+			}
 
-                var index = Rnd.Next(0, ChatMessages.Count);
-                message = ChatMessages[index];
+			if(BroadcastRandomly == true) {
 
-                if(ChatAudio.Count >= ChatMessages.Count) {
+				var index = Rnd.Next(0, ChatMessages.Count);
+				message = ChatMessages[index];
 
-                    sound = ChatAudio[index];
+				if(ChatAudio.Count >= ChatMessages.Count) {
 
-                }
+					sound = ChatAudio[index];
 
-                if(BroadcastChatType.Count >= ChatMessages.Count) {
+				}
 
-                    type = BroadcastChatType[index];
+				if(BroadcastChatType.Count >= ChatMessages.Count) {
 
-                }
+					type = BroadcastChatType[index];
 
-            } else {
+				}
 
-                if(MessageIndex >= ChatMessages.Count) {
+			} else {
 
-                    MessageIndex = 0;
+				if(MessageIndex >= ChatMessages.Count) {
 
-                }
+					MessageIndex = 0;
 
-                message = ChatMessages[MessageIndex];
+				}
 
-                if(ChatAudio.Count >= ChatMessages.Count) {
+				message = ChatMessages[MessageIndex];
 
-                    sound = ChatAudio[MessageIndex];
+				if(ChatAudio.Count >= ChatMessages.Count) {
 
-                }
+					sound = ChatAudio[MessageIndex];
 
-                if(BroadcastChatType.Count >= ChatMessages.Count) {
+				}
 
-                    type = BroadcastChatType[MessageIndex];
+				if(BroadcastChatType.Count >= ChatMessages.Count) {
 
-                }
+					type = BroadcastChatType[MessageIndex];
 
-                MessageIndex++;
+				}
 
-            }
+				MessageIndex++;
 
+			}
 
-        }
 
-    }
+		}
+
+	}
 }

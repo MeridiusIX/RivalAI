@@ -34,129 +34,137 @@ using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
 
-    public static class SpawnHelper {
+	public static class SpawnHelper {
 
-        private static bool _spawnInProgress = false;
-        private static List<SpawnProfile> _pendingSpawns = new List<SpawnProfile>();
-        
-        private static SpawnProfile _currentSpawn;
-        private static MatrixD _spawnMatrix;
-        
+		private static bool _spawnInProgress = false;
+		private static List<SpawnProfile> _pendingSpawns = new List<SpawnProfile>();
+		
+		private static SpawnProfile _currentSpawn;
+		private static MatrixD _spawnMatrix;
+		
 
-        public static void SpawnRequest(SpawnProfile spawn = null) {
+		public static void SpawnRequest(SpawnProfile spawn = null) {
 
-            if(spawn != null) {
+			if(spawn != null) {
 
-                _pendingSpawns.Add(spawn);
+				_pendingSpawns.Add(spawn);
 
-            }
+			}
 
-            if(_spawnInProgress == true || _pendingSpawns.Count == 0)
-                return;
-            
-            _currentSpawn = _pendingSpawns[0];
-            _pendingSpawns.RemoveAt(0);
-            _spawnInProgress = true;
-            MyAPIGateway.Parallel.Start(SpawningParallelChecks, CompleteSpawning);
+			if(_spawnInProgress == true || _pendingSpawns.Count == 0)
+				return;
+			
+			_currentSpawn = _pendingSpawns[0];
+			_pendingSpawns.RemoveAt(0);
+			_spawnInProgress = true;
+			MyAPIGateway.Parallel.Start(SpawningParallelChecks, CompleteSpawning);
 
-        }
+		}
 
-        private static void SpawningParallelChecks() {
-            
-            if(_currentSpawn.UseRelativeSpawnPosition){
-                
-                var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPositionMatrix);
-                _spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPositionMatrix.Forward, _currentSpawn.CurrentPositionMatrix.Up);
+		private static void SpawningParallelChecks() {
+			
+			if(_currentSpawn.UseRelativeSpawnPosition){
+				
+				var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPositionMatrix);
+				_spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPositionMatrix.Forward, _currentSpawn.CurrentPositionMatrix.Up);
 
-            }else{
-                
-                var upDir = VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPositionMatrix.Translation);
-                var playerList = new List<IMyPlayer>();
-                MyAPIGateway.Players.GetPlayers(playerList);
+			}else{
+				
+				var upDir = VectorHelper.GetPlanetUpDirection(_currentSpawn.CurrentPositionMatrix.Translation);
+				var playerList = new List<IMyPlayer>();
+				MyAPIGateway.Players.GetPlayers(playerList);
 
-                for (int i = 0; i < 15; i++) {
+				for (int i = 0; i < 15; i++) {
 
-                    if (upDir == Vector3D.Zero) {
+					if (upDir == Vector3D.Zero) {
 
-                        var spawnCoords = VectorHelper.RandomDirection() * VectorHelper.RandomDistance(_currentSpawn.MinDistance, _currentSpawn.MaxDistance) + _currentSpawn.CurrentPositionMatrix.Translation;
-                        var forwardDir = Vector3D.Normalize(spawnCoords - _currentSpawn.CurrentPositionMatrix.Translation);
-                        var upPerpDir = Vector3D.CalculatePerpendicularVector(forwardDir);
-                        _spawnMatrix = MatrixD.CreateWorld(spawnCoords, forwardDir, upPerpDir);
+						var spawnCoords = VectorHelper.RandomDirection() * VectorHelper.RandomDistance(_currentSpawn.MinDistance, _currentSpawn.MaxDistance) + _currentSpawn.CurrentPositionMatrix.Translation;
+						var forwardDir = Vector3D.Normalize(spawnCoords - _currentSpawn.CurrentPositionMatrix.Translation);
+						var upPerpDir = Vector3D.CalculatePerpendicularVector(forwardDir);
+						_spawnMatrix = MatrixD.CreateWorld(spawnCoords, forwardDir, upPerpDir);
 
-                    } else {
+					} else {
 
-                        _spawnMatrix = VectorHelper.GetPlanetRandomSpawnMatrix(_currentSpawn.CurrentPositionMatrix.Translation, _currentSpawn.MinDistance, _currentSpawn.MaxDistance, _currentSpawn.MinAltitude, _currentSpawn.MaxAltitude, _currentSpawn.InheritNpcAltitude);
+						_spawnMatrix = VectorHelper.GetPlanetRandomSpawnMatrix(_currentSpawn.CurrentPositionMatrix.Translation, _currentSpawn.MinDistance, _currentSpawn.MaxDistance, _currentSpawn.MinAltitude, _currentSpawn.MaxAltitude, _currentSpawn.InheritNpcAltitude);
 
-                    }
+					}
 
-                    foreach (var player in playerList) {
+					foreach (var player in playerList) {
 
-                        if (player.IsBot || player.Controller?.ControlledEntity?.Entity == null) {
+						if (player.IsBot || player.Controller?.ControlledEntity?.Entity == null) {
 
-                            continue;
+							continue;
 
-                        }
+						}
 
-                        if (Vector3D.Distance(_spawnMatrix.Translation, player.GetPosition()) < 100) {
+						if (Vector3D.Distance(_spawnMatrix.Translation, player.GetPosition()) < 100) {
 
-                            _spawnMatrix = MatrixD.Identity;
-                            break;
+							Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Player Too Close To Possible Spawn Coords. Attempt " + (i + 1).ToString(), DebugTypeEnum.Spawn);
+							_spawnMatrix = MatrixD.Identity;
+							break;
 
-                        }
+						}
 
-                    }
+					}
 
-                    if (_spawnMatrix != MatrixD.Identity) {
+					if (_spawnMatrix != MatrixD.Identity) {
 
-                        break;
+						break;
 
-                    }
+					}
 
-                }
-                
-            }
-            
-                
+				}
+				
+			}
+			
+				
 
-        }
+		}
 
-        private static void CompleteSpawning() {
-            
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
+		private static void CompleteSpawning() {
+			
+			MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
 
-                if (_spawnMatrix == MatrixD.Identity) {
+				if (_spawnMatrix == MatrixD.Identity) {
 
-                    PerformNextSpawn();
-                    return;
+					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Coords Could Not Be Calculated. Aborting Process", DebugTypeEnum.Spawn);
+					PerformNextSpawn();
+					return;
 
-                }
+				}
 
-                var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
-                var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
-                
-                if(result == true){
+				Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
+				var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
+				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
 
-                    _currentSpawn.SpawnCount++;
+				if (result == true) {
+
+					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
 
 
 
-                }
+				} else {
 
-                PerformNextSpawn();
+					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
 
-            });
+				}
+
+				PerformNextSpawn();
+
+			});
    
-        }
+		}
 
-        private static void PerformNextSpawn() {
+		private static void PerformNextSpawn() {
 
-            _spawnInProgress = false;
+			_spawnInProgress = false;
 
-            if (_pendingSpawns.Count > 0)
-                SpawnRequest();
+			if (_pendingSpawns.Count > 0)
+				SpawnRequest();
 
-        }
+		}
 
-    }
+	}
 
 }

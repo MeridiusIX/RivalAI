@@ -72,7 +72,7 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			if(remoteControl == null){
 				
-				Logger.AddMsg("OwnerSystem Could Not Init. RemoteControl null", true);
+				Logger.DebugMsg("OwnerSystem Could Not Init. RemoteControl null", DebugTypeEnum.Owner);
 				return;
 				
 			}
@@ -105,7 +105,7 @@ namespace RivalAI.Behavior.Subsystems{
 				if(faction.Tag != this.RequiredFactionTag && string.IsNullOrEmpty(this.RequiredFactionTag) == false){
 					
 					this.NpcOwned = false;
-                    Logger.AddMsg("Owner Check: Incorrect Faction Tag", true);
+                    Logger.DebugMsg("Owner Check: Incorrect Faction Tag", DebugTypeEnum.Owner);
 					return;
 					
 				}
@@ -117,12 +117,12 @@ namespace RivalAI.Behavior.Subsystems{
                         this.NpcOwned = true;
                         this.Faction = faction;
                         this.FactionId = faction.FactionId;
-                        Logger.AddMsg("Owner Check: Valid NPC Faction", true);
+                        Logger.DebugMsg("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
                         var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
 
                         if(npcSteam != 0) {
 
-                            Logger.AddMsg("Warning. NPC Identity: " + block.OwnerId.ToString() + " has a SteamId of: " + npcSteam.ToString() + " - Please Alert Mod Author");
+                            Logger.WriteLog("Warning. NPC Identity: " + block.OwnerId.ToString() + " has a SteamId of: " + npcSteam.ToString() + " - Please Alert Mod Author");
 
                         }
 
@@ -139,7 +139,7 @@ namespace RivalAI.Behavior.Subsystems{
                         this.NpcOwned = true;
                         this.Faction = faction;
                         this.FactionId = faction.FactionId;
-                        Logger.AddMsg("Owner Check: Valid NPC Faction", true);
+                        Logger.DebugMsg("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
                         return;
 
                     }
@@ -149,7 +149,7 @@ namespace RivalAI.Behavior.Subsystems{
 			}
 
             //TODO: Maybe Update This To Include Factionless NPCs?
-            Logger.AddMsg("Owner Check: Not NPC Faction", true);
+            Logger.DebugMsg("Owner Check: Not NPC Faction", DebugTypeEnum.Owner);
             this.Faction = null;
             this.FactionId = 0;
             this.NpcOwned = false;

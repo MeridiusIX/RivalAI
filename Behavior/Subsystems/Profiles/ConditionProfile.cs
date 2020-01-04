@@ -88,6 +88,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(17)]
 		public List<string> SpawnGroupBlacklistContainsAny;
 
+		[ProtoMember(18)]
+		public string ProfileSubtypeId;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -122,6 +125,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			SpawnGroupBlacklistContainsAll = new List<string>();
 			SpawnGroupBlacklistContainsAny = new List<string>();
 
+			ProfileSubtypeId = "";
+
 		}
 		
 		public void SetReferences(IMyRemoteControl remoteControl, StoredSettings settings){
@@ -151,6 +156,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (Utilities.ModIDs.Contains(mod) == false) {
 
+						Logger.DebugMsg(this.ProfileSubtypeId + ": Mod ID Not Present", DebugTypeEnum.Condition);
 						missingMod = true;
 						break;
 
@@ -171,6 +177,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (Utilities.ModIDs.Contains(mod)) {
 
+						Logger.DebugMsg(this.ProfileSubtypeId + ": A Mod ID was Found: " + mod.ToString(), DebugTypeEnum.Condition);
 						satisfiedConditions++;
 						break;
 
@@ -189,6 +196,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (!_settings.GetCustomBoolResult(boolName)) {
 
+						Logger.DebugMsg(this.ProfileSubtypeId + ": Booleam Not True: " + boolName, DebugTypeEnum.Condition);
 						failedCheck = true;
 						break;
 
@@ -214,6 +222,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 							if (_settings.GetCustomCounterResult(this.CustomCounters[i], this.CustomCountersTargets[i]) == false) {
 
+								Logger.DebugMsg(this.ProfileSubtypeId + ": Counter Amount Not High Enough: " + this.CustomCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -221,8 +230,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						} catch (Exception e) {
 
-							Logger.AddMsg("Exception: ", true);
-							Logger.AddMsg(e.ToString(), true);
+							Logger.DebugMsg("Exception: ", DebugTypeEnum.Condition);
+							Logger.DebugMsg(e.ToString(), DebugTypeEnum.Condition);
 
 						}
 
@@ -230,6 +239,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				} else {
 
+					Logger.DebugMsg(this.ProfileSubtypeId + ": Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
 					failedCheck = true;
 
 				}
@@ -243,11 +253,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				
 				usedConditions++;
 				float speed = (float)_remoteControl.GetShipSpeed();
-				
-				if((this.MinGridSpeed == -1 || speed >= this.MinGridSpeed) && (this.MaxGridSpeed == -1 || speed <= this.MaxGridSpeed)){
-					
+
+				if ((this.MinGridSpeed == -1 || speed >= this.MinGridSpeed) && (this.MaxGridSpeed == -1 || speed <= this.MaxGridSpeed)) {
+
+					Logger.DebugMsg(this.ProfileSubtypeId + ": Grid Speed High Enough", DebugTypeEnum.Condition);
 					satisfiedConditions++;
-					
+
+				} else {
+
+					Logger.DebugMsg(this.ProfileSubtypeId + ": Grid Speed Not High Enough", DebugTypeEnum.Condition);
+
 				}
 				
 			}
@@ -265,6 +280,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (blackList.Contains(group) == false) {
 
+							Logger.DebugMsg(this.ProfileSubtypeId + ": A Spawngroup was not on MES BlackList: " + group, DebugTypeEnum.Condition);
 							failedCheck = true;
 							break;
 
@@ -284,6 +300,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (blackList.Contains(group) == true) {
 
+							Logger.DebugMsg(this.ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
 							satisfiedConditions++;
 							break;
 
@@ -296,12 +313,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			}
 			
 			if(this.MatchAnyCondition == false){
-				
-				return (satisfiedConditions >= usedConditions);
+
+				bool result = (satisfiedConditions >= usedConditions);
+				Logger.DebugMsg(this.ProfileSubtypeId + ": Any Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				return result;
 				
 			}else{
-				
-				return (satisfiedConditions > 0);
+
+				bool result = (satisfiedConditions > 0);
+				Logger.DebugMsg(this.ProfileSubtypeId + ": All Conditions Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				return result;
 				
 			}
 			

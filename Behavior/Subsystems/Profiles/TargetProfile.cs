@@ -30,211 +30,215 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Profiles {
 
-    [ProtoContract]
-    public class TargetProfile {
+	[ProtoContract]
+	public class TargetProfile {
 
-        [ProtoMember(1)]
-        public bool UseCustomTargeting;
+		[ProtoMember(1)]
+		public bool UseCustomTargeting;
 
-        [ProtoMember(2)]
-        public BlockTargetTypes BlockTargets;
+		[ProtoMember(2)]
+		public BlockTargetTypes BlockTargets;
 
-        [ProtoMember(3)]
-        public TargetDistanceEnum Distance;
+		[ProtoMember(3)]
+		public TargetDistanceEnum Distance;
 
-        [ProtoMember(4)]
-        public TargetFilterEnum Filters;
+		[ProtoMember(4)]
+		public TargetFilterEnum Filters;
 
-        [ProtoMember(5)]
-        public TargetOwnerEnum Owners;
+		[ProtoMember(5)]
+		public TargetOwnerEnum Owners;
 
-        [ProtoMember(6)]
-        public TargetRelationEnum Relations;
+		[ProtoMember(6)]
+		public TargetRelationEnum Relations;
 
-        [ProtoMember(7)]
-        public TargetTypeEnum Target;
+		[ProtoMember(7)]
+		public TargetTypeEnum Target;
 
-        [ProtoMember(8)]
-        public bool UseTimeout;
+		[ProtoMember(8)]
+		public bool UseTimeout;
 
-        [ProtoMember(9)]
-        public int MinTimeout;
+		[ProtoMember(9)]
+		public int MinTimeout;
 
-        [ProtoMember(10)]
-        public int MaxTimeout;
+		[ProtoMember(10)]
+		public int MaxTimeout;
 
-        [ProtoMember(11)]
-        public double NonBroadcastingMaxDistance; //TODO: Build Feature For This First
+		[ProtoMember(11)]
+		public double NonBroadcastingMaxDistance; //TODO: Build Feature For This First
 
-        [ProtoMember(12)]
-        public double MaxDistance;
+		[ProtoMember(12)]
+		public double MaxDistance;
 
-        [ProtoMember(13)]
-        public bool UseProjectileLead;
+		[ProtoMember(13)]
+		public bool UseProjectileLead;
 
-        [ProtoMember(14)]
-        public bool UseCollisionLead;
+		[ProtoMember(14)]
+		public bool UseCollisionLead;
 
-        public TargetProfile() {
+		[ProtoMember(15)]
+		public string ProfileSubtypeId;
 
-            UseCustomTargeting = false;
-            BlockTargets = BlockTargetTypes.None;
-            Distance = TargetDistanceEnum.Closest;
-            Filters = TargetFilterEnum.None;
-            Owners = TargetOwnerEnum.None;
-            Relations = TargetRelationEnum.None;
-            Target = TargetTypeEnum.None;
-            UseTimeout = false;
-            MinTimeout = 0;
-            MaxTimeout = 1;
-            NonBroadcastingMaxDistance = 3000;
-            MaxDistance = 12000;
-            UseProjectileLead = false;
-            UseCollisionLead = false;
+		public TargetProfile() {
 
-        }
-        
-        public void InitTags(string customData) {
+			UseCustomTargeting = false;
+			BlockTargets = BlockTargetTypes.None;
+			Distance = TargetDistanceEnum.Closest;
+			Filters = TargetFilterEnum.None;
+			Owners = TargetOwnerEnum.None;
+			Relations = TargetRelationEnum.None;
+			Target = TargetTypeEnum.None;
+			UseTimeout = false;
+			MinTimeout = 0;
+			MaxTimeout = 1;
+			NonBroadcastingMaxDistance = 3000;
+			MaxDistance = 12000;
+			UseProjectileLead = false;
+			UseCollisionLead = false;
+			ProfileSubtypeId = "";
 
-            if(string.IsNullOrWhiteSpace(customData) == false) {
+		}
+		
+		public void InitTags(string customData) {
 
-                var descSplit = customData.Split('\n');
+			if(string.IsNullOrWhiteSpace(customData) == false) {
 
-                foreach(var tag in descSplit) {
+				var descSplit = customData.Split('\n');
 
-                    //UseCustomTargeting
-                    if(tag.Contains("[UseCustomTargeting:") == true) {
+				foreach(var tag in descSplit) {
 
-                        this.UseCustomTargeting = TagHelper.TagBoolCheck(tag);
+					//UseCustomTargeting
+					if(tag.Contains("[UseCustomTargeting:") == true) {
 
-                    }
-                    
-                    //BlockTargets
-                    if(tag.Contains("[BlockTargets:") == true) {
+						this.UseCustomTargeting = TagHelper.TagBoolCheck(tag);
 
-                        var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
+					}
+					
+					//BlockTargets
+					if(tag.Contains("[BlockTargets:") == true) {
 
-                        if(this.BlockTargets.HasFlag(tempValue) == false) {
+						var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
 
-                            this.BlockTargets |= tempValue;
+						if(this.BlockTargets.HasFlag(tempValue) == false) {
 
-                        }
+							this.BlockTargets |= tempValue;
 
-                    }
-                    
-                    //Distance
-                    if(tag.Contains("[Distance:") == true) {
+						}
 
-                        this.Distance = TagHelper.TagTargetDistanceEnumCheck(tag);
+					}
+					
+					//Distance
+					if(tag.Contains("[Distance:") == true) {
 
-                    }
-                    
-                    //Filters
-                    if(tag.Contains("[Filters:") == true) {
+						this.Distance = TagHelper.TagTargetDistanceEnumCheck(tag);
 
-                        var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
+					}
+					
+					//Filters
+					if(tag.Contains("[Filters:") == true) {
 
-                        if(this.Filters.HasFlag(tempValue) == false) {
+						var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
 
-                            this.Filters |= tempValue;
+						if(this.Filters.HasFlag(tempValue) == false) {
 
-                        }
+							this.Filters |= tempValue;
 
-                    }
-                    
-                    //Owners
-                    if(tag.Contains("[Owners:") == true) {
+						}
 
-                        var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
+					}
+					
+					//Owners
+					if(tag.Contains("[Owners:") == true) {
 
-                        if(this.Owners.HasFlag(tempValue) == false) {
+						var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
 
-                            this.Owners |= tempValue;
+						if(this.Owners.HasFlag(tempValue) == false) {
 
-                        }
+							this.Owners |= tempValue;
 
-                    }
-                    
-                    //Relations
-                    if(tag.Contains("[Relations:") == true) {
+						}
 
-                        var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
+					}
+					
+					//Relations
+					if(tag.Contains("[Relations:") == true) {
 
-                        if(this.Relations.HasFlag(tempValue) == false) {
+						var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
 
-                            this.Relations |= tempValue;
+						if(this.Relations.HasFlag(tempValue) == false) {
 
-                        }
+							this.Relations |= tempValue;
 
-                    }
-                    
-                    //Target
-                    if(tag.Contains("[Target:") == true) {
+						}
 
-                        this.Target = TagHelper.TagTargetTypeEnumCheck(tag);
+					}
+					
+					//Target
+					if(tag.Contains("[Target:") == true) {
 
-                    }
-                    
-                    //UseTimeout
-                    if(tag.Contains("[UseTimeout:") == true) {
+						this.Target = TagHelper.TagTargetTypeEnumCheck(tag);
 
-                        this.UseTimeout = TagHelper.TagBoolCheck(tag);
+					}
+					
+					//UseTimeout
+					if(tag.Contains("[UseTimeout:") == true) {
 
-                    }
-                    
-                    //MinTimeout
-                    if(tag.Contains("[MinTimeout:") == true) {
+						this.UseTimeout = TagHelper.TagBoolCheck(tag);
 
-                        this.MinTimeout = TagHelper.TagIntCheck(tag, this.MinTimeout);
+					}
+					
+					//MinTimeout
+					if(tag.Contains("[MinTimeout:") == true) {
 
-                    }
-                    
-                    //MaxTimeout
-                    if(tag.Contains("[MaxTimeout:") == true) {
+						this.MinTimeout = TagHelper.TagIntCheck(tag, this.MinTimeout);
 
-                        this.MaxTimeout = TagHelper.TagIntCheck(tag, this.MaxTimeout);
+					}
+					
+					//MaxTimeout
+					if(tag.Contains("[MaxTimeout:") == true) {
 
-                    }
-                    
-                    //NonBroadcastingMaxDistance
-                    if(tag.Contains("[NonBroadcastingMaxDistance:") == true) {
+						this.MaxTimeout = TagHelper.TagIntCheck(tag, this.MaxTimeout);
 
-                        this.NonBroadcastingMaxDistance = TagHelper.TagDoubleCheck(tag, this.NonBroadcastingMaxDistance);
+					}
+					
+					//NonBroadcastingMaxDistance
+					if(tag.Contains("[NonBroadcastingMaxDistance:") == true) {
 
-                    }
-                    
-                    //MaxDistance
-                    if(tag.Contains("[MaxDistance:") == true) {
+						this.NonBroadcastingMaxDistance = TagHelper.TagDoubleCheck(tag, this.NonBroadcastingMaxDistance);
 
-                        this.MaxDistance = TagHelper.TagDoubleCheck(tag, this.MaxDistance);
+					}
+					
+					//MaxDistance
+					if(tag.Contains("[MaxDistance:") == true) {
 
-                    }
-                    
-                    //UseProjectileLead
-                    if(tag.Contains("[UseProjectileLead:") == true) {
+						this.MaxDistance = TagHelper.TagDoubleCheck(tag, this.MaxDistance);
 
-                        this.UseProjectileLead = TagHelper.TagBoolCheck(tag);
+					}
+					
+					//UseProjectileLead
+					if(tag.Contains("[UseProjectileLead:") == true) {
 
-                    }
-                    
-                    //UseCollisionLead
-                    if(tag.Contains("[UseCollisionLead:") == true) {
+						this.UseProjectileLead = TagHelper.TagBoolCheck(tag);
 
-                        this.UseCollisionLead = TagHelper.TagBoolCheck(tag);
+					}
+					
+					//UseCollisionLead
+					if(tag.Contains("[UseCollisionLead:") == true) {
 
-                    }
-                    
-                }
+						this.UseCollisionLead = TagHelper.TagBoolCheck(tag);
 
-            }
+					}
+					
+				}
 
-            if(MinTimeout > MaxTimeout) {
+			}
 
-                MinTimeout = MaxTimeout + 1;
+			if(MinTimeout > MaxTimeout) {
 
-            }
+				MinTimeout = MaxTimeout + 1;
 
-        }
+			}
 
-    }
+		}
+
+	}
 }

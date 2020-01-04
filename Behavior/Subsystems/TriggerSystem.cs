@@ -347,7 +347,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//ChatBroadcast
 			if(trigger.Actions.UseChatBroadcast == true) {
 
-				//Logger.AddMsg("Chat Broadcast", true);
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Chat Broadcast", DebugTypeEnum.Action);
 				_broadcast.BroadcastRequest(trigger.Actions.ChatData);
 
 			}
@@ -369,6 +369,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//ChangeAutopilotSpeed
 			if(trigger.Actions.ChangeAutopilotSpeed == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + trigger.Actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
 				_autopilot.DesiredMaxSpeed = trigger.Actions.NewAutopilotSpeed;
 				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
@@ -387,8 +388,9 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//SpawnReinforcements
-			if(trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
+			if (trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Action);
 				if (trigger.Actions.Spawner.IsReadyToSpawn()) {
 
 					//Logger.AddMsg("Do Spawn", true);
@@ -397,11 +399,16 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 
+			} else {
+
+
+
 			}
 
 			//SelfDestruct
 			if(trigger.Actions.SelfDestruct == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting SelfDestruct", DebugTypeEnum.Action);
 				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 				int totalWarheads = 0;
 				
@@ -430,6 +437,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//Retreat
 			if(trigger.Actions.Retreat == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Retreat", DebugTypeEnum.Action);
 				_despawn.Retreat();
 
 			}
@@ -437,6 +445,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//BroadcastCurrentTarget
 			if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Broadcast of Current Target", DebugTypeEnum.Action);
 				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
 				
 				if(antenna != null)
@@ -447,6 +456,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//SwitchToReceivedTarget
 			if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Switch to Received Target Data", DebugTypeEnum.Action);
 				_targeting.UpdateSpecificTarget = detectedEntity;
 
 			}
@@ -461,6 +471,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//RefreshTarget
 			if(trigger.Actions.RefreshTarget == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Target Refresh", DebugTypeEnum.Action);
 				_targeting.UpdateTargetRequested = true;
 
 			}
@@ -468,6 +479,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//ChangeReputationWithPlayers
 			if(trigger.Actions.ChangeReputationWithPlayers == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Reputation Change With Players In Radius", DebugTypeEnum.Action);
 				OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
 
 			}
@@ -475,6 +487,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//ChangeAttackerReputation
 			if (trigger.Actions.ChangeAttackerReputation == true && detectedEntity != 0) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Reputation Change for Attacker", DebugTypeEnum.Action);
 				OwnershipHelper.ChangeDamageOwnerReputation(trigger.Actions.ChangeAttackerReputationFaction, detectedEntity, trigger.Actions.ChangeAttackerReputationAmount, trigger.Actions.ReputationChangesForAllAttackPlayerFactionMembers);
 
 			}
@@ -483,6 +496,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//TriggerTimerBlock
 			if (trigger.Actions.TriggerTimerBlocks == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Trigger of Timer Blocks", DebugTypeEnum.Action);
 				var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
 
 				foreach(var block in blockList) {
@@ -511,6 +525,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//ChangeAntennaOwnership
 			if (trigger.Actions.ChangeAntennaOwnership == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Antenna Ownership Change", DebugTypeEnum.Action);
 				OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, trigger.Actions.AntennaFactionOwner);
 
 			}
@@ -518,6 +533,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//CreateKnownPlayerArea
 			if (trigger.Actions.CreateKnownPlayerArea == true) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Creation of Known Player Area in MES", DebugTypeEnum.Action);
 				MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, trigger.Actions.KnownPlayerAreaRadius, trigger.Actions.KnownPlayerAreaTimer, trigger.Actions.KnownPlayerAreaMaxSpawns);
 
 			}
@@ -525,6 +541,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//DamageAttacker
 			if (trigger.Actions.DamageToolAttacker == true && detectedEntity != 0) {
 
+				Logger.DebugMsg(trigger.Actions.ProfileSubtypeId + ": Attempting Damage to Tool User", DebugTypeEnum.Action);
 				DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
 
 			}

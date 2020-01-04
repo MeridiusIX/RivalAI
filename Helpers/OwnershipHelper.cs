@@ -58,7 +58,7 @@ namespace RivalAI.Helpers {
 
 			if (amounts.Count != factions.Count) {
 
-				Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
+				Logger.DebugMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
 				return;
 
 			}
@@ -67,7 +67,7 @@ namespace RivalAI.Helpers {
 
 			if (owner == 0) {
 
-				Logger.AddMsg("No Owner From Provided Id: " + attackingEntity);
+				Logger.DebugMsg("No Owner From Provided Id: " + attackingEntity);
 				return;
 
 			}
@@ -82,7 +82,7 @@ namespace RivalAI.Helpers {
 
 			if (amounts.Count != factions.Count) {
 
-				Logger.AddMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
+				Logger.DebugMsg("Could Not Do Reputation Change. Faction Tag and Rep Amount Counts Do Not Match");
 				return;
 
 			}

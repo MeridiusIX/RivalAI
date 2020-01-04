@@ -89,7 +89,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		
 		[ProtoMember(19)]
 		public bool InheritNpcAltitude;
-		
+
+		[ProtoMember(20)]
+		public string ProfileSubtypeId;
+
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
 		
@@ -119,7 +122,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			RelativeSpawnVelocity = Vector3D.Zero;
 			IgnoreSafetyChecks = false;
 			InheritNpcAltitude = false;
-			
+			ProfileSubtypeId = "";
+
 			CurrentPositionMatrix = MatrixD.Identity;
 			Rnd = new Random();
 
@@ -132,6 +136,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
 
+				Logger.DebugMsg(this.ProfileSubtypeId + ": Max Spawns Already Exceeded", DebugTypeEnum.Spawn);
 				UseSpawn = false;
 				return false;
 
@@ -143,17 +148,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 				if (StartsReady == true) {
 
+					Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					if (SpawnCount > 0)
 						return false;
 
 				} else {
 
+					Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					return false;
 
 				}
 
 			}
 
+			Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Finished", DebugTypeEnum.Spawn);
 			return true;
 
 		}

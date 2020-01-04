@@ -93,6 +93,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(20)]
 		public string CommandReceiveCode;
 
+		[ProtoMember(21)]
+		public string ProfileSubtypeId;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -124,6 +127,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			MaxPlayerReputation = 1501;
 
 			CommandReceiveCode = "";
+			ProfileSubtypeId = "";
 
 
 			Rnd = new Random();
@@ -134,6 +138,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if(MaxActions >= 0 && TriggerCount >= MaxActions) {
 
+				Logger.DebugMsg(this.ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
 				UseTrigger = false;
 				return;
 
@@ -149,6 +154,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (Conditions.AreConditionsMets()) {
 
+							Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
 							Triggered = true;
 
 						} else if(this.ConditionCheckResetsTimer) {
@@ -160,6 +166,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					} else {
 
+						Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
@@ -168,8 +175,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			} else {
 
-				Triggered = true;
+				if (Conditions.UseConditions == true) {
 
+					if (Conditions.AreConditionsMets()) {
+
+						Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+						Triggered = true;
+
+					}
+
+				} else {
+
+					Logger.DebugMsg(this.ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
+					Triggered = true;
+
+				}
+				
 			}
 
 		}

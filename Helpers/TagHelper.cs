@@ -33,213 +33,219 @@ using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
 
-    public static class TagHelper {
+	public static class TagHelper {
 
-        public static Dictionary<string, string> BehaviorTemplates = new Dictionary<string, string>();
+		public static Dictionary<string, string> BehaviorTemplates = new Dictionary<string, string>();
 
-        public static Dictionary<string, byte[]> ActionObjectTemplates = new Dictionary<string, byte[]>();
-        public static Dictionary<string, byte[]> ChatObjectTemplates = new Dictionary<string, byte[]>();
-        public static Dictionary<string, byte[]> ConditionObjectTemplates = new Dictionary<string, byte[]>();
-        public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
-        public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
-        public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> ActionObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> ChatObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> ConditionObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
 
-        public static void Setup() {
+		public static void Setup() {
 
-            var definitionList = MyDefinitionManager.Static.GetEntityComponentDefinitions();
+			var definitionList = MyDefinitionManager.Static.GetEntityComponentDefinitions();
 
-            //Get All Chat, Spawner
-            foreach (var def in definitionList) {
+			//Get All Chat, Spawner
+			foreach (var def in definitionList) {
 
-                try {
+				try {
 
-                    if (string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+					if (string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
 
-                        continue;
+						continue;
 
-                    }
+					}
 
-                    if (def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+					if (def.DescriptionText.Contains("[RivalAI Chat]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                        var chatObject = new ChatProfile();
-                        chatObject.InitTags(def.DescriptionText);
-                        var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
-                        Logger.AddMsg("Chat Profile Added: " + def.Id.SubtypeName, true);
-                        ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
-                        continue;
+						var chatObject = new ChatProfile();
+						chatObject.InitTags(def.DescriptionText);
+						chatObject.ProfileSubtypeId = def.Id.SubtypeName;
+						var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
+						Logger.WriteLog("Chat Profile Added: " + def.Id.SubtypeName);
+						ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
+						continue;
 
-                    }
+					}
 
-                    if (def.DescriptionText.Contains("[RivalAI Spawner]") == true && SpawnerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+					if (def.DescriptionText.Contains("[RivalAI Spawn]") == true && SpawnerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                        var spawnerObject = new SpawnProfile();
-                        spawnerObject.InitTags(def.DescriptionText);
-                        var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
-                        Logger.AddMsg("Spawner Profile Added: " + def.Id.SubtypeName, true);
-                        SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
-                        continue;
+						var spawnerObject = new SpawnProfile();
+						spawnerObject.InitTags(def.DescriptionText);
+						spawnerObject.ProfileSubtypeId = def.Id.SubtypeName;
+						var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
+						Logger.WriteLog("Spawner Profile Added: " + def.Id.SubtypeName);
+						SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
+						continue;
 
-                    }
+					}
 
-                } catch (Exception) {
+				} catch (Exception) {
 
-                    Logger.AddMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.DebugMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
 
-                }
+				}
 
-            }
+			}
 
-            foreach (var def in definitionList) {
+			foreach (var def in definitionList) {
 
-                try {
+				try {
 
-                    if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+					if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
 
-                        continue;
+						continue;
 
-                    }
+					}
 
-		            if(def.DescriptionText.Contains("[RivalAI Action]") == true && ActionObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+					if(def.DescriptionText.Contains("[RivalAI Action]") == true && ActionObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                        var actionObject = new ActionProfile();
-                        actionObject.InitTags(def.DescriptionText);
-                        var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<ActionProfile>(actionObject);
-                        Logger.AddMsg("Action Profile Added: " + def.Id.SubtypeName, true);
-                        ActionObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
-                        continue;
+						var actionObject = new ActionProfile();
+						actionObject.InitTags(def.DescriptionText);
+						actionObject.ProfileSubtypeId = def.Id.SubtypeName;
+						var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<ActionProfile>(actionObject);
+						Logger.WriteLog("Action Profile Added: " + def.Id.SubtypeName);
+						ActionObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
+						continue;
 
-                    }
+					}
 			
-                    if(def.DescriptionText.Contains("[RivalAI Condition]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+					if(def.DescriptionText.Contains("[RivalAI Condition]") == true && ChatObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                        var conditionObject = new ConditionProfile();
-                        conditionObject.InitTags(def.DescriptionText);
-                        var conditionBytes = MyAPIGateway.Utilities.SerializeToBinary<ConditionProfile>(conditionObject);
-                        Logger.AddMsg("Condition Profile Added: " + def.Id.SubtypeName, true);
-                        ConditionObjectTemplates.Add(def.Id.SubtypeName, conditionBytes);
-                        continue;
+						var conditionObject = new ConditionProfile();
+						conditionObject.InitTags(def.DescriptionText);
+						conditionObject.ProfileSubtypeId = def.Id.SubtypeName;
+						var conditionBytes = MyAPIGateway.Utilities.SerializeToBinary<ConditionProfile>(conditionObject);
+						Logger.WriteLog("Condition Profile Added: " + def.Id.SubtypeName);
+						ConditionObjectTemplates.Add(def.Id.SubtypeName, conditionBytes);
+						continue;
 
-                    }
+					}
 
-		            if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+					if(def.DescriptionText.Contains("[RivalAI Target]") == true && TargetObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                        var targetObject = new TargetProfile();
-                        targetObject.InitTags(def.DescriptionText);
-                        var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<TargetProfile>(targetObject);
-                        Logger.AddMsg("Target Profile Added: " + def.Id.SubtypeName, true);
-                        TargetObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
-                        continue;
+						var targetObject = new TargetProfile();
+						targetObject.InitTags(def.DescriptionText);
+						targetObject.ProfileSubtypeId = def.Id.SubtypeName;
+						var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<TargetProfile>(targetObject);
+						Logger.WriteLog("Target Profile Added: " + def.Id.SubtypeName);
+						TargetObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
+						continue;
 
-                    }
+					}
 
-                } catch(Exception) {
+				} catch(Exception) {
 
-                    Logger.AddMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.DebugMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
 
-                }
+				}
 
-            }
+			}
 
-            //Get All Triggers - Build With Action, Chat and Spawner
-            foreach(var def in definitionList) {
+			//Get All Triggers - Build With Action, Chat and Spawner
+			foreach(var def in definitionList) {
 
-                if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+				if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
 
-                    continue;
+					continue;
 
-                }
+				}
 
-                if(def.DescriptionText.Contains("[RivalAI Trigger]") == true && TriggerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+				if(def.DescriptionText.Contains("[RivalAI Trigger]") == true && TriggerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
 
-                    var triggerObject = new TriggerProfile();
-                    triggerObject.InitTags(def.DescriptionText);
-                    var triggerBytes = MyAPIGateway.Utilities.SerializeToBinary<TriggerProfile>(triggerObject);
-                    Logger.AddMsg("Trigger Profile Added: " + def.Id.SubtypeName, true);
-                    TriggerObjectTemplates.Add(def.Id.SubtypeName, triggerBytes);
-                    continue;
+					var triggerObject = new TriggerProfile();
+					triggerObject.InitTags(def.DescriptionText);
+					triggerObject.ProfileSubtypeId = def.Id.SubtypeName;
+					var triggerBytes = MyAPIGateway.Utilities.SerializeToBinary<TriggerProfile>(triggerObject);
+					Logger.WriteLog("Trigger Profile Added: " + def.Id.SubtypeName);
+					TriggerObjectTemplates.Add(def.Id.SubtypeName, triggerBytes);
+					continue;
 
-                }
+				}
 
 
-            }
+			}
 
-            //Get All Behavior
+			//Get All Behavior
 
-        }
+		}
 
-        private static string [] ProcessTag(string tag){
+		private static string [] ProcessTag(string tag){
 			
 			var thisTag = tag;
 			thisTag = thisTag.Replace("[", "");
 			thisTag = thisTag.Replace("]", "");
 			var tagSplit = thisTag.Split(':');
-            string a = "";
-            string b = "";
+			string a = "";
+			string b = "";
 
-            if(tagSplit.Length > 2) {
+			if(tagSplit.Length > 2) {
 
-                a = tagSplit[0];
+				a = tagSplit[0];
 
-                for(int i = 1;i < tagSplit.Length;i++) {
+				for(int i = 1;i < tagSplit.Length;i++) {
 
-                    b += tagSplit[i];
+					b += tagSplit[i];
 
-                    if(i != tagSplit.Length - 1) {
+					if(i != tagSplit.Length - 1) {
 
-                        b += ":";
+						b += ":";
 
-                    }
+					}
 
-                }
+				}
 
-                tagSplit = new string[] {a,b};
+				tagSplit = new string[] {a,b};
 
-            }
+			}
 
 			return tagSplit;
 			
 		}
 
-        public static BlockTargetTypes TagBlockTargetTypesCheck(string tag) {
+		public static BlockTargetTypes TagBlockTargetTypesCheck(string tag) {
 
-            BlockTargetTypes result = BlockTargetTypes.All;
-            var tagSplit = ProcessTag(tag);
+			BlockTargetTypes result = BlockTargetTypes.All;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(BlockTargetTypes.TryParse(tagSplit[1], out result) == false) {
+				if(BlockTargetTypes.TryParse(tagSplit[1], out result) == false) {
 
-                    return BlockTargetTypes.All;
+					return BlockTargetTypes.All;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static Base6Directions.Direction TagBase6DirectionCheck(string tag) {
+		public static Base6Directions.Direction TagBase6DirectionCheck(string tag) {
 
-            Base6Directions.Direction result = Base6Directions.Direction.Forward;
-            var tagSplit = ProcessTag(tag);
+			Base6Directions.Direction result = Base6Directions.Direction.Forward;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                bool parseResult = Base6Directions.Direction.TryParse(tagSplit[1], out result) == false;
+				bool parseResult = Base6Directions.Direction.TryParse(tagSplit[1], out result) == false;
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static bool TagBoolCheck(string tag){
+		public static bool TagBoolCheck(string tag){
 			
 			bool result = false;
 			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2){
+			if(tagSplit.Length == 2){
 
 				bool parseResult = bool.TryParse(tagSplit[1], out result);
 				
@@ -249,26 +255,26 @@ namespace RivalAI.Helpers {
 			
 		}
 
-        public static BroadcastType TagBroadcastTypeEnumCheck(string tag) {
+		public static BroadcastType TagBroadcastTypeEnumCheck(string tag) {
 
-            BroadcastType result = BroadcastType.None;
-            var tagSplit = ProcessTag(tag);
+			BroadcastType result = BroadcastType.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
+				if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return BroadcastType.None;
+					return BroadcastType.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static double TagDoubleCheck(string tag, double defaultValue){
+		public static double TagDoubleCheck(string tag, double defaultValue){
 			
 			double result = defaultValue;
 			var tagSplit = ProcessTag(tag);
@@ -344,173 +350,173 @@ namespace RivalAI.Helpers {
 			
 		}
 
-        public static string TagStringCheck(string tag) {
+		public static string TagStringCheck(string tag) {
 
-            string result = "";
-            var tagSplit = ProcessTag(tag);
+			string result = "";
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                result = tagSplit[1];
+				result = tagSplit[1];
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static SpawnPositioningEnum TagSpawnPositioningEnumCheck(string tag) {
+		public static SpawnPositioningEnum TagSpawnPositioningEnumCheck(string tag) {
 
-            SpawnPositioningEnum result = SpawnPositioningEnum.RandomDirection;
-            var tagSplit = ProcessTag(tag);
+			SpawnPositioningEnum result = SpawnPositioningEnum.RandomDirection;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
+				if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return SpawnPositioningEnum.RandomDirection;
+					return SpawnPositioningEnum.RandomDirection;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TargetDistanceEnum TagTargetDistanceEnumCheck(string tag) {
+		public static TargetDistanceEnum TagTargetDistanceEnumCheck(string tag) {
 
-            TargetDistanceEnum result = TargetDistanceEnum.Any;
-            var tagSplit = ProcessTag(tag);
+			TargetDistanceEnum result = TargetDistanceEnum.Any;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TargetDistanceEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetDistanceEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return TargetDistanceEnum.Any;
+					return TargetDistanceEnum.Any;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TargetFilterEnum TagTargetFilterEnumCheck(string tag) {
+		public static TargetFilterEnum TagTargetFilterEnumCheck(string tag) {
 
-            TargetFilterEnum result = TargetFilterEnum.None;
-            var tagSplit = ProcessTag(tag);
+			TargetFilterEnum result = TargetFilterEnum.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TargetFilterEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetFilterEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return TargetFilterEnum.None;
+					return TargetFilterEnum.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TargetOwnerEnum TagTargetOwnerEnumCheck(string tag) {
+		public static TargetOwnerEnum TagTargetOwnerEnumCheck(string tag) {
 
-            TargetOwnerEnum result = TargetOwnerEnum.None;
-            var tagSplit = ProcessTag(tag);
+			TargetOwnerEnum result = TargetOwnerEnum.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TargetOwnerEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetOwnerEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return TargetOwnerEnum.None;
+					return TargetOwnerEnum.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TargetRelationEnum TagTargetRelationEnumCheck(string tag) {
+		public static TargetRelationEnum TagTargetRelationEnumCheck(string tag) {
 
-            TargetRelationEnum result = TargetRelationEnum.None;
-            var tagSplit = ProcessTag(tag);
+			TargetRelationEnum result = TargetRelationEnum.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TargetRelationEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetRelationEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return TargetRelationEnum.None;
+					return TargetRelationEnum.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TargetTypeEnum TagTargetTypeEnumCheck(string tag) {
+		public static TargetTypeEnum TagTargetTypeEnumCheck(string tag) {
 
-            TargetTypeEnum result = TargetTypeEnum.None;
-            var tagSplit = ProcessTag(tag);
+			TargetTypeEnum result = TargetTypeEnum.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TargetTypeEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetTypeEnum.TryParse(tagSplit[1], out result) == false) {
 
-                    return TargetTypeEnum.None;
+					return TargetTypeEnum.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static TriggerAction TagTriggerActionCheck(string tag) {
+		public static TriggerAction TagTriggerActionCheck(string tag) {
 
-            TriggerAction result = TriggerAction.None;
-            var tagSplit = ProcessTag(tag);
+			TriggerAction result = TriggerAction.None;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(TriggerAction.TryParse(tagSplit[1], out result) == false) {
+				if(TriggerAction.TryParse(tagSplit[1], out result) == false) {
 
-                    return TriggerAction.None;
+					return TriggerAction.None;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-        public static Vector3D TagVector3DCheck(string tag) {
+		public static Vector3D TagVector3DCheck(string tag) {
 
-            Vector3D result = Vector3D.Zero;
-            var tagSplit = ProcessTag(tag);
+			Vector3D result = Vector3D.Zero;
+			var tagSplit = ProcessTag(tag);
 
-            if(tagSplit.Length == 2) {
+			if(tagSplit.Length == 2) {
 
-                if(Vector3D.TryParse(tagSplit[1], out result) == false) {
+				if(Vector3D.TryParse(tagSplit[1], out result) == false) {
 
-                    return Vector3D.Zero;
+					return Vector3D.Zero;
 
-                }
+				}
 
-            }
+			}
 
-            return result;
+			return result;
 
-        }
+		}
 
-    }
+	}
 	
 }

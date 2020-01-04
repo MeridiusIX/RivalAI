@@ -33,74 +33,125 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Sync {
 
-    public enum ChatMsgMode {
+	public enum ChatMsgMode {
 
-        None,
-        ServerProcessing,
-        ReturnMessage
+		None,
+		ServerProcessing,
+		ReturnMessage
 
-    }
+	}
 
-    [ProtoContract]
-    public class ChatMessage {
+	[ProtoContract]
+	public class ChatMessage {
 
-        [ProtoMember(1)]
-        public ChatMsgMode Mode;
+		[ProtoMember(1)]
+		public ChatMsgMode Mode;
 
-        [ProtoMember(2)]
-        public string Message;
+		[ProtoMember(2)]
+		public string Message;
 
-        [ProtoMember(3)]
-        public long PlayerId;
+		[ProtoMember(3)]
+		public long PlayerId;
 
-        [ProtoMember(4)]
-        public ulong SteamId;
+		[ProtoMember(4)]
+		public ulong SteamId;
 
-        [ProtoMember(5)]
-        public string ReturnMessage;
+		[ProtoMember(5)]
+		public string ReturnMessage;
 
-        [ProtoMember(6)]
-        public string ClipboardPayload;
+		[ProtoMember(6)]
+		public string ClipboardPayload;
 
-        public ChatMessage() {
+		public ChatMessage() {
 
-            Mode = ChatMsgMode.None;
-            Message = "";
-            PlayerId = 0;
-            SteamId = 0;
-            ReturnMessage = "";
-            ClipboardPayload = "";
+			Mode = ChatMsgMode.None;
+			Message = "";
+			PlayerId = 0;
+			SteamId = 0;
+			ReturnMessage = "";
+			ClipboardPayload = "";
 
-        }
+		}
 
-        public bool ProcessDebugMode() {
+		public bool ProcessDebugMode() {
 
-            // /RAI.DebugMode.true
+			// /RAI.DebugMode.true
 
-            var msg = this.Message.Split('.');
+			var msg = this.Message.Split('.');
 
-            if(msg.Length < 3) {
+			if(msg.Length < 3) {
 
-                this.ReturnMessage = "Command Received Could Not Be Read Properly.";
-                return false;
+				this.ReturnMessage = "Command Received Could Not Be Read Properly.";
+				return false;
 
-            }
+			}
 
-            bool result = false;
+			bool result = false;
 
-            if(bool.TryParse(msg[2], out result) == false) {
+			if(bool.TryParse(msg[2], out result) == false) {
 
-                this.ReturnMessage = "Debug Mode Value Not Recognized. Accepts true or false.";
-                return true;
+				this.ReturnMessage = "Debug Mode Value Not Recognized. Accepts true or false.";
+				return true;
 
-            }
+			}
 
-            Logger.LoggerDebugMode = result;
-            this.ReturnMessage = "Debug Mode Enabled: " + result.ToString();
-            return true;
+			if(msg[1] == "DebugMode")
+				Logger.LoggerDebugMode = result;
 
-        }
+			if (msg[1] == "DebugWriteToLog")
+				Logger.DebugWriteToLog = result;
 
-    }
+			if (msg[1] == "DebugNotification")
+				Logger.DebugNotification = result;
+
+			if (msg[1] == "DebugAction")
+				Logger.DebugAction = result;
+
+			if (msg[1] == "DebugChat")
+				Logger.DebugChat = result;
+
+			if (msg[1] == "DebugCollision")
+				Logger.DebugCollision = result;
+
+			if (msg[1] == "DebugCondition")
+				Logger.DebugCondition = result;
+
+			if (msg[1] == "DebugDespawn")
+				Logger.DebugDespawn = result;
+
+			if (msg[1] == "DebugDev")
+				Logger.DebugDev = result;
+
+			if (msg[1] == "DebugGeneral")
+				Logger.DebugGeneral = result;
+
+			if (msg[1] == "DebugOwner")
+				Logger.DebugOwner = result;
+
+			if (msg[1] == "DebugSpawn")
+				Logger.DebugSpawn = result;
+
+			if (msg[1] == "DebugTarget")
+				Logger.DebugTarget = result;
+
+			if (msg[1] == "DebugTrigger")
+				Logger.DebugTrigger = result;
+
+			if (msg[1] == "DebugWeapon")
+				Logger.DebugWeapon = result;
+
+			if (msg[1] == "DebugFullEnable" && result)
+				Logger.EnableAllOptions();
+
+			if (msg[1] == "DebugFullEnable" && !result)
+				Logger.DisableAllOptions();
+
+			Logger.SaveDebugToSandbox();
+			this.ReturnMessage = msg[1] + " Set: " + result.ToString();
+			return true;
+
+		}
+
+	}
 
 }

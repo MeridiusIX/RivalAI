@@ -441,7 +441,7 @@ namespace RivalAI.Helpers {
             this.TargetBlock = null;
             this.TargetPlayer = null;
             this.TargetExists = false;
-            Logger.AddMsg("Target Evaluation Fail: " + reason, true);
+            Logger.DebugMsg("Target Evaluation Fail: " + reason, DebugTypeEnum.Target);
 
         }
 

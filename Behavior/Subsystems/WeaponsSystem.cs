@@ -219,8 +219,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 					} catch(Exception exc) {
 
-						Logger.AddMsg("Exception Detected Checking Weapon Readiness");
-						Logger.AddMsg(exc.ToString(), true);
+						Logger.DebugMsg("Exception Detected Checking Weapon Readiness", DebugTypeEnum.Weapon);
+						Logger.DebugMsg(exc.ToString(), DebugTypeEnum.Weapon);
 
 					}
 					

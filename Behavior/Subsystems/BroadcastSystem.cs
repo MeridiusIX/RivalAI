@@ -33,276 +33,278 @@ using RivalAI.Sync;
 
 namespace RivalAI.Behavior.Subsystems {
 
-    public struct ChatDetails {
+	public struct ChatDetails {
 
-        public bool UseChat;
-        public double ChatTriggerDistance;
-        public int ChatMinTime;
-        public int ChatMaxTime;
-        public int ChatChance;
-        public int MaxChats;
-        public List<string> ChatMessages;
-        public List<string> ChatAudio;
-        public List<BroadcastType> BroadcastChatType;
+		public bool UseChat;
+		public double ChatTriggerDistance;
+		public int ChatMinTime;
+		public int ChatMaxTime;
+		public int ChatChance;
+		public int MaxChats;
+		public List<string> ChatMessages;
+		public List<string> ChatAudio;
+		public List<BroadcastType> BroadcastChatType;
 
-    }
+	}
 
-    public class BroadcastSystem {
+	public class BroadcastSystem {
 
-        //Configurable
-        public bool UseChatSystem;
-        public bool UseNotificationSystem;
-        public bool DelayChatIfSoundPlaying;
-        public bool SingleChatPerTrigger;
-        public string ChatAuthor;
-        public string ChatAuthorColor;
+		//Configurable
+		public bool UseChatSystem;
+		public bool UseNotificationSystem;
+		public bool DelayChatIfSoundPlaying;
+		public bool SingleChatPerTrigger;
+		public string ChatAuthor;
+		public string ChatAuthorColor;
 
-        //New Classes
-        public List<ChatProfile> ChatControlReference;
+		//New Classes
+		public List<ChatProfile> ChatControlReference;
 
-        //Non-Configurable
-        public IMyRemoteControl RemoteControl;
-        public string LastChatMessageSent;
-        public List<IMyRadioAntenna> AntennaList;
-        public double HighestRadius;
-        public Vector3D AntennaCoords;
-        public Random Rnd;
+		//Non-Configurable
+		public IMyRemoteControl RemoteControl;
+		public string LastChatMessageSent;
+		public List<IMyRadioAntenna> AntennaList;
+		public double HighestRadius;
+		public Vector3D AntennaCoords;
+		public Random Rnd;
 
 
-        public BroadcastSystem(IMyRemoteControl remoteControl = null) {
+		public BroadcastSystem(IMyRemoteControl remoteControl = null) {
 
-            UseChatSystem = false;
-            UseNotificationSystem = false;
-            DelayChatIfSoundPlaying = true;
-            SingleChatPerTrigger = true;
-            ChatAuthor = "";
-            ChatAuthorColor = "";
+			UseChatSystem = false;
+			UseNotificationSystem = false;
+			DelayChatIfSoundPlaying = true;
+			SingleChatPerTrigger = true;
+			ChatAuthor = "";
+			ChatAuthorColor = "";
 
-            ChatControlReference = new List<ChatProfile>();
+			ChatControlReference = new List<ChatProfile>();
 
-            RemoteControl = null;
-            LastChatMessageSent = "";
-            AntennaList = new List<IMyRadioAntenna>();
-            HighestRadius = 0;
-            AntennaCoords = Vector3D.Zero;
-            Rnd = new Random();
+			RemoteControl = null;
+			LastChatMessageSent = "";
+			AntennaList = new List<IMyRadioAntenna>();
+			HighestRadius = 0;
+			AntennaCoords = Vector3D.Zero;
+			Rnd = new Random();
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
 
-        }
+		}
 
-        private void Setup(IMyRemoteControl remoteControl) {
+		private void Setup(IMyRemoteControl remoteControl) {
 
-            if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
+			if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.RemoteControl = remoteControl;
-            RefreshAntennaList();
+			this.RemoteControl = remoteControl;
+			RefreshAntennaList();
 
-        }
+		}
 
-        public void BroadcastRequest(ChatProfile chat) {
+		public void BroadcastRequest(ChatProfile chat) {
 
-            string message = "";
-            string sound = "";
-            var broadcastType = BroadcastType.None;
+			string message = "";
+			string sound = "";
+			var broadcastType = BroadcastType.None;
 
-            if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
+			if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
 
-                Logger.AddMsg("Process Chat Fail", true);
-                return;
+				Logger.DebugMsg(chat.ProfileSubtypeId + ": Process Chat Fail", DebugTypeEnum.Chat);
+				return;
 
-            }
+			}
 
-            if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message) == true) {
+			if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message) == true) {
 
-                Logger.AddMsg("Last Message Same", true);
-                return;
+				Logger.DebugMsg(chat.ProfileSubtypeId + ": Last Message Same", DebugTypeEnum.Chat);
+				return;
 
-            }
+			}
 
-            GetHighestAntennaRange();
+			GetHighestAntennaRange();
 
-            if(this.HighestRadius == 0) {
+			if(this.HighestRadius == 0) {
 
-                Logger.AddMsg("No Valid Antenna", true);
-                return;
+				Logger.DebugMsg(chat.ProfileSubtypeId + ": No Valid Antenna", DebugTypeEnum.Chat);
+				return;
 
-            }
+			}
 
-            var playerList = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(playerList);
+			var playerList = new List<IMyPlayer>();
+			MyAPIGateway.Players.GetPlayers(playerList);
 
-            foreach(var player in playerList) {
 
-                if(player.IsBot == true || player.Character == null) {
+			Logger.DebugMsg(chat.ProfileSubtypeId + ": Sending Chat to all Players within distance: " + this.HighestRadius.ToString(), DebugTypeEnum.Chat);
+			foreach (var player in playerList) {
 
-                    continue;
+				if(player.IsBot == true || player.Character == null) {
 
-                }
+					continue;
 
-                if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
+				}
 
-                    continue;
+				if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
 
-                }
+					continue;
 
-                var modifiedMsg = message;
+				}
 
-                if(modifiedMsg.Contains("{PlayerName}") == true) {
+				var modifiedMsg = message;
 
-                    modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
+				if(modifiedMsg.Contains("{PlayerName}") == true) {
 
-                }
+					modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
 
-                if(modifiedMsg.Contains("{PlayerFactionName}") == true) {
+				}
 
-                    var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
+				if(modifiedMsg.Contains("{PlayerFactionName}") == true) {
 
-                    if(playerFaction != null) {
+					var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
 
-                        modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", playerFaction.Name);
+					if(playerFaction != null) {
 
-                    } else {
+						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", playerFaction.Name);
 
-                        modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", "Unaffiliated");
+					} else {
 
-                    }
+						modifiedMsg = modifiedMsg.Replace("{PlayerFactionName}", "Unaffiliated");
 
-                }
+					}
 
-                var authorName = chat.Author;
-                var authorColor = chat.Color;
+				}
 
-                if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
+				var authorName = chat.Author;
+				var authorColor = chat.Color;
 
-                    authorColor = "White";
+				if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
 
-                }
+					authorColor = "White";
 
-                if(broadcastType == BroadcastType.Chat || broadcastType == BroadcastType.Both) {
+				}
 
-                    MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, authorName, player.IdentityId, authorColor);
+				if(broadcastType == BroadcastType.Chat || broadcastType == BroadcastType.Both) {
 
-                }
+					MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, authorName, player.IdentityId, authorColor);
 
-                if(broadcastType == BroadcastType.Notify || broadcastType == BroadcastType.Both) {
+				}
 
-                    MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, 6000, authorColor, player.IdentityId);
+				if(broadcastType == BroadcastType.Notify || broadcastType == BroadcastType.Both) {
 
-                }
+					MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, 6000, authorColor, player.IdentityId);
 
-                if(string.IsNullOrWhiteSpace(sound) == false && sound != "None") {
+				}
 
-                    var effect = new Effects();
-                    effect.Mode = EffectSyncMode.PlayerSound;
-                    effect.SoundId = sound;
-                    var sync = new SyncContainer(effect);
-                    SyncManager.SendSyncMesage(sync, player.SteamUserId);
+				if(string.IsNullOrWhiteSpace(sound) == false && sound != "None") {
 
-                }
+					var effect = new Effects();
+					effect.Mode = EffectSyncMode.PlayerSound;
+					effect.SoundId = sound;
+					var sync = new SyncContainer(effect);
+					SyncManager.SendSyncMesage(sync, player.SteamUserId);
 
-            }
+				}
 
-        }
+			}
 
-        public void ProcessAutoMessages() {
+		}
 
-            if(RAI_SessionCore.IsServer == false || (this.UseChatSystem == false && this.UseNotificationSystem == false)) {
+		public void ProcessAutoMessages() {
 
-                //Logger.AddMsg("Chat System Inactive", true);
-                return;
+			if(RAI_SessionCore.IsServer == false || (this.UseChatSystem == false && this.UseNotificationSystem == false)) {
 
-            }
+				//Logger.AddMsg("Chat System Inactive", true);
+				return;
 
-        }
+			}
 
-        private void GetHighestAntennaRange() {
+		}
 
-            this.HighestRadius = 0;
-            this.AntennaCoords = Vector3D.Zero;
+		private void GetHighestAntennaRange() {
 
-            foreach(var antenna in this.AntennaList) {
+			this.HighestRadius = 0;
+			this.AntennaCoords = Vector3D.Zero;
 
-                if(antenna?.SlimBlock == null) {
+			foreach(var antenna in this.AntennaList) {
 
-                    continue;
+				if(antenna?.SlimBlock == null) {
 
-                }
+					continue;
 
-                if(antenna.IsWorking == false || antenna.IsFunctional == false || antenna.IsBroadcasting == false) {
+				}
 
-                    continue;
+				if(antenna.IsWorking == false || antenna.IsFunctional == false || antenna.IsBroadcasting == false) {
 
-                }
+					continue;
 
-                if(antenna.Radius > this.HighestRadius) {
+				}
 
-                    this.HighestRadius = antenna.Radius;
-                    this.AntennaCoords = antenna.GetPosition();
+				if(antenna.Radius > this.HighestRadius) {
 
-                }
+					this.HighestRadius = antenna.Radius;
+					this.AntennaCoords = antenna.GetPosition();
 
-            }
+				}
 
-            
+			}
 
-        }
+			
 
-        private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, ref string message, ref string sound, ref BroadcastType broadcastType){
+		}
 
-            if(messages.Count == 0) {
+		private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, ref string message, ref string sound, ref BroadcastType broadcastType){
 
-                return;
+			if(messages.Count == 0) {
 
-            }
+				return;
 
-            var index = Rnd.Next(0, messages.Count);
-            message = messages[index];
+			}
 
-            if(sounds.Count >= messages.Count) {
+			var index = Rnd.Next(0, messages.Count);
+			message = messages[index];
 
-                sound = sounds[index];
+			if(sounds.Count >= messages.Count) {
 
-            }
+				sound = sounds[index];
 
-            if(broadcastTypes.Count >= messages.Count) {
+			}
 
-                broadcastType = broadcastTypes[index];
+			if(broadcastTypes.Count >= messages.Count) {
 
-            }
+				broadcastType = broadcastTypes[index];
 
-        }
+			}
 
-        public void RefreshAntennaList() {
+		}
 
-            if(this.RemoteControl == null || MyAPIGateway.Entities.Exist(this.RemoteControl?.SlimBlock?.CubeGrid) == false) {
+		public void RefreshAntennaList() {
 
-                return;
+			if(this.RemoteControl == null || MyAPIGateway.Entities.Exist(this.RemoteControl?.SlimBlock?.CubeGrid) == false) {
 
-            }
+				return;
 
-            this.AntennaList.Clear();
-            var blockList = TargetHelper.GetAllBlocks(this.RemoteControl.SlimBlock.CubeGrid);
+			}
 
-            foreach(var block in blockList.Where(x => x.FatBlock != null)) {
+			this.AntennaList.Clear();
+			var blockList = TargetHelper.GetAllBlocks(this.RemoteControl.SlimBlock.CubeGrid);
 
-                var antenna = block.FatBlock as IMyRadioAntenna;
+			foreach(var block in blockList.Where(x => x.FatBlock != null)) {
 
-                if(antenna != null) {
+				var antenna = block.FatBlock as IMyRadioAntenna;
 
-                    this.AntennaList.Add(antenna);
+				if(antenna != null) {
 
-                }
+					this.AntennaList.Add(antenna);
 
-            }
+				}
 
-        }
+			}
 
-    }
+		}
+
+	}
 
 }

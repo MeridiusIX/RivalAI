@@ -785,7 +785,7 @@ namespace RivalAI.Helpers{
 
 			}
 
-			Logger.AddMsg("End Getting Rotations");
+			Logger.DebugMsg("End Getting Rotations");
 
 			return result;
 
@@ -805,8 +805,8 @@ namespace RivalAI.Helpers{
 
 			} catch(Exception e) {
 
-				Logger.AddMsg("Caught Exception: ", true);
-				Logger.AddMsg(e.ToString(), true);
+				Logger.DebugMsg("Caught Exception: ", DebugTypeEnum.General);
+				Logger.DebugMsg(e.ToString(), DebugTypeEnum.General);
 
 			}
 

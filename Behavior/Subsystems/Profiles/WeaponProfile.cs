@@ -227,7 +227,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
                             }
 
-                            Logger.AddMsg("Rate Of Fire: " + ammoData.RateOfFire.ToString(), true);
+                            //Logger.DebugMsg("Rate Of Fire: " + ammoData.RateOfFire.ToString(), true);
                             RateOfFire = ammoData.RateOfFire;
                             break;
 
@@ -240,8 +240,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             } catch(Exception e) {
 
-                Logger.AddMsg("Failed to get Weapon Definition for " + weapon.CustomName, true);
-                Logger.AddMsg(e.ToString(), true);
+                Logger.DebugMsg("Failed to get Weapon Definition for " + weapon.CustomName, DebugTypeEnum.Weapon);
+                Logger.DebugMsg(e.ToString(), DebugTypeEnum.Weapon);
 
             }
 

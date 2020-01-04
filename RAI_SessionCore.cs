@@ -38,6 +38,8 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
+		public static string ReleaseVersion = "0.0.3";
+
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
 
@@ -87,7 +89,7 @@ namespace RivalAI {
 
 				SetupComplete = true;
 				Setup();
-				Logger.AddMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
+				Logger.DebugMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
 
 			}
 
@@ -119,6 +121,8 @@ namespace RivalAI {
 
 		public static void Setup() {
 
+			Logger.WriteLog("Mod Version: " + ReleaseVersion);
+
 			IsServer = MyAPIGateway.Multiplayer.IsServer;
 			IsDedicated = MyAPIGateway.Utilities.IsDedicated;
 			ConfigInstance = MyAPIGateway.Utilities.GamePaths.ModScopeName;
@@ -144,6 +148,7 @@ namespace RivalAI {
 
 			}
 
+			Logger.LoadDebugFromSandbox();
 			MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
 
 		}

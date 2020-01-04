@@ -207,6 +207,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(58)]
 		public bool ReputationChangesForAllAttackPlayerFactionMembers;
 
+		[ProtoMember(59)]
+		public string ProfileSubtypeId;
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
@@ -283,6 +286,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ChangeAttackerReputationFaction = new List<string>();
 			ChangeAttackerReputationAmount = new List<int>();
 			ReputationChangesForAllAttackPlayerFactionMembers = false;
+
+			ProfileSubtypeId = "";
 
 		}
 
