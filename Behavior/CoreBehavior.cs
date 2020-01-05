@@ -278,21 +278,33 @@ namespace RivalAI.Behavior {
 		public void PostTagsSetup() {
 
 			Damage.SetupDamageHandler();
-			
+
 			//TODO: Restore Storage Data
-			
+
 			//TODO: Refactor This Into TriggerSystem
-			foreach (var trigger in Trigger.Triggers)
+			foreach (var trigger in Trigger.Triggers) {
+
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
 				trigger.ResetTime();
 
-			foreach (var trigger in Trigger.DamageTriggers)
+			}
+
+
+			foreach (var trigger in Trigger.DamageTriggers) {
+
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
 				trigger.ResetTime();
 
-			foreach (var trigger in Trigger.CommandTriggers)
+			}
+				
+
+			foreach (var trigger in Trigger.CommandTriggers) {
+
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
 				trigger.ResetTime();
+
+			}
+				
 
 		}
 
