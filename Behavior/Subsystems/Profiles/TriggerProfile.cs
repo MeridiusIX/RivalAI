@@ -138,7 +138,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if(MaxActions >= 0 && TriggerCount >= MaxActions) {
 
-				Logger.DebugMsg(this.ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
 				UseTrigger = false;
 				return;
 
@@ -154,7 +154,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (Conditions.AreConditionsMets()) {
 
-							Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+							Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
 							Triggered = true;
 
 						} else if(this.ConditionCheckResetsTimer) {
@@ -166,7 +166,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					} else {
 
-						Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
@@ -179,14 +179,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					if (Conditions.AreConditionsMets()) {
 
-						Logger.DebugMsg(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
 
 				} else {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
 					Triggered = true;
 
 				}
@@ -282,8 +282,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[Actions:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
+						bool gotAction = false;
 
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							byte[] byteData = { };
 
@@ -296,6 +297,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 									if(profile != null) {
 
 										Actions = profile;
+										gotAction = true;
 
 									}
 
@@ -309,10 +311,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						}
 
+						if (!gotAction)
+							Logger.WriteLog("Could Not Find Action Profile Associated To Tag: " + tag);
+
+
 					}
 
 					//DamageTypes
-					if(tag.Contains("[DamageTypes:") == true) {
+					if (tag.Contains("[DamageTypes:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 
@@ -324,12 +330,27 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//MinPlayerReputation
+					if (tag.Contains("[MinPlayerReputation:") == true) {
+
+						MinPlayerReputation = TagHelper.TagIntCheck(tag, MinPlayerReputation);
+
+					}
+
+					//MaxPlayerReputation
+					if (tag.Contains("[MaxPlayerReputation:") == true) {
+
+						MaxPlayerReputation = TagHelper.TagIntCheck(tag, MaxPlayerReputation);
+
+					}
+
 					//Conditions
-					if(tag.Contains("[Conditions:") == true) {
+					if (tag.Contains("[Conditions:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
+						bool gotCondition = false;
 
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							byte[] byteData = { };
 
@@ -342,6 +363,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 									if(profile != null) {
 
 										this.Conditions = profile;
+										gotCondition = true;
 
 									}
 
@@ -354,6 +376,17 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 							}
 
 						}
+
+						if (!gotCondition)
+							Logger.WriteLog("Could Not Find Condition Profile Associated To Tag: " + tag);
+
+
+					}
+
+					//ConditionCheckResetsTimer
+					if (tag.Contains("[ConditionCheckResetsTimer:") == true) {
+
+						ConditionCheckResetsTimer = TagHelper.TagBoolCheck(tag);
 
 					}
 

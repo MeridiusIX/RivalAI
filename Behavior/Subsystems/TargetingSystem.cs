@@ -272,8 +272,8 @@ namespace RivalAI.Behavior.Subsystems{
 
                 } catch(Exception exc) {
 
-                    Logger.DebugMsg("Acquire Target Exception", DebugTypeEnum.Target);
-                    Logger.DebugMsg(exc.ToString(), DebugTypeEnum.Target);
+                    Logger.MsgDebug("Acquire Target Exception", DebugTypeEnum.Target);
+                    Logger.MsgDebug(exc.ToString(), DebugTypeEnum.Target);
 
                 }
 
@@ -306,7 +306,7 @@ namespace RivalAI.Behavior.Subsystems{
 
                 } catch(Exception exc) {
 
-                    Logger.DebugMsg("Exception Getting Player Target: ", DebugTypeEnum.Target); //
+                    Logger.MsgDebug("Exception Getting Player Target: ", DebugTypeEnum.Target); //
 
                 }
                 

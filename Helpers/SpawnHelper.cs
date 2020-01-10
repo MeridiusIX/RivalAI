@@ -99,7 +99,7 @@ namespace RivalAI.Helpers {
 
 						if (Vector3D.Distance(_spawnMatrix.Translation, player.GetPosition()) < 100) {
 
-							Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Player Too Close To Possible Spawn Coords. Attempt " + (i + 1).ToString(), DebugTypeEnum.Spawn);
+							Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Player Too Close To Possible Spawn Coords. Attempt " + (i + 1).ToString(), DebugTypeEnum.Spawn);
 							_spawnMatrix = MatrixD.Identity;
 							break;
 
@@ -127,26 +127,26 @@ namespace RivalAI.Helpers {
 
 				if (_spawnMatrix == MatrixD.Identity) {
 
-					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Coords Could Not Be Calculated. Aborting Process", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Coords Could Not Be Calculated. Aborting Process", DebugTypeEnum.Spawn);
 					PerformNextSpawn();
 					return;
 
 				}
 
-				Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
 				var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
 				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
 
 				if (result == true) {
 
-					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
 					_currentSpawn.SpawnCount++;
 
 
 
 				} else {
 
-					Logger.DebugMsg(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
 
 				}
 

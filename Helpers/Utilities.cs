@@ -76,7 +76,7 @@ namespace RivalAI.Helpers{
 
                         var sb = new StringBuilder();
                         sb.Append("Error Adding RivalAI Profile: ").Append(def.Id.SubtypeName).Append(" - Profile Already Exists.");
-                        Logger.DebugMsg(sb.ToString());
+                        Logger.MsgDebug(sb.ToString());
 
                     }
 

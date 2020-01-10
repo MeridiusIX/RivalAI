@@ -63,6 +63,15 @@ namespace RivalAI.Behavior {
 		public bool ConfigCheck;
 		public bool EndScript;
 
+		private int _settingSaveCounter;
+		private int _settingSaveCounterTrigger;
+
+		private Guid _triggerStorageKey;
+		private Guid _settingsStorageKey;
+
+		private bool _readyToSaveSettings;
+		private string _settingsDataPending;
+
 		public bool IsWorking;
 		public bool PhysicsValid;
 
@@ -80,6 +89,15 @@ namespace RivalAI.Behavior {
 			SetupFailed = false;
 			ConfigCheck = false;
 			EndScript = false;
+
+			_settingSaveCounter = 0;
+			_settingSaveCounterTrigger = 5;
+
+			_triggerStorageKey = new Guid("8470FBC9-1B64-4603-AB75-ABB2CD28AA02");
+			_settingsStorageKey = new Guid("FF814A67-AEC3-4DF0-ADC4-A9B239FA954F");
+
+			_readyToSaveSettings = false;
+			_settingsDataPending = "";
 
 			IsWorking = false;
 			PhysicsValid = false;
@@ -160,10 +178,12 @@ namespace RivalAI.Behavior {
 			if((CoreCounter % 60) == 0) {
 
 				CoreCounter = 0;
+				_settingSaveCounter++;
 				AutoPilot.ProcessEvasionCounter();
 				Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
 
-				Broadcast.ProcessAutoMessages();
+				if (_settingSaveCounter >= _settingSaveCounterTrigger)
+					SaveData();
 
 				if(Despawn.DoDespawn == true) {
 
@@ -190,7 +210,7 @@ namespace RivalAI.Behavior {
 
 		public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-			Logger.DebugMsg("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
+			Logger.MsgDebug("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
 			this.Mode = newMode;
 
 		}
@@ -199,6 +219,7 @@ namespace RivalAI.Behavior {
 
 			if(remoteControl == null) {
 
+				Logger.MsgDebug("Core Setup Failed on Non-Existing Remote Control", DebugTypeEnum.General);
 				SetupFailed = true;
 				return;
 
@@ -277,15 +298,71 @@ namespace RivalAI.Behavior {
 		
 		public void PostTagsSetup() {
 
+			Logger.MsgDebug("Post Tag Setup for " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+
+			if (Trigger.DamageTriggers.Count > 0)
+				Damage.UseDamageDetection = true;
+
 			Damage.SetupDamageHandler();
 
 			//TODO: Restore Storage Data
+			bool foundStoredSettings = false;
+
+			if (this.RemoteControl.Storage != null) {
+
+				string tempSettingsString = "";
+
+				this.RemoteControl.Storage.TryGetValue(_settingsStorageKey, out tempSettingsString);
+
+				try {
+
+					if (tempSettingsString != null) {
+
+						var tempSettingsBytes = Convert.FromBase64String(tempSettingsString);
+						StoredSettings tempSettings = MyAPIGateway.Utilities.SerializeFromBinary<StoredSettings>(tempSettingsBytes);
+
+						if (tempSettings != null) {
+
+							Settings = tempSettings;
+							foundStoredSettings = true;
+							Logger.MsgDebug("Loaded Stored Settings For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+							Trigger.Triggers = Settings.Triggers;
+							Trigger.DamageTriggers = Settings.DamageTriggers;
+							Trigger.CommandTriggers = Settings.CommandTriggers;
+
+						} else {
+
+							Logger.MsgDebug("Stored Settings Invalid For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+
+						}
+
+					}
+	
+				} catch (Exception e) {
+
+					Logger.MsgDebug("Failed to Deserialize Existing Stored Remote Control Data on Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+					Logger.MsgDebug(e.ToString(), DebugTypeEnum.Dev);
+
+				}
+
+			}
+
+			if (!foundStoredSettings) {
+
+				Logger.MsgDebug("Stored Settings Not Found For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+				Settings.Triggers = Trigger.Triggers;
+				Settings.DamageTriggers = Trigger.DamageTriggers;
+				Settings.CommandTriggers = Trigger.CommandTriggers;
+
+			}
 
 			//TODO: Refactor This Into TriggerSystem
 			foreach (var trigger in Trigger.Triggers) {
 
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
-				trigger.ResetTime();
+
+				if(!foundStoredSettings)
+					trigger.ResetTime();
 
 			}
 
@@ -293,7 +370,9 @@ namespace RivalAI.Behavior {
 			foreach (var trigger in Trigger.DamageTriggers) {
 
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
-				trigger.ResetTime();
+
+				if (!foundStoredSettings)
+					trigger.ResetTime();
 
 			}
 				
@@ -301,10 +380,65 @@ namespace RivalAI.Behavior {
 			foreach (var trigger in Trigger.CommandTriggers) {
 
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
-				trigger.ResetTime();
+
+				if (!foundStoredSettings)
+					trigger.ResetTime();
 
 			}
 				
+
+		}
+
+		public void SaveData() {
+
+			_settingSaveCounter = 0;
+
+			MyAPIGateway.Parallel.Start(() => {
+
+				try {
+
+					var tempSettingsBytes = MyAPIGateway.Utilities.SerializeToBinary<StoredSettings>(Settings);
+					var tempSettingsString = Convert.ToBase64String(tempSettingsBytes);
+					_settingsDataPending = tempSettingsString;
+					_readyToSaveSettings = true;
+
+				} catch (Exception e) {
+
+					Logger.MsgDebug("Exception Occured While Serializing Settings", DebugTypeEnum.Dev);
+					Logger.MsgDebug(e.ToString(), DebugTypeEnum.Dev);
+
+				}
+
+			}, () => {
+
+				MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+					if (!_readyToSaveSettings)
+						return;
+
+					if (this.RemoteControl.Storage == null) {
+
+						this.RemoteControl.Storage = new MyModStorageComponent();
+						Logger.MsgDebug("Creating Mod Storage on Remote Control", DebugTypeEnum.Dev);
+
+					}
+
+					if (this.RemoteControl.Storage.ContainsKey(_settingsStorageKey)) {
+
+						this.RemoteControl.Storage[_settingsStorageKey] = _settingsDataPending;
+
+					} else {
+
+						this.RemoteControl.Storage.Add(_settingsStorageKey, _settingsDataPending);
+
+					}
+
+					Logger.MsgDebug("Saved AI Storage Settings To Remote Control", DebugTypeEnum.Dev);
+					_readyToSaveSettings = false;
+
+				});
+
+			});
 
 		}
 

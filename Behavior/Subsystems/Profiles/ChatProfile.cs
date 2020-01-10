@@ -84,6 +84,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(17)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(18)]
+		public bool IgnoreAntennaRequirement;
+
+		[ProtoMember(19)]
+		public double IgnoredAntennaRangeOverride;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -102,6 +108,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			Author = "";
 			Color = "";
 			ProfileSubtypeId = "";
+			IgnoreAntennaRequirement = false;
+			IgnoredAntennaRangeOverride = 0;
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;

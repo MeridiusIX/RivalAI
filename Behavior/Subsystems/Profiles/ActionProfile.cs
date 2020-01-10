@@ -210,6 +210,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(59)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(60)]
+		public bool BroadcastGenericCommand;
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
@@ -287,6 +290,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ChangeAttackerReputationAmount = new List<int>();
 			ReputationChangesForAllAttackPlayerFactionMembers = false;
 
+			BroadcastGenericCommand = false;
+
 			ProfileSubtypeId = "";
 
 		}
@@ -307,35 +312,49 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					}
 
 					//ChatData
-					if(tag.Contains("[ChatData:") == true) {
+					if (tag.Contains("[ChatData:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
+						bool gotChat = false;
 
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							byte[] byteData = { };
 
-							if(TagHelper.ChatObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if (TagHelper.ChatObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
 								try {
 
 									var profile = MyAPIGateway.Utilities.SerializeFromBinary<ChatProfile>(byteData);
 
-									if(profile != null) {
+									if (profile != null) {
 
 										ChatData = profile;
+										gotChat = true;
+
+									} else {
+
+										Logger.WriteLog("Deserialized Chat Profile was Null");
 
 									}
 
-								} catch(Exception) {
+								} catch (Exception e) {
 
-
+									Logger.WriteLog("Caught Exception While Attaching to Action Profile:");
+									Logger.WriteLog(e.ToString());
 
 								}
+
+							} else {
+
+								Logger.WriteLog("Chat Profile Not in Dictionary");
 
 							}
 
 						}
+
+						if (!gotChat)
+							Logger.WriteLog("Could Not Find Chat Profile Associated To Tag: " + tag);
 
 					}
 
@@ -378,6 +397,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if(tag.Contains("[Spawner:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
+						bool gotSpawn = false;
 
 						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
@@ -392,6 +412,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 									if(profile != null) {
 
 										Spawner = profile;
+										gotSpawn = true;
 
 									}
 
@@ -405,10 +426,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						}
 
+						if (!gotSpawn)
+							Logger.WriteLog("Could Not Find Spawn Profile Associated To Tag: " + tag);
+
+
 					}
 
 					//SelfDestruct
-					if(tag.Contains("[SelfDestruct:") == true) {
+					if (tag.Contains("[SelfDestruct:") == true) {
 
 						this.SelfDestruct = TagHelper.TagBoolCheck(tag);
 

@@ -240,8 +240,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             } catch(Exception e) {
 
-                Logger.DebugMsg("Failed to get Weapon Definition for " + weapon.CustomName, DebugTypeEnum.Weapon);
-                Logger.DebugMsg(e.ToString(), DebugTypeEnum.Weapon);
+                Logger.MsgDebug("Failed to get Weapon Definition for " + weapon.CustomName, DebugTypeEnum.Weapon);
+                Logger.MsgDebug(e.ToString(), DebugTypeEnum.Weapon);
 
             }
 

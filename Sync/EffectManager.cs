@@ -52,14 +52,14 @@ namespace RivalAI.Sync {
 
 			if(effectData.Mode == EffectSyncMode.PositionSound) {
 
-				Logger.DebugMsg("Process Position Sound");
+				Logger.MsgDebug("Process Position Sound");
 				ProcessPositionSoundEffect(effectData);
 
 			}
 
 			if (effectData.Mode == EffectSyncMode.Particle) {
 
-				Logger.DebugMsg("Process Particle");
+				Logger.MsgDebug("Process Particle");
 				ProcessParticleEffect(effectData);
 
 			}

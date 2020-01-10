@@ -170,7 +170,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 			}
 
-			Logger.DebugMsg("Autopilot Mode Changed To: " + newMode.ToString(), DebugTypeEnum.General);
+			Logger.MsgDebug("Autopilot Mode Changed To: " + newMode.ToString(), DebugTypeEnum.General);
 			this.RevertMode = this.Mode;
 			this.Mode = newMode;
 			EngageAutoPilot();

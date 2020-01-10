@@ -65,6 +65,7 @@ namespace RivalAI.Behavior.Subsystems {
 		public string LastChatMessageSent;
 		public List<IMyRadioAntenna> AntennaList;
 		public double HighestRadius;
+		public string HighestAntennaRangeName;
 		public Vector3D AntennaCoords;
 		public Random Rnd;
 
@@ -84,6 +85,7 @@ namespace RivalAI.Behavior.Subsystems {
 			LastChatMessageSent = "";
 			AntennaList = new List<IMyRadioAntenna>();
 			HighestRadius = 0;
+			HighestAntennaRangeName = "";
 			AntennaCoords = Vector3D.Zero;
 			Rnd = new Random();
 
@@ -113,32 +115,57 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
 
-				Logger.DebugMsg(chat.ProfileSubtypeId + ": Process Chat Fail", DebugTypeEnum.Chat);
+				Logger.MsgDebug(chat.ProfileSubtypeId + ": Process Chat Fail", DebugTypeEnum.Chat);
 				return;
 
 			}
 
 			if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message) == true) {
 
-				Logger.DebugMsg(chat.ProfileSubtypeId + ": Last Message Same", DebugTypeEnum.Chat);
+				Logger.MsgDebug(chat.ProfileSubtypeId + ": Last Message Same", DebugTypeEnum.Chat);
 				return;
 
 			}
 
-			GetHighestAntennaRange();
+			if (chat.IgnoreAntennaRequirement) {
 
-			if(this.HighestRadius == 0) {
+				this.HighestRadius = chat.IgnoredAntennaRangeOverride;
+				this.HighestAntennaRangeName = "";
 
-				Logger.DebugMsg(chat.ProfileSubtypeId + ": No Valid Antenna", DebugTypeEnum.Chat);
-				return;
+			} else {
+
+				GetHighestAntennaRange();
+
+				if (this.HighestRadius == 0) {
+
+					Logger.MsgDebug(chat.ProfileSubtypeId + ": No Valid Antenna", DebugTypeEnum.Chat);
+					return;
+
+				}
 
 			}
+
+			
 
 			var playerList = new List<IMyPlayer>();
 			MyAPIGateway.Players.GetPlayers(playerList);
+			Logger.MsgDebug(chat.ProfileSubtypeId + ": Sending Chat to all Players within distance: " + this.HighestRadius.ToString(), DebugTypeEnum.Chat);
+
+			if (message.Contains("{AntennaName}"))
+				message = message.Replace("{AntennaName}", this.HighestAntennaRangeName);
+
+			if(this.RemoteControl?.SlimBlock?.CubeGrid?.CustomName != null && message.Contains("{GridName}"))
+				message = message.Replace("{GridName}", this.RemoteControl.SlimBlock.CubeGrid.CustomName);
+
+			var authorName = chat.Author;
+
+			if (authorName.Contains("{AntennaName}"))
+				authorName = authorName.Replace("{AntennaName}", this.HighestAntennaRangeName);
+
+			if (this.RemoteControl?.SlimBlock?.CubeGrid?.CustomName != null && authorName.Contains("{GridName}"))
+				authorName = authorName.Replace("{GridName}", this.RemoteControl.SlimBlock.CubeGrid.CustomName);
 
 
-			Logger.DebugMsg(chat.ProfileSubtypeId + ": Sending Chat to all Players within distance: " + this.HighestRadius.ToString(), DebugTypeEnum.Chat);
 			foreach (var player in playerList) {
 
 				if(player.IsBot == true || player.Character == null) {
@@ -177,7 +204,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 
-				var authorName = chat.Author;
+				
 				var authorColor = chat.Color;
 
 				if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
@@ -227,6 +254,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			this.HighestRadius = 0;
 			this.AntennaCoords = Vector3D.Zero;
+			this.HighestAntennaRangeName = "";
 
 			foreach(var antenna in this.AntennaList) {
 
@@ -246,6 +274,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					this.HighestRadius = antenna.Radius;
 					this.AntennaCoords = antenna.GetPosition();
+					this.HighestAntennaRangeName = antenna.CustomName;
 
 				}
 

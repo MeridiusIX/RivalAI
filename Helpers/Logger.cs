@@ -74,7 +74,7 @@ namespace RivalAI.Helpers{
 		public static bool DebugTrigger = true;
 		public static bool DebugWeapon = false;
 
-		public static void DebugMsg(string message, DebugTypeEnum type = DebugTypeEnum.None){
+		public static void MsgDebug(string message, DebugTypeEnum type = DebugTypeEnum.None){
 			
 			if(LoggerDebugMode == false){
 				

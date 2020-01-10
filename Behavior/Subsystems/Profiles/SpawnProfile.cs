@@ -136,7 +136,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
 
-				Logger.DebugMsg(this.ProfileSubtypeId + ": Max Spawns Already Exceeded", DebugTypeEnum.Spawn);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": Max Spawns Already Exceeded", DebugTypeEnum.Spawn);
 				UseSpawn = false;
 				return false;
 
@@ -148,20 +148,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 				if (StartsReady == true) {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					if (SpawnCount > 0)
 						return false;
 
 				} else {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					return false;
 
 				}
 
 			}
 
-			Logger.DebugMsg(this.ProfileSubtypeId + ": Spawn Cooldown Finished", DebugTypeEnum.Spawn);
+			Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Finished", DebugTypeEnum.Spawn);
 			return true;
 
 		}

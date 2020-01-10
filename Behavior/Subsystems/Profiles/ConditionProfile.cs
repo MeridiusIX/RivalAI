@@ -91,13 +91,44 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(18)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(19)]
+		public bool UseRequiredFunctionalBlocks;
+
+		[ProtoMember(20)]
+		public List<string> RequiredAllFunctionalBlockNames;
+
+		[ProtoMember(21)]
+		public List<string> RequiredAnyFunctionalBlockNames;
+
+		[ProtoMember(22)]
+		public List<string> RequiredNoneFunctionalBlockNames;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
 		[ProtoIgnore]
 		private StoredSettings _settings;
 
+		[ProtoIgnore]
+		private bool _gotWatchedBlocks;
 
+		[ProtoIgnore]
+		private List<IMyCubeBlock> _watchedAllBlocks;
+
+		[ProtoIgnore]
+		private List<IMyCubeBlock> _watchedAnyBlocks;
+
+		[ProtoIgnore]
+		private List<IMyCubeBlock> _watchedNoneBlocks;
+
+		[ProtoIgnore]
+		private bool _watchedAllBlocksResult;
+
+		[ProtoIgnore]
+		private bool _watchedAnyBlocksResult;
+
+		[ProtoIgnore]
+		private bool _watchedNoneBlocksResult;
 
 		public ConditionProfile(){
 			
@@ -125,7 +156,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			SpawnGroupBlacklistContainsAll = new List<string>();
 			SpawnGroupBlacklistContainsAny = new List<string>();
 
+			UseRequiredFunctionalBlocks = false;
+			RequiredAllFunctionalBlockNames = new List<string>();
+			RequiredAnyFunctionalBlockNames = new List<string>();
+
 			ProfileSubtypeId = "";
+
+			_remoteControl = null;
+			_settings = new StoredSettings();
+
+			_gotWatchedBlocks = false;
+			_watchedAllBlocks = new List<IMyCubeBlock>();
+			_watchedAnyBlocks = new List<IMyCubeBlock>();
+			_watchedNoneBlocks = new List<IMyCubeBlock>();
+			_watchedAllBlocksResult = false;
+			_watchedAnyBlocksResult = false;
+			_watchedNoneBlocksResult = false;
 
 		}
 		
@@ -137,7 +183,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		}
 		
 		public bool AreConditionsMets(){
-			
+
+			if (!_gotWatchedBlocks)
+				SetupWatchedBlocks();
+
 			if(this.UseConditions == false){
 				
 				return true;
@@ -156,7 +205,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (Utilities.ModIDs.Contains(mod) == false) {
 
-						Logger.DebugMsg(this.ProfileSubtypeId + ": Mod ID Not Present", DebugTypeEnum.Condition);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Mod ID Not Present", DebugTypeEnum.Condition);
 						missingMod = true;
 						break;
 
@@ -177,7 +226,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (Utilities.ModIDs.Contains(mod)) {
 
-						Logger.DebugMsg(this.ProfileSubtypeId + ": A Mod ID was Found: " + mod.ToString(), DebugTypeEnum.Condition);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": A Mod ID was Found: " + mod.ToString(), DebugTypeEnum.Condition);
 						satisfiedConditions++;
 						break;
 
@@ -196,7 +245,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (!_settings.GetCustomBoolResult(boolName)) {
 
-						Logger.DebugMsg(this.ProfileSubtypeId + ": Booleam Not True: " + boolName, DebugTypeEnum.Condition);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Booleam Not True: " + boolName, DebugTypeEnum.Condition);
 						failedCheck = true;
 						break;
 
@@ -222,7 +271,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 							if (_settings.GetCustomCounterResult(this.CustomCounters[i], this.CustomCountersTargets[i]) == false) {
 
-								Logger.DebugMsg(this.ProfileSubtypeId + ": Counter Amount Not High Enough: " + this.CustomCounters[i], DebugTypeEnum.Condition);
+								Logger.MsgDebug(this.ProfileSubtypeId + ": Counter Amount Not High Enough: " + this.CustomCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -230,8 +279,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						} catch (Exception e) {
 
-							Logger.DebugMsg("Exception: ", DebugTypeEnum.Condition);
-							Logger.DebugMsg(e.ToString(), DebugTypeEnum.Condition);
+							Logger.MsgDebug("Exception: ", DebugTypeEnum.Condition);
+							Logger.MsgDebug(e.ToString(), DebugTypeEnum.Condition);
 
 						}
 
@@ -239,7 +288,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				} else {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
 					failedCheck = true;
 
 				}
@@ -256,12 +305,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				if ((this.MinGridSpeed == -1 || speed >= this.MinGridSpeed) && (this.MaxGridSpeed == -1 || speed <= this.MaxGridSpeed)) {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": Grid Speed High Enough", DebugTypeEnum.Condition);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Grid Speed High Enough", DebugTypeEnum.Condition);
 					satisfiedConditions++;
 
 				} else {
 
-					Logger.DebugMsg(this.ProfileSubtypeId + ": Grid Speed Not High Enough", DebugTypeEnum.Condition);
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Grid Speed Not High Enough", DebugTypeEnum.Condition);
 
 				}
 				
@@ -280,7 +329,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (blackList.Contains(group) == false) {
 
-							Logger.DebugMsg(this.ProfileSubtypeId + ": A Spawngroup was not on MES BlackList: " + group, DebugTypeEnum.Condition);
+							Logger.MsgDebug(this.ProfileSubtypeId + ": A Spawngroup was not on MES BlackList: " + group, DebugTypeEnum.Condition);
 							failedCheck = true;
 							break;
 
@@ -300,7 +349,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (blackList.Contains(group) == true) {
 
-							Logger.DebugMsg(this.ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
+							Logger.MsgDebug(this.ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
 							satisfiedConditions++;
 							break;
 
@@ -315,19 +364,221 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			if(this.MatchAnyCondition == false){
 
 				bool result = (satisfiedConditions >= usedConditions);
-				Logger.DebugMsg(this.ProfileSubtypeId + ": Any Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": Any Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
 				return result;
 				
 			}else{
 
 				bool result = (satisfiedConditions > 0);
-				Logger.DebugMsg(this.ProfileSubtypeId + ": All Conditions Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": All Conditions Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
 				return result;
 				
 			}
 			
 		}
-		
+
+		private void SetupWatchedBlocks() {
+
+			_gotWatchedBlocks = true;
+			_watchedAnyBlocks.Clear();
+			_watchedAllBlocks.Clear();
+
+			if (!UseRequiredFunctionalBlocks)
+				return;
+
+			_remoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplitHandler;
+			var allBlocks = TargetHelper.GetAllBlocks(_remoteControl?.SlimBlock?.CubeGrid).Where(x => x.FatBlock != null);
+
+			foreach (var block in allBlocks) {
+
+				var terminalBlock = block.FatBlock as IMyTerminalBlock;
+
+				if (terminalBlock == null)
+					continue;
+
+				if (this.RequiredAllFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+
+					_watchedAllBlocks.Add(block.FatBlock);
+					block.FatBlock.IsWorkingChanged += CheckAllBlocks;
+
+				}
+
+				if (this.RequiredAnyFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+
+					_watchedAnyBlocks.Add(block.FatBlock);
+					block.FatBlock.IsWorkingChanged += CheckAnyBlocks;
+
+				}
+
+				if (this.RequiredNoneFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+
+					_watchedNoneBlocks.Add(block.FatBlock);
+					block.FatBlock.IsWorkingChanged += CheckNoneBlocks;
+
+				}
+
+			}
+
+			CheckAllBlocks();
+			CheckAnyBlocks();
+			CheckNoneBlocks();
+
+		}
+
+		private void CheckAllBlocks(IMyCubeBlock cubeBlock = null) {
+
+			for (int i = _watchedAllBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedAllBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedAllBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (!block.IsWorking || !block.IsFunctional) {
+
+					_watchedAllBlocksResult = false;
+					return;
+					
+				}
+
+			}
+
+			_watchedAllBlocksResult = true;
+
+		}
+
+		private void CheckAnyBlocks(IMyCubeBlock cubeBlock = null) {
+
+			for (int i = _watchedAnyBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedAnyBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedAnyBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (block.IsWorking || block.IsFunctional) {
+
+					_watchedAnyBlocksResult = true;
+					return;
+
+				}
+
+			}
+
+			_watchedAnyBlocksResult = false;
+
+		}
+
+		private void CheckNoneBlocks(IMyCubeBlock cubeBlock = null) {
+
+			for (int i = _watchedNoneBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedNoneBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedNoneBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (block.IsWorking || block.IsFunctional) {
+
+					_watchedNoneBlocksResult = false;
+					return;
+
+				}
+
+			}
+
+			_watchedNoneBlocksResult = true;
+
+		}
+
+		private void GridSplitHandler(IMyCubeGrid gridA, IMyCubeGrid gridB) {
+
+			gridA.OnGridSplit -= GridSplitHandler;
+			gridB.OnGridSplit -= GridSplitHandler;
+
+			if (_remoteControl == null || !MyAPIGateway.Entities.Exist(_remoteControl?.SlimBlock?.CubeGrid))
+				return;
+
+			_remoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplitHandler;
+
+			for (int i = _watchedAllBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedAllBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedAllBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (!_remoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.SlimBlock.CubeGrid)) {
+
+					_watchedAllBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+			}
+
+			for (int i = _watchedAnyBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedAnyBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedAnyBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (!_remoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.SlimBlock.CubeGrid)) {
+
+					_watchedAnyBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+			}
+
+			for (int i = _watchedNoneBlocks.Count - 1; i >= 0; i--) {
+
+				var block = _watchedNoneBlocks[i];
+
+				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+
+					_watchedNoneBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+				if (!_remoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.SlimBlock.CubeGrid)) {
+
+					_watchedNoneBlocks.RemoveAt(i);
+					continue;
+
+				}
+
+			}
+
+			CheckAllBlocks();
+			CheckAnyBlocks();
+			CheckNoneBlocks();
+
+		}
+
 		public void InitTags(string customData){
 
 			if(string.IsNullOrWhiteSpace(customData) == false) {

@@ -38,7 +38,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.0.4";
+		public static string ReleaseVersion = "0.0.5";
 
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
@@ -77,6 +77,10 @@ namespace RivalAI {
 
 		public override void BeforeStart() {
 
+			if (!MyAPIGateway.Multiplayer.IsServer)
+				return;
+
+			Logger.LoadDebugFromSandbox();
 			Utilities.GetAllModIDs();
 			TagHelper.Setup();
 			DamageHelper.RegisterEntityWatchers();
@@ -89,7 +93,7 @@ namespace RivalAI {
 
 				SetupComplete = true;
 				Setup();
-				Logger.DebugMsg("MES API Registered: " + MESApi.MESApiReady.ToString());
+				Logger.MsgDebug("MES API Registered: " + MESApi.MESApiReady.ToString());
 
 			}
 

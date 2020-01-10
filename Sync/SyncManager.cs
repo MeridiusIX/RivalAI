@@ -105,8 +105,8 @@ namespace RivalAI.Sync {
 
             } catch(Exception exc) {
 
-                Logger.DebugMsg("Exception in NetworkMessageReceiver", DebugTypeEnum.General);
-                Logger.DebugMsg(exc.ToString(), DebugTypeEnum.General);
+                Logger.MsgDebug("Exception in NetworkMessageReceiver", DebugTypeEnum.General);
+                Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
 
             }
 

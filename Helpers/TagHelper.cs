@@ -65,7 +65,7 @@ namespace RivalAI.Helpers {
 						chatObject.InitTags(def.DescriptionText);
 						chatObject.ProfileSubtypeId = def.Id.SubtypeName;
 						var chatBytes = MyAPIGateway.Utilities.SerializeToBinary<ChatProfile>(chatObject);
-						Logger.WriteLog("Chat Profile Added: " + def.Id.SubtypeName);
+						//Logger.WriteLog("Chat Profile Added: " + def.Id.SubtypeName);
 						ChatObjectTemplates.Add(def.Id.SubtypeName, chatBytes);
 						continue;
 
@@ -77,7 +77,7 @@ namespace RivalAI.Helpers {
 						spawnerObject.InitTags(def.DescriptionText);
 						spawnerObject.ProfileSubtypeId = def.Id.SubtypeName;
 						var spawnerBytes = MyAPIGateway.Utilities.SerializeToBinary<SpawnProfile>(spawnerObject);
-						Logger.WriteLog("Spawner Profile Added: " + def.Id.SubtypeName);
+						//Logger.WriteLog("Spawner Profile Added: " + def.Id.SubtypeName);
 						SpawnerObjectTemplates.Add(def.Id.SubtypeName, spawnerBytes);
 						continue;
 
@@ -85,7 +85,7 @@ namespace RivalAI.Helpers {
 
 				} catch (Exception) {
 
-					Logger.DebugMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.MsgDebug(string.Format("Caught Error While Processing Definition {0}", def.Id));
 
 				}
 
@@ -107,7 +107,7 @@ namespace RivalAI.Helpers {
 						actionObject.InitTags(def.DescriptionText);
 						actionObject.ProfileSubtypeId = def.Id.SubtypeName;
 						var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<ActionProfile>(actionObject);
-						Logger.WriteLog("Action Profile Added: " + def.Id.SubtypeName);
+						//Logger.WriteLog("Action Profile Added: " + def.Id.SubtypeName);
 						ActionObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
 						continue;
 
@@ -119,7 +119,7 @@ namespace RivalAI.Helpers {
 						conditionObject.InitTags(def.DescriptionText);
 						conditionObject.ProfileSubtypeId = def.Id.SubtypeName;
 						var conditionBytes = MyAPIGateway.Utilities.SerializeToBinary<ConditionProfile>(conditionObject);
-						Logger.WriteLog("Condition Profile Added: " + def.Id.SubtypeName);
+						//Logger.WriteLog("Condition Profile Added: " + def.Id.SubtypeName);
 						ConditionObjectTemplates.Add(def.Id.SubtypeName, conditionBytes);
 						continue;
 
@@ -131,7 +131,7 @@ namespace RivalAI.Helpers {
 						targetObject.InitTags(def.DescriptionText);
 						targetObject.ProfileSubtypeId = def.Id.SubtypeName;
 						var targetBytes = MyAPIGateway.Utilities.SerializeToBinary<TargetProfile>(targetObject);
-						Logger.WriteLog("Target Profile Added: " + def.Id.SubtypeName);
+						//Logger.WriteLog("Target Profile Added: " + def.Id.SubtypeName);
 						TargetObjectTemplates.Add(def.Id.SubtypeName, targetBytes);
 						continue;
 
@@ -139,7 +139,7 @@ namespace RivalAI.Helpers {
 
 				} catch(Exception) {
 
-					Logger.DebugMsg(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.MsgDebug(string.Format("Caught Error While Processing Definition {0}", def.Id));
 
 				}
 
@@ -160,7 +160,7 @@ namespace RivalAI.Helpers {
 					triggerObject.InitTags(def.DescriptionText);
 					triggerObject.ProfileSubtypeId = def.Id.SubtypeName;
 					var triggerBytes = MyAPIGateway.Utilities.SerializeToBinary<TriggerProfile>(triggerObject);
-					Logger.WriteLog("Trigger Profile Added: " + def.Id.SubtypeName);
+					//Logger.WriteLog("Trigger Profile Added: " + def.Id.SubtypeName);
 					TriggerObjectTemplates.Add(def.Id.SubtypeName, triggerBytes);
 					continue;
 
@@ -171,11 +171,35 @@ namespace RivalAI.Helpers {
 
 			//Get All Behavior
 
+			//Print Profile Names To Log:
+			BuildKeyListAndWriteToLog("Trigger", TriggerObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Condition", ConditionObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Action", ActionObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Chat", ChatObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Spawn", SpawnerObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Target", TargetObjectTemplates.Keys);
+
+		}
+
+		private static void BuildKeyListAndWriteToLog(string profileType, IEnumerable<string> stringList) {
+
+			var sb = new StringBuilder();
+			sb.Append("Detected Profiles: " + profileType).AppendLine();
+
+			foreach (var subtypeName in stringList.OrderBy(x => x)) {
+
+				sb.Append(" - ").Append(subtypeName).AppendLine();
+			
+			}
+
+			sb.AppendLine();
+			Logger.WriteLog(sb.ToString());
+
 		}
 
 		private static string [] ProcessTag(string tag){
 			
-			var thisTag = tag;
+			var thisTag = tag.Trim();
 			thisTag = thisTag.Replace("[", "");
 			thisTag = thisTag.Replace("]", "");
 			var tagSplit = thisTag.Split(':');

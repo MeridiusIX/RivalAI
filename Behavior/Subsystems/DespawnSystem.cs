@@ -191,14 +191,14 @@ namespace RivalAI.Behavior.Subsystems{
 
 					if(Vector3D.Distance(this.RemoteControl.GetPosition(), this.NearestPlayer.GetPosition()) > this.RetreatDespawnDistance){
 
-						Logger.DebugMsg("Retreat Despawn: Player Far Enough", DebugTypeEnum.Despawn);
+						Logger.MsgDebug("Retreat Despawn: Player Far Enough", DebugTypeEnum.Despawn);
 						DoDespawn = true;
 						
 					}
 
 				} else {
 
-					Logger.DebugMsg("Retreat Despawn: No Player", DebugTypeEnum.Despawn);
+					Logger.MsgDebug("Retreat Despawn: No Player", DebugTypeEnum.Despawn);
 					DoDespawn = true;
 
 				}
@@ -219,7 +219,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 						if(PlayerDistanceTimer >= PlayerDistanceTimerTrigger) {
 
-							Logger.DebugMsg("No Player Within Distance", DebugTypeEnum.Despawn);
+							Logger.MsgDebug("No Player Within Distance", DebugTypeEnum.Despawn);
 							DoDespawn = true;
 
 						}
@@ -270,14 +270,14 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public void Retreat(){
 
-			Logger.DebugMsg("Retreat Signal Received For Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
+			Logger.MsgDebug("Retreat Signal Received For Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
 			DoRetreat = true;
 			
 		}
 
 		public void DespawnGrid() {
 
-			Logger.DebugMsg("Despawning Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
+			Logger.MsgDebug("Despawning Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
 
 			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
 

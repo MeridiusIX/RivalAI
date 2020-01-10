@@ -195,10 +195,10 @@ namespace RivalAI.Helpers {
 			}
 
 			var filteredBlockList = FilterBlocksByFamily(blockList, targetData.BlockTargets);
-			Logger.DebugMsg("Eligible Block Targets: " + filteredBlockList.Count.ToString(), DebugTypeEnum.Target);
-			Logger.DebugMsg(targetData.Relations.ToString(), DebugTypeEnum.Target);
-			Logger.DebugMsg(targetData.Owners.ToString(), DebugTypeEnum.Target);
-			Logger.DebugMsg(targetData.BlockTargets.ToString(), DebugTypeEnum.Target);
+			Logger.MsgDebug("Eligible Block Targets: " + filteredBlockList.Count.ToString(), DebugTypeEnum.Target);
+			Logger.MsgDebug(targetData.Relations.ToString(), DebugTypeEnum.Target);
+			Logger.MsgDebug(targetData.Owners.ToString(), DebugTypeEnum.Target);
+			Logger.MsgDebug(targetData.BlockTargets.ToString(), DebugTypeEnum.Target);
 			return TargetHelper.GetEntityAtDistance(remoteControl.GetPosition(), filteredBlockList, targetData.Distance) as IMyTerminalBlock;
 
 		}
@@ -556,8 +556,8 @@ namespace RivalAI.Helpers {
 
 			} catch(Exception exc) {
 
-				Logger.DebugMsg("Caught Error In AI Parallel Collision Detection.", DebugTypeEnum.General);
-				Logger.DebugMsg(exc.ToString(), DebugTypeEnum.General);
+				Logger.MsgDebug("Caught Error In AI Parallel Collision Detection.", DebugTypeEnum.General);
+				Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
 
 			}
 
@@ -602,7 +602,7 @@ namespace RivalAI.Helpers {
 				
 			}catch(Exception exc){
 				
-				Logger.DebugMsg("Caught Error in EvaluateTargetWeaponsRange Method.");
+				Logger.MsgDebug("Caught Error in EvaluateTargetWeaponsRange Method.");
 				return 0;
 				
 			}
