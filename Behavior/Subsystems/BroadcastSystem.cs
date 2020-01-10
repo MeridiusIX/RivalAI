@@ -156,7 +156,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if(this.RemoteControl?.SlimBlock?.CubeGrid?.CustomName != null && message.Contains("{GridName}"))
 				message = message.Replace("{GridName}", this.RemoteControl.SlimBlock.CubeGrid.CustomName);
-
+			
+			if(chat.UseRandomNameGeneratorFromMES && MESApi.MESApiReady)
+				message = MESApi.ConvertRandomNamePatterns(message);
+			
 			var authorName = chat.Author;
 
 			if (authorName.Contains("{AntennaName}"))
