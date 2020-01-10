@@ -89,6 +89,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(19)]
 		public double IgnoredAntennaRangeOverride;
+		
+		[ProtoMember(20)]
+		public bool UseRandomNameGeneratorFromMES;
 
 		[ProtoIgnore]
 		public Random Rnd;
@@ -110,6 +113,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ProfileSubtypeId = "";
 			IgnoreAntennaRequirement = false;
 			IgnoredAntennaRangeOverride = 0;
+			UseRandomNameGeneratorFromMES = false;
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;
@@ -271,7 +275,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						Color = TagHelper.TagStringCheck(tag);
 
 					}
+					
+					//IgnoreAntennaRequirement
+					if(tag.Contains("[IgnoreAntennaRequirement:") == true) {
 
+						IgnoreAntennaRequirement = TagHelper.TagBoolCheck(tag);
+
+					}
+					
+					//IgnoredAntennaRangeOverride
+					if(tag.Contains("[IgnoredAntennaRangeOverride:") == true) {
+
+						IgnoredAntennaRangeOverride = TagHelper.TagDoubleCheck(tag, IgnoredAntennaRangeOverride);
+
+					}
+					
+					//UseRandomNameGeneratorFromMES
+					if(tag.Contains("[UseRandomNameGeneratorFromMES:") == true) {
+
+						UseRandomNameGeneratorFromMES = TagHelper.TagBoolCheck(tag);
+
+					}
+					
 				}
 
 			}
