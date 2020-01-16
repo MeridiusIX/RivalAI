@@ -101,7 +101,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if(trigger.UseTrigger == true) {
 
-							if(IsPlayerNearby(trigger)) {
+							if(IsPlayerNearby(trigger, trigger.PlayerNearPositionOffset)) {
 
 								trigger.ActivateTrigger();
 
@@ -258,6 +258,11 @@ namespace RivalAI.Behavior.Subsystems {
 		public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
 
 			//Logger.AddMsg("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), true);
+			if (info.Amount <= 0)
+				return;
+
+			_settings.LastDamageTakenTime = MyAPIGateway.Session.GameDateTime;
+			_settings.TotalDamageAccumulated += info.Amount;
 
 			for (int i = 0;i < this.DamageTriggers.Count;i++) {
 
@@ -586,17 +591,19 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public bool IsPlayerNearby(TriggerProfile control) {
+		public bool IsPlayerNearby(TriggerProfile control, Vector3D offset) {
 
 			IMyPlayer player = null;
 
+			var remotePosition = Vector3D.Transform(offset, this.RemoteControl.WorldMatrix);
+
 			if(control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
 
-				player = TargetHelper.GetClosestPlayerWithReputation(this.RemoteControl.GetPosition(), _owner.FactionId, control.MinPlayerReputation, control.MaxPlayerReputation);
+				player = TargetHelper.GetClosestPlayerWithReputation(remotePosition, _owner.FactionId, control.MinPlayerReputation, control.MaxPlayerReputation);
 
 			} else {
 
-				player = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
+				player = TargetHelper.GetClosestPlayer(remotePosition);
 
 			}
 
@@ -607,7 +614,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			var playerDist = Vector3D.Distance(player.GetPosition(), this.RemoteControl.GetPosition());
+			var playerDist = Vector3D.Distance(player.GetPosition(), remotePosition);
 
 			if(playerDist > control.TargetDistance) {
 

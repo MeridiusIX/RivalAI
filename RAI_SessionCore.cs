@@ -38,7 +38,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.0.5";
+		public static string ReleaseVersion = "0.0.6";
 
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
@@ -105,7 +105,10 @@ namespace RivalAI {
 
 			Ticks++;
 
-			if(Ticks % 10 == 0) {
+			if (EffectManager.SoundsPlaying)
+				EffectManager.ProcessAvatarDisplay();
+
+			if (Ticks % 10 == 0) {
 
 				if(EffectManager.SoundsPending == true) {
 

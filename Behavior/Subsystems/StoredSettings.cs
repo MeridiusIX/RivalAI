@@ -58,6 +58,12 @@ namespace RivalAI.Behavior.Subsystems{
 		[ProtoMember(7)]
 		public List<TriggerProfile> CommandTriggers;
 
+		[ProtoMember(8)]
+		public float TotalDamageAccumulated;
+
+		[ProtoMember(9)]
+		public DateTime LastDamageTakenTime;
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -68,6 +74,9 @@ namespace RivalAI.Behavior.Subsystems{
 			Triggers = new List<TriggerProfile>();
 			DamageTriggers = new List<TriggerProfile>();
 			CommandTriggers = new List<TriggerProfile>();
+
+			TotalDamageAccumulated = 0;
+			LastDamageTakenTime = MyAPIGateway.Session.GameDateTime;
 
 		}
 		

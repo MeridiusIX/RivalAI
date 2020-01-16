@@ -35,61 +35,61 @@ namespace RivalAI.Behavior{
 	
 	public class Fighter : CoreBehavior{
 
-        //Configurable
-        public double FighterEngageDistanceSpace;
-        public double FighterEngageDistancePlanet;
+		//Configurable
+		public double FighterEngageDistanceSpace;
+		public double FighterEngageDistancePlanet;
 		
 		public bool ReceivedEvadeSignal;
 		public bool ReceivedRetreatSignal;
 		public bool ReceivedExternalTarget;
 		
-        public byte Counter;
+		public byte Counter;
 
-        public Fighter() {
+		public Fighter() {
 
-            FighterEngageDistanceSpace = 300;
-            FighterEngageDistancePlanet = 600;
+			FighterEngageDistanceSpace = 300;
+			FighterEngageDistancePlanet = 600;
 			
 			ReceivedEvadeSignal = false;
 			ReceivedRetreatSignal = false;
 			ReceivedExternalTarget = false;
 			
-            Counter = 0;
+			Counter = 0;
 
-        }
+		}
 
-        public void RunAi() {
+		public void RunAi() {
 
-            if(!IsAIReady())
-                return;
+			if(!IsAIReady())
+				return;
 
-            RunCoreAi();
+			RunCoreAi();
 
-            if(EndScript == true) {
+			if(EndScript == true) {
 
-                return;
+				return;
 
-            }
+			}
 
-            Counter++;
+			Counter++;
 
-            if(Counter >= 60) {
+			if(Counter >= 60) {
 
-                MainBehavior();
-                Counter = 0;
+				MainBehavior();
+				Counter = 0;
 
-            }
+			}
 
 
-        }
+		}
 
-        public void MainBehavior() {
+		public void MainBehavior() {
 
-            if(RAI_SessionCore.IsServer == false) {
+			if(RAI_SessionCore.IsServer == false) {
 
-                return;
+				return;
 
-            }
+			}
 			
 			if(ReceivedEvadeSignal == true && Mode != BehaviorMode.Retreat) {
 				
@@ -97,7 +97,7 @@ namespace RivalAI.Behavior{
 				
 				if(Collision.UseCollisionDetection == true){
 
-                    ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
+					ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
 					//Set Waypoint Here
 					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 					
@@ -107,7 +107,7 @@ namespace RivalAI.Behavior{
 			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
-                ChangeCoreBehaviorMode(BehaviorMode.Retreat);
+				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
 			
 			}
@@ -119,91 +119,91 @@ namespace RivalAI.Behavior{
 				
 			}
 
-            if(Mode == BehaviorMode.Init) {
+			if(Mode == BehaviorMode.Init) {
 
-                if(Targeting.InvalidTarget == true) {
+				if(Targeting.InvalidTarget == true) {
 
-                    ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
-                } else {
+				} else {
 
-                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 
-                }
+				}
 
-            }
+			}
 
-            if(Mode == BehaviorMode.WaitingForTarget) {
+			if(Mode == BehaviorMode.WaitingForTarget) {
 
-                if(AutoPilot.Mode != AutoPilotMode.None) {
+				if(AutoPilot.Mode != AutoPilotMode.None) {
 
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
 
-                }
+				}
 
-                if(Targeting.InvalidTarget == false) {
+				if(Targeting.InvalidTarget == false) {
 
-                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
 
-                }else if(Despawn.NoTargetExpire == true){
+				}else if(Despawn.NoTargetExpire == true){
 					
 					Despawn.Retreat();
 					
 				}
 
-            }
+			}
 
-            if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+			if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
-                ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
-            }
+			}
 
-            //Evade
-            if(Mode == BehaviorMode.EvadeCollision) {
+			//Evade
+			if(Mode == BehaviorMode.EvadeCollision) {
 
 				if(AutoPilot.EvasionModeTimer >= AutoPilot.EvasionModeTimer || Vector3D.Distance(this.RemoteControl.GetPosition(), this.AutoPilot.WaypointCoords) < 50){
 					
 					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					
 				}
 
-            }
+			}
 
-            //Space Approach
-            if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection == Vector3D.Zero) {
+			//Space Approach
+			if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection == Vector3D.Zero) {
 
-                Weapons.AllowFire();
-                var newCoords = VectorHelper.CreateDirectionAndTarget(AutoPilot.TargetCoords, RemoteControl.GetPosition(), AutoPilot.TargetCoords, this.FighterEngageDistanceSpace);
-                AutoPilot.UpdateWaypoint(newCoords);
-                CheckTarget();
+				Weapons.AllowFire();
+				var newCoords = VectorHelper.CreateDirectionAndTarget(AutoPilot.TargetCoords, RemoteControl.GetPosition(), AutoPilot.TargetCoords, this.FighterEngageDistanceSpace);
+				AutoPilot.UpdateWaypoint(newCoords);
+				CheckTarget();
 
-                if(Targeting.Target.Distance < this.FighterEngageDistanceSpace) {
+				if(Targeting.Target.Distance < this.FighterEngageDistanceSpace) {
 
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
-                    ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
+					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
-                }
+				}
 
-            }
+			}
 
-            //Space Engage
-            if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection == Vector3D.Zero) {
+			//Space Engage
+			if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection == Vector3D.Zero) {
 
-                Weapons.AllowFire();
-                CheckTarget();
+				Weapons.AllowFire();
+				CheckTarget();
 
-                if(Targeting.Target.Distance > this.FighterEngageDistanceSpace) {
+				if(Targeting.Target.Distance > this.FighterEngageDistanceSpace) {
 
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
-                }
+				}
 
-            }
+			}
 			
 			//Space Retreat
 			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection == Vector3D.Zero) {
@@ -215,143 +215,143 @@ namespace RivalAI.Behavior{
 					
 				}
 
-            }
+			}
 
-            //Planet Approach
-            if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection != Vector3D.Zero) {
+			//Planet Approach
+			if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection != Vector3D.Zero) {
 
-                CheckTarget();
-                Weapons.AllowFire();
-                if(Targeting.Target.Distance < this.FighterEngageDistancePlanet) {
+				CheckTarget();
+				Weapons.AllowFire();
+				if(Targeting.Target.Distance < this.FighterEngageDistancePlanet) {
 
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
-                    ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
+					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
-                }
+				}
 
-            }
+			}
 
-            //Planet Engage
-            if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection != Vector3D.Zero) {
+			//Planet Engage
+			if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection != Vector3D.Zero) {
 
-                //Logger.AddMsg(AutoPilot.UpDirection.ToString(), true);
-                CheckTarget();
-                Weapons.AllowFire();
-                if(Targeting.Target.Distance > this.FighterEngageDistancePlanet) {
+				//Logger.AddMsg(AutoPilot.UpDirection.ToString(), true);
+				CheckTarget();
+				Weapons.AllowFire();
+				if(Targeting.Target.Distance > this.FighterEngageDistancePlanet) {
 
-                    AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
-                }
+				}
 
-            }
+			}
 			
 			//Planet Retreat
 			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection != Vector3D.Zero) {
 
-                if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null){
+				if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null){
 
-                    //Logger.AddMsg("DespawnCoordsCreated", true);
+					//Logger.AddMsg("DespawnCoordsCreated", true);
 					var roughDespawnCoords = VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition();
 					var despawnCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), roughDespawnCoords);
 					AutoPilot.UpdateWaypoint(despawnCoords);
 					
 				}
 
-            }
+			}
 
 
-        }
+		}
 
-        public void CheckTarget() {
+		public void CheckTarget() {
 
-            if(Targeting.InvalidTarget == true) {
+			if(Targeting.InvalidTarget == true) {
 
-                ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-                AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
 
-            }
+			}
 
-        }
+		}
 
-        public void CollisionWarningTrigger(Vector3D collisionCoords) {
+		public void CollisionWarningTrigger(Vector3D collisionCoords) {
 
-            if(Mode == BehaviorMode.ApproachTarget == true) {
+			if(Mode == BehaviorMode.ApproachTarget == true) {
 
-                ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
+				ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
 
-                if(AutoPilot.UpDirection == Vector3D.Zero) {
+				if(AutoPilot.UpDirection == Vector3D.Zero) {
 
-                    AutoPilot.UpdateWaypoint(Collision.SpaceEvadeCoords);
+					AutoPilot.UpdateWaypoint(Collision.SpaceEvadeCoords);
 
-                } else {
+				} else {
 
-                    AutoPilot.UpdateWaypoint(Collision.PlanetEvadeCoords);
+					AutoPilot.UpdateWaypoint(Collision.PlanetEvadeCoords);
 
-                }
+				}
 
-                AutoPilot.ProcessEvasionCounter(true);
-                AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
+				AutoPilot.ProcessEvasionCounter(true);
+				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
 
-            }
+			}
 
-        }
+		}
 
-        public void BehaviorInit(IMyRemoteControl remoteControl) {
+		public void BehaviorInit(IMyRemoteControl remoteControl) {
 
-            //Core Setup
-            CoreSetup(remoteControl);
+			//Core Setup
+			CoreSetup(remoteControl);
 
-            //Behavior Specific Defaults
-            Despawn.UseNoTargetTimer = true;
-            Targeting.NeedsTarget = true;
-            Weapons.UseStaticGuns = true;
+			//Behavior Specific Defaults
+			Despawn.UseNoTargetTimer = true;
+			Targeting.NeedsTarget = true;
+			Weapons.UseStaticGuns = true;
 
-            //Get Settings From Custom Data
-            InitCoreTags();
+			//Get Settings From Custom Data
+			InitCoreTags();
 		InitTags();
 
-            if(Targeting.TargetData.UseCustomTargeting == false) {
+			if(Targeting.TargetData.UseCustomTargeting == false) {
 
-                Targeting.TargetData.Target = TargetTypeEnum.Player;
-                Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
-                Targeting.TargetData.Owners = TargetOwnerEnum.Player;
+				Targeting.TargetData.Target = TargetTypeEnum.Player;
+				Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
+				Targeting.TargetData.Owners = TargetOwnerEnum.Player;
 
-            }
+			}
 
-            Collision.TriggerWarning += CollisionWarningTrigger;
+			Collision.TriggerWarning += CollisionWarningTrigger;
 
-        }
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            if(string.IsNullOrWhiteSpace(this.RemoteControl?.CustomData) == false) {
+			if(string.IsNullOrWhiteSpace(this.RemoteControl?.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 					
 			//FighterEngageDistanceSpace
 			if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
 
-                        	this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
+							this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
 
-                    	}	
+						}	
 			
 			//FighterEngageDistancePlanet
 			if(tag.Contains("[FighterEngageDistancePlanet:") == true) {
 
-                        	this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
+							this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
 
-                    	}
+						}
 					
 		}
 				
-	    }
+		}
 
-        }
+		}
 
-    }
+	}
 
 }
 	

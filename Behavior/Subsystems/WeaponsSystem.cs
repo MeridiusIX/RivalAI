@@ -47,10 +47,14 @@ namespace RivalAI.Behavior.Subsystems {
 
 		//Configurable
 		public bool UseStaticGuns;
+
 		public double WeaponMaxAngleFromTarget;
+
 		public bool UseBarrageFire;
 		public int MaxFireRateForBarrageWeapons;
+
 		public bool KeepWeaponsLoaded;
+
 		public bool WeaponsAttackVoxels;
 		public bool WeaponsAttackAnyGrids;
 

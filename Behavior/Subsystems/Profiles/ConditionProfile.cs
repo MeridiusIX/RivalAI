@@ -103,6 +103,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(22)]
 		public List<string> RequiredNoneFunctionalBlockNames;
 
+		[ProtoMember(23)]
+		public bool UseAccumulatedDamageWatcher;
+
+		[ProtoMember(24)]
+		public float MinAccumulatedDamage;
+
+		[ProtoMember(25)]
+		public float MaxAccumulatedDamage;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -358,6 +367,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					}
 
 				}
+
+			}
+
+			if (UseAccumulatedDamageWatcher) {
+
+				usedConditions++;
+				bool failedCheck = false;
+
+				if (this.MinAccumulatedDamage >= 0 && this.MinAccumulatedDamage < _settings.TotalDamageAccumulated)
+					failedCheck = true;
+
+				if (this.MaxAccumulatedDamage >= 0 && this.MaxAccumulatedDamage > _settings.TotalDamageAccumulated)
+					failedCheck = true;
+
+				if(!failedCheck)
+					satisfiedConditions++;
 
 			}
 			

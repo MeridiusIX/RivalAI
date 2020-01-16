@@ -93,6 +93,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(20)]
 		public bool UseRandomNameGeneratorFromMES;
 
+		[ProtoMember(21)]
+		public List<string> ChatAvatar;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -114,6 +117,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			IgnoreAntennaRequirement = false;
 			IgnoredAntennaRangeOverride = 0;
 			UseRandomNameGeneratorFromMES = false;
+			ChatAvatar = new List<string>();
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;
@@ -255,8 +259,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//ChatAvatar
+					if (tag.Contains("[ChatAvatar:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							ChatAvatar.Add(tempValue);
+
+						}
+
+					}
+
 					//BroadcastChatType
-					if(tag.Contains("[BroadcastChatType:") == true) {
+					if (tag.Contains("[BroadcastChatType:") == true) {
 
 						BroadcastChatType.Add(TagHelper.TagBroadcastTypeEnumCheck(tag));
 

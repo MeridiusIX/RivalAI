@@ -44,6 +44,7 @@ namespace RivalAI.Behavior.Subsystems{
 		public double SpaceTargetPaddingDistance;
 		public float DesiredMaxSpeed;
 		public double MinimumAltitudeAboveTarget;
+		public double IdealTravelAltitude;
 		public double PlanetSafePathingCheckDistance;
 		public int EvasionModeMaxTime;
 
@@ -93,7 +94,8 @@ namespace RivalAI.Behavior.Subsystems{
 			AutoPilotForwardDirection = Base6Directions.Direction.Forward;
 			SpaceTargetPaddingDistance = 100;
 			DesiredMaxSpeed = 100;
-			MinimumAltitudeAboveTarget = 200;
+			MinimumAltitudeAboveTarget = 125;
+			IdealTravelAltitude = 250;
 			PlanetSafePathingCheckDistance = 1000;
 			EvasionModeMaxTime = 6;
 

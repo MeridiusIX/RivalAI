@@ -75,6 +75,9 @@ namespace RivalAI.Sync {
 		[ProtoMember(10)]
 		public Vector3 Velocity;
 
+		[ProtoMember(11)]
+		public string AvatarId;
+
 		public Effects() {
 
 			Mode = EffectSyncMode.None;
@@ -87,7 +90,7 @@ namespace RivalAI.Sync {
 			ParticleForwardDir = Vector3D.Forward;
 			ParticleUpDir = Vector3D.Up;
 			Velocity = Vector3.Zero;
-
+			AvatarId = "";
 
 		}
 

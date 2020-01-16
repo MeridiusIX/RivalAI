@@ -96,6 +96,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(21)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(22)]
+		public Vector3D PlayerNearPositionOffset;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -127,6 +130,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			MaxPlayerReputation = 1501;
 
 			CommandReceiveCode = "";
+
+			PlayerNearPositionOffset = Vector3D.Zero;
+
 			ProfileSubtypeId = "";
 
 
@@ -387,6 +393,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ConditionCheckResetsTimer:") == true) {
 
 						ConditionCheckResetsTimer = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//PlayerNearPositionOffset
+					if (tag.Contains("[PlayerNearPositionOffset:") == true) {
+
+						PlayerNearPositionOffset = TagHelper.TagVector3DCheck(tag);
 
 					}
 

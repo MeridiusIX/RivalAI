@@ -30,22 +30,28 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using static VRageRender.MyBillboard;
 
 namespace RivalAI.Sync {
 	
 	public static class EffectManager {
 
 		public static bool SoundsPending = false;
+		public static bool SoundsPlaying = false;
 		public static List<string> SoundsPendingList = new List<string>();
+		public static List<string> AvatarPendingList = new List<string>();
 
-		public static IMyCharacter CurrentPlayerCharacter;
+		public static IMyEntity CurrentPlayerEntity;
 		public static MyEntity3DSoundEmitter SoundEmitter;
+		public static bool GotFirstEmitter;
+		public static string CurrentAvatar;
 
 		public static void ClientReceiveEffect(Effects effectData) {
 
 			if(effectData.Mode == EffectSyncMode.PlayerSound) {
 				
 				SoundsPendingList.Add(effectData.SoundId);
+				AvatarPendingList.Add(effectData.AvatarId);
 				SoundsPending = true;
 
 			}
@@ -150,8 +156,9 @@ namespace RivalAI.Sync {
 			var soundPair = new MySoundPair(SoundsPendingList[0]);
 			SoundsPendingList.RemoveAt(0);
 			SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
-			
-			if(SoundsPendingList.Count == 0){
+			SoundsPlaying = true;
+
+			if (SoundsPendingList.Count == 0){
 			
 				SoundsPending = false;
 			
@@ -159,24 +166,57 @@ namespace RivalAI.Sync {
 
 		}
 
+		public static void ProcessAvatarDisplay() {
+
+			if (SoundEmitter == null)
+				return;
+
+			if (!SoundEmitter.IsPlaying || string.IsNullOrWhiteSpace(CurrentAvatar)) {
+
+				SoundsPlaying = false;
+				return;
+
+			}
+
+
+			var camera = MyAPIGateway.Session.Camera;
+			var camCenter = camera.Position + camera.ViewMatrix.Forward;
+			var screenPos = camera.WorldToScreen(ref camCenter);
+			MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("Avatar-Glitchy-Berserk"), Color.White, screenPos, camera.ViewMatrix.Left, camera.ViewMatrix.Up, (float)1 * 0.075f, BlendTypeEnum.PostPP);
+
+
+		}
+
 		public static bool CheckPlayerSoundEmitter() {
 
-			if(MyAPIGateway.Session.LocalHumanPlayer?.Character == null) {
+			if(MyAPIGateway.Session.LocalHumanPlayer?.Controller?.ControlledEntity?.Entity == null) {
 
-				CurrentPlayerCharacter = null;
+				CurrentPlayerEntity = null;
 				SoundEmitter = null;
+				SoundsPlaying = false;
+
+				if (GotFirstEmitter) {
+
+					AvatarPendingList.Clear();
+					SoundsPendingList.Clear();
+					SoundsPending = false;
+					SoundsPlaying = false;
+				
+				}
+
 				return false;
 
 			}
 
-			if(MyAPIGateway.Session.LocalHumanPlayer.Character == CurrentPlayerCharacter) {
+			if(MyAPIGateway.Session.LocalHumanPlayer.Controller.ControlledEntity.Entity == CurrentPlayerEntity) {
 
 				return true;
 
 			}
 
-			CurrentPlayerCharacter = MyAPIGateway.Session.LocalHumanPlayer.Character;
-			SoundEmitter = new MyEntity3DSoundEmitter(CurrentPlayerCharacter as MyEntity);
+			CurrentPlayerEntity = MyAPIGateway.Session.LocalHumanPlayer.Character;
+			SoundEmitter = new MyEntity3DSoundEmitter(CurrentPlayerEntity as MyEntity);
+			GotFirstEmitter = true;
 			return true;
 
 		}
