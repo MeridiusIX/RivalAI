@@ -42,8 +42,12 @@ namespace RivalAI.Behavior.Subsystems {
 	}
 	public class NewAutoPilotSystem {
 
+		//Planet Config
 		public double MaxPlanetPathCheckDistance;
+		public double IdealPlanetAltitude;
+		public double MinimumPlanetAltitude;
 
+		//Non-Configurable
 		private IMyRemoteControl _remoteControl;
 
 		private AutoPilotType _currentAutoPilot;
@@ -55,6 +59,9 @@ namespace RivalAI.Behavior.Subsystems {
 		private bool _rollOverride;
 
 		private bool _getInitialWaypointFromTarget;
+		private bool _calculateOffset;
+		private bool _calculateSafePlanetPath;
+
 
 		private Vector3D _myPosition; //
 		private Vector3D _initialWaypoint; //A static waypoint or derived from last valid target position.
@@ -63,14 +70,44 @@ namespace RivalAI.Behavior.Subsystems {
 
 		private bool _requiresClimbToIdealAltitude;
 
-		//PlanetData
+		//PlanetData - Self
 		private MyPlanet _currentPlanet;
 		private Vector3D _upDirection;
 		private double _gravityStrength;
 		private double _surfaceDistance;
 		private float _airDensity;
+		private double _currentAltitude;
 
+		//PlanetData - Waypoint
+		private double _highestTerrainToWaypoint;
+
+		private const double PLANET_PATH_CHECK_DISTANCE = 1000;
 		private const double PLANET_PATH_CHECK_INCREMENT = 50;
+
+		public NewAutoPilotSystem() {
+
+			MaxPlanetPathCheckDistance = 1000;
+
+			_currentAutoPilot = AutoPilotType.None;
+			_oldAutoPilot = null; //Fix Later
+			_newAutoPilot = null; //Fix Later
+
+			_autopilotOverride = false;
+			_strafeOverride = false;
+			_rollOverride = false;
+
+			_getInitialWaypointFromTarget = false;
+			_calculateOffset = false;
+			_calculateSafePlanetPath = false;
+
+			_myPosition = Vector3D.Zero;
+			_initialWaypoint = Vector3D.Zero;
+			_pendingWaypoint = Vector3D.Zero;
+			_currentWaypoint = Vector3D.Zero;
+
+			_requiresClimbToIdealAltitude = false;
+
+		}
 
 		public void UpdateAutoPilot() {
 
@@ -127,11 +164,19 @@ namespace RivalAI.Behavior.Subsystems {
 			//Offset
 
 			//PlanetPathing
-			if (_currentPlanet != null) {
+			if (_calculateSafePlanetPath && _gravityStrength > 0) {
 
-				var directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
-			
+				CalculateSafePlanetPathWaypoint();
+
 			}
+
+		}
+
+		private void CalculateSafePlanetPathWaypoint() {
+
+			var directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
+			double requiredAltitude = _requiresClimbToIdealAltitude ? this.IdealPlanetAltitude : this.MinimumPlanetAltitude;
+
 
 		}
 
