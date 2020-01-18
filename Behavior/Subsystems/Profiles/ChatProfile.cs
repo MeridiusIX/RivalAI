@@ -128,7 +128,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		}
 
-		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type) {
+		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref avatar) {
 
 			if(UseChat == false) {
 
@@ -156,9 +156,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			string thisMsg = "";
 			string thisSound = "";
+			string thisAvatar = "";
 			BroadcastType thisType = BroadcastType.None;
 
-			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType);
+			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType, ref thisAvatar);
 
 			if(string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
@@ -174,6 +175,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			msg = thisMsg;
 			audio = thisSound;
 			type = thisType;
+			avatar = thisAvatar;
 			return true;
 
 		}
@@ -336,7 +338,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		}
 
-		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type) {
+		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref avatar) {
 
 			if(ChatMessages.Count == 0) {
 
@@ -360,6 +362,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					type = BroadcastChatType[index];
 
 				}
+				
+				if(ChatAvatar.Count >= ChatMessages.Count) {
+
+					avatar = ChatAvatar[index];
+
+				}
 
 			} else {
 
@@ -380,6 +388,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 				if(BroadcastChatType.Count >= ChatMessages.Count) {
 
 					type = BroadcastChatType[MessageIndex];
+
+				}
+				
+				if(ChatAvatar.Count >= ChatMessages.Count) {
+
+					avatar = ChatAvatar[index];
 
 				}
 
