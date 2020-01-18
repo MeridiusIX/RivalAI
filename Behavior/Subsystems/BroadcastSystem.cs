@@ -234,6 +234,7 @@ namespace RivalAI.Behavior.Subsystems {
 					var effect = new Effects();
 					effect.Mode = EffectSyncMode.PlayerSound;
 					effect.SoundId = sound;
+					effect.AvatarId = avatar;
 					var sync = new SyncContainer(effect);
 					SyncManager.SendSyncMesage(sync, player.SteamUserId);
 
