@@ -111,9 +111,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 			string message = "";
 			string sound = "";
+			string avatar = "";
 			var broadcastType = BroadcastType.None;
 
-			if(chat.ProcessChat(ref message, ref sound, ref broadcastType) == false) {
+			if(chat.ProcessChat(ref message, ref sound, ref broadcastType, ref avatar) == false) {
 
 				Logger.MsgDebug(chat.ProfileSubtypeId + ": Process Chat Fail", DebugTypeEnum.Chat);
 				return;
@@ -287,7 +288,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, ref string message, ref string sound, ref BroadcastType broadcastType){
+		private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, List<BroadcastType> avatars, ref string message, ref string sound, ref BroadcastType broadcastType, ref string avatar){
 
 			if(messages.Count == 0) {
 
@@ -307,6 +308,12 @@ namespace RivalAI.Behavior.Subsystems {
 			if(broadcastTypes.Count >= messages.Count) {
 
 				broadcastType = broadcastTypes[index];
+
+			}
+			
+			if(avatars.Count >= messages.Count) {
+
+				avatar = avatars[index];
 
 			}
 
