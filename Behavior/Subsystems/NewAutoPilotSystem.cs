@@ -40,12 +40,22 @@ namespace RivalAI.Behavior.Subsystems {
 		RivalAI,
 
 	}
+
+	public enum PathCheckResult {
+		
+		Ok,
+		TerrainHigherThanNpc,
+		TerrainHigherThanWaypoint
+
+	
+	}
 	public class NewAutoPilotSystem {
 
 		//Planet Config
 		public double MaxPlanetPathCheckDistance;
 		public double IdealPlanetAltitude;
 		public double MinimumPlanetAltitude;
+		public double AltitudeTolerance;
 
 		//Non-Configurable
 		private IMyRemoteControl _remoteControl;
@@ -76,7 +86,6 @@ namespace RivalAI.Behavior.Subsystems {
 		private double _gravityStrength;
 		private double _surfaceDistance;
 		private float _airDensity;
-		private double _currentAltitude;
 
 		//PlanetData - Waypoint
 		private double _highestTerrainToWaypoint;
@@ -87,6 +96,9 @@ namespace RivalAI.Behavior.Subsystems {
 		public NewAutoPilotSystem() {
 
 			MaxPlanetPathCheckDistance = 1000;
+			IdealPlanetAltitude = 200;
+			MinimumPlanetAltitude = 110;
+			AltitudeTolerance = 10;
 
 			_currentAutoPilot = AutoPilotType.None;
 			_oldAutoPilot = null; //Fix Later
@@ -177,6 +189,16 @@ namespace RivalAI.Behavior.Subsystems {
 			var directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
 			double requiredAltitude = _requiresClimbToIdealAltitude ? this.IdealPlanetAltitude : this.MinimumPlanetAltitude;
 
+			//Get MyAltitude and WaypointAltitude
+
+			//Get MyCoreDistance and WaypointCoreDistance
+
+			//Get Steps
+
+			//Check Steps
+
+			//Get Position
+			
 
 		}
 
@@ -203,6 +225,15 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			return result;
+		
+		}
+
+		private bool CheckAltitudeTolerance(double currentCoreDistance, double targetCoreDistance, double tolerance) {
+
+			if (currentCoreDistance < targetCoreDistance - tolerance || currentCoreDistance > targetCoreDistance + tolerance)
+				return false;
+
+			return true;
 		
 		}
 
