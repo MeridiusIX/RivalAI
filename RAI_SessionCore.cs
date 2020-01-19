@@ -45,10 +45,17 @@ namespace RivalAI {
 
 		//ShieldApi Support
 		internal static RAI_SessionCore Instance { get; private set; } // allow access from gamelogic
+		public ulong ShieldModId = 1365616918;
 		public bool ShieldMod { get; set; }
 		public bool ShieldApiLoaded { get; set; }
 		public ShieldApi SApi = new ShieldApi();
 		public static string ConfigInstance = "";
+		
+		//WeaponCore Support
+		public ulong WeaponCoreModId = 1365616918;
+		public bool WeaponCoreMod { get; set; }
+		public bool WeaponCoreLoaded { get; set; }
+		public ShieldApi WeaponCore = new ShieldApi();
 
 		public int Ticks = 0;
 
@@ -63,9 +70,16 @@ namespace RivalAI {
 
 			foreach(var mod in MyAPIGateway.Session.Mods) {
 
-				if(mod.PublishedFileId == 1365616918) {
+				if(mod.PublishedFileId == ShieldModId) {
 
 					ShieldMod = true;
+					continue;
+
+				}
+				
+				if(mod.PublishedFileId == WeaponCoreModId) {
+
+					WeaponCoreMod = true;
 
 				}
 
@@ -79,7 +93,9 @@ namespace RivalAI {
 
 			if (!MyAPIGateway.Multiplayer.IsServer)
 				return;
-
+			
+			//TODO: Register Shield and WeaponCore APIs
+			
 			Logger.LoadDebugFromSandbox();
 			Utilities.GetAllModIDs();
 			TagHelper.Setup();
