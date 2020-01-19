@@ -52,10 +52,10 @@ namespace RivalAI {
 		public static string ConfigInstance = "";
 		
 		//WeaponCore Support
-		public ulong WeaponCoreModId = 1365616918;
+		public ulong WeaponCoreModId = 1918681825;
 		public bool WeaponCoreMod { get; set; }
 		public bool WeaponCoreLoaded { get; set; }
-		public ShieldApi WeaponCore = new ShieldApi();
+		public ShieldApi WeaponCore = new WeaponCoreApi();
 
 		public int Ticks = 0;
 
@@ -95,6 +95,17 @@ namespace RivalAI {
 				return;
 			
 			//TODO: Register Shield and WeaponCore APIs
+			if(ShieldMod && !ShieldApiLoaded && SApi.Load()) {
+
+				ShieldApiLoaded = true;
+
+			}
+			
+			if(WeaponCoreMod && !WeaponCoreLoaded && WeaponCore.Load()) {
+
+				WeaponCoreLoaded = true;
+
+			}
 			
 			Logger.LoadDebugFromSandbox();
 			Utilities.GetAllModIDs();
@@ -110,12 +121,6 @@ namespace RivalAI {
 				SetupComplete = true;
 				Setup();
 				Logger.MsgDebug("MES API Registered: " + MESApi.MESApiReady.ToString());
-
-			}
-
-			if(ShieldMod && !ShieldApiLoaded && SApi.Load()) {
-
-				ShieldApiLoaded = true;
 
 			}
 
