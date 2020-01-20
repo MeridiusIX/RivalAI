@@ -288,8 +288,8 @@ namespace RivalAI.Behavior.Subsystems {
 			
 
 		}
-
-		private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, List<BroadcastType> avatars, ref string message, ref string sound, ref BroadcastType broadcastType, ref string avatar){
+		/*
+		private void GetRandomChatAndSoundFromLists(List<string> messages, List<string> sounds, List<BroadcastType> broadcastTypes, List<string> avatars, ref string message, ref string sound, ref BroadcastType broadcastType, ref string avatar){
 
 			if(messages.Count == 0) {
 
@@ -319,7 +319,7 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 		}
-
+		*/
 		public void RefreshAntennaList() {
 
 			if(this.RemoteControl == null || MyAPIGateway.Entities.Exist(this.RemoteControl?.SlimBlock?.CubeGrid) == false) {

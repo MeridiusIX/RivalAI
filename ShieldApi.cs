@@ -156,5 +156,9 @@ namespace RivalAI
         public IMyTerminalBlock GetClosestShield(Vector3D pos) => _getClosestShield?.Invoke(pos) ?? null;
         public double GetDistanceToShield(IMyTerminalBlock block, Vector3D pos) => _getDistanceToShield?.Invoke(block, pos) ?? -1;
         public Vector3D? GetClosestShieldPoint(IMyTerminalBlock block, Vector3D pos) => _getClosestShieldPoint?.Invoke(block, pos) ?? null;
-    }
+
+		public static implicit operator ShieldApi(WeaponCoreApi v) {
+			throw new NotImplementedException();
+		}
+	}
 }

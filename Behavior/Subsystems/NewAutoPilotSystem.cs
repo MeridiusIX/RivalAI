@@ -61,8 +61,8 @@ namespace RivalAI.Behavior.Subsystems {
 		private IMyRemoteControl _remoteControl;
 
 		private AutoPilotType _currentAutoPilot;
-		private OldAutoPilot _oldAutoPilot;
-		private NewAutoPilot _newAutoPilot;
+		//private OldAutoPilot _oldAutoPilot;
+		//private NewAutoPilot _newAutoPilot;
 
 		private bool _autopilotOverride;
 		private bool _strafeOverride;
@@ -101,8 +101,8 @@ namespace RivalAI.Behavior.Subsystems {
 			AltitudeTolerance = 10;
 
 			_currentAutoPilot = AutoPilotType.None;
-			_oldAutoPilot = null; //Fix Later
-			_newAutoPilot = null; //Fix Later
+			//_oldAutoPilot = null; //Fix Later
+			//_newAutoPilot = null; //Fix Later
 
 			_autopilotOverride = false;
 			_strafeOverride = false;
@@ -178,27 +178,36 @@ namespace RivalAI.Behavior.Subsystems {
 			//PlanetPathing
 			if (_calculateSafePlanetPath && _gravityStrength > 0) {
 
-				CalculateSafePlanetPathWaypoint();
+				CalculateSafePlanetPathWaypoint(_currentPlanet);
 
 			}
 
 		}
 
-		private void CalculateSafePlanetPathWaypoint() {
+		private void CalculateSafePlanetPathWaypoint(MyPlanet planet) {
 
 			var directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
+			var distanceToTarget = Vector3D.Distance(_pendingWaypoint, _myPosition);
+			
 			double requiredAltitude = _requiresClimbToIdealAltitude ? this.IdealPlanetAltitude : this.MinimumPlanetAltitude;
+			var planetPosition = planet.PositionComp.WorldAABB.Center;
 
-			//Get MyAltitude and WaypointAltitude
+			var mySurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, _currentPlanet);
+			var waypointSurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_pendingWaypoint, _currentPlanet);
 
-			//Get MyCoreDistance and WaypointCoreDistance
+			var myAltitude = Vector3D.Distance(_myPosition, mySurfaceCoords);
+			var waypointAltitude = Vector3D.Distance(_pendingWaypoint, waypointSurfaceCoords);
+			
+			var myCoreDistance = Vector3D.Distance(_myPosition, planetPosition);
+			var waypointCoreDistance = Vector3D.Distance(waypointSurfaceCoords, planetPosition);
 
 			//Get Steps
+			var stepsList = GetPlanetPathSteps(_myPosition, directionToTarget, distanceToTarget);
 
 			//Check Steps
 
 			//Get Position
-			
+
 
 		}
 

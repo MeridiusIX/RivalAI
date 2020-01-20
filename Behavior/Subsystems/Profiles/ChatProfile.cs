@@ -128,7 +128,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		}
 
-		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref avatar) {
+		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref string avatar) {
 
 			if(UseChat == false) {
 
@@ -338,7 +338,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		}
 
-		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref avatar) {
+		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref string avatar) {
 
 			if(ChatMessages.Count == 0) {
 
@@ -393,7 +393,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 				
 				if(ChatAvatar.Count >= ChatMessages.Count) {
 
-					avatar = ChatAvatar[index];
+					avatar = ChatAvatar[MessageIndex];
 
 				}
 

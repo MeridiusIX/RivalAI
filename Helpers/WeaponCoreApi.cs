@@ -4,10 +4,8 @@ using Sandbox.ModAPI;
 using VRage.Game;
 using VRageMath;
 
-namespace WeaponCore.Support
-{
-    internal class WeaponCoreApi
-    {
+namespace RivalAI.Helpers {
+    internal class WeaponCoreApi {
         private bool _apiInit;
         private delegate T5 OutFunc<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, out T4 arg4);
 
@@ -29,12 +27,11 @@ namespace WeaponCore.Support
         private Func<IMyTerminalBlock, float> _currentPowerConsumption;
         private Func<MyDefinitionId, float> _maxPowerConsumption;
         private Action<IMyTerminalBlock> _disablePowerRequirements;
-        
+
 
         private const long Channel = 67549756549;
 
-        public enum Threat
-        {
+        public enum Threat {
             Projectiles,
             Characters,
             Grids,
@@ -45,8 +42,7 @@ namespace WeaponCore.Support
 
         public bool IsReady { get; private set; }
 
-        private void HandleMessage(object o)
-        {
+        private void HandleMessage(object o) {
             if (_apiInit) return;
             var dict = o as IReadOnlyDictionary<string, Delegate>;
             if (dict == null)
@@ -57,10 +53,8 @@ namespace WeaponCore.Support
 
         private bool _isRegistered;
 
-        public bool Load()
-        {
-            if (!_isRegistered)
-            {
+        public bool Load() {
+            if (!_isRegistered) {
                 _isRegistered = true;
                 MyAPIGateway.Utilities.RegisterMessageHandler(Channel, HandleMessage);
             }
@@ -69,18 +63,15 @@ namespace WeaponCore.Support
             return IsReady;
         }
 
-        public void Unload()
-        {
-            if (_isRegistered)
-            {
+        public void Unload() {
+            if (_isRegistered) {
                 _isRegistered = false;
                 MyAPIGateway.Utilities.UnregisterMessageHandler(Channel, HandleMessage);
             }
             IsReady = false;
         }
 
-        public void ApiLoad(IReadOnlyDictionary<string, Delegate> delegates)
-        {
+        public void ApiLoad(IReadOnlyDictionary<string, Delegate> delegates) {
             _apiInit = true;
             _getAllCoreWeapons = (Func<List<MyDefinitionId>>)delegates["GetAllCoreWeapons"];
             _getAllCoreStaticLaunchers = (Func<List<MyDefinitionId>>)delegates["GetCoreStaticLaunchers"];
@@ -91,7 +82,7 @@ namespace WeaponCore.Support
             _isWeaponReadyToFire = (Func<IMyTerminalBlock, bool>)delegates["WeaponReady"];
             _getMaxWeaponRange = (Func<IMyTerminalBlock, float>)delegates["GetMaxRange"];
             _getTurretTargetTypes = (Func<IMyTerminalBlock, List<List<Threat>>>)delegates["GetTurretTargetTypes"];
-            _setTurretTargetingRange = (Action <IMyTerminalBlock, float>)delegates["SetTurretRange"];
+            _setTurretTargetingRange = (Action<IMyTerminalBlock, float>)delegates["SetTurretRange"];
             _setTurretTargetTypes = (Action<IMyTerminalBlock, List<List<Threat>>>)delegates["SetTurretTargetTypes"];
             _getTargetedEntity = (Func<IMyTerminalBlock, List<VRage.Game.ModAPI.Ingame.IMyEntity>>)delegates["GetTargetedEntity"];
             _isTargetAligned = (OutFunc<IMyTerminalBlock, VRage.Game.ModAPI.Ingame.IMyEntity, int, Vector3D?, bool?>)delegates["TargetPredictedPosition"];
@@ -118,8 +109,7 @@ namespace WeaponCore.Support
         public void FireWeaponOnce(IMyTerminalBlock weapon) => _fireWeaponOnce?.Invoke(weapon);
         public void ToggleWeaponFire(IMyTerminalBlock weapon, bool on) => _toggleWeaponFire?.Invoke(weapon, on);
         public void SetTurretTargetTypes(IMyTerminalBlock weapon, List<List<Threat>> threats) => _setTurretTargetTypes?.Invoke(weapon, threats);
-        public bool? IsTargetAligned(IMyTerminalBlock weaponBlock, VRage.Game.ModAPI.Ingame.IMyEntity targetEnt, int weaponId, out Vector3D? targetPos)
-        {
+        public bool? IsTargetAligned(IMyTerminalBlock weaponBlock, VRage.Game.ModAPI.Ingame.IMyEntity targetEnt, int weaponId, out Vector3D? targetPos) {
             targetPos = null;
             var aligned = _isTargetAligned?.Invoke(weaponBlock, targetEnt, weaponId, out targetPos);
             return aligned;
