@@ -186,29 +186,91 @@ namespace RivalAI.Behavior.Subsystems {
 
 		private void CalculateSafePlanetPathWaypoint(MyPlanet planet) {
 
-			var directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
-			var distanceToTarget = Vector3D.Distance(_pendingWaypoint, _myPosition);
+			Vector3D directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
+			double distanceToTarget = Vector3D.Distance(_pendingWaypoint, _myPosition);
 			
 			double requiredAltitude = _requiresClimbToIdealAltitude ? this.IdealPlanetAltitude : this.MinimumPlanetAltitude;
-			var planetPosition = planet.PositionComp.WorldAABB.Center;
+			Vector3D planetPosition = planet.PositionComp.WorldAABB.Center;
 
-			var mySurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, _currentPlanet);
-			var waypointSurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_pendingWaypoint, _currentPlanet);
+			Vector3D mySurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, _currentPlanet);
+			Vector3D waypointSurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_pendingWaypoint, _currentPlanet);
 
-			var myAltitude = Vector3D.Distance(_myPosition, mySurfaceCoords);
-			var waypointAltitude = Vector3D.Distance(_pendingWaypoint, waypointSurfaceCoords);
+			double myAltitude = Vector3D.Distance(_myPosition, mySurfaceCoords);
+			double waypointAltitude = Vector3D.Distance(_pendingWaypoint, waypointSurfaceCoords);
+
+			double myCoreDistance = Vector3D.Distance(_myPosition, planetPosition);
+			double waypointCoreDistance = Vector3D.Distance(waypointSurfaceCoords, planetPosition);
+
+			List<Vector3D> stepsList = GetPlanetPathSteps(_myPosition, directionToTarget, distanceToTarget);
+
+			Vector3D highestTerrainPoint = Vector3D.Zero;
+			double highestTerrainCoreDistance = 0;
+
+			foreach (Vector3D pathPoint in stepsList) {
+
+				Vector3D surfacePathPoint = VectorHelper.GetPlanetSurfaceCoordsAtPosition(pathPoint, _currentPlanet);
+				double surfaceCoreDistance = Vector3D.Distance(surfacePathPoint, planetPosition);
+
+				if (surfaceCoreDistance >= highestTerrainCoreDistance) {
+
+					highestTerrainPoint = surfacePathPoint;
+					highestTerrainCoreDistance = surfaceCoreDistance;
+
+				}
+
+			}
+
+			double myAltitudeDifferenceFromHighestTerrain = myCoreDistance - highestTerrainCoreDistance;
+			double waypointAltitudeDifferenceFromHighestTerrain = waypointCoreDistance - highestTerrainCoreDistance;
+
+			//Terrain Higher Than Me
+			if (myAltitudeDifferenceFromHighestTerrain < this.MinimumPlanetAltitude) {
+
+				_requiresClimbToIdealAltitude = true;
+				_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+				return;
+
+			}
+
+			//Check if Climb is still required
+			if (_requiresClimbToIdealAltitude) {
+
+				if (CheckAltitudeTolerance(myAltitudeDifferenceFromHighestTerrain, this.IdealPlanetAltitude, this.AltitudeTolerance)) {
+
+					_requiresClimbToIdealAltitude = false;
+
+				} else {
+
+					_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+					return;
+
+				}
 			
-			var myCoreDistance = Vector3D.Distance(_myPosition, planetPosition);
-			var waypointCoreDistance = Vector3D.Distance(waypointSurfaceCoords, planetPosition);
+			}
 
-			//Get Steps
-			var stepsList = GetPlanetPathSteps(_myPosition, directionToTarget, distanceToTarget);
+			//No Obstruction Case
+			if (myAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude && waypointAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude) {
 
-			//Check Steps
+				return;
 
-			//Get Position
+			}
+
+			//Terrain Higher Than NPC
+
+			
 
 
+
+		}
+
+		private Vector3D GetCoordsAboveHighestTerrain(Vector3D planetPosition, Vector3D directionToTarget, double highestTerrainDistanceFromCore) {
+
+			//Get position 50m in direction of target
+			var roughForwardStep = directionToTarget * 50 + _myPosition;
+
+			var upDirectionFromStep = Vector3D.Normalize(roughForwardStep - planetPosition);
+			return upDirectionFromStep * (highestTerrainDistanceFromCore + this.IdealPlanetAltitude) + planetPosition;
+		
 		}
 
 		private List<Vector3D> GetPlanetPathSteps(Vector3D startCoords, Vector3D directionToTarget, double distanceToTarget) {
