@@ -12,6 +12,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.GameSystems;
 using Sandbox.ModAPI;
+using Ingame = Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using Sandbox.ModAPI.Weapons;
 using SpaceEngineers.Game.ModAPI;
@@ -41,6 +42,16 @@ namespace RivalAI.Behavior.Subsystems {
 
 	}
 
+	[Flags]
+	public enum NewAutoPilotMode {
+	
+		None = 0, 
+		RotateToWaypoint = 1 << 0,
+		ThrustForward = 1 << 1,
+		Strafe = 1 << 2,
+	
+	}
+
 	public enum PathCheckResult {
 		
 		Ok,
@@ -51,29 +62,36 @@ namespace RivalAI.Behavior.Subsystems {
 	}
 	public class NewAutoPilotSystem {
 
+		//General Config
+		public float IdealMaxSpeed;
+
 		//Planet Config
 		public double MaxPlanetPathCheckDistance;
 		public double IdealPlanetAltitude;
 		public double MinimumPlanetAltitude;
 		public double AltitudeTolerance;
+		public double WaypointTolerance;
 
 		//Non-Configurable
 		private IMyRemoteControl _remoteControl;
 
 		private AutoPilotType _currentAutoPilot;
-		//private OldAutoPilot _oldAutoPilot;
-		//private NewAutoPilot _newAutoPilot;
-
 		private bool _autopilotOverride;
 		private bool _strafeOverride;
 		private bool _rollOverride;
+
+		//New AutoPilot
+		private NewAutoPilotMode _newAutoPilotMode;
+		private ThrustSystem _thrust;
+		private RotationSystem _rotation;
+		private TargetingSystem _targeting;
 
 		private bool _getInitialWaypointFromTarget;
 		private bool _calculateOffset;
 		private bool _calculateSafePlanetPath;
 
-
 		private Vector3D _myPosition; //
+		private Vector3D _previousWaypoint;
 		private Vector3D _initialWaypoint; //A static waypoint or derived from last valid target position.
 		private Vector3D _pendingWaypoint; //Gets calculated in parallel.
 		private Vector3D _currentWaypoint; //Actual position being travelled to.
@@ -87,37 +105,57 @@ namespace RivalAI.Behavior.Subsystems {
 		private double _surfaceDistance;
 		private float _airDensity;
 
-		//PlanetData - Waypoint
-		private double _highestTerrainToWaypoint;
-
 		private const double PLANET_PATH_CHECK_DISTANCE = 1000;
 		private const double PLANET_PATH_CHECK_INCREMENT = 50;
 
-		public NewAutoPilotSystem() {
+		public NewAutoPilotSystem(IMyRemoteControl remoteControl = null) {
+
+			IdealMaxSpeed = 100;
 
 			MaxPlanetPathCheckDistance = 1000;
 			IdealPlanetAltitude = 200;
 			MinimumPlanetAltitude = 110;
 			AltitudeTolerance = 10;
+			WaypointTolerance = 10;
 
 			_currentAutoPilot = AutoPilotType.None;
-			//_oldAutoPilot = null; //Fix Later
-			//_newAutoPilot = null; //Fix Later
-
 			_autopilotOverride = false;
 			_strafeOverride = false;
 			_rollOverride = false;
+
+			_newAutoPilotMode = NewAutoPilotMode.None;
 
 			_getInitialWaypointFromTarget = false;
 			_calculateOffset = false;
 			_calculateSafePlanetPath = false;
 
 			_myPosition = Vector3D.Zero;
+			_previousWaypoint = Vector3D.Zero;
 			_initialWaypoint = Vector3D.Zero;
 			_pendingWaypoint = Vector3D.Zero;
 			_currentWaypoint = Vector3D.Zero;
 
 			_requiresClimbToIdealAltitude = false;
+
+			_currentPlanet = null;
+			_upDirection = Vector3D.Zero;
+			_gravityStrength = 0;
+			_surfaceDistance = 0;
+			_airDensity = 0;
+
+			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
+
+				_remoteControl = remoteControl;
+				_rotation = new RotationSystem(_remoteControl);
+				_thrust = new ThrustSystem(_remoteControl);
+
+			}
+
+		}
+
+		public void SetupReferences(CollisionSystem collision, TargetingSystem targeting, WeaponsSystem weapons) {
+
+			_thrust.SetupReferences(collision);
 
 		}
 
@@ -141,15 +179,103 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			if (_currentAutoPilot == AutoPilotType.None)
+				return;
+
+			_previousWaypoint = _currentWaypoint;
+
+			if (_getInitialWaypointFromTarget) {
+
+
+				//TODO: Get Last or Current Waypoint From TargetEvaluation
+
+			}
+
+			MyAPIGateway.Parallel.Start(CalculateCurrentWaypoint, () => {
+
+				MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+					_currentWaypoint = _pendingWaypoint;
+
+					if (_currentWaypoint == Vector3D.Zero)
+						return;
+
+					if (_currentAutoPilot == AutoPilotType.Legacy)
+						UpdateLegacyAutoPilot();
+
+					if (_currentAutoPilot == AutoPilotType.RivalAI)
+						UpdateNewAutoPilot();
+
+				});
+			
+			});
+
+		}
+
+		private void UpdateLegacyAutoPilot() {
+
+			if (_remoteControl.IsAutoPilotEnabled && Vector3D.Distance(_previousWaypoint, _currentWaypoint) < this.WaypointTolerance)
+				return;
+
+			_remoteControl.SetAutoPilotEnabled(false);
+			_remoteControl.ClearWaypoints();
+			_remoteControl.AddWaypoint(_currentWaypoint, "Current Waypoint Target");
+			_remoteControl.FlightMode = Ingame.FlightMode.OneWay;
+			_remoteControl.SetAutoPilotEnabled(true);
+
+		}
+
+		private void UpdateNewAutoPilot() {
+
+			if (_newAutoPilotMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
+
+				_rotation.StartCalculation(_currentWaypoint, _remoteControl, _upDirection);
+			
+			}
+
+			if (_newAutoPilotMode.HasFlag(NewAutoPilotMode.Strafe)) {
+
+				_thrust.ProcessStrafing();
+
+			}
+
+			if (_newAutoPilotMode.HasFlag(NewAutoPilotMode.ThrustForward)) {
+
+				_thrust.ProcessForwardThrust();
+
+			}
+
+		}
+
+		public void ActivateAutoPilot(AutoPilotType type, NewAutoPilotMode newType, Vector3D initialWaypoint, bool getWaypointFromTarget = false, bool useWaypointOffset = false, bool useSafePlanetPathing = false) {
+
+			DeactivateAutoPilot();
+			_currentAutoPilot = type;
+			_newAutoPilotMode = newType;
+			_initialWaypoint = initialWaypoint;
+			_getInitialWaypointFromTarget = getWaypointFromTarget;
+			_calculateOffset = useWaypointOffset;
+			_calculateSafePlanetPath = useSafePlanetPathing;
+			_remoteControl.SpeedLimit = IdealMaxSpeed;
+			UpdateAutoPilot();
+
+		}
+
+		public void DeactivateAutoPilot() {
+
+			_currentAutoPilot = AutoPilotType.None;
+			_newAutoPilotMode = NewAutoPilotMode.None;
+			_remoteControl.SetAutoPilotEnabled(false);
+			_rotation.StopAllRotation();
+			_thrust.StopAllThrust();
+		
 		}
 
 		private void CalculateCurrentWaypoint() {
 
-			if (_getInitialWaypointFromTarget)
-				//TODO: Move This Out Of Parallel
-				//TODO: Get Last or Current Waypoint From TargetEvaluation
+			if (_initialWaypoint == Vector3D.Zero)
+				return;
 
-			//TODO: Verify if we are on a planet, and get data from it
 			if (_currentPlanet == null || !MyAPIGateway.Entities.Exist(_currentPlanet))
 				_currentPlanet = MyGamePruningStructure.GetClosestPlanet(_myPosition);
 
@@ -249,17 +375,16 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//No Obstruction Case
-			if (myAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude && waypointAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude) {
+			if (waypointAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude) {
 
 				return;
 
 			}
 
 			//Terrain Higher Than NPC
-
+			Vector3D waypointCoreDirection = Vector3D.Normalize(_pendingWaypoint - planetPosition);
+			_pendingWaypoint = waypointCoreDirection * (highestTerrainCoreDistance + this.IdealPlanetAltitude) + planetPosition;
 			
-
-
 
 		}
 
@@ -308,18 +433,6 @@ namespace RivalAI.Behavior.Subsystems {
 		
 		}
 
-		public void SetAutoPilotMode(AutoPilotType type, bool useTargetPosition = false) {
-
-			DisableAutoPilot();
-			_getInitialWaypointFromTarget = useTargetPosition;
-
-		}
-
-		public void DisableAutoPilot() {
-
-
-
-		}
-
 	}
+
 }
