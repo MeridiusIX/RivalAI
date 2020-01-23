@@ -269,7 +269,6 @@ namespace RivalAI.Behavior {
 			Collision.SetupReferences(this.Thrust);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
-			Thrust.SetupReferences(this.AutoPilot, this.Collision);
 			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this.Targeting, this.Weapons);
 			Weapons.SetupReferences(this.Targeting);
 
