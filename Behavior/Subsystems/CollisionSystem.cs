@@ -220,13 +220,13 @@ namespace RivalAI.Behavior.Subsystems{
 		}
 
 
-		public void RequestVelocityCheckCollisions(){
+		public bool RequestVelocityCheckCollisions(){
 
 			if(RAI_SessionCore.IsServer == false || this.UseCollisionDetection == false){
 
 				this.VelocityResult = new CollisionCheckResult(false);
 				VelocityCollisionCheckFinish();
-				return;
+				return false;
 				
 			}
 			
@@ -234,7 +234,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 				this.VelocityResult = new CollisionCheckResult(false);
 				VelocityCollisionCheckFinish();
-				return;
+				return false;
 				
 			}
 			
@@ -242,13 +242,14 @@ namespace RivalAI.Behavior.Subsystems{
 
 				this.VelocityResult = new CollisionCheckResult(false);
 				VelocityCollisionCheckFinish();
-				return;
+				return false;
 				
 			}
 
 			this.RemoteControlPosition = RemoteControl.GetPosition();
 			this.GridVelocity = this.CubeGrid.Physics.LinearVelocity;
-			MyAPIGateway.Parallel.Start(CheckVelocityCollisionsThreaded, VelocityCollisionCheckFinish);
+			return true;
+			//MyAPIGateway.Parallel.Start(CheckVelocityCollisionsThreaded, VelocityCollisionCheckFinish);
 			
 		}
 
@@ -277,7 +278,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 		}
 
-		private void CheckVelocityCollisionsThreaded(){
+		public void CheckVelocityCollisionsThreaded(){
 
 			if(this.UseCollisionDetection == false) {
 
@@ -313,7 +314,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 		}
 
-		private void VelocityCollisionCheckFinish() {
+		public void VelocityCollisionCheckFinish() {
 
 			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
 

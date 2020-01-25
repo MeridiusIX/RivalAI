@@ -41,6 +41,7 @@ namespace RivalAI.Behavior {
 		//public BaseSystems Systems;
 
 		public AutoPilotSystem AutoPilot;
+		public NewAutoPilotSystem NewAutoPilot;
 		public BroadcastSystem Broadcast;
 		public CollisionSystem Collision;
 		public DamageSystem Damage;
@@ -146,19 +147,9 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if((CoreCounter % 20) == 0) {
+			if((CoreCounter % 15) == 0) {
 
-				//Internalize Collision To AutoPilot Class
-				AutoPilot.CollisionDetected = Collision.VelocityResult.CollisionImminent;
-				AutoPilot.TargetCoords = Targeting.GetTargetPosition();
-				AutoPilot.EngageAutoPilot();
-
-
-			}
-
-			if((CoreCounter % 25) == 0) {
-
-				Collision.RequestVelocityCheckCollisions();
+				NewAutoPilot.StartCalculations();
 
 			}
 
@@ -171,7 +162,7 @@ namespace RivalAI.Behavior {
 			//50 Tick - Target Check
 			if((CoreCounter % 50) == 0) {
 
-				Targeting.RequestTarget();
+				//Targeting.RequestTarget();
 
 			}
 
@@ -179,7 +170,7 @@ namespace RivalAI.Behavior {
 
 				CoreCounter = 0;
 				_settingSaveCounter++;
-				AutoPilot.ProcessEvasionCounter();
+				//AutoPilot.ProcessEvasionCounter();
 				Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
 
 				if (_settingSaveCounter >= _settingSaveCounterTrigger)
@@ -248,6 +239,7 @@ namespace RivalAI.Behavior {
 			PhysicsValidCheck(this.CubeGrid);
 
 			AutoPilot = new AutoPilotSystem(remoteControl);
+			NewAutoPilot = new NewAutoPilotSystem(remoteControl);
 			Broadcast = new BroadcastSystem(remoteControl);
 			Collision = new CollisionSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
@@ -280,6 +272,7 @@ namespace RivalAI.Behavior {
 		public void InitCoreTags() {
 
 			AutoPilot.InitTags();
+			NewAutoPilot.InitTags();
 			Collision.InitTags();
 			Targeting.InitTags();
 			Weapons.InitTags();

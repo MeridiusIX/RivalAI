@@ -36,31 +36,31 @@ namespace RivalAI.Behavior.Subsystems{
 	
 	public class TargetingSystem{
 
-        //Configurable
-        public TargetTypeEnum TargetType;
-        public TargetRelationEnum TargetRelation;
-        public TargetDistanceEnum TargetDistance;
-        public TargetOwnerEnum TargetOwner;
-        public TargetFilterEnum TargetFilter;
-        public BlockTargetTypes BlockFilter;
-        public double MaximumTargetScanDistance;
-        public bool UseProjectileLeadTargeting;
-        public bool UseCollisionLeadTargeting;
+		//Configurable
+		public TargetTypeEnum TargetType;
+		public TargetRelationEnum TargetRelation;
+		public TargetDistanceEnum TargetDistance;
+		public TargetOwnerEnum TargetOwner;
+		public TargetFilterEnum TargetFilter;
+		public BlockTargetTypes BlockFilter;
+		public double MaximumTargetScanDistance;
+		public bool UseProjectileLeadTargeting;
+		public bool UseCollisionLeadTargeting;
 
-        public TargetProfile TargetData;
+		public TargetProfile TargetData;
 
-        //Non-Configurable
-        public IMyRemoteControl RemoteControl;
+		//Non-Configurable
+		public IMyRemoteControl RemoteControl;
 
-        public DateTime LastNewTargetCheck;
-        public int TimeUntilNewTarget;
+		public DateTime LastNewTargetCheck;
+		public int TimeUntilNewTarget;
 
-        public bool NeedsTarget;
-        public bool UpdateTargetRequested;
-        public long UpdateSpecificTarget;
-        public bool SearchingForTarget;
+		public bool NeedsTarget;
+		public bool UpdateTargetRequested;
+		public long UpdateSpecificTarget;
+		public bool SearchingForTarget;
 		public bool InvalidTarget;
-        public bool TargetIsShielded;
+		public bool TargetIsShielded;
 		public Vector3D TargetCoords;
 		public IMyPlayer TargetPlayer;
 		public IMyEntity TargetEntity;
@@ -69,26 +69,26 @@ namespace RivalAI.Behavior.Subsystems{
 		public long RequestedGridId;
 		public long RequestedBlockId;
 
-        
-        public TargetEvaluation Target;
-        public event Action<TargetEvaluation> WeaponTrigger;
+		
+		public TargetEvaluation Target;
+		public event Action<TargetEvaluation> WeaponTrigger;
 
-        public float PrimaryAmmoVelocity;
+		public float PrimaryAmmoVelocity;
 
-        public Random Rnd;
+		public Random Rnd;
 		
 		public TargetingSystem(IMyRemoteControl remoteControl = null) {
 			
 			RemoteControl = null;
 
-            LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
+			LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
 
-            NeedsTarget = false;
-            SearchingForTarget = false;
-            TargetType = TargetTypeEnum.None;
+			NeedsTarget = false;
+			SearchingForTarget = false;
+			TargetType = TargetTypeEnum.None;
 			InvalidTarget = true;
-            TargetIsShielded = false;
-            TargetCoords = Vector3D.Zero;
+			TargetIsShielded = false;
+			TargetCoords = Vector3D.Zero;
 			TargetPlayer = null;
 			TargetEntity = null;
 			TargetGrid = null;
@@ -96,10 +96,10 @@ namespace RivalAI.Behavior.Subsystems{
 			RequestedGridId = 0;
 			RequestedBlockId = 0;
 
-            Target = new TargetEvaluation(null, TargetTypeEnum.None);
+			Target = new TargetEvaluation(null, TargetTypeEnum.None);
 
-            TargetData = new TargetProfile();
-            TargetDistance = TargetDistanceEnum.Closest;
+			TargetData = new TargetProfile();
+			TargetDistance = TargetDistanceEnum.Closest;
 			MaximumTargetScanDistance = 15000;
 
 			BlockFilter = BlockTargetTypes.All;
@@ -107,261 +107,251 @@ namespace RivalAI.Behavior.Subsystems{
 			UseProjectileLeadTargeting = false;
 			PrimaryAmmoVelocity = 0;
 
-            Rnd = new Random();
+			Rnd = new Random();
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
 
-        }
+		}
 		
 		private void Setup(IMyRemoteControl remoteControl) {
 
-            if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
+			if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.RemoteControl = remoteControl;
+			this.RemoteControl = remoteControl;
 
-        }
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //TargetData
-                    if(tag.Contains("[TargetData:") == true) {
+					//TargetData
+					if(tag.Contains("[TargetData:") == true) {
 
-                        var tempValue = TagHelper.TagStringCheck(tag);
+						var tempValue = TagHelper.TagStringCheck(tag);
 
-                        if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if(string.IsNullOrWhiteSpace(tempValue) == false) {
 
-                            byte[] byteData = { };
+							byte[] byteData = { };
 
-                            if(TagHelper.TargetObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if(TagHelper.TargetObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
-                                try {
+								try {
 
-                                    var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
+									var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
 
-                                    if(profile != null) {
+									if(profile != null) {
 
-                                        this.TargetData = profile;
+										this.TargetData = profile;
 
-                                    }
+									}
 
-                                } catch(Exception) {
+								} catch(Exception) {
 
 
 
-                                }
+								}
 
-                            }
+							}
 
-                        }
+						}
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public void RequestTarget(long requestGridId = 0, long requestBlockId = 0){
+		public void RequestTarget(long requestGridId = 0, long requestBlockId = 0){
 
-            if(RAI_SessionCore.IsServer == false) {
+			if(RAI_SessionCore.IsServer == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            if(this.RemoteControl == null || MyAPIGateway.Entities.Exist(this.RemoteControl?.SlimBlock?.CubeGrid) == false) {
+			if(this.RemoteControl == null || MyAPIGateway.Entities.Exist(this.RemoteControl?.SlimBlock?.CubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.TargetIsShielded = false;
-            this.TargetPlayer = null;
-            this.TargetEntity = null;
-            this.TargetGrid = null;
-            this.TargetBlock = null;
-            this.RequestedGridId = requestGridId;
+			this.TargetIsShielded = false;
+			this.TargetPlayer = null;
+			this.TargetEntity = null;
+			this.TargetGrid = null;
+			this.TargetBlock = null;
+			this.RequestedGridId = requestGridId;
 			this.RequestedBlockId = requestBlockId;
-
-            MyAPIGateway.Parallel.Start(() => {
-
-                try {
-
-                    if (this.TargetData.UseTimeout && !this.InvalidTarget) {
-
-                        var duration = MyAPIGateway.Session.GameDateTime - this.LastNewTargetCheck;
-
-                        if (duration.TotalSeconds > this.TimeUntilNewTarget) {
-
-                            this.InvalidTarget = false;
-                            this.TimeUntilNewTarget = Rnd.Next(this.TargetData.MinTimeout, this.TargetData.MaxTimeout);
-                            this.LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
-
-                        }
-
-                    }
-
-                    if (this.UpdateSpecificTarget != 0) {
-
-                        TargetTypeEnum targetType = TargetTypeEnum.None;
-                        var targetEntity = TargetHelper.GetTargetFromId(this.UpdateSpecificTarget, out targetType);
-                        this.UpdateSpecificTarget = 0;
-
-                        if (targetEntity != null) {
-
-                            this.TargetEntity = targetEntity;
-                            this.Target = new TargetEvaluation(this.TargetEntity, targetType);
-
-                            if (targetType == TargetTypeEnum.Player) {
-
-                                this.Target.TargetPlayer = TargetHelper.MatchPlayerToEntity(targetEntity);
-
-                            }
-
-                            if (targetType == TargetTypeEnum.Block) {
-
-                                this.Target.TargetBlock = targetEntity as IMyTerminalBlock;
-                                this.Target.Target = this.Target.TargetBlock?.SlimBlock?.CubeGrid;
-
-                            }
-
-                            this.InvalidTarget = false;
-
-                        }
-
-                    } else if((this.NeedsTarget == true && this.InvalidTarget == true) || this.UpdateTargetRequested) {
-
-                        //Logger.AddMsg("Get New Target", true);
-
-                        this.UpdateTargetRequested = false;
-                        AcquireTarget();
-                        this.Target = new TargetEvaluation(this.TargetEntity, this.TargetData.Target);
-                        this.Target.TargetPlayer = this.TargetPlayer;
-                        this.Target.TargetBlock = this.TargetBlock;
-                        this.InvalidTarget = false;
-
-                    }
-
-                    if(this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
-
-                        //Logger.AddMsg("Evaluate Target", true);
-                        this.Target.Evaluate(this.RemoteControl, this.TargetData);
-                        //Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
-
-
-                        if(this.Target.TargetExists == false) {
-
-                            //Logger.AddMsg("Invalid Target", true);
-                            this.InvalidTarget = true;
-
-                        }
-
-                    }
-
-                } catch(Exception exc) {
-
-                    Logger.MsgDebug("Acquire Target Exception", DebugTypeEnum.Target);
-                    Logger.MsgDebug(exc.ToString(), DebugTypeEnum.Target);
-
-                }
-
-                
-
-            }, () => {
-
-                MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
-                    WeaponTrigger?.Invoke(Target);
-
-                });
-
-            });
 			
+		}
+
+		public void RequestTargetParallel() {
+
+			try {
+
+				if (this.TargetData.UseTimeout && !this.InvalidTarget) {
+
+					var duration = MyAPIGateway.Session.GameDateTime - this.LastNewTargetCheck;
+
+					if (duration.TotalSeconds > this.TimeUntilNewTarget) {
+
+						this.InvalidTarget = false;
+						this.TimeUntilNewTarget = Rnd.Next(this.TargetData.MinTimeout, this.TargetData.MaxTimeout);
+						this.LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
+
+					}
+
+				}
+
+				if (this.UpdateSpecificTarget != 0) {
+
+					TargetTypeEnum targetType = TargetTypeEnum.None;
+					var targetEntity = TargetHelper.GetTargetFromId(this.UpdateSpecificTarget, out targetType);
+					this.UpdateSpecificTarget = 0;
+
+					if (targetEntity != null) {
+
+						this.TargetEntity = targetEntity;
+						this.Target = new TargetEvaluation(this.TargetEntity, targetType);
+
+						if (targetType == TargetTypeEnum.Player) {
+
+							this.Target.TargetPlayer = TargetHelper.MatchPlayerToEntity(targetEntity);
+
+						}
+
+						if (targetType == TargetTypeEnum.Block) {
+
+							this.Target.TargetBlock = targetEntity as IMyTerminalBlock;
+							this.Target.Target = this.Target.TargetBlock?.SlimBlock?.CubeGrid;
+
+						}
+
+						this.InvalidTarget = false;
+
+					}
+
+				} else if ((this.NeedsTarget == true && this.InvalidTarget == true) || this.UpdateTargetRequested) {
+
+					//Logger.AddMsg("Get New Target", true);
+
+					this.UpdateTargetRequested = false;
+					AcquireTarget();
+					this.Target = new TargetEvaluation(this.TargetEntity, this.TargetData.Target);
+					this.Target.TargetPlayer = this.TargetPlayer;
+					this.Target.TargetBlock = this.TargetBlock;
+					this.InvalidTarget = false;
+
+				}
+
+				if (this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
+
+					//Logger.AddMsg("Evaluate Target", true);
+					this.Target.Evaluate(this.RemoteControl, this.TargetData);
+					//Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
+
+
+					if (this.Target.TargetExists == false) {
+
+						//Logger.AddMsg("Invalid Target", true);
+						this.InvalidTarget = true;
+
+					}
+
+				}
+
+			} catch (Exception exc) {
+
+				Logger.MsgDebug("Acquire Target Exception", DebugTypeEnum.Target);
+				Logger.MsgDebug(exc.ToString(), DebugTypeEnum.Target);
+
+			}
+
 		}
 
 		//Parallel
 		public void AcquireTarget(long UpdateSpecificTarget = 0) {
 
-            this.SearchingForTarget = true;
-            this.InvalidTarget = false;
+			this.SearchingForTarget = true;
+			this.InvalidTarget = false;
 
-            //Players
-            if(TargetData.Target == TargetTypeEnum.Player) {
+			//Players
+			if(TargetData.Target == TargetTypeEnum.Player) {
 
-                try {
+				try {
 
-                    this.TargetPlayer = TargetHelper.AcquirePlayerTarget(this.RemoteControl, this.TargetData);
+					this.TargetPlayer = TargetHelper.AcquirePlayerTarget(this.RemoteControl, this.TargetData);
 
-                } catch(Exception exc) {
+				} catch(Exception exc) {
 
-                    Logger.MsgDebug("Exception Getting Player Target: ", DebugTypeEnum.Target); //
+					Logger.MsgDebug("Exception Getting Player Target: ", DebugTypeEnum.Target); //
 
-                }
-                
+				}
+				
 
-                if(this.TargetPlayer == null) {
+				if(this.TargetPlayer == null) {
 
-                    //Logger.AddMsg("Cannot Find Player", true);
-                    this.InvalidTarget = true;
-                    this.SearchingForTarget = false;
-                    return;
+					//Logger.AddMsg("Cannot Find Player", true);
+					this.InvalidTarget = true;
+					this.SearchingForTarget = false;
+					return;
 
-                }
+				}
 
-                //Logger.AddMsg("Got Player", true);
-                this.TargetEntity = this.TargetPlayer.Controller.ControlledEntity.Entity;
+				//Logger.AddMsg("Got Player", true);
+				this.TargetEntity = this.TargetPlayer.Controller.ControlledEntity.Entity;
  
-            }
+			}
 
-            //Grids
-            if(TargetData.Target == TargetTypeEnum.Grid) {
+			//Grids
+			if(TargetData.Target == TargetTypeEnum.Grid) {
 
-                this.TargetGrid = TargetHelper.AcquireGridTarget(this.RemoteControl, this.TargetData, this.RequestedGridId);
+				this.TargetGrid = TargetHelper.AcquireGridTarget(this.RemoteControl, this.TargetData, this.RequestedGridId);
 
-                if(this.TargetGrid == null) {
+				if(this.TargetGrid == null) {
 
-                    this.InvalidTarget = true;
-                    this.SearchingForTarget = false;
-                    return;
+					this.InvalidTarget = true;
+					this.SearchingForTarget = false;
+					return;
 
-                }
+				}
 
-                this.TargetEntity = this.TargetGrid;
+				this.TargetEntity = this.TargetGrid;
 
-            }
+			}
 
-            //Blocks
-            if(TargetData.Target == TargetTypeEnum.Block) {
+			//Blocks
+			if(TargetData.Target == TargetTypeEnum.Block) {
 
-                this.TargetBlock = TargetHelper.AcquireBlockTarget(this.RemoteControl, this.TargetData, this.RequestedBlockId);
+				this.TargetBlock = TargetHelper.AcquireBlockTarget(this.RemoteControl, this.TargetData, this.RequestedBlockId);
 
-                if(this.TargetBlock == null) {
+				if(this.TargetBlock == null) {
 
-                    this.InvalidTarget = true;
-                    this.SearchingForTarget = false;
-                    return;
+					this.InvalidTarget = true;
+					this.SearchingForTarget = false;
+					return;
 
-                }
+				}
 
-                this.TargetEntity = this.TargetBlock.SlimBlock.CubeGrid;
+				this.TargetEntity = this.TargetBlock.SlimBlock.CubeGrid;
 
-            }
+			}
 
-            this.SearchingForTarget = false;
+			this.SearchingForTarget = false;
 
-        }
+		}
 
 		public Vector3D GetTargetPosition(Vector3D originalCoords = new Vector3D()){
 
@@ -377,15 +367,15 @@ namespace RivalAI.Behavior.Subsystems{
 			if(this.TargetData.Target == TargetTypeEnum.Coords){
 				
 				this.InvalidTarget = false;
-                return this.TargetCoords;
+				return this.TargetCoords;
 				
 			}
 			
-            if(this.Target.TargetExists == true) {
+			if(this.Target.TargetExists == true) {
 
-                return Target.TargetCoords;
+				return Target.TargetCoords;
 
-            }
+			}
 			
 
 			this.InvalidTarget = true;

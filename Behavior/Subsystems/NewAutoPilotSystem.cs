@@ -82,9 +82,11 @@ namespace RivalAI.Behavior.Subsystems {
 
 		//New AutoPilot
 		private NewAutoPilotMode _newAutoPilotMode;
-		private ThrustSystem _thrust;
+		private CollisionSystem _collision;
 		private RotationSystem _rotation;
 		private TargetingSystem _targeting;
+		private ThrustSystem _thrust;
+		private WeaponsSystem _weapons;
 
 		private bool _getInitialWaypointFromTarget;
 		private bool _calculateOffset;
@@ -124,6 +126,7 @@ namespace RivalAI.Behavior.Subsystems {
 			_rollOverride = false;
 
 			_newAutoPilotMode = NewAutoPilotMode.None;
+			
 
 			_getInitialWaypointFromTarget = false;
 			_calculateOffset = false;
@@ -146,8 +149,11 @@ namespace RivalAI.Behavior.Subsystems {
 			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
 
 				_remoteControl = remoteControl;
+				_collision = new CollisionSystem(_remoteControl);
 				_rotation = new RotationSystem(_remoteControl);
+				_targeting = new TargetingSystem(_remoteControl);
 				_thrust = new ThrustSystem(_remoteControl);
+				_weapons = new WeaponsSystem(_remoteControl);
 
 			}
 
@@ -159,7 +165,44 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void UpdateAutoPilot() {
+		public void InitTags() {
+		
+			
+		
+		}
+
+		public void StartCalculations() {
+
+			if(_collision.RequestVelocityCheckCollisions())
+				MyAPIGateway.Parallel.Start(_collision.CheckVelocityCollisionsThreaded, FinishCollisionChecking);
+		
+		}
+
+		private void FinishCollisionChecking() {
+
+			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+				_collision.VelocityCollisionCheckFinish();
+				_targeting.RequestTarget();
+				MyAPIGateway.Parallel.Start(_targeting.RequestTargetParallel, FinishTargetChecking);
+
+			});
+		
+		}
+
+		private void FinishTargetChecking() {
+
+
+			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+
+				ThreadedAutoPilotCalculations();
+
+
+			});
+
+		}
+
+		private void ThreadedAutoPilotCalculations() {
 
 			_myPosition = _remoteControl.GetPosition();
 
@@ -173,7 +216,6 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 					
-
 				if (_autopilotOverride)
 					return;
 
@@ -186,8 +228,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (_getInitialWaypointFromTarget) {
 
-
-				//TODO: Get Last or Current Waypoint From TargetEvaluation
+				if (!_targeting.InvalidTarget)
+					_initialWaypoint = _targeting.GetTargetPosition();
 
 			}
 
@@ -205,6 +247,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 					if (_currentAutoPilot == AutoPilotType.RivalAI)
 						UpdateNewAutoPilot();
+
+					//Engage Weapon Parallel
 
 				});
 			
@@ -257,7 +301,7 @@ namespace RivalAI.Behavior.Subsystems {
 			_calculateOffset = useWaypointOffset;
 			_calculateSafePlanetPath = useSafePlanetPathing;
 			_remoteControl.SpeedLimit = IdealMaxSpeed;
-			UpdateAutoPilot();
+			ThreadedAutoPilotCalculations();
 
 		}
 
