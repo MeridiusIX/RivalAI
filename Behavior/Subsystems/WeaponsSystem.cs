@@ -55,6 +55,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public bool KeepWeaponsLoaded;
 
+		public bool UseTargetVelocityPrediction;
+
 		public bool WeaponsAttackVoxels;
 		public bool WeaponsAttackAnyGrids;
 
@@ -77,6 +79,8 @@ namespace RivalAI.Behavior.Subsystems {
 		private TargetingSystem _targeting;
 		public TargetEvaluation TargetEval;
 		public double DistanceToTarget;
+
+		public float MostCommonAmmoSpeed;
 
 		public bool CanAnyWeaponFire;
  
@@ -107,6 +111,8 @@ namespace RivalAI.Behavior.Subsystems {
 			TargetCoords = Vector3D.Zero;
 			TargetEval = new TargetEvaluation(null, TargetTypeEnum.None);
 			DistanceToTarget = -1;
+
+			MostCommonAmmoSpeed = 300;
 
 			CanAnyWeaponFire = true;
 

@@ -44,8 +44,6 @@ namespace RivalAI.Behavior.Subsystems{
 		public TargetFilterEnum TargetFilter;
 		public BlockTargetTypes BlockFilter;
 		public double MaximumTargetScanDistance;
-		public bool UseProjectileLeadTargeting;
-		public bool UseCollisionLeadTargeting;
 
 		public TargetProfile TargetData;
 
@@ -104,7 +102,6 @@ namespace RivalAI.Behavior.Subsystems{
 
 			BlockFilter = BlockTargetTypes.All;
 			
-			UseProjectileLeadTargeting = false;
 			PrimaryAmmoVelocity = 0;
 
 			Rnd = new Random();

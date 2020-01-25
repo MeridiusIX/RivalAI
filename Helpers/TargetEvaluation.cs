@@ -243,13 +243,6 @@ namespace RivalAI.Helpers {
 
             }
 
-            //Target Lead Stuff
-            if(_targetData.UseCollisionLead == true || _targetData.UseProjectileLead) {
-
-                this.TargetCoords = VectorHelper.FirstOrderIntercept(this.MyPosition, this.MyVelocity, this.ProjectileVelocity, this.TargetCoords, this.TargetVelocity);
-
-            }
-
             //Obstruction To Target (For Weapons)
             IsTargetObstructed();
 

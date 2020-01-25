@@ -352,6 +352,36 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			//Space Obstacle Avoidance
+			//TODO: May Need to set this to 0.12 or some equiv value to account for asteroids
+			//slacking off in orbit of a planet. Wait to see if it becomes an issue.
+			if (_gravityStrength <= 0) {
+			
+				
+			
+			}
+
+
+			if (_initialWaypoint == _pendingWaypoint && _targeting.Target.IsMoving) {
+
+				bool gotLead = false;
+
+				if (_targeting.TargetData.UseCollisionLead && !gotLead) {
+
+					gotLead = true;
+					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, _targeting.Target.MyVelocity, (float)_targeting.Target.MyVelocity.Length(), _pendingWaypoint, _targeting.Target.TargetVelocity);
+
+				}
+
+				if (_targeting.TargetData.UseProjectileLead && !gotLead) {
+
+					gotLead = true;
+					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, _targeting.Target.MyVelocity, _weapons.MostCommonAmmoSpeed, _pendingWaypoint, _targeting.Target.TargetVelocity);
+
+				}
+			
+			}
+
 		}
 
 		private void CalculateSafePlanetPathWaypoint(MyPlanet planet) {
