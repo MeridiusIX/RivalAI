@@ -168,7 +168,7 @@ namespace RivalAI.Behavior.Subsystems {
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeEndTime;
 				if (duration.TotalMilliseconds >= this.ThisStrafeCooldown) {
 
-					//Logger.AddMsg("Begin Strafe", true);
+					Logger.MsgDebug("Begin Strafe", DebugTypeEnum.AutoPilot);
 					this.LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeDuration = Rnd.Next(StrafeMinDurationMs, StrafeMaxDurationMs);
 					this.Strafing = true;
@@ -178,20 +178,23 @@ namespace RivalAI.Behavior.Subsystems {
 					MyAPIGateway.Parallel.Start(() => {
 
 						Collision.CheckDirectionalCollisionsThreaded();
+						this.CurrentAllowedStrafeDirections = Vector3I.Zero;
 						this.CurrentStrafeDirections = new Vector3I(Rnd.Next(-1, 2), Rnd.Next(-1, 2), Rnd.Next(-1, 2));
 
 						if (this.CurrentStrafeDirections.X != 0) {
+
+							this.CurrentAllowedStrafeDirections.X = 1;
 
 							if (this.CurrentStrafeDirections.X == 1) {
 
 								if (Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: X Reverse", true);
+									Logger.MsgDebug("Strafe: X Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X *= -1;
 
 								} else if (Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: X Negate", true);
+									Logger.MsgDebug("Strafe: X Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X = 0;
 
 								}
@@ -200,12 +203,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 								if (Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: X Reverse", true);
+									Logger.MsgDebug("Strafe: X Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X *= -1;
 
 								} else if (Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: X Negate", true);
+									Logger.MsgDebug("Strafe: X Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X = 0;
 
 								}
@@ -216,16 +219,18 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if (this.CurrentStrafeDirections.Y != 0) {
 
+							this.CurrentAllowedStrafeDirections.Y = 1;
+
 							if (this.CurrentStrafeDirections.Y == 1) {
 
 								if (Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: Y Reverse", true);
+									Logger.MsgDebug("Strafe: Y Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y *= -1;
 
 								} else if (Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: Y Negate", true);
+									Logger.MsgDebug("Strafe: Y Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y = 0;
 
 								}
@@ -234,12 +239,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 								if (Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: Y Reverse", true);
+									Logger.MsgDebug("Strafe: Y Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y *= -1;
 
 								} else if (Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: Y Negate", true);
+									Logger.MsgDebug("Strafe: Y Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y = 0;
 
 								}
@@ -250,16 +255,18 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if (this.CurrentStrafeDirections.Z != 0) {
 
+							this.CurrentAllowedStrafeDirections.Z = 1;
+
 							if (this.CurrentStrafeDirections.Z == 1) {
 
 								if (Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: Z Reverse", true);
+									Logger.MsgDebug("Strafe: Z Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z *= -1;
 
 								} else if (Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: Z Negate", true);
+									Logger.MsgDebug("Strafe: Z Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z = 0;
 
 								}
@@ -268,12 +275,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 								if (Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == false) {
 
-									//Logger.AddMsg("Strafe: Z Reverse", true);
+									Logger.MsgDebug("Strafe: Z Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z *= -1;
 
 								} else if (Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == true) {
 
-									//Logger.AddMsg("Strafe: Z Negate", true);
+									Logger.MsgDebug("Strafe: Z Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z = 0;
 
 								}
@@ -289,6 +296,8 @@ namespace RivalAI.Behavior.Subsystems {
 						MyAPIGateway.Utilities.InvokeOnGameThread(() => {
 
 							//Game Thread
+							Logger.MsgDebug("Allowed Strafing: " + this.CurrentAllowedStrafeDirections.ToString(), DebugTypeEnum.AutoPilot);
+							Logger.MsgDebug("Current Strafing: " + this.CurrentStrafeDirections.ToString(), DebugTypeEnum.AutoPilot);
 							SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
 
 						});
@@ -309,7 +318,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (duration.TotalMilliseconds >= this.ThisStrafeDuration) {
 
-					//Logger.AddMsg("End Strafe", true);
+					Logger.MsgDebug("End Strafe", DebugTypeEnum.General);
 					this.InvertStrafingActivated = false;
 					this.LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeCooldown = Rnd.Next(StrafeMinCooldownMs, StrafeMaxCooldownMs);
@@ -317,6 +326,17 @@ namespace RivalAI.Behavior.Subsystems {
 					SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
 					//Logger.AddMsg("Cooldown: " + this.ThisStrafeCooldown.ToString(), true);
 
+				} else {
+
+					if (this.InvertStrafingActivated == false && Collision.VelocityResult.CollisionImminent) {
+
+						this.InvertStrafingActivated = true;
+						SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections * -1);
+
+					}
+
+					//TODO: 2nd Check to see if inverted path eventually results in collision
+				
 				}
 
 			}

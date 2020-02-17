@@ -136,64 +136,74 @@ namespace RivalAI.Behavior{
 
 				MyAPIGateway.Parallel.Start(() => {
 
-					//CoreBehavior
-					if(RemoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
+					try {
 
-						ValidBehavior = true;
-						CoreBehaviorInstance = new CoreBehavior();
-						CoreBehaviorInstance.CoreSetup(RemoteControl);
-						BehaviorRun += CoreBehaviorInstance.RunCoreAi;
+						//CoreBehavior
+						if (RemoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
+
+							ValidBehavior = true;
+							CoreBehaviorInstance = new CoreBehavior();
+							CoreBehaviorInstance.CoreSetup(RemoteControl);
+							BehaviorRun += CoreBehaviorInstance.RunCoreAi;
+
+						}
+
+						//Fighter
+						if (RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
+
+							ValidBehavior = true;
+							FighterBehaviorInstance = new Fighter();
+							BehaviorName = "Fighter";
+							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+							FighterBehaviorInstance.BehaviorInit(RemoteControl);
+							BehaviorRun += FighterBehaviorInstance.RunCoreAi;
+
+						}
+
+						//Horsefly
+						if (RemoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
+
+							ValidBehavior = true;
+							HorseflyBehaviorInstance = new Horsefly();
+							BehaviorName = "Horsefly";
+							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+							HorseflyBehaviorInstance.BehaviorInit(RemoteControl);
+							BehaviorRun += HorseflyBehaviorInstance.RunCoreAi;
+
+						}
+
+						//Passive
+						if (RemoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
+
+							Logger.MsgDebug("Initializing Passive Behavior On Grid " + RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.General);
+							ValidBehavior = true;
+							PassiveBehaviorInstance = new Passive();
+							BehaviorName = "Passive";
+							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+							PassiveBehaviorInstance.BehaviorInit(RemoteControl);
+							BehaviorRun += PassiveBehaviorInstance.RunCoreAi;
+
+						}
+
+						//Strike
+						if (RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
+
+							ValidBehavior = true;
+							StrikeBehaviorInstance = new Strike();
+							BehaviorName = "Strike";
+							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
+							StrikeBehaviorInstance.BehaviorInit(RemoteControl);
+							BehaviorRun += StrikeBehaviorInstance.RunCoreAi;
+
+						}
+
+					} catch (Exception exc) {
+
+						Logger.MsgDebug("Exception Found During Behavior Setup: ", DebugTypeEnum.General);
+						Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
 
 					}
-
-					//Fighter
-					if(RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
-
-						ValidBehavior = true;
-						FighterBehaviorInstance = new Fighter();
-						BehaviorName = "Fighter";
-						GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-						FighterBehaviorInstance.BehaviorInit(RemoteControl);
-						BehaviorRun += FighterBehaviorInstance.RunAi;
-
-					}
-
-					//Horsefly
-					if(RemoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
-
-						ValidBehavior = true;
-						HorseflyBehaviorInstance = new Horsefly();
-						BehaviorName = "Horsefly";
-						GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-						HorseflyBehaviorInstance.BehaviorInit(RemoteControl);
-						BehaviorRun += HorseflyBehaviorInstance.RunAi;
-
-					}
-
-					//Passive
-					if (RemoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
-
-						Logger.MsgDebug("Initializing Passive Behavior On Grid " + RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.General);
-						ValidBehavior = true;
-						PassiveBehaviorInstance = new Passive();
-						BehaviorName = "Passive";
-						GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-						PassiveBehaviorInstance.BehaviorInit(RemoteControl);
-						BehaviorRun += PassiveBehaviorInstance.RunAi;
-
-					}
-
-					//Strike
-					if (RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
-
-						ValidBehavior = true;
-						StrikeBehaviorInstance = new Strike();
-						BehaviorName = "Strike";
-						GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-						StrikeBehaviorInstance.BehaviorInit(RemoteControl);
-						BehaviorRun += StrikeBehaviorInstance.RunAi;
-
-					}
+					
 
 				});
 
@@ -208,6 +218,7 @@ namespace RivalAI.Behavior{
 				} catch(Exception exc) {
 
 					Logger.MsgDebug("Exception Found In Behavior: " + BehaviorName + " / " + GridName, DebugTypeEnum.General);
+					Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
 
 				}
 

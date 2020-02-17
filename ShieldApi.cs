@@ -5,15 +5,11 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using VRage;
-using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
 
-namespace RivalAI
-{
-	public class ShieldApi
-	{
+namespace RivalAI.Helpers {
+	public class ShieldApi {
 		private bool _apiInit;
 		private Func<IMyTerminalBlock, RayD, long, float, bool, bool, Vector3D?> _rayAttackShield; // negative damage values heal
 		private Func<IMyTerminalBlock, LineD, long, float, bool, bool, Vector3D?> _lineAttackShield; // negative damage values heal
@@ -51,8 +47,7 @@ namespace RivalAI
 
 		public bool IsReady { get; private set; }
 
-		private void HandleMessage(object o)
-		{
+		private void HandleMessage(object o) {
 			if (_apiInit) return;
 			var dict = o as IReadOnlyDictionary<string, Delegate>;
 			if (dict == null)
@@ -63,10 +58,8 @@ namespace RivalAI
 
 		private bool _isRegistered;
 
-		public bool Load()
-		{
-			if (!_isRegistered)
-			{
+		public bool Load() {
+			if (!_isRegistered) {
 				_isRegistered = true;
 				MyAPIGateway.Utilities.RegisterMessageHandler(Channel, HandleMessage);
 			}
@@ -75,18 +68,15 @@ namespace RivalAI
 			return IsReady;
 		}
 
-		public void Unload()
-		{
-			if (_isRegistered)
-			{
+		public void Unload() {
+			if (_isRegistered) {
 				_isRegistered = false;
 				MyAPIGateway.Utilities.UnregisterMessageHandler(Channel, HandleMessage);
 			}
 			IsReady = false;
 		}
 
-		public void ApiLoad(IReadOnlyDictionary<string, Delegate> delegates)
-		{
+		public void ApiLoad(IReadOnlyDictionary<string, Delegate> delegates) {
 			_apiInit = true;
 			_rayAttackShield = (Func<IMyTerminalBlock, RayD, long, float, bool, bool, Vector3D?>)delegates["RayAttackShield"];
 			_lineAttackShield = (Func<IMyTerminalBlock, LineD, long, float, bool, bool, Vector3D?>)delegates["LineAttackShield"];
@@ -157,6 +147,6 @@ namespace RivalAI
 		public double GetDistanceToShield(IMyTerminalBlock block, Vector3D pos) => _getDistanceToShield?.Invoke(block, pos) ?? -1;
 		public Vector3D? GetClosestShieldPoint(IMyTerminalBlock block, Vector3D pos) => _getClosestShieldPoint?.Invoke(block, pos) ?? null;
 
-		
+
 	}
 }

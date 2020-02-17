@@ -36,6 +36,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
     public class WeaponProfile {
 
+        public bool RemoveWeapon;
         public IMyUserControllableGun WeaponBlock;
         public MyWeaponDefinition WeaponDefinition;
         public IMyGunObject<MyGunBase> GunBase;
@@ -61,6 +62,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         public WeaponProfile(IMyUserControllableGun weapon) {
 
+            RemoveWeapon = false;
             WeaponBlock = null;
             GunBase = null;
             ReadyToFire = false;

@@ -64,6 +64,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 		//Results
 		public CollisionCheckResult VelocityResult;
+		public CollisionCheckResult EvasionResult;
 		public CollisionCheckResult ForwardResult;
 		public CollisionCheckResult BackwardResult;
 		public CollisionCheckResult UpResult;
@@ -111,8 +112,11 @@ namespace RivalAI.Behavior.Subsystems{
 			CollisionDirectionsCheckDistance = 150;
 			CollisionTimeTrigger = 5;
 
+
+
 			//Results
 			VelocityResult = new CollisionCheckResult(false);
+			EvasionResult = new CollisionCheckResult(false);
 			ForwardResult = new CollisionCheckResult(false);
 			BackwardResult = new CollisionCheckResult(false);
 			UpResult = new CollisionCheckResult(false);
@@ -225,7 +229,6 @@ namespace RivalAI.Behavior.Subsystems{
 			if(RAI_SessionCore.IsServer == false || this.UseCollisionDetection == false){
 
 				this.VelocityResult = new CollisionCheckResult(false);
-				VelocityCollisionCheckFinish();
 				return false;
 				
 			}
@@ -233,7 +236,6 @@ namespace RivalAI.Behavior.Subsystems{
 			if(this.CubeGrid.Physics == null || this.CubeGrid.IsStatic == true){
 
 				this.VelocityResult = new CollisionCheckResult(false);
-				VelocityCollisionCheckFinish();
 				return false;
 				
 			}
@@ -241,7 +243,6 @@ namespace RivalAI.Behavior.Subsystems{
 			if(this.CubeGrid.Physics.LinearVelocity.Length() < 0.1f){
 
 				this.VelocityResult = new CollisionCheckResult(false);
-				VelocityCollisionCheckFinish();
 				return false;
 				
 			}
@@ -269,12 +270,36 @@ namespace RivalAI.Behavior.Subsystems{
 
 			}
 
+			Logger.MsgDebug("Directional Strafe Collision Checks", DebugTypeEnum.Dev);
+
 			this.ForwardResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Forward, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 			this.BackwardResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Backward, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 			this.UpResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Up, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 			this.DownResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Down, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 			this.LeftResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Left, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 			this.RightResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, this.RemoteMaxtrix.Right, this.CollisionDirectionsCheckDistance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
+
+		}
+
+		public void CheckPotentialEvasionCollisionThreaded(Vector3D direction, double distance) {
+
+			if (RAI_SessionCore.IsServer == false || this.UseCollisionDetection == false) {
+
+				this.EvasionResult = new CollisionCheckResult(false);
+				return;
+
+			}
+
+			if (this.RemoteControl.SlimBlock.CubeGrid.Physics == null || this.RemoteControl.SlimBlock.CubeGrid.IsStatic == true) {
+
+				this.EvasionResult = new CollisionCheckResult(false);
+				return;
+
+			}
+
+			Logger.MsgDebug("Potential Evasion Collision Check", DebugTypeEnum.Dev);
+
+			this.EvasionResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, direction, distance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 
 		}
 
@@ -285,6 +310,8 @@ namespace RivalAI.Behavior.Subsystems{
 				return;
 
 			}
+
+			Logger.MsgDebug("Velocity Collision Check", DebugTypeEnum.Dev);
 
 			var direction = Vector3D.Normalize((Vector3D)this.GridVelocity);
 			this.VelocityResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, direction, this.CollisionVelocityCheckDistance, this.GridVelocity.Length(), this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
@@ -311,25 +338,6 @@ namespace RivalAI.Behavior.Subsystems{
 			var dirBackwards = Vector3D.Normalize(this.RemoteControl.GetPosition() - coords);
 			var dirUp = VectorHelper.GetPlanetUpDirection(this.RemoteControl.GetPosition());
 			return Vector3D.Normalize(dirBackwards + dirUp) * 200 + coords;
-
-		}
-
-		public void VelocityCollisionCheckFinish() {
-
-			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
-				//Logger.AddMsg("Time To Collision: " + this.CollisionDetected.ToString() + "/" + this.TimeToCollision.ToString(), true);
-
-				if(this.VelocityResult.HasTarget == true && this.VelocityResult.CollisionImminent == true) {
-
-					this.TriggerWarning?.Invoke(this.VelocityResult.Coords);
-					//Logger.AddMsg("Collision Event Invoked", true);
-
-				}
-
-
-
-			});
 
 		}
 

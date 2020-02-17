@@ -107,6 +107,9 @@ namespace RivalAI.Sync {
 			if (msg[1] == "DebugAction")
 				Logger.DebugAction = result;
 
+			if (msg[1] == "DebugAutoPilot")
+				Logger.DebugAutoPilot = result;
+
 			if (msg[1] == "DebugChat")
 				Logger.DebugChat = result;
 

@@ -138,11 +138,11 @@ namespace RivalAI.Behavior.Subsystems{
 			
 			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //Tags Go Here
+					//Tags Go Here
 					
 				}
 				

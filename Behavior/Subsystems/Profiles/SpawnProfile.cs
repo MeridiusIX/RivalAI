@@ -93,9 +93,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(20)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(21)]
+		public bool ForceSameFactionOwnership;
+
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
-		
+
+		[ProtoIgnore]
+		public string CurrentFactionTag;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -124,7 +130,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			InheritNpcAltitude = false;
 			ProfileSubtypeId = "";
 
+			ForceSameFactionOwnership = false;
+
 			CurrentPositionMatrix = MatrixD.Identity;
+			CurrentFactionTag = "";
 			Rnd = new Random();
 
 		}
@@ -302,6 +311,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[InheritNpcAltitude:") == true) {
 
 						InheritNpcAltitude = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ForceSameFactionOwnership
+					if (tag.Contains("[ForceSameFactionOwnership:") == true) {
+
+						ForceSameFactionOwnership = TagHelper.TagBoolCheck(tag);
 
 					}
 

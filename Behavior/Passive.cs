@@ -79,10 +79,9 @@ namespace RivalAI.Behavior{
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
-			Collision.UseCollisionDetection = false;
-			AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+			NewAutoPilot.Collision.UseCollisionDetection = false;
 			Despawn.UsePlayerDistanceTimer = false;
-			Targeting.NeedsTarget = false;
+			NewAutoPilot.Targeting.NeedsTarget = false;
 
 			//Get Settings From Custom Data
 			InitCoreTags();

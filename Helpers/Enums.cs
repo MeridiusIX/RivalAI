@@ -121,13 +121,14 @@ namespace RivalAI.Helpers {
 
     }
 
+    [Flags]
     public enum TargetObstructionEnum {
 
-        None,
-        Voxel,
-        Safezone,
-        DefenseShield,
-        Grid,
+        None = 0,
+        Voxel = 1 << 0,
+        Safezone = 1 << 1,
+        DefenseShield = 1 << 2,
+        OtherGrid = 1 << 3,
 
     }
 
@@ -189,6 +190,13 @@ namespace RivalAI.Helpers {
 
     }
 
-
+    public enum WaypointOffsetType {
+    
+        None,
+        DistanceFromTarget,
+        FixedMatrix,
+        FixedMatrixRelativePosition
+    
+    }
 
 }

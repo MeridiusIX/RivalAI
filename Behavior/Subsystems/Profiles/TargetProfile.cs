@@ -78,6 +78,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(15)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(16)]
+		public TargetObstructionEnum IgnoredObstructions;
+
 		public TargetProfile() {
 
 			UseCustomTargeting = false;
@@ -95,6 +98,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			UseProjectileLead = false;
 			UseCollisionLead = false;
 			ProfileSubtypeId = "";
+			IgnoredObstructions = TargetObstructionEnum.None;
 
 		}
 		

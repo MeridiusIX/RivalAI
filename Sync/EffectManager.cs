@@ -30,7 +30,6 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
-using static VRageRender.MyBillboard;
 
 namespace RivalAI.Sync {
 	
@@ -182,7 +181,7 @@ namespace RivalAI.Sync {
 			var camera = MyAPIGateway.Session.Camera;
 			var camCenter = camera.Position + camera.ViewMatrix.Forward;
 			var screenPos = camera.WorldToScreen(ref camCenter);
-			MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("Avatar-Glitchy-Berserk"), Color.White, screenPos, camera.ViewMatrix.Left, camera.ViewMatrix.Up, (float)1 * 0.075f, BlendTypeEnum.PostPP);
+			MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("Avatar-Glitchy-Berserk"), Color.White, screenPos, camera.ViewMatrix.Left, camera.ViewMatrix.Up, (float)1 * 0.075f, 4);
 
 
 		}

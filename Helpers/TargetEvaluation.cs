@@ -70,6 +70,7 @@ namespace RivalAI.Helpers {
 
         public TargetObstructionEnum TargetObstruction;
         public double TargetObstructionDistance;
+        public IMyEntity TargetObstructionEntity;
 
         public TargetEvaluation(IMyEntity entity, TargetTypeEnum entityType) {
 
@@ -102,6 +103,7 @@ namespace RivalAI.Helpers {
 
             TargetObstruction = TargetObstructionEnum.None;
             TargetObstructionDistance = 0;
+            TargetObstructionEntity = null;
 
         }
 
@@ -389,7 +391,8 @@ namespace RivalAI.Helpers {
                 if(gridDistance < closestDistance) {
 
                     closestDistance = gridDistance;
-                    closestThing = TargetObstructionEnum.Grid;
+                    closestThing = TargetObstructionEnum.OtherGrid;
+                    this.TargetObstructionEntity = grid;
 
                 }
 
@@ -408,7 +411,7 @@ namespace RivalAI.Helpers {
 
             }
 
-            if(this.TargetObstruction == TargetObstructionEnum.Voxel || this.TargetObstruction == TargetObstructionEnum.Safezone) {
+            if(this.TargetObstruction == TargetObstructionEnum.Voxel && !_targetData.IgnoredObstructions.HasFlag(TargetObstructionEnum.Voxel)) {
 
                 if(this.Distance > this.TargetObstructionDistance) {
 
@@ -418,9 +421,22 @@ namespace RivalAI.Helpers {
 
             }
 
-            if(this.TargetObstruction == TargetObstructionEnum.Grid) {
+            if (this.TargetObstruction == TargetObstructionEnum.Safezone && !_targetData.IgnoredObstructions.HasFlag(TargetObstructionEnum.Safezone)) {
 
-                //TODO: Friendly Check
+                if (this.Distance > this.TargetObstructionDistance) {
+
+                    return false;
+
+                }
+
+            }
+
+            if (this.TargetObstruction == TargetObstructionEnum.OtherGrid && this.TargetObstructionEntity != null) {
+
+                var gridRep = OwnershipHelper.GetTargetReputation(this.RemoteControl.OwnerId, (IMyCubeGrid)this.TargetObstructionEntity, true);
+
+                if (OwnershipHelper.CompareAllowedReputation(_targetData.Relations, gridRep))
+                    return true;
 
             }
 

@@ -25,7 +25,6 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
@@ -55,7 +54,7 @@ namespace RivalAI {
 		public ulong WeaponCoreModId = 1918681825;
 		public bool WeaponCoreMod { get; set; }
 		public bool WeaponCoreLoaded { get; set; }
-		public ShieldApi WeaponCore = new WeaponCoreApi();
+		public WeaponCoreApi WeaponCore = new WeaponCoreApi();
 
 		public int Ticks = 0;
 
@@ -173,6 +172,14 @@ namespace RivalAI {
 			if(IsServer == false) {
 
 				return;
+
+			}
+
+			if (Instance.WeaponCoreLoaded) {
+
+				Utilities.AllWeaponCoreBlocks = Instance.WeaponCore.GetAllCoreWeapons();
+				Utilities.AllWeaponCoreGuns = Instance.WeaponCore.GetAllCoreStaticLaunchers();
+				Utilities.AllWeaponCoreTurrets = Instance.WeaponCore.GetAllCoreTurrets();
 
 			}
 

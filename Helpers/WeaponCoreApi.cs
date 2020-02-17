@@ -5,7 +5,8 @@ using VRage.Game;
 using VRageMath;
 
 namespace RivalAI.Helpers {
-    internal class WeaponCoreApi {
+    public class WeaponCoreApi {
+
         private bool _apiInit;
         private delegate T5 OutFunc<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, out T4 arg4);
 

@@ -40,14 +40,12 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<IMyRadioAntenna> AntennaList = new List<IMyRadioAntenna>();
 		public List<IMyLargeTurretBase> TurretList = new List<IMyLargeTurretBase>();
 
-		private AutoPilotSystem _autopilot;
+		private NewAutoPilotSystem _autopilot;
 		private BroadcastSystem _broadcast;
 		private DespawnSystem _despawn;
 		private ExtrasSystem _extras;
 		private OwnerSystem _owner;
 		private StoredSettings _settings;
-		private TargetingSystem _targeting;
-		private WeaponsSystem _weapons;
 
 		public List<TriggerProfile> Triggers;
 		public List<TriggerProfile> DamageTriggers;
@@ -57,6 +55,10 @@ namespace RivalAI.Behavior.Subsystems {
 		public bool DamageHandlerRegistered;
 		public MyDamageInformation DamageInfo;
 		public bool PendingDamage;
+
+		public DateTime LastTriggerRun;
+
+		public Action OnComplete;
 
 
 		public TriggerSystem(IMyRemoteControl remoteControl){
@@ -71,11 +73,26 @@ namespace RivalAI.Behavior.Subsystems {
 
 			CommandListenerRegistered = false;
 
+			LastTriggerRun = MyAPIGateway.Session.GameDateTime;
+
 			Setup(remoteControl);
 
 		}
 
 		public void ProcessTriggerWatchers() {
+
+			var timeDifference = MyAPIGateway.Session.GameDateTime - this.LastTriggerRun;
+
+			if (timeDifference.TotalMilliseconds >= 500) {
+
+				Logger.MsgDebug("Triggers Not Ready, Handing Off to Next Action", DebugTypeEnum.Dev);
+				OnComplete?.Invoke();
+				return;
+			
+			}
+
+			Logger.MsgDebug("Checking Triggers", DebugTypeEnum.Dev);
+			this.LastTriggerRun = MyAPIGateway.Session.GameDateTime;
 
 			MyAPIGateway.Parallel.Start(() => {
 
@@ -118,32 +135,15 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if(trigger.UseTrigger == true) {
 
-							_weapons.TurretTarget = null;
+							var turretTarget = _autopilot.Weapons.GetTurretTarget();
 
-							foreach(var turret in _weapons.Turrets) {
-
-								if(turret == null) {
-
-									continue;
-
-								}
-
-								if(turret.Target != null && turret.IsShooting) {
-
-									_weapons.TurretTarget = turret.Target;
-									break;
-
-								}
-
-							}
-
-							if(_weapons.TurretTarget != null) {
+							if(turretTarget != 0) {
 
 								trigger.ActivateTrigger();
 
 								if(trigger.Triggered == true) {
 
-									trigger.DetectedEntityId = _weapons.TurretTarget.EntityId;
+									trigger.DetectedEntityId = turretTarget;
 
 								}
 
@@ -158,46 +158,9 @@ namespace RivalAI.Behavior.Subsystems {
 					//NoWeapon
 					if(trigger.Type == "NoWeapon") {
 
-						if(trigger.UseTrigger == true && _weapons.AllWeaponCollectionDone == true) {
+						if(trigger.UseTrigger == true && _autopilot.Weapons.HasWorkingWeapons()) {
 
-							bool validWeapon = false;
-
-							if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
-								continue;
-
-							foreach(var weapon in _weapons.AllWeapons) {
-
-								if(weapon == null) {
-
-									continue;
-
-								}
-
-								if(weapon.IsFunctional == false || weapon.IsWorking == false) {
-
-									continue;
-
-								}
-
-								if (!this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(weapon.SlimBlock.CubeGrid))
-									continue;
-
-								if(!_weapons.KeepWeaponsLoaded && weapon.GetInventory().Empty() == true) {
-
-									continue;
-
-								}
-
-								validWeapon = true;
-								break;
-
-							}
-
-							if(validWeapon == false) {
-
-								trigger.ActivateTrigger();
-
-							}
+							trigger.ActivateTrigger();
 
 						}
 
@@ -210,7 +173,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if(trigger.UseTrigger == true) {
 
-							if(_targeting.Target.TargetExists == true && _targeting.Target.InSafeZone == true) {
+							if(_autopilot.Targeting.Target.TargetExists == true && _autopilot.Targeting.Target.InSafeZone == true) {
 
 								trigger.ActivateTrigger();
 
@@ -248,6 +211,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 					}
 
+					Logger.MsgDebug("Trigger Actions Complete, Handing Off to Next Action", DebugTypeEnum.Dev);
+					this.OnComplete?.Invoke();
+
 				});
 
 			});
@@ -279,7 +245,7 @@ namespace RivalAI.Behavior.Subsystems {
 						if(trigger.Triggered == true) {
 
 							//Logger.AddMsg("Process Damage Actions", true);
-							ProcessTrigger(trigger, info.AttackerId);
+							ProcessTrigger(trigger, info.AttackerId, true);
 
 						}
 
@@ -314,7 +280,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					if(trigger.Triggered == true) {
 
-						ProcessTrigger(trigger, entityId);
+						ProcessTrigger(trigger, entityId, true);
 
 					}
 
@@ -324,7 +290,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0) {
+		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0, bool skipOnComplete = false) {
 
 			if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
 				return;
@@ -337,7 +303,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			long detectedEntity = attackerEntityId;
 
-			if (trigger.DetectedEntityId != 0 && detectedEntity != 0) {
+			if (trigger.DetectedEntityId != 0 && detectedEntity == 0) {
 
 				detectedEntity = trigger.DetectedEntityId;
 
@@ -375,7 +341,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if(trigger.Actions.ChangeAutopilotSpeed == true) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + trigger.Actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
-				_autopilot.DesiredMaxSpeed = trigger.Actions.NewAutopilotSpeed;
+				_autopilot.IdealMaxSpeed = trigger.Actions.NewAutopilotSpeed;
 				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
 				foreach (var block in blockList.Where(x => x.FatBlock != null)) {
@@ -400,6 +366,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					//Logger.AddMsg("Do Spawn", true);
 					trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
+					trigger.Actions.Spawner.CurrentFactionTag = (trigger.Actions.Spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag)) ? _owner.Faction.Tag : "";
 					SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
 
 				}
@@ -473,7 +440,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Switch to Received Target Data", DebugTypeEnum.Action);
-				_targeting.UpdateSpecificTarget = detectedEntity;
+				_autopilot.Targeting.UpdateSpecificTarget = detectedEntity;
 
 			}
 
@@ -488,7 +455,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if(trigger.Actions.RefreshTarget == true) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Target Refresh", DebugTypeEnum.Action);
-				_targeting.UpdateTargetRequested = true;
+				_autopilot.Targeting.UpdateTargetRequested = true;
 
 			}
 
@@ -589,6 +556,8 @@ namespace RivalAI.Behavior.Subsystems {
 			foreach (var variable in trigger.Actions.ResetCounters)
 				_settings.SetCustomCounter(variable, 0, true);
 
+
+
 		}
 
 		public bool IsPlayerNearby(TriggerProfile control, Vector3D offset) {
@@ -662,7 +631,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, TargetingSystem targeting, WeaponsSystem weapons) {
+		public void SetupReferences(NewAutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings) {
 
 			this._autopilot = autopilot;
 			this._broadcast = broadcast;
@@ -670,8 +639,6 @@ namespace RivalAI.Behavior.Subsystems {
 			this._extras = extras;
 			this._owner = owners;
 			this._settings = settings;
-			this._targeting = targeting;
-			this._weapons = weapons;
 
 		}
 		

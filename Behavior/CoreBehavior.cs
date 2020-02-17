@@ -40,21 +40,15 @@ namespace RivalAI.Behavior {
 
 		//public BaseSystems Systems;
 
-		public AutoPilotSystem AutoPilot;
 		public NewAutoPilotSystem NewAutoPilot;
 		public BroadcastSystem Broadcast;
-		public CollisionSystem Collision;
 		public DamageSystem Damage;
 		public DespawnSystem Despawn;
 		public ExtrasSystem Extras;
 		public OwnerSystem Owner;
-		public RotationSystem Rotation;
 		public SpawningSystem Spawning;
 		public StoredSettings Settings;
-		public TargetingSystem Targeting;
-		public ThrustSystem Thrust;
 		public TriggerSystem Trigger;
-		public WeaponsSystem Weapons;
 
 		public BehaviorMode Mode;
 		public BehaviorMode PreviousMode;
@@ -63,6 +57,8 @@ namespace RivalAI.Behavior {
 		public bool SetupFailed;
 		public bool ConfigCheck;
 		public bool EndScript;
+
+		private DateTime _behaviorTimer;
 
 		private int _settingSaveCounter;
 		private int _settingSaveCounterTrigger;
@@ -91,6 +87,8 @@ namespace RivalAI.Behavior {
 			ConfigCheck = false;
 			EndScript = false;
 
+			_behaviorTimer = MyAPIGateway.Session.GameDateTime;
+
 			_settingSaveCounter = 0;
 			_settingSaveCounterTrigger = 5;
 
@@ -111,39 +109,25 @@ namespace RivalAI.Behavior {
 
 			//MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
 
-			if(!IsAIReady())
+			if (!IsAIReady()) {
+
 				return;
+
+			}
+				
 
 			CoreCounter++;
 
-			/*
-			Vector4 color = new Vector4(1, 1, 1, 1);
-			var endCoords = this.RemoteControl.WorldMatrix.Forward * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
-			MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoords, MyStringId.GetOrCompute("WeaponLaser"), ref color, 0.1f);
-			
-			
-			var endCoordsb = Targeting.Target.TargetDirection * Targeting.Target.TargetDistance + this.RemoteControl.GetPosition();
-			MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsb, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 0.1f);
-			*/
-
 			if (Logger.LoggerDebugMode) {
 
-				if (this.RemoteControl?.PositionComp != null) {
-
-					Vector4 colorb = new Vector4(0, 1, 1, 1);
-					Vector4 colorc = new Vector4(0, 1, 0, 1);
-					var endCoordsc = AutoPilot.WaypointCoords;
-					MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), endCoordsc, MyStringId.GetOrCompute("WeaponLaser"), ref colorc, 5);
-					MySimpleObjectDraw.DrawLine(this.RemoteControl.GetPosition(), AutoPilot.PlanetSafeWaypointCoords, MyStringId.GetOrCompute("WeaponLaser"), ref colorb, 5);
-
-				}
+				NewAutoPilot.DebugDrawingToWaypoints();
 
 			}
 
 			if((CoreCounter % 10) == 0) {
 
 				//TODO: Damage Alert Handlers
-				Weapons.BarrageFire();
+				//Weapons.BarrageFire();
 
 			}
 
@@ -153,45 +137,34 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if((CoreCounter % 30) == 0) {
-
-				Trigger.ProcessTriggerWatchers();
-
-			}
-
-			//50 Tick - Target Check
-			if((CoreCounter % 50) == 0) {
-
-				//Targeting.RequestTarget();
-
-			}
-
 			if((CoreCounter % 60) == 0) {
 
 				CoreCounter = 0;
 				_settingSaveCounter++;
-				//AutoPilot.ProcessEvasionCounter();
-				Despawn.ProcessTimers(Mode, Targeting.InvalidTarget);
-
-				if (_settingSaveCounter >= _settingSaveCounterTrigger)
-					SaveData();
-
-				if(Despawn.DoDespawn == true) {
-
-					this.EndScript = true;
-					Despawn.DespawnGrid();
-					return;
-
-				}
-
+				
 			}
 
 		}
 
+		public virtual void MainBehavior() {
+		
+			
+		
+		}
 
+		public void CheckDespawnConditions() {
 
+			var timeDifference = MyAPIGateway.Session.GameDateTime - _behaviorTimer;
 
+			if (timeDifference.TotalMilliseconds <= 999)
+				return;
 
+			Logger.MsgDebug("Checking Despawn Conditions", DebugTypeEnum.Dev);
+			_behaviorTimer = MyAPIGateway.Session.GameDateTime;
+			Despawn.ProcessTimers(Mode, NewAutoPilot.InvalidTarget());
+			MainBehavior();
+		
+		}
 
 		public void ChangeBehavior(string newBehaviorSubtypeID) {
 
@@ -208,14 +181,16 @@ namespace RivalAI.Behavior {
 
 		public void CoreSetup(IMyRemoteControl remoteControl) {
 
-			if(remoteControl == null) {
+			Logger.MsgDebug("Beginning Core Setup On Remote Control", DebugTypeEnum.General);
+
+			if (remoteControl == null) {
 
 				Logger.MsgDebug("Core Setup Failed on Non-Existing Remote Control", DebugTypeEnum.General);
 				SetupFailed = true;
 				return;
 
 			}
-
+			
 			if (this.ConfigCheck == false) {
 
 				this.ConfigCheck = true;
@@ -238,49 +213,34 @@ namespace RivalAI.Behavior {
 			this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
 			PhysicsValidCheck(this.CubeGrid);
 
-			AutoPilot = new AutoPilotSystem(remoteControl);
 			NewAutoPilot = new NewAutoPilotSystem(remoteControl);
 			Broadcast = new BroadcastSystem(remoteControl);
-			Collision = new CollisionSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
 			Despawn = new DespawnSystem(remoteControl);
 			Extras = new ExtrasSystem(remoteControl);
-			Rotation = new RotationSystem(remoteControl);
 			Owner = new OwnerSystem(remoteControl);
 			Spawning = new SpawningSystem(remoteControl);
 			Settings = new StoredSettings();
-			Targeting = new TargetingSystem(remoteControl);
-			Thrust = new ThrustSystem(remoteControl);
 			Trigger = new TriggerSystem(remoteControl);
-			Weapons = new WeaponsSystem(remoteControl);
 
-			Targeting.WeaponTrigger += Weapons.FireEligibleWeapons;
-			Collision.TriggerWarning += Thrust.InvertStrafe;
-
-			AutoPilot.SetupReferences(this.Collision, this.Rotation, this.Targeting, this.Thrust, this.Weapons);
-			Collision.SetupReferences(this.Thrust);
+			NewAutoPilot.SetupReferences();
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
-			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this.Targeting, this.Weapons);
-			Weapons.SetupReferences(this.Targeting);
-
-			//Setup Alert Systems
-			//Register Damage Handler if Eligible
+			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings);
 
 		}
 
 		public void InitCoreTags() {
 
-			AutoPilot.InitTags();
+			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.General);
+
 			NewAutoPilot.InitTags();
-			Collision.InitTags();
-			Targeting.InitTags();
-			Weapons.InitTags();
+			NewAutoPilot.Targeting.InitTags();
+			NewAutoPilot.Weapons.InitTags();
 			Damage.InitTags();
 			Despawn.InitTags();
 			Extras.InitTags();
 			Owner.InitTags();
-			Trigger.InitTags();
 
 			PostTagsSetup();
 
@@ -377,8 +337,17 @@ namespace RivalAI.Behavior {
 					trigger.ResetTime();
 
 			}
-				
 
+			SetupCallbacks();
+
+		}
+
+		private void SetupCallbacks() {
+
+			NewAutoPilot.OnComplete += Trigger.ProcessTriggerWatchers;
+			Trigger.OnComplete += CheckDespawnConditions;
+
+		
 		}
 
 		public void SaveData() {

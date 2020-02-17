@@ -38,7 +38,10 @@ namespace RivalAI.Behavior{
 		//Configurable
 		public double FighterEngageDistanceSpace;
 		public double FighterEngageDistancePlanet;
-		
+
+		public double FighterDisengageDistanceSpace;
+		public double FighterDisengageDistancePlanet;
+
 		public bool ReceivedEvadeSignal;
 		public bool ReceivedRetreatSignal;
 		public bool ReceivedExternalTarget;
@@ -49,7 +52,10 @@ namespace RivalAI.Behavior{
 
 			FighterEngageDistanceSpace = 300;
 			FighterEngageDistancePlanet = 600;
-			
+
+			FighterDisengageDistanceSpace = 300;
+			FighterDisengageDistancePlanet = 600;
+
 			ReceivedEvadeSignal = false;
 			ReceivedRetreatSignal = false;
 			ReceivedExternalTarget = false;
@@ -58,77 +64,33 @@ namespace RivalAI.Behavior{
 
 		}
 
-		public void RunAi() {
-
-			if(!IsAIReady())
-				return;
-
-			RunCoreAi();
-
-			if(EndScript == true) {
-
-				return;
-
-			}
-
-			Counter++;
-
-			if(Counter >= 60) {
-
-				MainBehavior();
-				Counter = 0;
-
-			}
-
-
-		}
-
-		public void MainBehavior() {
+		public override void MainBehavior() {
 
 			if(RAI_SessionCore.IsServer == false) {
 
 				return;
 
 			}
-			
-			if(ReceivedEvadeSignal == true && Mode != BehaviorMode.Retreat) {
-				
-				ReceivedEvadeSignal = false;
-				
-				if(Collision.UseCollisionDetection == true){
 
-					ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
-					//Set Waypoint Here
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-					
-				}
-				
-			}
+			Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
 			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
-			
-			}
-			
-			if(ReceivedExternalTarget == true){
-				
-				ReceivedExternalTarget = false;
-				//Set New Target
-				
-			}
+				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), false, false, true);
 
+			}
+			
 			if(Mode == BehaviorMode.Init) {
 
-				if(Targeting.InvalidTarget == true) {
+				if(NewAutoPilot.Targeting.InvalidTarget == true) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
 				} else {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				}
 
@@ -136,18 +98,18 @@ namespace RivalAI.Behavior{
 
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(AutoPilot.Mode != AutoPilotMode.None) {
+				if(NewAutoPilot.CurrentMode != NewAutoPilotMode.None) {
 
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
 
 				}
 
-				if(Targeting.InvalidTarget == false) {
+				if(NewAutoPilot.Targeting.InvalidTarget == false) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
-				}else if(Despawn.NoTargetExpire == true){
+				} else if(Despawn.NoTargetExpire == true){
 					
 					Despawn.Retreat();
 					
@@ -155,107 +117,62 @@ namespace RivalAI.Behavior{
 
 			}
 
-			if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+			if(NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+				NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
 
 			}
 
-			//Evade
-			if(Mode == BehaviorMode.EvadeCollision) {
+			//Approach
+			if (Mode == BehaviorMode.ApproachTarget) {
 
-				if(AutoPilot.EvasionModeTimer >= AutoPilot.EvasionModeTimer || Vector3D.Distance(this.RemoteControl.GetPosition(), this.AutoPilot.WaypointCoords) < 50){
-					
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					
-				}
+				bool inRange = false;
 
-			}
+				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistanceSpace)
+					inRange = true;
 
-			//Space Approach
-			if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection == Vector3D.Zero) {
+				if(NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistancePlanet)
+					inRange = true;
 
-				Weapons.AllowFire();
-				var newCoords = VectorHelper.CreateDirectionAndTarget(AutoPilot.TargetCoords, RemoteControl.GetPosition(), AutoPilot.TargetCoords, this.FighterEngageDistanceSpace);
-				AutoPilot.UpdateWaypoint(newCoords);
-				CheckTarget();
+				if (inRange) {
 
-				if(Targeting.Target.Distance < this.FighterEngageDistanceSpace) {
-
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe, Vector3D.Zero, true, false, false);
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
 				}
 
 			}
 
-			//Space Engage
-			if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection == Vector3D.Zero) {
+			//Engage
+			if (Mode == BehaviorMode.EngageTarget) {
 
-				Weapons.AllowFire();
-				CheckTarget();
+				bool outRange = false;
 
-				if(Targeting.Target.Distance > this.FighterEngageDistanceSpace) {
+				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistanceSpace)
+					outRange = true;
 
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
+				if (NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistancePlanet)
+					outRange = true;
+
+				if (outRange) {
+
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
 				}
 
 			}
-			
-			//Space Retreat
-			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection == Vector3D.Zero) {
 
-				if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null){
-					
-					var despawnCoords = Vector3D.Normalize(this.RemoteControl.GetPosition() - Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition();
-					AutoPilot.UpdateWaypoint(despawnCoords);
-					
-				}
+			//Retreat
+			if (Mode == BehaviorMode.Retreat) {
 
-			}
-
-			//Planet Approach
-			if(Mode == BehaviorMode.ApproachTarget && AutoPilot.UpDirection != Vector3D.Zero) {
-
-				CheckTarget();
-				Weapons.AllowFire();
-				if(Targeting.Target.Distance < this.FighterEngageDistancePlanet) {
-
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.RotateToTargetAndStrafe);
-					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
-
-				}
-
-			}
-
-			//Planet Engage
-			if(Mode == BehaviorMode.EngageTarget && AutoPilot.UpDirection != Vector3D.Zero) {
-
-				//Logger.AddMsg(AutoPilot.UpDirection.ToString(), true);
-				CheckTarget();
-				Weapons.AllowFire();
-				if(Targeting.Target.Distance > this.FighterEngageDistancePlanet) {
-
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotTarget);
-					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-
-				}
-
-			}
-			
-			//Planet Retreat
-			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection != Vector3D.Zero) {
-
-				if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null){
+				if (Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
 
 					//Logger.AddMsg("DespawnCoordsCreated", true);
-					var roughDespawnCoords = VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition();
-					var despawnCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), roughDespawnCoords);
-					AutoPilot.UpdateWaypoint(despawnCoords);
-					
+					NewAutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
+
 				}
 
 			}
@@ -265,33 +182,10 @@ namespace RivalAI.Behavior{
 
 		public void CheckTarget() {
 
-			if(Targeting.InvalidTarget == true) {
+			if(NewAutoPilot.Targeting.InvalidTarget == true) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-
-			}
-
-		}
-
-		public void CollisionWarningTrigger(Vector3D collisionCoords) {
-
-			if(Mode == BehaviorMode.ApproachTarget == true) {
-
-				ChangeCoreBehaviorMode(BehaviorMode.EvadeCollision);
-
-				if(AutoPilot.UpDirection == Vector3D.Zero) {
-
-					AutoPilot.UpdateWaypoint(Collision.SpaceEvadeCoords);
-
-				} else {
-
-					AutoPilot.UpdateWaypoint(Collision.PlanetEvadeCoords);
-
-				}
-
-				AutoPilot.ProcessEvasionCounter(true);
-				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
+				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 			}
 
@@ -299,27 +193,29 @@ namespace RivalAI.Behavior{
 
 		public void BehaviorInit(IMyRemoteControl remoteControl) {
 
+			Logger.MsgDebug("Beginning Behavior Init For Fighter", DebugTypeEnum.General);
+
 			//Core Setup
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
-			Targeting.NeedsTarget = true;
-			Weapons.UseStaticGuns = true;
 
 			//Get Settings From Custom Data
 			InitCoreTags();
-		InitTags();
+			InitTags();
 
-			if(Targeting.TargetData.UseCustomTargeting == false) {
+			NewAutoPilot.Targeting.NeedsTarget = true;
 
-				Targeting.TargetData.Target = TargetTypeEnum.Player;
-				Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
-				Targeting.TargetData.Owners = TargetOwnerEnum.Player;
+			if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
+
+				NewAutoPilot.Targeting.TargetData.Target = TargetTypeEnum.Player;
+				NewAutoPilot.Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
+				NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
 
 			}
 
-			Collision.TriggerWarning += CollisionWarningTrigger;
+			NewAutoPilot.Thrust.AllowStrafing = true;
 
 		}
 

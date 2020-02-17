@@ -135,7 +135,7 @@ namespace RivalAI.Helpers {
 
 				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
 				var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
-				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks);
+				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks, _currentSpawn.CurrentFactionTag);
 
 				if (result == true) {
 

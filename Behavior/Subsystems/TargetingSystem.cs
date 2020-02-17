@@ -204,9 +204,9 @@ namespace RivalAI.Behavior.Subsystems{
 
 					if (duration.TotalSeconds > this.TimeUntilNewTarget) {
 
+						Logger.MsgDebug("Target Expired. Refreshing...", DebugTypeEnum.Target);
 						this.InvalidTarget = false;
-						this.TimeUntilNewTarget = Rnd.Next(this.TargetData.MinTimeout, this.TargetData.MaxTimeout);
-						this.LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
+						SetNewTimeout();
 
 					}
 
@@ -214,12 +214,14 @@ namespace RivalAI.Behavior.Subsystems{
 
 				if (this.UpdateSpecificTarget != 0) {
 
+					Logger.MsgDebug("Target Update Requested", DebugTypeEnum.Target);
 					TargetTypeEnum targetType = TargetTypeEnum.None;
 					var targetEntity = TargetHelper.GetTargetFromId(this.UpdateSpecificTarget, out targetType);
 					this.UpdateSpecificTarget = 0;
 
 					if (targetEntity != null) {
 
+						Logger.MsgDebug("Target Update Successful", DebugTypeEnum.Target);
 						this.TargetEntity = targetEntity;
 						this.Target = new TargetEvaluation(this.TargetEntity, targetType);
 
@@ -236,13 +238,20 @@ namespace RivalAI.Behavior.Subsystems{
 
 						}
 
+						if (this.TargetData.UseTimeout)
+							SetNewTimeout();
+
 						this.InvalidTarget = false;
+
+					} else {
+
+						Logger.MsgDebug("Target Update Fail", DebugTypeEnum.Target);
 
 					}
 
 				} else if ((this.NeedsTarget == true && this.InvalidTarget == true) || this.UpdateTargetRequested) {
 
-					//Logger.AddMsg("Get New Target", true);
+					Logger.MsgDebug("Attempting To Get New Target", DebugTypeEnum.Target);
 
 					this.UpdateTargetRequested = false;
 					AcquireTarget();
@@ -255,14 +264,14 @@ namespace RivalAI.Behavior.Subsystems{
 
 				if (this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
 
-					//Logger.AddMsg("Evaluate Target", true);
+					Logger.MsgDebug("Evaluating Target", DebugTypeEnum.Target);
 					this.Target.Evaluate(this.RemoteControl, this.TargetData);
 					//Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
 
 
 					if (this.Target.TargetExists == false) {
 
-						//Logger.AddMsg("Invalid Target", true);
+						Logger.MsgDebug("Evaluated Target Invalid", DebugTypeEnum.Target);
 						this.InvalidTarget = true;
 
 					}
@@ -275,6 +284,13 @@ namespace RivalAI.Behavior.Subsystems{
 				Logger.MsgDebug(exc.ToString(), DebugTypeEnum.Target);
 
 			}
+
+		}
+
+		public void SetNewTimeout() {
+
+			this.TimeUntilNewTarget = Rnd.Next(this.TargetData.MinTimeout, this.TargetData.MaxTimeout);
+			this.LastNewTargetCheck = MyAPIGateway.Session.GameDateTime;
 
 		}
 

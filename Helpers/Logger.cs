@@ -37,6 +37,7 @@ namespace RivalAI.Helpers{
 
 		None,
 		Action,
+		AutoPilot,
 		Chat,
 		Condition,
 		Despawn,
@@ -62,6 +63,7 @@ namespace RivalAI.Helpers{
 		public static bool DebugNotification = false;
 
 		public static bool DebugAction = false;
+		public static bool DebugAutoPilot = false;
 		public static bool DebugChat = false;
 		public static bool DebugCollision = false;
 		public static bool DebugCondition = false;
@@ -117,6 +119,9 @@ namespace RivalAI.Helpers{
 			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugAction", out result))
 				Logger.DebugAction = result;
 
+			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugAutoPilot", out result))
+				Logger.DebugAutoPilot = result;
+
 			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugChat", out result))
 				Logger.DebugChat = result;
 
@@ -158,6 +163,7 @@ namespace RivalAI.Helpers{
 			DebugWriteToLog = true;
 			DebugNotification = true;
 			DebugAction = true;
+			DebugAutoPilot = true;
 			DebugChat = true;
 			DebugCollision = true;
 			DebugCondition = true;
@@ -178,6 +184,7 @@ namespace RivalAI.Helpers{
 			DebugWriteToLog = false;
 			DebugNotification = false;
 			DebugAction = false;
+			DebugAutoPilot = false;
 			DebugChat = false;
 			DebugCollision = false;
 			DebugCondition = false;
@@ -198,6 +205,7 @@ namespace RivalAI.Helpers{
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugWriteToLog", Logger.DebugWriteToLog);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugNotification", Logger.DebugNotification);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugAction", Logger.DebugAction);
+			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugAutoPilot", Logger.DebugAutoPilot);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugChat", Logger.DebugChat);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugCollision", Logger.DebugCollision);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugCondition", Logger.DebugCondition);
@@ -215,6 +223,9 @@ namespace RivalAI.Helpers{
 		public static bool IsMessageValid(DebugTypeEnum type) {
 
 			if (type == DebugTypeEnum.Action && DebugAction)
+				return true;
+
+			if (type == DebugTypeEnum.AutoPilot && DebugAutoPilot)
 				return true;
 
 			if (type == DebugTypeEnum.Chat && DebugChat)

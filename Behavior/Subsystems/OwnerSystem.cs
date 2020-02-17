@@ -38,10 +38,10 @@ namespace RivalAI.Behavior.Subsystems{
 		public IMyRemoteControl RemoteControl;
 		public string RequiredFactionTag;
 		public bool NpcOwned;
-        public bool AllowHumansInFaction;
+		public bool AllowHumansInFaction;
 
-        public IMyFaction Faction;
-        public long FactionId;
+		public IMyFaction Faction;
+		public long FactionId;
 		
 		public bool UseGridReclamation;
 		public double SecondsBetweenAttempts;
@@ -55,18 +55,18 @@ namespace RivalAI.Behavior.Subsystems{
 			RemoteControl = null;
 			RequiredFactionTag = "";
 			NpcOwned = false;
-            AllowHumansInFaction = false;
+			AllowHumansInFaction = false;
 
-            UseGridReclamation = false;
+			UseGridReclamation = false;
 			SecondsBetweenAttempts = 60;
 			ReclamationTimer = 0;
 			
 			Rnd = new Random();
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
 
-        }
+		}
 		
 		private void Setup(IMyRemoteControl remoteControl){
 			
@@ -83,13 +83,13 @@ namespace RivalAI.Behavior.Subsystems{
 			
 		}
 
-        public void InitTags() {
+		public void InitTags() {
 
 
 
-        }
+		}
 
-        public void ChangeRequiredFaction(string newFaction){
+		public void ChangeRequiredFaction(string newFaction){
 			
 			this.RequiredFactionTag = newFaction;
 			CheckIfNpcOwned(this.RemoteControl);
@@ -105,54 +105,54 @@ namespace RivalAI.Behavior.Subsystems{
 				if(faction.Tag != this.RequiredFactionTag && string.IsNullOrEmpty(this.RequiredFactionTag) == false){
 					
 					this.NpcOwned = false;
-                    Logger.MsgDebug("Owner Check: Incorrect Faction Tag", DebugTypeEnum.Owner);
+					Logger.MsgDebug("Owner Check: Incorrect Faction Tag", DebugTypeEnum.Owner);
 					return;
 					
 				}
 
-                if(this.AllowHumansInFaction == false) {
+				if(this.AllowHumansInFaction == false) {
 
-                    if(faction.IsEveryoneNpc() == true) {
+					if(faction.IsEveryoneNpc() == true) {
 
-                        this.NpcOwned = true;
-                        this.Faction = faction;
-                        this.FactionId = faction.FactionId;
-                        Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
-                        var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
+						this.NpcOwned = true;
+						this.Faction = faction;
+						this.FactionId = faction.FactionId;
+						Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
+						var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
 
-                        if(npcSteam != 0) {
+						if(npcSteam != 0) {
 
-                            Logger.WriteLog("Warning. NPC Identity: " + block.OwnerId.ToString() + " has a SteamId of: " + npcSteam.ToString() + " - Please Alert Mod Author");
+							Logger.WriteLog("Warning. NPC Identity: " + block.OwnerId.ToString() + " has a SteamId of: " + npcSteam.ToString() + " - Please Alert Mod Author");
 
-                        }
+						}
 
-                        return;
+						return;
 
-                    }
+					}
 
-                } else {
+				} else {
 
-                    var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
+					var npcSteam = MyAPIGateway.Players.TryGetSteamId(block.OwnerId);
 
-                    if(npcSteam == 0) {
+					if(npcSteam == 0) {
 
-                        this.NpcOwned = true;
-                        this.Faction = faction;
-                        this.FactionId = faction.FactionId;
-                        Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
-                        return;
+						this.NpcOwned = true;
+						this.Faction = faction;
+						this.FactionId = faction.FactionId;
+						Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
+						return;
 
-                    }
+					}
 
-                }
+				}
 
 			}
 
-            //TODO: Maybe Update This To Include Factionless NPCs?
-            Logger.MsgDebug("Owner Check: Not NPC Faction", DebugTypeEnum.Owner);
-            this.Faction = null;
-            this.FactionId = 0;
-            this.NpcOwned = false;
+			//TODO: Maybe Update This To Include Factionless NPCs?
+			Logger.MsgDebug("Owner Check: Not NPC Faction", DebugTypeEnum.Owner);
+			this.Faction = null;
+			this.FactionId = 0;
+			this.NpcOwned = false;
 			
 		}
 		

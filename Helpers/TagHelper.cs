@@ -200,12 +200,12 @@ namespace RivalAI.Helpers {
 		private static string [] ProcessTag(string tag){
 			
 			var thisTag = tag.Trim();
-			
-			if(thisTag.Length > 0 && thisTag[0] == '[')
-				thisTag = thisTag.Remove(0,0);
-			
-			if(thisTag.Length > 0 && thisTag[thisTag.Length - 1] == ']')
-				thisTag = thisTag.Remove(thisTag.Length - 1,thisTag.Length - 1);
+
+			if (thisTag.Length > 0 && thisTag[0] == '[')
+				thisTag = thisTag.Remove(0,1);
+
+			if (thisTag.Length > 0 && thisTag[thisTag.Length - 1] == ']')
+				thisTag = thisTag.Remove(thisTag.Length - 1,1);
 
 			var tagSplit = thisTag.Split(':');
 			string a = "";
@@ -442,6 +442,25 @@ namespace RivalAI.Helpers {
 				if(TargetFilterEnum.TryParse(tagSplit[1], out result) == false) {
 
 					return TargetFilterEnum.None;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static TargetObstructionEnum TagTargetObstructionEnumCheck(string tag) {
+
+			TargetObstructionEnum result = TargetObstructionEnum.None;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (TargetObstructionEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return TargetObstructionEnum.None;
 
 				}
 

@@ -100,38 +100,17 @@ namespace RivalAI.Behavior {
 				return;
 
 			}
-
-			if(ReceivedEvadeSignal == true && Mode != BehaviorMode.Retreat) {
-
-				ReceivedEvadeSignal = false;
-
-				if(Collision.UseCollisionDetection == true) {
-
-					Mode = BehaviorMode.WaitAtWaypoint;
-					//Set Waypoint Here
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-
-				}
-
-			}
-
+			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
 				Mode = BehaviorMode.Retreat;
-				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
-
-			}
-
-			if(ReceivedExternalTarget == true) {
-
-				ReceivedExternalTarget = false;
-				//Set New Target
+				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), false, true, true);
 
 			}
 
 			if(Mode == BehaviorMode.Init) {
 
-				if(Targeting.InvalidTarget == true) {
+				if(NewAutoPilot.Targeting.InvalidTarget == true) {
 
 					Mode = BehaviorMode.WaitingForTarget;
 
@@ -139,7 +118,7 @@ namespace RivalAI.Behavior {
 
 					Mode = BehaviorMode.WaitAtWaypoint;
 					this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				}
 
@@ -147,17 +126,11 @@ namespace RivalAI.Behavior {
 
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(AutoPilot.Mode != AutoPilotMode.None) {
-
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-
-				}
-
-				if(Targeting.InvalidTarget == false) {
+				if(NewAutoPilot.Targeting.InvalidTarget == false) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				} else if(Despawn.NoTargetExpire == true) {
 
@@ -167,139 +140,30 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if(Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
+			if(NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-
-				
 
 			}
 
 			//WaitAtWaypoint
 			if(Mode == BehaviorMode.WaitAtWaypoint == true) {
 
-				this.HorseflyWaypointWaitTime++;
 
-				if(this.HorseflyWaypointWaitTime >= this.HorseflyWaypointWaitTimeTrigger) {
-
-					if(AutoPilot.UpDirection == Vector3D.Zero) {
-
-						var dist = VectorHelper.RandomDistance(this.HorseflyMinDistFromTarget, this.HorseflyMaxDistFromTarget);
-						var direction = VectorHelper.RandomDirection();
-						var coordsA = direction * dist + this.Targeting.Target.TargetCoords;
-						var coordsB = direction * -dist + this.Targeting.Target.TargetCoords;
-						
-						var distA = Vector3D.Distance(coordsA, this.RemoteControl.GetPosition());
-						var distB = Vector3D.Distance(coordsB, this.RemoteControl.GetPosition());
-						
-						if(distA < distB){
-							
-							AutoPilot.UpdateWaypoint(coordsA);
-							
-						}else{
-							
-							AutoPilot.UpdateWaypoint(coordsB);
-							
-						}
-
-					} else {
-
-						var randomPerp = VectorHelper.RandomPerpendicular(AutoPilot.UpDirection);
-						var roughCoords = randomPerp * VectorHelper.RandomDistance(this.HorseflyMinDistFromTarget, this.HorseflyMaxDistFromTarget) + Targeting.GetTargetPosition();
-						var surfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(roughCoords);
-						var targetAltitude = Vector3D.Distance(AutoPilot.PlanetCore, Targeting.GetTargetPosition());
-						var finalCoords = Vector3D.Normalize(surfaceCoords - AutoPilot.PlanetCore) * targetAltitude + AutoPilot.PlanetCore;
-						AutoPilot.UpdateWaypoint(finalCoords);
-
-					}
-
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.LegacyAutoPilotWaypoint);
-					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					this.HorseflyWaypointWaitTime = 0;
-
-				}
 
 			}
 
 			//Approach
 			if(Mode == BehaviorMode.ApproachTarget) {
+				
 
-				this.HorseflyWaypointAbandonTime++;
-				var toCoords = AutoPilot.WaypointCoords;
-				bool atPosition = false;
-				bool timeUp = this.HorseflyWaypointAbandonTime >= this.HorseflyWaypointAbandonTimeTrigger;
-
-				if(AutoPilot.UpDirection == Vector3D.Zero) {
-
-					atPosition = Vector3D.Distance(this.RemoteControl.GetPosition(), toCoords) < this.HorseflyMinDistFromWaypoint;
-
-				} else {
-
-					var safePointDist = Vector3D.Distance(this.RemoteControl.GetPosition(), AutoPilot.PlanetSafeWaypointCoords);
-					var sealevelA = VectorHelper.GetPlanetSealevelAtPosition(AutoPilot.WaypointCoords, AutoPilot.Planet);
-					var sealevelB = VectorHelper.GetPlanetSealevelAtPosition(AutoPilot.PlanetSafeWaypointCoords, AutoPilot.Planet);
-					var waypointDist = Vector3D.Distance(sealevelA, sealevelB);
-
-					if(safePointDist < this.HorseflyMinDistFromWaypoint && waypointDist < this.HorseflyMinDistFromWaypoint) {
-
-						atPosition = true;
-
-					}
-
-				}
-
-				if(timeUp || atPosition == true) {
-
-					if(timeUp == true) {
-
-						this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
-
-					}
-						
-					this.HorseflyWaypointAbandonTime = 0;
-					AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
-
-				}
 
 			}
 
-			//Space Retreat
-			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection == Vector3D.Zero) {
+			//Retreat
+			if(Mode == BehaviorMode.Retreat) {
 
-				if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
-
-					var despawnCoords = Vector3D.Normalize(this.RemoteControl.GetPosition() - Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition();
-					AutoPilot.UpdateWaypoint(despawnCoords);
-
-				}
-
-			}
-
-			//Planet Retreat
-			if(Mode == BehaviorMode.Retreat && AutoPilot.UpDirection != Vector3D.Zero) {
-
-				if(Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
-
-					//Logger.AddMsg("DespawnCoordsCreated", true);
-					var roughDespawnCoords = VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition();
-					var despawnCoords = VectorHelper.GetPlanetWaypointPathing(this.RemoteControl.GetPosition(), roughDespawnCoords);
-					AutoPilot.UpdateWaypoint(despawnCoords);
-
-				}
-
-			}
-
-
-		}
-
-		public void CollisionWarningTrigger(Vector3D collisionCoords) {
-
-			if(Mode == BehaviorMode.ApproachTarget == true) {
-
-				ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
-				AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
-				this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
+				
 
 			}
 
@@ -312,31 +176,29 @@ namespace RivalAI.Behavior {
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
-			Targeting.NeedsTarget = true;
+			NewAutoPilot.Targeting.NeedsTarget = true;
 
 			//Get Settings From Custom Data
 			InitCoreTags();
 
 			//Behavior Specific Default Enums (If None is Not Acceptable)
-			if(Targeting.TargetType == TargetTypeEnum.None) {
+			if(NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
 
-				Targeting.TargetType = TargetTypeEnum.Player;
-
-			}
-
-			if(Targeting.TargetRelation == TargetRelationEnum.None) {
-
-				Targeting.TargetRelation = TargetRelationEnum.Enemy;
+				NewAutoPilot.Targeting.TargetType = TargetTypeEnum.Player;
 
 			}
 
-			if(Targeting.TargetOwner == TargetOwnerEnum.None) {
+			if(NewAutoPilot.Targeting.TargetRelation == TargetRelationEnum.None) {
 
-				Targeting.TargetOwner = TargetOwnerEnum.Player;
+				NewAutoPilot.Targeting.TargetRelation = TargetRelationEnum.Enemy;
 
 			}
 
-			Collision.TriggerWarning += CollisionWarningTrigger;
+			if(NewAutoPilot.Targeting.TargetOwner == TargetOwnerEnum.None) {
+
+				NewAutoPilot.Targeting.TargetOwner = TargetOwnerEnum.Player;
+
+			}
 
 		}
 

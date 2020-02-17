@@ -40,9 +40,13 @@ namespace RivalAI.Helpers{
 		public static long BlockModMessageId = 0;
 		public static string ModName = "";
 
-        public static List<long> ModIDs = new List<long>();
+		public static List<MyDefinitionId> AllWeaponCoreBlocks;
+		public static List<MyDefinitionId> AllWeaponCoreGuns;
+		public static List<MyDefinitionId> AllWeaponCoreTurrets;
 
-        public static Dictionary<string, MyPhysicalItemDefinition> BehaviorProfiles = new Dictionary<string, MyPhysicalItemDefinition>();
+		public static List<long> ModIDs = new List<long>();
+
+		public static Dictionary<string, MyPhysicalItemDefinition> BehaviorProfiles = new Dictionary<string, MyPhysicalItemDefinition>();
 		
 		public static Random Rnd = new Random();
 		
@@ -52,70 +56,70 @@ namespace RivalAI.Helpers{
 			
 		}
 
-        public static void GetAllBehaviorProfiles() {
+		public static void GetAllBehaviorProfiles() {
 
-            BehaviorProfiles.Clear();
-            var defList = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
+			BehaviorProfiles.Clear();
+			var defList = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
 
-            foreach(var def in defList) {
+			foreach(var def in defList) {
 
-                if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+				if(string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
 
-                    continue;
+					continue;
 
-                }
+				}
 
-                if(def.DescriptionText.Contains("[Rival AI Behavior]") == true) {
+				if(def.DescriptionText.Contains("[Rival AI Behavior]") == true) {
 
-                    MyPhysicalItemDefinition item = null;
-                    if(BehaviorProfiles.TryGetValue(def.Id.SubtypeName, out item) == false) {
+					MyPhysicalItemDefinition item = null;
+					if(BehaviorProfiles.TryGetValue(def.Id.SubtypeName, out item) == false) {
 
-                        BehaviorProfiles.Add(def.Id.SubtypeName, def);
+						BehaviorProfiles.Add(def.Id.SubtypeName, def);
 
-                    } else {
+					} else {
 
-                        var sb = new StringBuilder();
-                        sb.Append("Error Adding RivalAI Profile: ").Append(def.Id.SubtypeName).Append(" - Profile Already Exists.");
-                        Logger.MsgDebug(sb.ToString());
+						var sb = new StringBuilder();
+						sb.Append("Error Adding RivalAI Profile: ").Append(def.Id.SubtypeName).Append(" - Profile Already Exists.");
+						Logger.MsgDebug(sb.ToString());
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public static string GetBehaviorProfile(string behaviorSubtype) {
+		public static string GetBehaviorProfile(string behaviorSubtype) {
 
-            MyPhysicalItemDefinition item = null;
-            if(BehaviorProfiles.TryGetValue(behaviorSubtype, out item) == true) {
+			MyPhysicalItemDefinition item = null;
+			if(BehaviorProfiles.TryGetValue(behaviorSubtype, out item) == true) {
 
-                if(string.IsNullOrWhiteSpace(item.DescriptionText) == false) {
+				if(string.IsNullOrWhiteSpace(item.DescriptionText) == false) {
 
-                    return item.DescriptionText;
+					return item.DescriptionText;
 
-                }
+				}
 
-            }
+			}
 
-            return "";
+			return "";
 
-        }
+		}
 
-        public static void GetAllModIDs() {
+		public static void GetAllModIDs() {
 
-            foreach (var mod in MyAPIGateway.Session.Mods) {
+			foreach (var mod in MyAPIGateway.Session.Mods) {
 
-                if (mod.PublishedFileId != 0) {
+				if (mod.PublishedFileId != 0) {
 
-                    ModIDs.Add((long)mod.PublishedFileId);
+					ModIDs.Add((long)mod.PublishedFileId);
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 		
 	}
 	

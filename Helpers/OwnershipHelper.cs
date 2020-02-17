@@ -284,6 +284,27 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public long GetOwnershipFromGrid(IMyTerminalBlock block) {
+
+			if (block?.SlimBlock?.CubeGrid?.BigOwners != null) {
+
+				if (block.SlimBlock.CubeGrid.BigOwners.Count > 0) {
+
+					foreach (var owner in block.SlimBlock.CubeGrid.BigOwners) {
+
+						if (owner != 0)
+							return owner;
+					
+					}
+				
+				}
+			
+			}
+
+			return 0;
+		
+		}
+
 		public static TargetOwnerEnum GetOwnershipTypes(IMyCubeGrid cubeGrid, bool includeSmallOwners) {
 
 			if(cubeGrid.BigOwners.Count == 0) {
@@ -345,13 +366,19 @@ namespace RivalAI.Helpers {
 
 		public static TargetRelationEnum GetTargetReputation(long myIdentity, IMyTerminalBlock block) {
 
-			if(block.OwnerId == 0) {
+			var ownerList = new List<long>();
+
+			if (block.OwnerId == 0) {
 
 				return GetTargetReputation(myIdentity, new List<long> { 0 });
 
+			} else {
+
+				ownerList.Add(block.OwnerId);
+
 			}
 
-			return GetTargetReputation(myIdentity, new List<long> { block.OwnerId });
+			return GetTargetReputation(myIdentity, ownerList);
 
 		}
 

@@ -324,6 +324,7 @@ namespace RivalAI.Helpers {
 
 			if(playerList.Count == 0) {
 
+				Logger.MsgDebug("No Active Players In Game", DebugTypeEnum.Target);
 				return null;
 
 			}
@@ -343,6 +344,7 @@ namespace RivalAI.Helpers {
 
 				if(Vector3D.Distance(remoteControl.GetPosition(), player.GetPosition()) > targetData.MaxDistance) {
 
+					Logger.MsgDebug(player.DisplayName + " is Too Far From NPC", DebugTypeEnum.Target);
 					playerList.RemoveAt(i);
 					continue;
 
@@ -350,6 +352,7 @@ namespace RivalAI.Helpers {
 
 				if(targetData.Filters.HasFlag(TargetFilterEnum.IgnoreSafeZone) == false && IsPositionInSafeZone(player.GetPosition()) == true) {
 
+					Logger.MsgDebug(player.DisplayName + " is in a SafeZone", DebugTypeEnum.Target);
 					playerList.RemoveAt(i);
 					continue;
 
@@ -365,12 +368,14 @@ namespace RivalAI.Helpers {
 				}
 
 				//No Valid Player Relation
+				Logger.MsgDebug(player.DisplayName + " is not valid relation to NPC: " + targetData.Relations.ToString(), DebugTypeEnum.Target);
 				playerList.RemoveAt(i);
 
 			}
 
 			if(playerList.Count == 0) {
 
+				Logger.MsgDebug("No Players That Meet Target Filter Requirements", DebugTypeEnum.Target);
 				return null;
 
 			} else if(playerList.Count == 1) {
