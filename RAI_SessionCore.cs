@@ -37,7 +37,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.0.6";
+		public static string ReleaseVersion = "0.1.0";
 
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
@@ -54,7 +54,7 @@ namespace RivalAI {
 		public ulong WeaponCoreModId = 1918681825;
 		public bool WeaponCoreMod { get; set; }
 		public bool WeaponCoreLoaded { get; set; }
-		public WeaponCoreApi WeaponCore = new WeaponCoreApi();
+		public WcApi WeaponCore = new WcApi();
 
 		public int Ticks = 0;
 
@@ -71,13 +71,15 @@ namespace RivalAI {
 
 				if(mod.PublishedFileId == ShieldModId) {
 
+					Logger.WriteLog("Defense Shield Mod Detected");
 					ShieldMod = true;
 					continue;
 
 				}
 				
-				if(mod.PublishedFileId == WeaponCoreModId) {
+				if(mod.PublishedFileId == WeaponCoreModId || mod.Name.Contains("WeaponCore-Local")) {
 
+					Logger.WriteLog("WeaponCore Mod Detected");
 					WeaponCoreMod = true;
 
 				}
@@ -92,25 +94,70 @@ namespace RivalAI {
 
 			if (!MyAPIGateway.Multiplayer.IsServer)
 				return;
-			
+
 			//TODO: Register Shield and WeaponCore APIs
-			if(ShieldMod && !ShieldApiLoaded && SApi.Load()) {
+			try {
 
-				ShieldApiLoaded = true;
+				Logger.WriteLog("Defense Shields API Loading");
+				if (ShieldMod && !ShieldApiLoaded) {
+
+					SApi.Load();
+
+				}
+
+			} catch (Exception exc) {
+
+				Logger.WriteLog("Defense Shields API Failed To Load");
+				Logger.WriteLog(exc.ToString());
 
 			}
 			
-			if(WeaponCoreMod && !WeaponCoreLoaded && WeaponCore.Load()) {
+			try {
 
-				WeaponCoreLoaded = true;
+				if (WeaponCoreMod && !Instance.WeaponCore.IsReady) {
+
+					Logger.WriteLog("WeaponCore API Loading");
+					WeaponCore.Load(WcApiCallback, true);
+
+				} else {
+
+					Logger.WriteLog("WeaponCore API Failed To Load For Unknown Reason");
+
+				}
+
+			} catch (Exception exc) {
+
+				Logger.WriteLog("WeaponCore API Failed To Load");
+				Logger.WriteLog(exc.ToString());
 
 			}
+
+			
 			
 			Logger.LoadDebugFromSandbox();
-			Utilities.GetAllModIDs();
+			Utilities.GetDefinitionsAndIDs();
 			TagHelper.Setup();
 			DamageHelper.RegisterEntityWatchers();
 
+
+		}
+
+		public void WcApiCallback() {
+
+			if (Instance.WeaponCore.IsReady) {
+
+				Logger.WriteLog("WeaponCore Successfully Loaded");
+				WeaponCoreLoaded = true;
+				Instance.WeaponCore.GetAllCoreWeapons(Utilities.AllWeaponCoreBlocks);
+				Instance.WeaponCore.GetAllCoreStaticLaunchers(Utilities.AllWeaponCoreGuns);
+				Instance.WeaponCore.GetAllCoreTurrets(Utilities.AllWeaponCoreTurrets);
+
+			} else {
+
+				Logger.WriteLog("WeaponCore API Failed To Load");
+
+			}
+		
 		}
 
 		public override void UpdateBeforeSimulation() {
@@ -124,6 +171,9 @@ namespace RivalAI {
 			}
 
 			Ticks++;
+
+			if (IsServer)
+				BehaviorManager.ProcessBehaviors();
 
 			if (EffectManager.SoundsPlaying)
 				EffectManager.ProcessAvatarDisplay();
@@ -169,19 +219,10 @@ namespace RivalAI {
 
 			//LogicManager.Setup();
 
-			if(IsServer == false) {
-
+			if(!IsServer)
 				return;
 
-			}
-
-			if (Instance.WeaponCoreLoaded) {
-
-				Utilities.AllWeaponCoreBlocks = Instance.WeaponCore.GetAllCoreWeapons();
-				Utilities.AllWeaponCoreGuns = Instance.WeaponCore.GetAllCoreStaticLaunchers();
-				Utilities.AllWeaponCoreTurrets = Instance.WeaponCore.GetAllCoreTurrets();
-
-			}
+			
 
 			Logger.LoadDebugFromSandbox();
 			MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
@@ -190,15 +231,17 @@ namespace RivalAI {
 
 		protected override void UnloadData() {
 
-			if(ShieldApiLoaded) {
-
+			if(ShieldApiLoaded)
 				SApi.Unload();
-				Instance = null;
 
-			}
+			if (WeaponCoreLoaded)
+				WeaponCore.Unload();
+
+			Instance = null;
 
 			SyncManager.Close();
 			DamageHelper.UnregisterEntityWatchers();
+			BehaviorManager.Behaviors.Clear();
 
 		}
 

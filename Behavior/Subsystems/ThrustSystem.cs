@@ -42,6 +42,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 	public class ThrustSystem{
 
+		public double AngleAllowedForForwardThrust;
 		public bool AllowStrafing;
 		public int StrafeMinDurationMs;
 		public int StrafeMaxDurationMs;
@@ -49,6 +50,10 @@ namespace RivalAI.Behavior.Subsystems {
 		public int StrafeMaxCooldownMs;
 		public double StrafeSpeedCutOff;
 		public double StrafeDistanceCutOff;
+
+		public double StrafeMinimumTargetDistance;
+		public double StrafeMinimumSafeAngleFromTarget;
+
 		public Vector3I AllowedStrafingDirectionsSpace;
 		public Vector3I AllowedStrafingDirectionsPlanet;
 
@@ -57,7 +62,8 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<ThrustProfile> ThrustProfiles;
 		public Random Rnd;
 
-		private CollisionSystem Collision;
+		private NewAutoPilotSystem _autoPilot;
+		private NewCollisionSystem _collision;
 
 		public Vector3I PreviousAllowedThrust;
 		public Vector3I PreviousRequiredThrust;
@@ -72,9 +78,14 @@ namespace RivalAI.Behavior.Subsystems {
 		public int ThisStrafeCooldown;
 		public DateTime LastStrafeStartTime;
 		public DateTime LastStrafeEndTime;
+
+		private bool _collisionStrafeAdjusted;
+		private bool _minAngleDistanceStrafeAdjusted;
+		private Vector3D _collisionStrafeDirection;
 		
 		public ThrustSystem(IMyRemoteControl remoteControl){
 
+			AngleAllowedForForwardThrust = 35;
 			AllowStrafing = false;
 			StrafeMinDurationMs = 750;
 			StrafeMaxDurationMs = 1500;
@@ -82,6 +93,10 @@ namespace RivalAI.Behavior.Subsystems {
 			StrafeMaxCooldownMs = 3000;
 			StrafeSpeedCutOff = 100;
 			StrafeDistanceCutOff = 1000;
+
+			StrafeMinimumTargetDistance = 250;
+			StrafeMinimumSafeAngleFromTarget = 25;
+
 			AllowedStrafingDirectionsSpace = new Vector3I(1, 1, 1);
 			AllowedStrafingDirectionsPlanet = new Vector3I(1, 1, 1);
 
@@ -113,6 +128,10 @@ namespace RivalAI.Behavior.Subsystems {
 			LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
 			LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 
+			_collisionStrafeAdjusted = false;
+			_minAngleDistanceStrafeAdjusted = false;
+			_collisionStrafeDirection = Vector3D.Zero;
+
 			Setup(remoteControl);
 
 
@@ -138,9 +157,10 @@ namespace RivalAI.Behavior.Subsystems {
 			
 		}
 
-		public void SetupReferences(CollisionSystem collision) {
+		public void SetupReferences(NewAutoPilotSystem autoPilot) {
 
-			this.Collision = collision;
+			this._autoPilot = autoPilot;
+			this._collision = autoPilot.Collision;
 
 		}
 
@@ -168,31 +188,33 @@ namespace RivalAI.Behavior.Subsystems {
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeEndTime;
 				if (duration.TotalMilliseconds >= this.ThisStrafeCooldown) {
 
-					Logger.MsgDebug("Begin Strafe", DebugTypeEnum.AutoPilot);
+					//Logger.MsgDebug("Begin Strafe", DebugTypeEnum.AutoPilot);
 					this.LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeDuration = Rnd.Next(StrafeMinDurationMs, StrafeMaxDurationMs);
 					this.Strafing = true;
-					Collision.RemoteControlPosition = this.RemoteControl.GetPosition();
-					Collision.RemoteMaxtrix = this.RemoteControl.WorldMatrix;
 
 					MyAPIGateway.Parallel.Start(() => {
 
-						Collision.CheckDirectionalCollisionsThreaded();
+						_autoPilot.Collision.RunSecondaryCollisionChecks();
 						this.CurrentAllowedStrafeDirections = Vector3I.Zero;
 						this.CurrentStrafeDirections = new Vector3I(Rnd.Next(-1, 2), Rnd.Next(-1, 2), Rnd.Next(-1, 2));
 
 						if (this.CurrentStrafeDirections.X != 0) {
 
 							this.CurrentAllowedStrafeDirections.X = 1;
+							var rAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Right, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							var lAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Left, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							bool rTargetIntersect = (rAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
+							bool lTargetIntersect = (lAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
 
 							if (this.CurrentStrafeDirections.X == 1) {
 
-								if (Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == false) {
+								if (rTargetIntersect || (_collision.RightResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.LeftResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: X Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X *= -1;
 
-								} else if (Collision.RightResult.HasTarget == true && Collision.LeftResult.HasTarget == true) {
+								} else if (lTargetIntersect || (_collision.RightResult.HasTarget(StrafeMinimumTargetDistance) && _collision.LeftResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: X Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X = 0;
@@ -201,12 +223,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 							} else {
 
-								if (Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == false) {
+								if (lTargetIntersect || (_collision.LeftResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.RightResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: X Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X *= -1;
 
-								} else if (Collision.LeftResult.HasTarget == true && Collision.RightResult.HasTarget == true) {
+								} else if (rTargetIntersect || (_collision.LeftResult.HasTarget(StrafeMinimumTargetDistance) && _collision.RightResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: X Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.X = 0;
@@ -220,15 +242,19 @@ namespace RivalAI.Behavior.Subsystems {
 						if (this.CurrentStrafeDirections.Y != 0) {
 
 							this.CurrentAllowedStrafeDirections.Y = 1;
+							var uAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Up, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							var dAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Down, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							bool uTargetIntersect = (uAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
+							bool dTargetIntersect = (dAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
 
 							if (this.CurrentStrafeDirections.Y == 1) {
 
-								if (Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == false) {
+								if (uTargetIntersect || (_collision.UpResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.DownResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Y Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y *= -1;
 
-								} else if (Collision.UpResult.HasTarget == true && Collision.DownResult.HasTarget == true) {
+								} else if (dTargetIntersect || (_collision.UpResult.HasTarget(StrafeMinimumTargetDistance) && _collision.DownResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Y Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y = 0;
@@ -237,12 +263,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 							} else {
 
-								if (Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == false) {
+								if (dTargetIntersect || (_collision.DownResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.UpResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Y Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y *= -1;
 
-								} else if (Collision.DownResult.HasTarget == true && Collision.UpResult.HasTarget == true) {
+								} else if (uTargetIntersect || (_collision.DownResult.HasTarget(StrafeMinimumTargetDistance) && _collision.UpResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Y Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Y = 0;
@@ -256,15 +282,19 @@ namespace RivalAI.Behavior.Subsystems {
 						if (this.CurrentStrafeDirections.Z != 0) {
 
 							this.CurrentAllowedStrafeDirections.Z = 1;
+							var fAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Forward, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							var bAngle = VectorHelper.GetAngleBetweenDirections(_collision.Matrix.Backward, Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - _collision.Matrix.Translation));
+							bool fTargetIntersect = (fAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
+							bool bTargetIntersect = (bAngle < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance);
 
 							if (this.CurrentStrafeDirections.Z == 1) {
 
-								if (Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == false) {
+								if (fTargetIntersect || (_collision.ForwardResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.BackwardResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Z Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z *= -1;
 
-								} else if (Collision.ForwardResult.HasTarget == true && Collision.BackwardResult.HasTarget == true) {
+								} else if (bTargetIntersect || (_collision.ForwardResult.HasTarget(StrafeMinimumTargetDistance) && _collision.BackwardResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Z Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z = 0;
@@ -273,12 +303,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 							} else {
 
-								if (Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == false) {
+								if (bTargetIntersect || (_collision.BackwardResult.HasTarget(StrafeMinimumTargetDistance) && !_collision.ForwardResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Z Reverse", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z *= -1;
 
-								} else if (Collision.BackwardResult.HasTarget == true && Collision.ForwardResult.HasTarget == true) {
+								} else if (fTargetIntersect || (_collision.BackwardResult.HasTarget(StrafeMinimumTargetDistance) && _collision.ForwardResult.HasTarget(StrafeMinimumTargetDistance))) {
 
 									Logger.MsgDebug("Strafe: Z Negate", DebugTypeEnum.AutoPilot);
 									this.CurrentStrafeDirections.Z = 0;
@@ -289,53 +319,86 @@ namespace RivalAI.Behavior.Subsystems {
 
 						}
 
+						if (_autoPilot.UpDirectionFromPlanet != Vector3D.Zero && _autoPilot.MyAltitude < _autoPilot.MinimumPlanetAltitude) {
+
+							var thrustDir = VectorHelper.GetThrustDirectionsAwayFromDirection(_collision.Matrix, -_autoPilot.UpDirectionFromPlanet);
+
+							if (thrustDir.X != 0) {
+
+								this.CurrentAllowedStrafeDirections.X = 1;
+								this.CurrentStrafeDirections.X = thrustDir.X;
+
+							}
+
+							if (thrustDir.Y != 0) {
+
+								this.CurrentAllowedStrafeDirections.Y = 1;
+								this.CurrentStrafeDirections.Y = thrustDir.Y;
+
+							}
+
+							if (thrustDir.Z != 0) {
+
+								this.CurrentAllowedStrafeDirections.Z = 1;
+								this.CurrentStrafeDirections.Z = thrustDir.Z;
+
+							}
+
+						}
+
 
 					}, () => {
 
-
-						MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
-							//Game Thread
-							Logger.MsgDebug("Allowed Strafing: " + this.CurrentAllowedStrafeDirections.ToString(), DebugTypeEnum.AutoPilot);
-							Logger.MsgDebug("Current Strafing: " + this.CurrentStrafeDirections.ToString(), DebugTypeEnum.AutoPilot);
-							SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
-
-						});
+						SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
 
 					});
-
-
-					//SafeStrafeDirections(upDirection, destination, minAltitude, minTargetDist);
-					//Logger.AddMsg("Duration: " + this.ThisStrafeDuration.ToString(), true);
 
 				}
 
 			} else {
 
-				//SafeStrafeDirections(upDirection, destination, minAltitude, minTargetDist);
-
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeStartTime;
 
 				if (duration.TotalMilliseconds >= this.ThisStrafeDuration) {
 
-					Logger.MsgDebug("End Strafe", DebugTypeEnum.General);
+					//Logger.MsgDebug("End Strafe", DebugTypeEnum.General);
 					this.InvertStrafingActivated = false;
 					this.LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeCooldown = Rnd.Next(StrafeMinCooldownMs, StrafeMaxCooldownMs);
 					this.Strafing = false;
+					_collisionStrafeAdjusted = false;
+					_minAngleDistanceStrafeAdjusted = false;
+					_collisionStrafeDirection = Vector3D.Zero;
 					SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
 					//Logger.AddMsg("Cooldown: " + this.ThisStrafeCooldown.ToString(), true);
 
 				} else {
 
-					if (this.InvertStrafingActivated == false && Collision.VelocityResult.CollisionImminent) {
+					//Logger.MsgDebug("Strafe Collision: " + _collision.VelocityResult.CollisionImminent.ToString() + " - " + _collision.VelocityResult.Time.ToString(), DebugTypeEnum.Collision);
 
-						this.InvertStrafingActivated = true;
-						SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections * -1);
+					if (!_collisionStrafeAdjusted && _collision.VelocityResult.CollisionImminent()) {
+
+						Logger.MsgDebug("Strafe Velocity Collision Detect: " + _collision.VelocityResult.Type.ToString() + ", " + _collision.VelocityResult.GetCollisionDistance(), DebugTypeEnum.Collision);
+						_collisionStrafeAdjusted = true;
+						StopStrafeDirectionNearestPosition(_collision.VelocityResult.GetCollisionCoords());
+						_collisionStrafeDirection = Vector3D.Normalize(_collision.VelocityResult.GetCollisionCoords() - RemoteControl.WorldMatrix.Translation);
+
+					} else if(_collisionStrafeAdjusted && VectorHelper.GetAngleBetweenDirections(_collisionStrafeDirection, Vector3D.Normalize(_collision.Velocity - RemoteControl.WorldMatrix.Translation)) > 15) {
+
+						Logger.MsgDebug("Strafe Collision Detect", DebugTypeEnum.General);
+						StopStrafeDirectionNearestPosition(_collision.VelocityResult.GetCollisionCoords());
+						_collisionStrafeDirection = Vector3D.Normalize(_collision.VelocityResult.GetCollisionCoords() - RemoteControl.WorldMatrix.Translation);
 
 					}
 
-					//TODO: 2nd Check to see if inverted path eventually results in collision
+					if (_minAngleDistanceStrafeAdjusted && _autoPilot.AngleToCurrentWaypoint < this.StrafeMinimumSafeAngleFromTarget && _autoPilot.DistanceToCurrentWaypoint < this.StrafeMinimumTargetDistance) {
+
+						Logger.MsgDebug("Strafe Min Dist/Angle Detect", DebugTypeEnum.General);
+						_minAngleDistanceStrafeAdjusted = false;
+						StopStrafeDirectionNearestPosition(_collision.VelocityResult.GetCollisionCoords());
+						_collisionStrafeDirection = Vector3D.Normalize(_collision.VelocityResult.GetCollisionCoords() - RemoteControl.WorldMatrix.Translation);
+
+					}
 				
 				}
 
@@ -343,18 +406,87 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void ProcessForwardThrust() {
+		public void StopStrafeDirectionNearestPosition(Vector3D coords) {
+
+			double minAngle = 50; //Move this to fields later
+			var targetDir = Vector3D.Normalize(coords - RemoteControl.WorldMatrix.Translation);
+			var leftAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Left, targetDir);
+			var rightAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Right, targetDir);
+			var upAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Up, targetDir);
+			var downAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Down, targetDir);
+			var forwardAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Forward, targetDir);
+			var backAngle = VectorHelper.GetAngleBetweenDirections(RemoteControl.WorldMatrix.Backward, targetDir);
+
+			if (this.CurrentStrafeDirections.X == 1 && rightAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop X Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.X = 0;
+				this.CurrentStrafeDirections.X = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+			if (this.CurrentStrafeDirections.X == -1 && leftAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop X Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.X = 0;
+				this.CurrentStrafeDirections.X = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+			if (this.CurrentStrafeDirections.Y == 1 && upAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop Y Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.Y = 0;
+				this.CurrentStrafeDirections.Y = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+			if (this.CurrentStrafeDirections.Y == -1 && downAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop Y Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.Y = 0;
+				this.CurrentStrafeDirections.Y = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+			if (this.CurrentStrafeDirections.Z == 1 && forwardAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop Z Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.Z = 0;
+				this.CurrentStrafeDirections.Z = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+			if (this.CurrentStrafeDirections.Z == -1 && backAngle < minAngle) {
+
+				//Logger.MsgDebug("Strafe Stop Z Movement", DebugTypeEnum.Collision);
+				this.CurrentAllowedStrafeDirections.Z = 0;
+				this.CurrentStrafeDirections.Z = 0;
+				SetThrust(this.CurrentAllowedStrafeDirections, this.CurrentStrafeDirections);
+
+			}
+
+		}
+
+		public void ProcessForwardThrust(double currentAngle = 180) {
 
 			if (this.Strafing)
 				return;
 
+			if (currentAngle > this.AngleAllowedForForwardThrust) {
+
+				SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
+				return;
+
+			}
+
+
 			SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, 1));
-
-		}
-
-		public void ProcessThrust(Vector3D upDirection = new Vector3D(), Vector3D destination = new Vector3D(), double minAltitude = -1, double minTargetDist = -1) {
-
-			
 
 		}
 

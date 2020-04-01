@@ -1,207 +1,57 @@
+using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
 
-namespace RivalAI.Helpers{
+namespace RivalAI.Helpers {
 
 	public static class VectorHelper {
 
 		public static Random Rnd = new Random();
 
-		//ClosestDirection
-		public static Vector3D ClosestDirection(MatrixD matrix, Vector3D checkCoords, Vector3D ignoreDirectionA, Vector3D ignoreDirectionB) {
+		public static Vector3D GetRandomDirectionAtAngle(Vector3D direction, int minAngle, int maxAngle) {
 
-			Vector3D closestVector = Vector3D.Zero;
-			double closestDistance = 0;
+			double oldAzimuth = 0;
+			double oldElevation = 0;
+			Vector3D.GetAzimuthAndElevation(direction, out oldAzimuth, out oldElevation);
 
-			//Forward
-			if(matrix.Forward != ignoreDirectionA && matrix.Forward != ignoreDirectionB) {
+			double randAzAngle = Rnd.Next(minAngle, maxAngle);
+			double randElAngle = Rnd.Next(minAngle, maxAngle);
+			double azimuth = AdjustAzimuthElevationByDegrees(oldAzimuth, randAzAngle);
+			double elevation = AdjustAzimuthElevationByDegrees(oldElevation, randElAngle);
 
-				var vectorPos = matrix.Translation + matrix.Forward;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			//Backward
-			if(matrix.Backward != ignoreDirectionA && matrix.Backward != ignoreDirectionB) {
-
-				var vectorPos = matrix.Translation + matrix.Backward;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			//Up
-			if(matrix.Up != ignoreDirectionA && matrix.Up != ignoreDirectionB) {
-
-				var vectorPos = matrix.Translation + matrix.Up;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			//Down
-			if(matrix.Down != ignoreDirectionA && matrix.Down != ignoreDirectionB) {
-
-				var vectorPos = matrix.Translation + matrix.Down;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			//Left
-			if(matrix.Left != ignoreDirectionA && matrix.Left != ignoreDirectionB) {
-
-				var vectorPos = matrix.Translation + matrix.Left;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			//Right
-			if(matrix.Right != ignoreDirectionA && matrix.Right != ignoreDirectionB) {
-
-				var vectorPos = matrix.Translation + matrix.Right;
-				var distance = Vector3D.Distance(vectorPos, checkCoords);
-				bool gotCloser = false;
-
-				if(closestVector == Vector3D.Zero) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-					gotCloser = true;
-
-				}
-
-				if(gotCloser == false && distance < closestDistance) {
-
-					closestDistance = distance;
-					closestVector = vectorPos;
-
-				}
-
-			}
-
-			return closestVector;
-
+			Vector3D result = Vector3D.Zero;
+			Vector3D.CreateFromAzimuthAndElevation(azimuth, elevation, out result);
+			return result;
+		
 		}
 
-		public static double CompareDistanceAtSealevel(MyPlanet planet, Vector3D pointA, Vector3D pointB) {
+		public static double AdjustAzimuthElevationByDegrees(double existingValue, double degrees) {
 
-			if(planet == null) {
+			double result = 0;
+			double changeBy = degrees * 0.034;
 
-				return -1;
+			if (existingValue >= 0) {
+
+				result = existingValue + changeBy;
+
+				if (result > 3.14)
+					result = -3.14 - (result - 3.14);
+
+			} else {
+
+				result = existingValue + changeBy;
+
+				if (result < -3.14)
+					result = 3.14 - (result - -3.14);
 
 			}
 
-			var seaLevelA = GetPlanetSealevelAtPosition(pointA, planet);
-			var seaLevelB = GetPlanetSealevelAtPosition(pointB, planet);
-			return Vector3D.Distance(seaLevelA, seaLevelB);
+			return result;
 
 		}
 
@@ -211,6 +61,21 @@ namespace RivalAI.Helpers{
 			var direction = Vector3D.Normalize(endDir - startDir);
 			return direction * distance + startCoords;
 
+		}
+
+		public static double GetAltitudeAtPosition(Vector3D coords, MyPlanet planet = null) {
+
+			if (planet == null) {
+
+				planet = MyGamePruningStructure.GetClosestPlanet(coords);
+
+				if (planet == null)
+					return 0;
+			
+			}
+
+			return Vector3D.Distance(coords, GetPlanetSurfaceCoordsAtPosition(coords, planet));
+		
 		}
 
 		//GetAngleBetweenDirections
@@ -240,44 +105,74 @@ namespace RivalAI.Helpers{
 			
 		}
 
+		public static double GetDistanceToTargetAtMyAltitude(Vector3D myCoords, Vector3D targetCoords, MyPlanet planet) {
+
+			if (planet == null || targetCoords == Vector3D.Zero)
+				return -1;
+
+			var myDistance = Vector3D.Distance(myCoords, planet.PositionComp.WorldAABB.Center);
+			var targetDirection = Vector3D.Normalize(targetCoords - planet.PositionComp.WorldAABB.Center);
+			var targetCoordsAtMyAltitude = myDistance * targetDirection + planet.PositionComp.WorldAABB.Center;
+			return Vector3D.Distance(myCoords, targetCoordsAtMyAltitude);
+
+		}
+
 		//GetThrustDirectionsAwayFromPosition
-		public static Vector3I GetThrustDirectionsAwayFromPosition(MatrixD myMatrix, Vector3D targetPosition) {
+		public static Vector3I GetThrustDirectionsAwayFromDirection(MatrixD myMatrix, Vector3D targetPosition) {
 
-			var dist = Vector3D.Distance(myMatrix.Translation, targetPosition) / 2;
-			Vector3I directions = new Vector3I(1, 1, 1);
+			var targetDir = targetPosition;
+			Vector3I closestVector = Vector3I.Zero;
+			double closestAngle = 180;
 
-			//X
-			var leftDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Left);
-			var rightDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Right);
+			var left = GetAngleBetweenDirections(targetDir, myMatrix.Left);
+			if (left < closestAngle) {
 
-			if(rightDist < leftDist) {
-
-				directions.X = -1;
-
-			}
-
-			//Y
-			var upDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
-			var downDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
-
-			if(upDist < downDist) {
-
-				directions.Y = -1;
+				closestVector = new Vector3I(1, 0, 0);
+				closestAngle = left;
 
 			}
 
-			//Z
-			var forwardDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Up);
-			var backDist = Vector3D.Distance(targetPosition, myMatrix.Translation + myMatrix.Down);
+			var right = GetAngleBetweenDirections(targetDir, myMatrix.Right);
+			if (right < closestAngle) {
 
-			if(forwardDist < backDist) {
-
-				directions.Z = -1;
+				closestVector = new Vector3I(-1, 0, 0);
+				closestAngle = right;
 
 			}
 
-			return directions;
+			var down = GetAngleBetweenDirections(targetDir, myMatrix.Down);
+			if (down < closestAngle) {
 
+				closestVector = new Vector3I(0, 1, 0);
+				closestAngle = down;
+
+			}
+
+			var up = GetAngleBetweenDirections(targetDir, myMatrix.Up);
+			if (up < closestAngle) {
+
+				closestVector = new Vector3I(0, -1, 0);
+				closestAngle = up;
+
+			}
+
+			var back = GetAngleBetweenDirections(targetDir, myMatrix.Backward);
+			if (back < closestAngle) {
+
+				closestVector = new Vector3I(0, 0, 1);
+				closestAngle = back;
+
+			}
+
+			var forward = GetAngleBetweenDirections(targetDir, myMatrix.Forward);
+			if (forward < closestAngle) {
+
+				closestVector = new Vector3I(0, 0, -1);
+				closestAngle = forward;
+
+			}
+
+			return closestVector;
 
 		}
 
@@ -813,6 +708,14 @@ namespace RivalAI.Helpers{
 			return 0;
 			
 
+		}
+
+		public static bool IsPerpendicular(Vector3D a, Vector3D b) {
+
+			var coordsA = a;
+			var coordsB = b;
+			return Vector3D.ArePerpendicular(ref a, ref b);
+		
 		}
 
 		//IsPositionUnderground

@@ -374,15 +374,17 @@ namespace RivalAI.Behavior.Subsystems{
 
 				}
 
+				var gridSize = (ControlGyro.CubeGrid.GridSizeEnum == MyCubeSize.Small);
+
 				//Calculate Yaw
 				double angleLeftToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, directionToTarget);
 				double angleRightToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, directionToTarget);
-				gyroRotation.Y = (float)CalculateAxisRotation(angleLeftToTarget, angleRightToTarget, angleToTarget);
+				gyroRotation.Y = (float)CalculateAxisRotation(angleLeftToTarget, angleRightToTarget, angleToTarget, gridSize);
 
 				//Calculate Pitch
 				double angleUpToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, directionToTarget);
 				double angleDownToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Down, directionToTarget);
-				gyroRotation.X = (float)CalculateAxisRotation(angleDownToTarget, angleUpToTarget, angleToTarget);
+				gyroRotation.X = (float)CalculateAxisRotation(angleDownToTarget, angleUpToTarget, angleToTarget, gridSize);
 
 				//Calculate Roll - If Specified
 				if(this.UpDirection != Vector3D.Zero) {
@@ -390,7 +392,15 @@ namespace RivalAI.Behavior.Subsystems{
 					double rollAngleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Up, this.UpDirection);
 					double angleRollLeftToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, this.UpDirection);
 					double angleRollRightToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, this.UpDirection);
-					gyroRotation.Z = (float)CalculateAxisRotation(angleRollLeftToUp, angleRollRightToUp, rollAngleToTarget);
+
+					if (angleRollLeftToUp == angleRollRightToUp) {
+
+						angleRollLeftToUp--;
+						angleRollRightToUp++;
+
+					}
+					
+					gyroRotation.Z = (float)CalculateAxisRotation(angleRollLeftToUp, angleRollRightToUp, rollAngleToTarget, gridSize);
 
 				}
 
@@ -481,7 +491,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 		}
 
-		public double CalculateAxisRotation(double angleA, double angleB, double totalAngle){
+		public double CalculateAxisRotation(double angleA, double angleB, double totalAngle, bool isSmallGrid = false){
 			
 			double angleDifference = 0;
 			double angleDirection = 1;
@@ -505,11 +515,10 @@ namespace RivalAI.Behavior.Subsystems{
 				
 			}
 
-			
-			if(totalAngle + angleDifference >= 180) {
+			if(totalAngle + angleDifference >= 170) {
 
 				//Logger.MsgDebug((totalAngle + angleDifference).ToString(), DebugTypeEnum.Dev);
-				return Math.PI * angleDirection;
+				return isSmallGrid ? Math.PI * 2 * angleDirection : Math.PI * angleDirection;
 				
 			}
 

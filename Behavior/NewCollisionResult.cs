@@ -1,0 +1,558 @@
+﻿using RivalAI.Helpers;
+using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Entities;
+using Sandbox.ModAPI;
+using System;
+using System.Collections.Generic;
+using VRage.Game.Entity;
+using VRage.Game.ModAPI;
+using VRage.ModAPI;
+using VRageMath;
+
+namespace RivalAI.Behavior {
+	public class NewCollisionResult {
+
+		private NewCollisionSystem _collisionSystem;
+
+		private DateTime _lastCollisionCheckTime;
+
+		public Vector3D StartPosition;
+		public Vector3D Direction;
+		public double Distance;
+		public Vector3D EndPosition;
+		public LineD Line;
+		public RayD Ray;
+
+		public bool CollisionDetected;
+		public CollisionType Type;
+		public bool CalculateTime;
+		public double Time;
+
+		public IMyEntity GridEntity;
+		public IMyEntity VoxelEntity;
+		public IMyEntity SafezoneEntity;
+		public IMyEntity ShieldBlockEntity;
+
+		public Vector3D GridCoords;
+		public Vector3D VoxelCoords;
+		public Vector3D SafezoneCoords;
+		public Vector3D ShieldCoords;
+
+		public double GridDistance;
+		public double VoxelDistance;
+		public double SafezoneDistance;
+		public double ShieldDistance;
+
+		public TargetOwnerEnum GridOwner;
+		public TargetOwnerEnum ShieldOwner;
+
+		public TargetRelationEnum GridRelation;
+		public TargetRelationEnum ShieldRelation;
+
+		private List<MyLineSegmentOverlapResult<MyEntity>> _entityScanList;
+		private List<MyVoxelBase> _voxelScanList;
+
+		public NewCollisionResult(NewCollisionSystem collisionSystem) {
+
+			_collisionSystem = collisionSystem;
+			_lastCollisionCheckTime = MyAPIGateway.Session.GameDateTime;
+			_entityScanList = new List<MyLineSegmentOverlapResult<MyEntity>>();
+			_voxelScanList = new List<MyVoxelBase>();
+
+			StartPosition = Vector3D.Zero;
+			Direction = Vector3D.Zero;
+			Distance = 0;
+			ResetResults();
+
+		}
+
+		public void CalculateCollisions(Vector3D direction, double distance, bool calculateTime = false, bool useAsteroidAABB = false) {
+
+			var timeSpan = MyAPIGateway.Session.GameDateTime - _lastCollisionCheckTime;
+
+			if (timeSpan.TotalMilliseconds < 200)
+				return;
+
+			_lastCollisionCheckTime = MyAPIGateway.Session.GameDateTime;
+
+			ResetResults();
+			CalculateTime = calculateTime;
+			Direction = direction;
+			Distance = distance;
+			StartPosition = _collisionSystem.Matrix.Translation;
+			EndPosition = direction * distance + StartPosition;
+			Line = new LineD(StartPosition, EndPosition);
+			Ray = new RayD(StartPosition, direction);
+			TargetIntersectionCheck();
+			ShieldIntersectionCheck();
+			VoxelCheckRequest(useAsteroidAABB);
+
+		}
+
+		public void ResetResults() {
+
+			CollisionDetected = false;
+			Type = CollisionType.None;
+			Time = 0;
+
+			GridEntity = null;
+			VoxelEntity = null;
+			SafezoneEntity = null;
+			ShieldBlockEntity = null;
+
+			GridCoords = Vector3D.Zero;
+			VoxelCoords = Vector3D.Zero;
+			SafezoneCoords = Vector3D.Zero;
+			ShieldCoords = Vector3D.Zero;
+
+			GridDistance = -1;
+			VoxelDistance = -1;
+			SafezoneDistance = -1;
+			ShieldDistance = -1;
+
+			GridOwner = TargetOwnerEnum.None;
+			GridRelation = TargetRelationEnum.None;
+
+		}
+
+		public void DetermineClosestCollision() {
+
+			double closestDist = -1;
+
+			if (GridEntity != null) {
+
+				if (Type == CollisionType.None || GridDistance < closestDist)
+					Type = CollisionType.Grid;
+
+			}
+
+			if (VoxelEntity != null) {
+
+				if (Type == CollisionType.None || VoxelDistance < closestDist)
+					Type = CollisionType.Voxel;
+
+			}
+
+			if (SafezoneEntity != null) {
+
+				if (Type == CollisionType.None || SafezoneDistance < closestDist)
+					Type = CollisionType.Safezone;
+
+			}
+
+			if (ShieldBlockEntity != null) {
+
+				if (Type == CollisionType.None || ShieldDistance < closestDist)
+					Type = CollisionType.Shield;
+
+			}
+
+			
+			if (CalculateTime) {
+
+				Time = GetCollisionDistance() / _collisionSystem.Velocity.Length();
+			
+			}
+
+		}
+
+		public bool HasTarget(double withinDistance = -1) {
+
+			if (Type == CollisionType.None)
+				return false;
+
+			if (withinDistance > 0 && GetCollisionDistance() > withinDistance)
+				return false;
+
+			return true;
+		
+		}
+
+		public bool CollisionImminent(int customTime = -1) {
+
+			var timeTrigger = customTime != -1 ? customTime : _collisionSystem.CollisionTimeTrigger;
+			return Type != CollisionType.None && CalculateTime && Time < timeTrigger && _collisionSystem.Velocity.Length() > _collisionSystem.MinimumSpeedForVelocityChecks;
+
+		}
+
+		public Vector3D GetCollisionCoords() {
+
+			switch (Type) {
+
+				case CollisionType.Grid:
+					return GridCoords;
+				case CollisionType.Voxel:
+					return VoxelCoords;
+				case CollisionType.Shield:
+					return ShieldCoords;
+				case CollisionType.Safezone:
+					return SafezoneCoords;
+
+			}
+
+			return Vector3D.Zero;
+
+		}
+
+		public double GetCollisionDistance() {
+
+			switch (Type) {
+
+				case CollisionType.Grid:
+					return GridDistance;
+				case CollisionType.Voxel:
+					return VoxelDistance;
+				case CollisionType.Shield:
+					return ShieldDistance;
+				case CollisionType.Safezone:
+					return SafezoneDistance;
+
+			}
+
+			return -1;
+
+		}
+
+		public IMyEntity GetCollisionEntity() {
+
+			switch (Type) {
+
+				case CollisionType.Grid:
+					return GridEntity;
+				case CollisionType.Voxel:
+					return VoxelEntity;
+				case CollisionType.Shield:
+					return ShieldBlockEntity;
+				case CollisionType.Safezone:
+					return SafezoneEntity;
+
+			}
+
+			return null;
+
+		}
+
+		public bool IsCollisionWithinDistance(double distance) {
+
+			switch (Type) {
+
+				case CollisionType.Grid:
+					return distance <= GridDistance;
+				case CollisionType.Voxel:
+					return distance <= VoxelDistance;
+				case CollisionType.Shield:
+					return distance <= ShieldDistance;
+				case CollisionType.Safezone:
+					return distance <= SafezoneDistance;
+
+			}
+
+			return false;
+		
+		}
+
+
+		public double SafeZoneIntersectionCheck(MySafeZone zone) {
+
+			var zoneEntity = zone as IMyEntity;
+
+			if (zone.Shape == MySafeZoneShape.Sphere) {
+
+				var newSphere = new BoundingSphereD(zoneEntity.PositionComp.WorldVolume.Center, zone.Radius);
+				var result = Ray.Intersects(newSphere);
+
+				if (result.HasValue == true) {
+
+					return (double)result;
+
+				}
+
+			} else {
+
+				var result = Ray.Intersects(zoneEntity.PositionComp.WorldAABB);
+
+				if (result.HasValue == true) {
+
+					return (double)result;
+
+				}
+
+			}
+
+			return -1;
+
+		}
+
+		public void ShieldIntersectionCheck() {
+
+			IMyEntity shieldEntity = null;
+
+			if (RAI_SessionCore.Instance.ShieldApiLoaded) {
+
+				var api = RAI_SessionCore.Instance.SApi;
+				var result = api.ClosestShieldInLine(Line, true);
+
+				if (result.Item1.HasValue) {
+
+					var dist = (double)result.Item1.Value;
+					shieldEntity = result.Item2;
+
+					ShieldCoords = StartPosition + (Line.Direction * dist);
+					ShieldDistance = dist;
+					ShieldBlockEntity = shieldEntity;
+					ShieldOwner = OwnershipHelper.GetOwnershipTypes((IMyTerminalBlock)shieldEntity);
+					ShieldRelation = OwnershipHelper.GetTargetReputation(_collisionSystem.Owner, (IMyTerminalBlock)shieldEntity);
+
+				}
+
+			}
+
+		}
+
+		public void TargetIntersectionCheck() {
+
+			_entityScanList.Clear();
+			_voxelScanList.Clear();
+			_entityScanList = new List<MyLineSegmentOverlapResult<MyEntity>>();
+			MyGamePruningStructure.GetTopmostEntitiesOverlappingRay(ref Line, _entityScanList);
+
+			IMyCubeGrid closestGrid = null;
+			double closestGridDistance = -1;
+
+			MySafeZone closestZone = null;
+			double closestZoneDistance = -1;
+
+			foreach (var item in _entityScanList) {
+
+				var targetGrid = item.Element as IMyCubeGrid;
+				var targetZone = item.Element as MySafeZone;
+				var targetVoxel = item.Element as MyVoxelBase;
+
+				if (targetGrid != null) {
+
+					if (targetGrid == _collisionSystem.RemoteControl.SlimBlock.CubeGrid || _collisionSystem.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(targetGrid)) {
+
+						continue;
+
+					}
+
+					if (closestGrid == null || (closestGrid != null && item.Distance < closestGridDistance)) {
+
+						closestGrid = targetGrid;
+						closestGridDistance = item.Distance;
+
+					}
+
+				}
+
+				if (targetZone != null) {
+
+					if (closestZone == null || (closestZone != null && item.Distance < closestZoneDistance)) {
+
+						closestZone = targetZone;
+						closestZoneDistance = item.Distance;
+
+					}
+
+				}
+
+				if (targetVoxel != null) {
+
+					_voxelScanList.Add(targetVoxel);
+				
+				}
+
+			}
+
+			if (closestGrid != null) {
+
+				double minDist = 0;
+				double maxDist = 0;
+				bool boxCheckResult = closestGrid.PositionComp.WorldAABB.Intersect(ref Ray, out minDist, out maxDist);
+
+				Vector3D startBox = boxCheckResult ? (minDist - 5) * Direction + StartPosition : StartPosition;
+				Vector3D endBox = boxCheckResult ? (maxDist + 5) * Direction + StartPosition : EndPosition;
+
+				var blockPos = closestGrid.RayCastBlocks(startBox, endBox);
+
+				if (!blockPos.HasValue) {
+
+					return;
+
+				}
+
+				IMySlimBlock slimBlock = closestGrid.GetCubeBlock(blockPos.Value);
+
+				if (slimBlock == null) {
+
+					return;
+
+				}
+
+				Vector3D blockPosition = Vector3D.Zero;
+				slimBlock.ComputeWorldCenter(out blockPosition);
+
+
+				GridCoords = blockPosition;
+				GridDistance = Vector3D.Distance(blockPosition, StartPosition);
+				GridEntity = closestGrid;
+				GridOwner = OwnershipHelper.GetOwnershipTypes(closestGrid, false);
+				GridRelation = OwnershipHelper.GetTargetReputation(_collisionSystem.Owner, closestGrid, false);
+
+			}
+
+			if (closestZone != null) {
+
+				SafezoneEntity = closestZone;
+				SafezoneCoords = closestZoneDistance * Direction + StartPosition;
+				SafezoneDistance = closestZoneDistance;
+
+			}
+
+		}
+
+		public void VoxelCheckRequest(bool useAsteroidAABB = false) {
+
+			if (_collisionSystem.AutoPilot.InGravity()) {
+
+				var stepList = _collisionSystem.AutoPilot.GetPlanetPathSteps(StartPosition, Direction, Distance, true);
+				var planet = _collisionSystem.AutoPilot.GetCurrentPlanet();
+				var planetCenter = planet.PositionComp.WorldAABB.Center;
+				int index = -1;
+
+				for (int i = 0; i < stepList.Count; i++) {
+
+					var step = stepList[i];
+					var stepToCore = Vector3D.Distance(planetCenter, step);
+					var stepSurfaceToCore = Vector3D.Distance(planetCenter, VectorHelper.GetPlanetSurfaceCoordsAtPosition(step, planet));
+
+					if (stepToCore < stepSurfaceToCore) {
+
+						//Logger.MsgDebug("Planet Voxel Found: ", DebugTypeEnum.Collision);
+						index = (i == 0) ? 0 : i - 1;
+						break;
+
+					}
+
+				}
+
+				if (index >= 0) {
+
+					
+					VoxelEntity = planet;
+					VoxelCoords = stepList[index];
+					VoxelDistance = Vector3D.Distance(StartPosition, stepList[index]);
+
+				}
+
+
+			} else {
+
+				MyVoxelBase closestVoxel = null;
+				double closestDistance = -1;
+
+				/*
+				//Temp Debug Code Start
+				_voxelScanList.Clear();
+				var startCorner = StartPosition + new Vector3D(-2000, -2000, -2000);
+				var endCorner = StartPosition + new Vector3D(2000, 2000, 2000);
+				var box = new BoundingBoxD(startCorner, endCorner);
+				MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, _voxelScanList);
+				*/
+
+				foreach (var voxel in _voxelScanList) {
+
+					var planet = voxel as MyPlanet;
+
+					if (planet != null)
+						continue;
+
+					if (!useAsteroidAABB) {
+
+						double minDist = 0;
+						double maxDist = 0;
+						bool boxCheckResult = voxel.PositionComp.WorldAABB.Intersect(ref Ray, out minDist, out maxDist);
+
+						Vector3D startBox = boxCheckResult ? (minDist - 5) * Direction + StartPosition : StartPosition;
+						Vector3D endBox = boxCheckResult ? (maxDist + 5) * Direction + StartPosition : EndPosition;
+						Vector3D? hitPosition = null;
+						LineD voxelLine = new LineD(startBox, endBox);
+						bool gotHit = false;
+
+						try {
+
+							using (voxel.Pin()) {
+
+								gotHit = voxel.GetIntersectionWithLine(ref voxelLine, out hitPosition);
+
+							}
+
+						} catch (Exception e) {
+
+							Logger.WriteLog("Supressed Exception While Checking Voxel Collision");
+							Logger.WriteLog(e.ToString());
+
+						}
+
+						if (hitPosition.HasValue) {
+
+							var hitDist = Vector3D.Distance((Vector3D)hitPosition, StartPosition);
+
+							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+
+								closestVoxel = voxel;
+								closestDistance = hitDist;
+
+							}
+
+						}
+
+					} else {
+
+						if (voxel.PositionComp.WorldAABB.Contains(StartPosition) == ContainmentType.Contains) {
+
+							var hitDist = Vector3D.Distance(StartPosition, StartPosition + Direction);
+
+							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+
+								closestVoxel = voxel;
+								closestDistance = hitDist;
+
+							}
+
+						} else {
+
+							double hitDist = 0;
+							voxel.PositionComp.WorldAABB.Intersects(ref Line, out hitDist);
+
+							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+
+								closestVoxel = voxel;
+								closestDistance = hitDist;
+
+							}
+
+						}
+					
+					}
+
+				}
+
+				if (closestDistance == -1) {
+
+					return;
+
+				}
+
+				VoxelEntity = closestVoxel;
+				VoxelDistance = closestDistance;
+				VoxelCoords = closestDistance * Direction + StartPosition;
+
+
+			}
+
+		}
+
+	}
+
+}

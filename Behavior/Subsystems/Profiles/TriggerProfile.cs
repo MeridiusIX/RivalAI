@@ -99,6 +99,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(22)]
 		public Vector3D PlayerNearPositionOffset;
 
+		[ProtoMember(23)]
+		public bool AllPlayersMustMatchReputation;
+
+		[ProtoMember(24)]
+		public double CustomReputationRangeCheck;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -109,6 +115,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			UseTrigger = false;
 			TargetDistance = 3000;
 			InsideAntenna = false;
+			PlayerNearPositionOffset = Vector3D.Zero;
 			MinCooldownMs = 0;
 			MaxCooldownMs = 1;
 			StartsReady = false;
@@ -128,10 +135,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			MinPlayerReputation = -1501;
 			MaxPlayerReputation = 1501;
+			AllPlayersMustMatchReputation = false;
+			CustomReputationRangeCheck = 5000;
 
 			CommandReceiveCode = "";
-
-			PlayerNearPositionOffset = Vector3D.Zero;
 
 			ProfileSubtypeId = "";
 
@@ -347,6 +354,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[MaxPlayerReputation:") == true) {
 
 						MaxPlayerReputation = TagHelper.TagIntCheck(tag, MaxPlayerReputation);
+
+					}
+
+					//AllPlayersMustMatchReputation
+					if (tag.Contains("[AllPlayersMustMatchReputation:") == true) {
+
+						AllPlayersMustMatchReputation = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CustomReputationRangeCheck
+					if (tag.Contains("[CustomReputationRangeCheck:") == true) {
+
+						CustomReputationRangeCheck = TagHelper.TagDoubleCheck(tag, CustomReputationRangeCheck);
 
 					}
 

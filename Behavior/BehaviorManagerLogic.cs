@@ -35,7 +35,7 @@ using RivalAI;
 
 namespace RivalAI.Behavior{
 	
-	[MyEntityComponentDescriptor(typeof(MyObjectBuilder_RemoteControl), false, "RivalAIRemoteControlSmall", "RivalAIRemoteControlLarge", "K_Imperial_Dropship_Guild_RC", "K_TIE_Fighter_RC", "K_Imperial_SpeederBike_FakePilot", "K_Imperial_ProbeDroid_Top_II", "K_Imperial_DroidCarrier_DroidBrain", "K_Imperial_DroidCarrier_DroidBrain_Aggressor")]
+	[MyEntityComponentDescriptor(typeof(MyObjectBuilder_RemoteControl), false, "RivalAIRemoteControlSmall", "RivalAIRemoteControlLarge", "K_Imperial_Dropship_Guild_RC", "K_TIE_Fighter_RC", "K_Imperial_SpeederBike_FakePilot", "K_Imperial_ProbeDroid_Top_II", "K_Imperial_DroidCarrier_DroidBrain", "K_Imperial_DroidCarrier_DroidBrain_Aggressor", "K_NewRepublic_EWing_RC", "K_Imperial_RC_Largegrid", "K_TIE_Drone_Core")]
 	 
 	public class BehaviorManagerLogic : MyGameLogicComponent{
 
@@ -50,6 +50,7 @@ namespace RivalAI.Behavior{
 		//Behavior
 		public event Action BehaviorRun;
 		public event Action BehaviorRemove;
+		private IBehavior MainBehavior;
 		private CoreBehavior CoreBehaviorInstance;
 		private Fighter FighterBehaviorInstance;
 		private Horsefly HorseflyBehaviorInstance;
@@ -144,7 +145,7 @@ namespace RivalAI.Behavior{
 							ValidBehavior = true;
 							CoreBehaviorInstance = new CoreBehavior();
 							CoreBehaviorInstance.CoreSetup(RemoteControl);
-							BehaviorRun += CoreBehaviorInstance.RunCoreAi;
+							//BehaviorRun += CoreBehaviorInstance.RunCoreAi;
 
 						}
 
@@ -152,11 +153,12 @@ namespace RivalAI.Behavior{
 						if (RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
 
 							ValidBehavior = true;
-							FighterBehaviorInstance = new Fighter();
+							MainBehavior = new Fighter();
 							BehaviorName = "Fighter";
 							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							FighterBehaviorInstance.BehaviorInit(RemoteControl);
-							BehaviorRun += FighterBehaviorInstance.RunCoreAi;
+							MainBehavior.BehaviorInit(RemoteControl);
+							//BehaviorRun += FighterBehaviorInstance.RunCoreAi;
+							BehaviorManager.Behaviors.Add(MainBehavior);
 
 						}
 
@@ -164,11 +166,12 @@ namespace RivalAI.Behavior{
 						if (RemoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
 
 							ValidBehavior = true;
-							HorseflyBehaviorInstance = new Horsefly();
+							MainBehavior = new Horsefly();
 							BehaviorName = "Horsefly";
 							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							HorseflyBehaviorInstance.BehaviorInit(RemoteControl);
-							BehaviorRun += HorseflyBehaviorInstance.RunCoreAi;
+							MainBehavior.BehaviorInit(RemoteControl);
+							//BehaviorRun += HorseflyBehaviorInstance.RunCoreAi;
+							BehaviorManager.Behaviors.Add(MainBehavior);
 
 						}
 
@@ -177,11 +180,12 @@ namespace RivalAI.Behavior{
 
 							Logger.MsgDebug("Initializing Passive Behavior On Grid " + RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.General);
 							ValidBehavior = true;
-							PassiveBehaviorInstance = new Passive();
+							MainBehavior = new Passive();
 							BehaviorName = "Passive";
 							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							PassiveBehaviorInstance.BehaviorInit(RemoteControl);
-							BehaviorRun += PassiveBehaviorInstance.RunCoreAi;
+							MainBehavior.BehaviorInit(RemoteControl);
+							//BehaviorRun += PassiveBehaviorInstance.RunCoreAi;
+							BehaviorManager.Behaviors.Add(MainBehavior);
 
 						}
 
@@ -189,11 +193,12 @@ namespace RivalAI.Behavior{
 						if (RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
 
 							ValidBehavior = true;
-							StrikeBehaviorInstance = new Strike();
+							MainBehavior = new Strike();
 							BehaviorName = "Strike";
 							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							StrikeBehaviorInstance.BehaviorInit(RemoteControl);
-							BehaviorRun += StrikeBehaviorInstance.RunCoreAi;
+							MainBehavior.BehaviorInit(RemoteControl);
+							//BehaviorRun += StrikeBehaviorInstance.RunCoreAi;
+							BehaviorManager.Behaviors.Add(MainBehavior);
 
 						}
 

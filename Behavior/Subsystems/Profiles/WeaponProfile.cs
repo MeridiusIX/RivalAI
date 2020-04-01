@@ -34,353 +34,341 @@ using VRage;
 
 namespace RivalAI.Behavior.Subsystems.Profiles {
 
-    public class WeaponProfile {
+	public class WeaponProfile {
 
-        public bool RemoveWeapon;
-        public IMyUserControllableGun WeaponBlock;
-        public MyWeaponDefinition WeaponDefinition;
-        public IMyGunObject<MyGunBase> GunBase;
-        public int RateOfFire;
-        public bool ReadyToFire;
-        public bool HasValidTarget;
-        public bool CurrentlyFiring;
+		public bool IsValid { get { return _weaponValid; } }
+		public bool IsStatic { get { return _isStatic; } internal set { _isStatic = value; } }
+		public bool IsTurret { get { return _isTurret; } internal set { _isTurret = value; } }
+		public bool IsWeaponCore { get { return _isWeaponCore; } internal set { _isWeaponCore = value; } }
+		public int CurrentAmmoCount { get { return _currentAmmoCount; } internal set { _currentAmmoCount = value; } }
+		public double MaxAmmoTrajectory { get { return _maxAmmoTrajectory; } internal set { _maxAmmoTrajectory = value; } }
+		public double MaxAmmoSpeed { get { return _maxAmmoSpeed; } internal set { _maxAmmoSpeed = value; } }
+		public double WeaponCurrentRange { get { return _weaponCurrentRange; } internal set { _weaponCurrentRange = value; } }
+		public bool ReadyToFire { get { return _readyToFire; } }
 
-        public MyDefinitionId CurrentAmmoId;
-        public MyAmmoMagazineDefinition CurrentAmmoDefinition;
-        public float AmmoRange;
-        public bool IsAmmoExplosive;
+		internal IMyRemoteControl _remoteControl;
+		internal IMyTerminalBlock _weaponBlock;
+		internal IMyCubeGrid _connectedCubeGrid;
+		internal IMyGunObject<MyGunBase> _gunBase;
 
-        public bool IsEnergyWeapon;
-        public double EnergyWeaponRange;
-        public bool EnergyWeaponRegularDamage;
-        public bool EnergyWeaponExplosiveDamage;
-        public bool EnergyWeaponVoxelDamage;
-        public bool EnergyWeaponTeslaDamage;
-        public bool EnergyWeaponJumpDamage;
-        public bool EnergyWeaponShieldDamage;
-        public bool EnergyWeaponHackDamage;
+		internal bool _baseSetupComplete;
+		internal bool _weaponValid;
+		internal bool _functional;
 
-        public WeaponProfile(IMyUserControllableGun weapon) {
+		internal bool _isStatic;
+		internal bool _isTurret;
+		internal bool _isWeaponCore;
+		internal bool _isBarrage;
+		internal bool _checkBarrageWeapon;
 
-            RemoveWeapon = false;
-            WeaponBlock = null;
-            GunBase = null;
-            ReadyToFire = false;
-            RateOfFire = 0;
-            HasValidTarget = false;
-            CurrentlyFiring = false;
+		internal bool _readyToFire;
+		internal bool _firing;
 
-            CurrentAmmoId = new MyDefinitionId();
-            AmmoRange = 0;
-            IsAmmoExplosive = false;
+		internal NewWeaponSystem _weaponSystem;
+		internal MyWeaponDefinition _weaponDefinition;
+		internal MyAmmoMagazineDefinition _ammoMagazineDefinition;
+		internal List<MyAmmoMagazineDefinition> _allAmmoMagazines;
+		internal MyAmmoDefinition _ammoDefinition;
+		internal List<string> _ammoSubtypesInInventory;
 
-            IsEnergyWeapon = false;
-            EnergyWeaponRange = 0;
-            EnergyWeaponRegularDamage = false;
-            EnergyWeaponExplosiveDamage = false;
-            EnergyWeaponVoxelDamage = false;
-            EnergyWeaponTeslaDamage = false;
-            EnergyWeaponJumpDamage = false;
-            EnergyWeaponShieldDamage = false;
-            EnergyWeaponHackDamage = false;
-            SetupWeapon(weapon);
+		internal DateTime _lastAmmoRefresh;
+		internal int _currentAmmoCount;
+		internal double _maxAmmoTrajectory;
+		internal double _maxAmmoSpeed;
+		internal double _weaponCurrentRange;
+		internal double _weaponRateOfFire;
 
-        }
+		internal double _currentAngle;
+		internal double _currentDistance;
+		internal Vector3D _currentTargetWaypoint;
+		internal bool _waypointIsTarget;
+		internal IMyEntity _currentTargetEntity;
 
-        public void ToggleFiring() {
+		internal bool _ammoReloadPending;
+		internal int _ammoMagazinesReloads;
 
-            if(ReadyToFire == true && HasValidTarget == true && CurrentlyFiring == false) {
+		public WeaponProfile(IMyRemoteControl remoteControl, IMyTerminalBlock block) {
 
-                CurrentlyFiring = true;
-                Sandbox.ModAPI.Ingame.TerminalBlockExtentions.ApplyAction(WeaponBlock, "Shoot_On");
+			_remoteControl = remoteControl;
+			_weaponBlock = block;
 
-            }
+			if (_weaponBlock != null) {
 
-            if((ReadyToFire == false || HasValidTarget == false) && CurrentlyFiring == true) {
+				_weaponBlock.IsWorkingChanged += (cubeBlock) => { _functional = cubeBlock.IsFunctional && cubeBlock.IsWorking ? true : false; };
+				_weaponBlock.OnClose += (entity) => { _weaponValid = false; };
+				_weaponValid = true;
 
-                CurrentlyFiring = false;
-                Sandbox.ModAPI.Ingame.TerminalBlockExtentions.ApplyAction(WeaponBlock, "Shoot_Off");
+				_functional = _weaponBlock.IsFunctional && _weaponBlock.IsWorking ? true : false;
+				IsConnectedToControllerGrid();
 
-            }
+			}
 
-        }
+			if (_weaponValid)
+				_baseSetupComplete = true;
 
-        public bool SingleShot() {
+			_ammoSubtypesInInventory = new List<string>();
+			_allAmmoMagazines = new List<MyAmmoMagazineDefinition>();
+			_lastAmmoRefresh = MyAPIGateway.Session.GameDateTime;
 
-            if(ReadyToFire == true && HasValidTarget == true) {
+		}
 
-                Sandbox.ModAPI.Ingame.TerminalBlockExtentions.ApplyAction(WeaponBlock, "ShootOnce");
-                return true;
+		public void AssignWeaponSystemReference(NewWeaponSystem weaponSystem) {
 
-            }
+			_weaponSystem = weaponSystem;
+		
+		}
 
-            return false;
+		public bool WeaponIsFunctional() {
 
-        }
+			return (_weaponValid && _functional && IsConnectedToControllerGrid());
 
-        public void CheckWeaponReadiness(bool hasTarget, double targetDistance, bool keepLoaded) {
+		}
 
-            if(WeaponBlock.IsFunctional == false || WeaponBlock.IsWorking == false) {
+		private bool IsConnectedToControllerGrid() {
 
-                ReadyToFire = false;
-                return;
+			if (!_weaponValid)
+				return false;
 
-            }
+			if (_remoteControl?.SlimBlock?.CubeGrid == null || _weaponBlock?.SlimBlock?.CubeGrid == null) {
 
-            HasValidTarget = hasTarget;
+				_weaponValid = false;
+				return false;
 
-            if(hasTarget == false) {
+			}
 
-                ReadyToFire = false;
-                return;
+			if (_weaponBlock.SlimBlock.CubeGrid == _connectedCubeGrid)
+				return true;
 
-            }
+			if (_weaponBlock.IsSameConstructAs(_remoteControl)) {
 
-            CurrentAmmoId = GunBase.GunBase.CurrentAmmoMagazineId;
-            AmmoRange = GunBase.GunBase.CurrentAmmoDefinition.MaxTrajectory;
-            IsAmmoExplosive = GunBase.GunBase.CurrentAmmoDefinition.IsExplosive;
+				_connectedCubeGrid = _weaponBlock.SlimBlock.CubeGrid;
+				return true;
 
-            if(AmmoRange < targetDistance) {
+			}
 
-                ReadyToFire = false;
-                return;
+			_weaponValid = false;
+			return false;
 
-            }
+		}
 
-            if(WeaponBlock.GetInventory(0).Empty() == true) {
+		public void CheckFunctional(IMyCubeBlock cubeBlock) {
 
-                if(keepLoaded == true) {
+			if (!cubeBlock.IsWorking || !cubeBlock.IsFunctional) {
 
-                    CheckAmmoMagazineDefinition(CurrentAmmoId);
-                    ReloadWeapon();
+				_functional = false;
 
-                }
+			}
 
-                if(GunBase.GunBase.CurrentAmmo == 0) {
+			_functional = true;
 
-                    ReadyToFire = false;
-                    return;
+		}
 
-                } else {
+		public virtual void RefreshAmmoDetails() {
 
-                    ReadyToFire = true;
-                    return;
+			var timeSpan = MyAPIGateway.Session.GameDateTime - _lastAmmoRefresh;
 
-                }
+			if (timeSpan.TotalMilliseconds < 500)
+				return;
 
-            }
+			_lastAmmoRefresh = MyAPIGateway.Session.GameDateTime;
 
-            if(WeaponBlock.GetInventory(0).GetItemAmount((SerializableDefinitionId)CurrentAmmoId) == 0) {
+			if (_gunBase?.GunBase == null) {
 
-                if(GunBase.GunBase.SwitchAmmoMagazineToNextAvailable() == false) {
+				_maxAmmoTrajectory = 0;
+				_maxAmmoSpeed = 0;
+				return;
 
-                    ReadyToFire = false;
-                    return;
+			}
 
-                }
+			_ammoMagazineDefinition = _gunBase.GunBase.CurrentAmmoMagazineDefinition;
+			_ammoDefinition = _gunBase.GunBase.CurrentAmmoDefinition;
 
-                CurrentAmmoId = GunBase.GunBase.CurrentAmmoMagazineId;
-                AmmoRange = GunBase.GunBase.CurrentAmmoDefinition.MaxTrajectory;
-                IsAmmoExplosive = GunBase.GunBase.CurrentAmmoDefinition.IsExplosive;
+			if (_ammoDefinition != null) {
 
-            }
+				_maxAmmoTrajectory = _ammoDefinition.MaxTrajectory;
+				_maxAmmoSpeed = _ammoDefinition.DesiredSpeed;
 
-            ReadyToFire = true;
+			}
 
-        }
+			if (_ammoMagazineDefinition != null) {
 
-        private bool SetupWeapon(IMyUserControllableGun weapon) {
+				_currentAmmoCount = _gunBase.GunBase.CurrentAmmo + (_ammoMagazineDefinition.Capacity * CountItemsInInventory(_ammoMagazineDefinition.Id));
 
-            if(weapon as IMyLargeTurretBase != null) {
+			}
 
-                return false;
+			if (_currentAmmoCount == 0 && _weaponSystem.UseAmmoReplenish) {
 
-            }
+				if (_ammoMagazinesReloads < _weaponSystem.MaxAmmoReplenishments || _weaponSystem.MaxAmmoReplenishments == -1) {
 
-            WeaponBlock = weapon;
-            Sandbox.ModAPI.Ingame.TerminalBlockExtentions.ApplyAction(weapon, "Shoot_Off");
-            GunBase = (IMyGunObject<MyGunBase>)WeaponBlock;
-            CurrentAmmoId = GunBase.GunBase.CurrentAmmoMagazineId;
+					_ammoMagazinesReloads++;
+					_ammoReloadPending = true;
 
-            if(GunBase.GunBase.CurrentAmmoDefinition != null) {
+				}
+			
+			}
 
-                AmmoRange = GunBase.GunBase.CurrentAmmoDefinition.MaxTrajectory;
 
-            }
+		}
 
-            //Get Weapon Defintion
-            try {
+		internal int CountItemsInInventory(MyDefinitionId id) {
 
-                var blockDef = weapon.SlimBlock.BlockDefinition as MyWeaponBlockDefinition;
+			if (_weaponBlock == null || !_weaponBlock.HasInventory)
+				return 0;
 
-                if(blockDef != null) {
+			int result = 0;
 
-                    MyWeaponDefinition tempWeapDef = null;
+			foreach (var item in _weaponBlock.GetInventory().GetItems()) {
 
-                    if(MyDefinitionManager.Static.TryGetWeaponDefinition(blockDef.WeaponDefinitionId, out tempWeapDef) == true) {
+				if (item.Content.GetId() == id)
+					result += (int)item.Amount;
 
-                        WeaponDefinition = tempWeapDef;
+			}
 
-                        foreach(var ammoData in tempWeapDef.WeaponAmmoDatas) {
+			return result;
+		
+		}
 
-                            if(ammoData == null) {
+		internal void GetTypesOfAmmoInInventory() {
 
-                                continue;
+			if (_weaponBlock == null || !_weaponBlock.HasInventory)
+				return;
 
-                            }
+			_ammoSubtypesInInventory.Clear();
 
-                            //Logger.DebugMsg("Rate Of Fire: " + ammoData.RateOfFire.ToString(), true);
-                            RateOfFire = ammoData.RateOfFire;
-                            break;
+			foreach (var item in _weaponBlock.GetInventory().GetItems()) {
 
-                        }
+				if (!_ammoSubtypesInInventory.Contains(item.Content.GetId().SubtypeName))
+					_ammoSubtypesInInventory.Add(item.Content.GetId().SubtypeName);
 
+			}
 
-                    }
+			return;
 
-                }
+		}
 
-            } catch(Exception e) {
+		internal virtual void ReloadWeapon() {
 
-                Logger.MsgDebug("Failed to get Weapon Definition for " + weapon.CustomName, DebugTypeEnum.Weapon);
-                Logger.MsgDebug(e.ToString(), DebugTypeEnum.Weapon);
+			if (!_ammoReloadPending)
+				return;
 
-            }
+			var content = (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(_ammoMagazineDefinition.Id);
+			MyObjectBuilder_InventoryItem inventoryItem = new MyObjectBuilder_InventoryItem { Amount = 1, Content = content };
+			float freeSpace = (float)(_weaponBlock.GetInventory().MaxVolume - _weaponBlock.GetInventory().CurrentVolume);
+			var amountToAdd = Math.Floor(freeSpace / _ammoMagazineDefinition.Volume);
 
-            //Check If Weapon Is Custom Energy Weapon
-            string energyWeaponData = "";
+			if (amountToAdd > _weaponSystem.AmmoReplenishClipAmount && _weaponSystem.AmmoReplenishClipAmount > -1) {
 
-            if(MyAPIGateway.Utilities.GetVariable("CEW-" + weapon.SlimBlock.BlockDefinition.Id.SubtypeName, out energyWeaponData) == true) {
+				var adjustedAmt = amountToAdd - _weaponSystem.AmmoReplenishClipAmount;
+				amountToAdd = adjustedAmt;
 
-                IsEnergyWeapon = true;
-                var dataSplit = energyWeaponData.Split('\n');
+			}
 
-                foreach(var item in dataSplit) {
+			if (amountToAdd > 0 && _weaponBlock.GetInventory().CanItemsBeAdded((MyFixedPoint)amountToAdd, _ammoMagazineDefinition.Id) == true) {
 
-                    if(EnergyWeaponRange == 0) {
+				_weaponBlock.GetInventory().AddItems((MyFixedPoint)amountToAdd, inventoryItem.Content);
 
-                        double range = 0;
+			}
 
-                        if(double.TryParse(item, out range) == true) {
+			_ammoReloadPending = false;
+		
+		}
 
-                            EnergyWeaponRange = range;
-                            continue;
+		public virtual MyDefinitionId GetCurrentAmmoMagazineId() {
 
-                        }
+			if (_ammoMagazineDefinition != null)
+				return _ammoMagazineDefinition.Id;
 
-                    }
+			return new MyDefinitionId();
 
-                    var itemLower = item.ToLower();
+		}
 
-                    if(itemLower.StartsWith("regulardamage-true") == true) {
+		internal void GetAmmoMagazineDefinition(MyDefinitionId id) {
+		
+			
+		
+		}
 
-                        EnergyWeaponRegularDamage = true;
-                        continue;
+		public virtual IMyEntity CurrentTargetEntity() {
 
-                    }
+			return null;
+		
+		}
 
-                    if(itemLower.StartsWith("explosiondamage-true") == true) {
+		public Vector3D GetWeaponPosition() {
 
-                        EnergyWeaponExplosiveDamage = true;
-                        continue;
+			return _weaponBlock?.PositionComp != null ? _weaponBlock.GetPosition() : Vector3D.Zero;
+		
+		}
 
-                    }
+		public virtual void DetermineWeaponReadiness() {
 
-                    if(itemLower.StartsWith("voxeldamage-true") == true) {
+			if (!WeaponIsFunctional()) {
 
-                        EnergyWeaponVoxelDamage = true;
-                        continue;
+				//Logger.MsgDebug("Weapon Not Functional", DebugTypeEnum.Weapon);
+				_readyToFire = false;
+				return;
 
-                    }
+			}
 
-                    if(itemLower.StartsWith("tesladamage-true") == true) {
+			_currentDistance = Vector3D.Distance(_weaponBlock.GetPosition(), _currentTargetWaypoint);
+			RefreshAmmoDetails();
 
-                        EnergyWeaponTeslaDamage = true;
-                        continue;
+			if (CurrentAmmoCount == 0 && !_ammoReloadPending) {
 
-                    }
+				//Logger.MsgDebug("Weapon Lacks Ammo", DebugTypeEnum.Weapon);
+				_readyToFire = false;
+				return;
 
-                    if(itemLower.StartsWith("jumpdamage-true") == true) {
+			}
 
-                        EnergyWeaponJumpDamage = true;
-                        continue;
+			_readyToFire = true;
 
-                    }
+		}
 
-                    if(itemLower.StartsWith("shielddamage-true") == true) {
+		public virtual void GetWeaponDefinition(IMyTerminalBlock weapon) {
 
-                        EnergyWeaponShieldDamage = true;
-                        continue;
+			MyWeaponBlockDefinition weaponBlockDef;
 
-                    }
+			if(!Utilities.WeaponBlockReferences.TryGetValue(weapon.SlimBlock.BlockDefinition.Id, out weaponBlockDef)){
 
-                    if(itemLower.StartsWith("hackingdamage-true") == true) {
+				Logger.MsgDebug("No Weapon Definition Found For: " + weapon.SlimBlock.BlockDefinition.Id.ToString(), DebugTypeEnum.Weapon);
 
-                        EnergyWeaponHackDamage = true;
-                        continue;
+			}
 
-                    }
+			MyWeaponDefinition weaponDef;
 
-                }
+			if (!MyDefinitionManager.Static.TryGetWeaponDefinition(weaponBlockDef.WeaponDefinitionId, out weaponDef)) {
 
-            }
+				Logger.MsgDebug("Weapon Def Null", DebugTypeEnum.Weapon);
+				return;
 
-            return true;
+			}
+	
+			_weaponDefinition = weaponDef;
+		
+		}
 
-        }
+		public void ToggleEnabled(bool enabled) {
 
-        private void CheckAmmoMagazineDefinition(MyDefinitionId defId) {
+			var funcBlock = _weaponBlock as IMyFunctionalBlock;
 
-            if(defId == null) {
+			if (funcBlock != null)
+				funcBlock.Enabled = enabled;
+		
+		}
 
-                return;
+		public virtual bool IsReadyToFire(bool targetIsWaypoint, bool isBarrage = false) {
 
-            }
+			return true;
 
-            if(CurrentAmmoDefinition != null && CurrentAmmoDefinition.Id == defId) {
+		}
 
-                return;
+		public virtual bool IsBarrageWeapon() {
 
-            }
+			return _isBarrage;
+		
+		}
 
-            var ammoMag = MyDefinitionManager.Static.GetAmmoMagazineDefinition(defId);
-
-            if(ammoMag == null) {
-
-                return;
-
-            }
-
-            CurrentAmmoDefinition = ammoMag;
-
-        }
-
-        private void ReloadWeapon() {
-
-            if(CurrentAmmoDefinition == null) {
-
-                return;
-
-            }
-
-            //CreateAmmo
-            var content = (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(CurrentAmmoDefinition.Id);
-            var inventoryItem = new MyObjectBuilder_InventoryItem { Amount = 1, Content = content };
-
-            //Get Inventory Volume
-            float amtToAdd = (float)Math.Floor((float)(WeaponBlock.GetInventory(0).MaxVolume - WeaponBlock.GetInventory(0).CurrentVolume) / CurrentAmmoDefinition.Volume);
-
-            //Add
-            if(WeaponBlock.GetInventory(0).CanItemsBeAdded((MyFixedPoint)amtToAdd, CurrentAmmoDefinition.Id) == true) {
-
-                //Logger.AddMsg("Weapon Reloaded! " + amtToAdd.ToString(), true);
-                WeaponBlock.GetInventory().AddItems((MyFixedPoint)amtToAdd, inventoryItem.Content);
-
-            }
-
-
-        }
-
-    }
+	}
 
 }

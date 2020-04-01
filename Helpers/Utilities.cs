@@ -40,9 +40,13 @@ namespace RivalAI.Helpers{
 		public static long BlockModMessageId = 0;
 		public static string ModName = "";
 
-		public static List<MyDefinitionId> AllWeaponCoreBlocks;
-		public static List<MyDefinitionId> AllWeaponCoreGuns;
-		public static List<MyDefinitionId> AllWeaponCoreTurrets;
+		public static List<MyDefinitionId> AllWeaponCoreBlocks = new List<MyDefinitionId>();
+		public static List<MyDefinitionId> AllWeaponCoreGuns = new List<MyDefinitionId>();
+		public static List<MyDefinitionId> AllWeaponCoreTurrets = new List<MyDefinitionId>();
+
+		public static Dictionary<MyDefinitionId, MyAmmoMagazineDefinition> NormalAmmoMagReferences = new Dictionary<MyDefinitionId, MyAmmoMagazineDefinition>();
+		public static Dictionary<MyDefinitionId, MyAmmoDefinition> NormalAmmoReferences = new Dictionary<MyDefinitionId, MyAmmoDefinition>();
+		public static Dictionary<MyDefinitionId, MyWeaponBlockDefinition> WeaponBlockReferences = new Dictionary<MyDefinitionId, MyWeaponBlockDefinition>();
 
 		public static List<long> ModIDs = new List<long>();
 
@@ -107,13 +111,61 @@ namespace RivalAI.Helpers{
 
 		}
 
-		public static void GetAllModIDs() {
+		public static void GetDefinitionsAndIDs() {
 
 			foreach (var mod in MyAPIGateway.Session.Mods) {
 
 				if (mod.PublishedFileId != 0) {
 
 					ModIDs.Add((long)mod.PublishedFileId);
+
+				}
+
+			}
+
+			//Get WeaponBlock Definitions
+			var allDefs = MyDefinitionManager.Static.GetAllDefinitions();
+
+			foreach (var def in allDefs) {
+
+				var weapon = def as MyWeaponBlockDefinition;
+
+				if (weapon != null && !Utilities.WeaponBlockReferences.ContainsKey(weapon.Id)) {
+
+					//Logger.WriteLog("Adding Weapon Def: " + weapon.Id.ToString());
+					Utilities.WeaponBlockReferences.Add(weapon.Id, weapon);
+
+				}
+
+			}
+
+			//Get Regular Ammos
+			var itemList = MyDefinitionManager.Static.GetPhysicalItemDefinitions();
+
+			foreach (var item in itemList) {
+
+				var ammoMag = item as MyAmmoMagazineDefinition;
+
+				if (ammoMag == null)
+					continue;
+
+				try {
+
+					var ammo = MyDefinitionManager.Static.GetAmmoDefinition(ammoMag.AmmoDefinitionId);
+
+					if (ammo == null)
+						continue;
+
+					if (!Utilities.NormalAmmoReferences.ContainsKey(ammoMag.Id)) {
+
+						Utilities.NormalAmmoReferences.Add(ammoMag.Id, ammo);
+
+
+					}
+
+				} catch (Exception e) {
+
+					Logger.WriteLog("Caught Error While Getting MyAmmoDefinition From ID in Magazine: " + ammoMag.Id.ToString());
 
 				}
 

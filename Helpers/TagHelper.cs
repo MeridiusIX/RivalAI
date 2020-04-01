@@ -553,7 +553,7 @@ namespace RivalAI.Helpers {
 
 			if(tagSplit.Length == 2) {
 
-				if(Vector3D.TryParse(tagSplit[1], out result) == false) {
+				if(Vector3D.TryParse(FixVectorString(tagSplit[1]), out result) == false) {
 
 					return Vector3D.Zero;
 
@@ -562,6 +562,26 @@ namespace RivalAI.Helpers {
 			}
 
 			return result;
+
+		}
+
+		public static string FixVectorString(string source) {
+
+			string newString = source;
+
+			if (newString.Length == 0)
+				return source;
+
+			if (newString[0] == '{')
+				newString = newString.Remove(0, 1);
+
+			if (newString.Length == 0)
+				return source;
+
+			if (newString[newString.Length - 1] == '}')
+				newString = newString.Remove(newString.Length - 1, 1);
+
+			return newString;
 
 		}
 

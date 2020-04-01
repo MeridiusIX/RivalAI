@@ -108,20 +108,20 @@ namespace RivalAI.Sync {
 
 			if (effectData.ParticleMaxTime > 0) {
 
-				effect.DurationMin = effectData.ParticleMaxTime;
-				effect.DurationMax = effectData.ParticleMaxTime;
+				//effect.DurationMin = effectData.ParticleMaxTime;
+				//effect.DurationMax = effectData.ParticleMaxTime;
 
 			}
 
 			if (effectData.ParticleColor != Vector3D.Zero) {
 
-				var newColor = new Vector4((float)effectData.ParticleColor.X, (float)effectData.ParticleColor.Y, (float)effectData.ParticleColor.Z, 1);
-				effect.UserColorMultiplier = newColor;
+				//var newColor = new Vector4((float)effectData.ParticleColor.X, (float)effectData.ParticleColor.Y, (float)effectData.ParticleColor.Z, 1);
+				//effect.UserColorMultiplier = newColor;
 
 			}
 
 			effect.Velocity = effectData.Velocity;
-			effect.Loop = false;
+			//effect.Loop = false;
 
 		}
 

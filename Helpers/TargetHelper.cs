@@ -438,138 +438,6 @@ namespace RivalAI.Helpers {
 
 		}
 
-		//CheckCollisions
-		public static CollisionCheckResult CheckCollisions(IMyTerminalBlock sourceBlock, Vector3D directionCheck, double distance, double speed, double timeTrigger, bool detectVoxel, bool detectGrid, bool detectSafeZone, bool detectShield, bool detectPlayer) {
-
-			CollisionCheckResult result = new CollisionCheckResult(false);
-			
-			try {
-
-				Vector3D remoteControlPosition = sourceBlock.GetPosition();
-				Vector3D closestCollisionCoords = Vector3D.Zero;
-				double closestCollisionDistance = 0;
-				CollisionDetectType detectType = CollisionDetectType.None;
-				IMyEntity closestEntity = null;
-
-				if(detectVoxel) {
-
-					IMyEntity voxelEntity = null;
-					var collision = TargetHelper.VoxelIntersectionCheck(remoteControlPosition, directionCheck, distance, out voxelEntity);
-
-					if(collision != Vector3D.Zero) {
-
-						var thisCollisionDist = Vector3D.Distance(collision, remoteControlPosition);
-						closestCollisionCoords = collision;
-						closestCollisionDistance = thisCollisionDist;
-						closestEntity = voxelEntity;
-						detectType = CollisionDetectType.Voxel;
-
-					}
-
-				}
-
-				if(detectGrid == true) {
-
-					IMyCubeGrid targetGrid = null;
-					var collision = TargetHelper.TargetIntersectionCheck(sourceBlock, directionCheck, distance, out targetGrid);
-
-					if(targetGrid != null) {
-
-						var thisCollisionDist = Vector3D.Distance(collision, remoteControlPosition);
-
-						if(thisCollisionDist < closestCollisionDistance || closestCollisionCoords == Vector3D.Zero) {
-
-							closestCollisionCoords = collision;
-							closestCollisionDistance = thisCollisionDist;
-							closestEntity = targetGrid;
-							detectType = CollisionDetectType.Grid;
-
-						}
-
-					}
-
-				}
-
-				if(detectSafeZone == true) {
-
-					IMyEntity zoneEntity = null;
-					var collision = SafeZoneIntersectionCheck(remoteControlPosition, directionCheck, distance, out zoneEntity);
-
-					if(collision != Vector3D.Zero) {
-
-						var thisCollisionDist = Vector3D.Distance(collision, remoteControlPosition);
-
-						if(thisCollisionDist < closestCollisionDistance || closestCollisionCoords == Vector3D.Zero) {
-
-							closestCollisionCoords = collision;
-							closestCollisionDistance = thisCollisionDist;
-							closestEntity = zoneEntity;
-							detectType = CollisionDetectType.SafeZone;
-
-						}
-
-					}
-
-				}
-
-				if(detectShield == true) {
-
-					IMyEntity shieldEntity = null;
-					var collision = TargetHelper.ShieldIntersectionCheck(remoteControlPosition, directionCheck, distance, out shieldEntity);
-
-					if(collision != Vector3D.Zero) {
-
-						var thisCollisionDist = Vector3D.Distance(collision, remoteControlPosition);
-
-						if(thisCollisionDist < closestCollisionDistance || closestCollisionCoords == Vector3D.Zero) {
-
-							closestCollisionCoords = collision;
-							closestCollisionDistance = thisCollisionDist;
-							closestEntity = shieldEntity;
-							detectType = CollisionDetectType.DefenseShield;
-
-						}
-
-					}
-
-				}
-
-				//TODO: Player Check
-
-
-
-				if(closestCollisionDistance != 0) {
-
-					var imminentCol = timeTrigger > (closestCollisionDistance / speed);
-					return new CollisionCheckResult(true, imminentCol, closestCollisionCoords, closestCollisionDistance, closestCollisionDistance / speed, detectType, closestEntity);
-
-				}
-
-				/*
-				if(Logger.LoggerDebugMode == true) {
-
-					if(closestCollisionCoords != Vector3D.Zero) {
-
-						var color = Color.Red.ToVector4();
-						//MySimpleObjectDraw.DrawLine(remoteControlPosition, closestCollisionCoords, MyStringId.GetOrCompute("WeaponLaser"), ref color, 1);
-						MyVisualScriptLogicProvider.ShowNotificationToAll("Collision: " + detectType.ToString() + " / " + closestCollisionDistance.ToString(), 166);
-
-					}
-
-				}
-				*/
-
-			} catch(Exception exc) {
-
-				Logger.MsgDebug("Caught Error In AI Parallel Collision Detection.", DebugTypeEnum.General);
-				Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
-
-			}
-
-			return result;
-
-		}
-
 		//EvaluateTargetWeaponsRange
 		public static float EvaluateTargetTurretRange(IMyCubeGrid cubeGrid){
 			
@@ -867,7 +735,7 @@ namespace RivalAI.Helpers {
 			
 		}
 
-		public static IMyPlayer GetClosestPlayerWithReputation(Vector3D coords, long factionId, int minRep, int maxRep) {
+		public static IMyPlayer GetClosestPlayerWithReputation(Vector3D coords, long factionId, TriggerProfile control) {
 
 			var activePlayers = new List<IMyPlayer>();
 			MyAPIGateway.Players.GetPlayers(activePlayers);
@@ -883,14 +751,25 @@ namespace RivalAI.Helpers {
 				}
 
 				var playerRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(player.IdentityId, factionId);
+				var distance = Vector3D.Distance(player.GetPosition(), coords);
 
-				if(playerRep < minRep || playerRep > maxRep) {
+				if (playerRep < control.MinPlayerReputation || playerRep > control.MaxPlayerReputation) {
+
+					if (control.AllPlayersMustMatchReputation) {
+
+						if (distance <= control.CustomReputationRangeCheck) {
+
+							return null;
+						
+						}
+					
+					}
 
 					continue;
 
 				}
 
-				var distance = Vector3D.Distance(player.GetPosition(), coords);
+				
 
 				if(closestPlayer == null) {
 
@@ -1354,7 +1233,7 @@ namespace RivalAI.Helpers {
 
 		//IsPositionInSafeZone
 		public static bool IsPositionInSafeZone(Vector3D position){
-			
+
 			var zones = GetSafeZones();
 			
 			foreach(var safezone in zones){
@@ -1743,189 +1622,11 @@ namespace RivalAI.Helpers {
 
 		}
 		
-		public static Vector3D SafeZoneIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, out IMyEntity zoneOutEntity){
-
-			zoneOutEntity = null;
-			var safezoneList = GetSafeZones();
-			double closestDistance = -1;
-			var ray = new RayD(fromCoords, direction);
-			
-			foreach(var zone in safezoneList){
-
-				var zoneEntity = zone as IMyEntity;
-				
-				if(zoneEntity == null){
-					
-					continue;
-					
-				}
-
-				if(zone.Enabled == false) {
-
-					continue;
-
-				}
-				
-				if(zone.Shape == MySafeZoneShape.Sphere){
-
-					var newSphere = new BoundingSphereD(zoneEntity.PositionComp.WorldVolume.Center, zone.Radius);
-					var result = ray.Intersects(newSphere);
-					
-					if(result.HasValue == true){
-						
-						if((double)result <= distance){
-							
-							if((double)result < closestDistance || closestDistance == -1){
-
-								zoneEntity = zone;
-								closestDistance = (double)result;
-								
-							}
-							
-						}
-						
-					}
-					
-				}else{
-					
-					var result = ray.Intersects(zoneEntity.PositionComp.WorldAABB);
-					
-					if(result.HasValue == true){
-						
-						if((double)result <= distance){
-							
-							if((double)result < closestDistance || closestDistance == -1){
-
-								zoneEntity = zone;
-								closestDistance = (double)result;
-								
-							}
-							
-						}
-						
-					}
-					
-				}
-				
-			}
-			
-			if(closestDistance == -1){
-				
-				return Vector3D.Zero;
-				
-			}
-			
-			return closestDistance * direction + fromCoords;
-			
-		}
 		
-		public static Vector3D ShieldIntersectionCheck(Vector3D fromCoords, Vector3D direction, double distance, out IMyEntity shieldEntity, long ownerId = 0){
-
-			shieldEntity = null;
-
-			if(RAI_SessionCore.Instance.ShieldApiLoaded){
-				
-				var api = RAI_SessionCore.Instance.SApi;
-				var toCoords = direction * distance + fromCoords;
-				var line = new LineD(fromCoords, toCoords);
-				var result = api.ClosestShieldInLine(line, true);
-				
-				if(result.Item1.HasValue){
-							
-					var dist = (double)result.Item1.Value;
-					shieldEntity = result.Item2;
-
-					if(ownerId != 0) {
-
-						var shield = result.Item2;
-						var reputation = OwnershipHelper.GetTargetReputation(ownerId, shield);
-
-						if(reputation.HasFlag(TargetRelationEnum.Enemy) == false) {
-
-							shieldEntity = null;
-							return Vector3D.Zero;
-
-						}
-
-					}
-
-					return fromCoords + (line.Direction * dist);
-
-				}
-				
-			}
-			
-			return Vector3D.Zero;
-			
-		}
 		
-		public static Vector3D TargetIntersectionCheck(IMyTerminalBlock sourceBlock, Vector3D direction, double distance, out IMyCubeGrid closestGrid){
-			
-			var resultList = new List<MyLineSegmentOverlapResult<MyEntity>>();
-			var fromCoords = sourceBlock.GetPosition();
-			var toCoords = direction * distance + fromCoords;
-			var ray = new LineD(fromCoords, toCoords);
-			MyGamePruningStructure.GetTopmostEntitiesOverlappingRay(ref ray, resultList);
-			
-			closestGrid = null;
-			double closestDistance = 0;
-			
-			foreach(var item in resultList){
-				
-				var targetGrid = item.Element as IMyCubeGrid;
-				
-				if(targetGrid == null){
-					
-					continue;
-					
-				}
-				
-				//TODO: Validate Same Construct Thing
-				if(targetGrid == sourceBlock.SlimBlock.CubeGrid /*|| sourceBlock.SlimBlock.CubeGrid.IsSameConstructAs(targetGrid) == true*/){
-					
-					continue;
-					
-				}
-				
-				if(closestGrid == null || (closestGrid != null && item.Distance < closestDistance)){
-					
-					closestGrid = targetGrid;
-					closestDistance = item.Distance;
-					
-				}
-	
-			}
-			
-			if(closestDistance == 0){
-				
-				return Vector3D.Zero;
-				
-			}
-
-			var blockPos = closestGrid.RayCastBlocks(fromCoords, toCoords);
-
-			if(blockPos.HasValue == false) {
-
-				closestGrid = null;
-				return Vector3D.Zero;
-
-			}
-
-			IMySlimBlock slimBlock = closestGrid.GetCubeBlock(blockPos.Value);
-
-			if(slimBlock == null) {
-
-				closestGrid = null;
-				return Vector3D.Zero;
-
-			}
-
-			Vector3D blockPosition = Vector3D.Zero;
-			slimBlock.ComputeWorldCenter(out blockPosition);
-
-			return blockPosition;
-			
-		}
+		
+		
+		
 		
 		public static Vector3D VoxelIntersectionCheck(Vector3D startScan, Vector3D scanDirection, double distance, out IMyEntity voxelEntity){
 

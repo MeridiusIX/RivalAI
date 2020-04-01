@@ -213,6 +213,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(60)]
 		public bool BroadcastGenericCommand;
 
+		[ProtoMember(61)]
+		public bool BehaviorSpecificEventA;
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
@@ -251,6 +254,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ReputationChangeAmount = new List<int>();
 			ReputationChangesForAllRadiusPlayerFactionMembers = false;
 
+			ChangeAttackerReputation = false;
+			ChangeAttackerReputationFaction = new List<string>();
+			ChangeAttackerReputationAmount = new List<int>();
+			ReputationChangesForAllAttackPlayerFactionMembers = false;
+
 			ActivateAssertiveAntennas = false;
 			
 			ChangeAntennaOwnership = false;
@@ -285,12 +293,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			DecreaseSandboxCounters = new List<string>();
 			ResetSandboxCounters = new List<string>();
 			
-			ChangeAttackerReputation = false;
-			ChangeAttackerReputationFaction = new List<string>();
-			ChangeAttackerReputationAmount = new List<int>();
-			ReputationChangesForAllAttackPlayerFactionMembers = false;
+			
 
 			BroadcastGenericCommand = false;
+
+			BehaviorSpecificEventA = false;
 
 			ProfileSubtypeId = "";
 
@@ -847,6 +854,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						this.ReputationChangesForAllAttackPlayerFactionMembers = TagHelper.TagBoolCheck(tag);
 
 					}
+
+					//BehaviorSpecificEventA
+					if (tag.Contains("[BehaviorSpecificEventA:") == true) {
+
+						this.BehaviorSpecificEventA = TagHelper.TagBoolCheck(tag);
+
+					}
+
 
 				}
 

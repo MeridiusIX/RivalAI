@@ -264,9 +264,9 @@ namespace RivalAI.Behavior.Subsystems{
 
 				if (this.NeedsTarget == true && this.InvalidTarget == false && this.Target != null) {
 
-					Logger.MsgDebug("Evaluating Target", DebugTypeEnum.Target);
+					//Logger.MsgDebug("Evaluating Target", DebugTypeEnum.Target);
 					this.Target.Evaluate(this.RemoteControl, this.TargetData);
-					//Logger.AddMsg("Target Coords: " + this.Target.TargetCoords.ToString(), true);
+					//Logger.MsgDebug("Target Eval Results: \r\nExists: " + this.Target.TargetExists.ToString() + "\r\nCoords:" + this.Target.TargetCoords.ToString(), DebugTypeEnum.Target);
 
 
 					if (this.Target.TargetExists == false) {

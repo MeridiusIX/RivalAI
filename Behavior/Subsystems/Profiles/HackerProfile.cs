@@ -62,14 +62,25 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public bool UseBlockInterference;
 		public List<MyDefinitionId> InterferenceBlockIDs;
 		public int InterferenceBlockCountRequired;
+		public bool InterferenceBlocksReduceSuccess;
 
 		public ChatProfile HackingChat; //Change Chat Profile To Use Modifiers
 
-
-
 		public HackerProfile() {
 
+			EnableHacking = false;
+			PreHackingTime = 10;
+			HackingCooldownTime = 30;
+			MaxHackingAttacks = 3;
+			MaxFailedHackingAttacks = 3;
+			HackingTypes = new List<HackingType>();
 
+			UseBlockInterference = false;
+			InterferenceBlockIDs = new List<MyDefinitionId>();
+			InterferenceBlockCountRequired = 3;
+			InterferenceBlocksReduceSuccess = true;
+
+			HackingChat = new ChatProfile();
 
 		}
 

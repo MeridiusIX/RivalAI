@@ -33,7 +33,7 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior{
 	
-	public class Passive : CoreBehavior{
+	public class Passive : CoreBehavior, IBehavior{
 
 		//Configurable
 		public double FighterEngageDistanceSpace;
@@ -58,21 +58,6 @@ namespace RivalAI.Behavior{
 
 		}
 
-		public void RunAi() {
-
-			if(!IsAIReady())
-				return;
-
-			RunCoreAi();
-
-			if(EndScript == true) {
-
-				return;
-
-			}
-
-		}
-
 		public void BehaviorInit(IMyRemoteControl remoteControl) {
 
 			//Core Setup
@@ -85,16 +70,6 @@ namespace RivalAI.Behavior{
 
 			//Get Settings From Custom Data
 			InitCoreTags();
-
-		}
-
-		public void InitTags() {
-
-			//Core Tags
-			
-
-			//Behavior Tags
-			
 
 		}
 

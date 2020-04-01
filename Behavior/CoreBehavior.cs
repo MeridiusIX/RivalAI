@@ -58,7 +58,8 @@ namespace RivalAI.Behavior {
 		public bool ConfigCheck;
 		public bool EndScript;
 
-		private DateTime _behaviorTimer;
+		private DateTime _despawnCheckTimer;
+		private DateTime _behaviorRunTimer;
 
 		private int _settingSaveCounter;
 		private int _settingSaveCounterTrigger;
@@ -71,6 +72,7 @@ namespace RivalAI.Behavior {
 
 		public bool IsWorking;
 		public bool PhysicsValid;
+		public bool IsEntityClosed;
 
 		public byte CoreCounter;
 
@@ -87,7 +89,8 @@ namespace RivalAI.Behavior {
 			ConfigCheck = false;
 			EndScript = false;
 
-			_behaviorTimer = MyAPIGateway.Session.GameDateTime;
+			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
+			_behaviorRunTimer = MyAPIGateway.Session.GameDateTime;
 
 			_settingSaveCounter = 0;
 			_settingSaveCounterTrigger = 5;
@@ -105,66 +108,133 @@ namespace RivalAI.Behavior {
 
 		}
 
-		public void RunCoreAi() {
+		//------------------------------------------------------------------------
+		//--------------START INTERFACE METHODS-----------------------------------
+		//------------------------------------------------------------------------
 
-			//MyVisualScriptLogicProvider.ShowNotificationToAll("AI Run / NPC: " + Owner.NpcOwned.ToString(), 16);
+		public bool IsAIReady() {
 
-			if (!IsAIReady()) {
-
-				return;
-
-			}
-				
-
-			CoreCounter++;
-
-			if (Logger.LoggerDebugMode) {
-
-				NewAutoPilot.DebugDrawingToWaypoints();
-
-			}
-
-			if((CoreCounter % 10) == 0) {
-
-				//TODO: Damage Alert Handlers
-				//Weapons.BarrageFire();
-
-			}
-
-			if((CoreCounter % 15) == 0) {
-
-				NewAutoPilot.StartCalculations();
-
-			}
-
-			if((CoreCounter % 60) == 0) {
-
-				CoreCounter = 0;
-				_settingSaveCounter++;
-				
-			}
+			return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
 
 		}
 
-		public virtual void MainBehavior() {
-		
-			
-		
+		public void ProcessCollisionChecks() {
+
+			NewAutoPilot.Collision.PrepareCollisionChecks();
+
 		}
 
+		public void ProcessTargetingChecks() {
+
+			NewAutoPilot.Targeting.RequestTarget();
+			NewAutoPilot.Targeting.RequestTargetParallel();
+
+		}
+
+		public void ProcessAutoPilotChecks() {
+
+			NewAutoPilot.ThreadedAutoPilotCalculations();
+
+		}
+
+		public void ProcessWeaponChecks() {
+
+			NewAutoPilot.Weapons.CheckWeaponReadiness();
+
+		}
+
+		public void ProcessTriggerChecks() {
+
+			Trigger.ProcessTriggerWatchers();
+
+		}
+
+		public void EngageAutoPilot() {
+		
+			NewAutoPilot.EngageAutoPilot();
+
+		}
+
+		public void SetInitialWeaponReadiness() {
+		
+			NewAutoPilot.Weapons.SetInitialWeaponReadiness();
+
+		}
+
+		public void FireWeapons() {
+
+			NewAutoPilot.Weapons.FireWeapons();
+
+		}
+
+		public void FireBarrageWeapons() {
+
+			NewAutoPilot.Weapons.FireBarrageWeapons();
+
+		}
+
+		public void ProcessActivatedTriggers() {
+
+			Trigger.ProcessActivatedTriggers();
+
+		}
+		
 		public void CheckDespawnConditions() {
 
-			var timeDifference = MyAPIGateway.Session.GameDateTime - _behaviorTimer;
+			var timeDifference = MyAPIGateway.Session.GameDateTime - _despawnCheckTimer;
 
 			if (timeDifference.TotalMilliseconds <= 999)
 				return;
 
+			_settingSaveCounter++;
 			Logger.MsgDebug("Checking Despawn Conditions", DebugTypeEnum.Dev);
-			_behaviorTimer = MyAPIGateway.Session.GameDateTime;
+			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
 			Despawn.ProcessTimers(Mode, NewAutoPilot.InvalidTarget());
+			//MainBehavior();
+
+			if (_settingSaveCounter >= _settingSaveCounterTrigger) {
+
+				SaveData();
+
+			}
+
+		}
+
+		public void RunMainBehavior() {
+
+			var timeDifference = MyAPIGateway.Session.GameDateTime - _behaviorRunTimer;
+
+			if (timeDifference.TotalMilliseconds <= 999)
+				return;
+
+			_behaviorRunTimer = MyAPIGateway.Session.GameDateTime;
 			MainBehavior();
+
+		}
+
+		public bool IsClosed() {
+
+			return (IsEntityClosed || EndScript);
 		
 		}
+
+		public void DebugDrawWaypoints() {
+
+			NewAutoPilot.DebugDrawingToWaypoints();
+		
+		}
+
+		//------------------------------------------------------------------------
+		//----------------END INTERFACE METHODS-----------------------------------
+		//------------------------------------------------------------------------
+
+		public virtual void MainBehavior() {
+
+			
+
+		}
+
+		
 
 		public void ChangeBehavior(string newBehaviorSubtypeID) {
 
@@ -172,7 +242,7 @@ namespace RivalAI.Behavior {
 
 		}
 
-		public void ChangeCoreBehaviorMode(BehaviorMode newMode) {
+		public virtual void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
 			Logger.MsgDebug("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
 			this.Mode = newMode;
@@ -194,8 +264,12 @@ namespace RivalAI.Behavior {
 			if (this.ConfigCheck == false) {
 
 				this.ConfigCheck = true;
+				var valA = RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTk1NzU4Mjc1OQ==")));
+				var valB = RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MjA0MzU0MzkyNQ==")));
 
-				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTk1NzU4Mjc1OQ=="))) == false)) {
+
+				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) && (!valA && !valB)) {
+
 
 					this.EndScript = true;
 					return;
@@ -206,6 +280,7 @@ namespace RivalAI.Behavior {
 
 			this.RemoteControl = remoteControl;
 			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
+			this.RemoteControl.OnClosing += (e) => { this.IsEntityClosed = true; };
 
 			this.RemoteControl.IsWorkingChanged += RemoteIsWorking;
 			RemoteIsWorking(this.RemoteControl);
@@ -223,7 +298,7 @@ namespace RivalAI.Behavior {
 			Settings = new StoredSettings();
 			Trigger = new TriggerSystem(remoteControl);
 
-			NewAutoPilot.SetupReferences();
+			NewAutoPilot.SetupReferences(Trigger);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
 			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings);
@@ -241,6 +316,7 @@ namespace RivalAI.Behavior {
 			Despawn.InitTags();
 			Extras.InitTags();
 			Owner.InitTags();
+			Trigger.InitTags();
 
 			PostTagsSetup();
 
@@ -252,9 +328,18 @@ namespace RivalAI.Behavior {
 
 			Logger.MsgDebug("Post Tag Setup for " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
 
+			if (Logger.DebugTrigger) {
+
+				Logger.MsgDebug("Total Triggers: " + Trigger.Triggers.Count.ToString(), DebugTypeEnum.Trigger);
+				Logger.MsgDebug("Total Damage Triggers: " + Trigger.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
+				Logger.MsgDebug("Total Command Triggers: " + Trigger.CommandTriggers.Count.ToString(), DebugTypeEnum.Trigger);
+
+			}
+
 			if (Trigger.DamageTriggers.Count > 0)
 				Damage.UseDamageDetection = true;
 
+			NewAutoPilot.Weapons.Setup();
 			Damage.SetupDamageHandler();
 
 			//TODO: Restore Storage Data
@@ -344,7 +429,7 @@ namespace RivalAI.Behavior {
 
 		private void SetupCallbacks() {
 
-			NewAutoPilot.OnComplete += Trigger.ProcessTriggerWatchers;
+			//NewAutoPilot.OnComplete += Trigger.ProcessTriggerWatchers;
 			Trigger.OnComplete += CheckDespawnConditions;
 
 		
@@ -429,11 +514,7 @@ namespace RivalAI.Behavior {
 
 		}
 
-		public bool IsAIReady() {
-
-			return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
-
-		}
+		
 
 	}
 	

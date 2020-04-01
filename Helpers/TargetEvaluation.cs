@@ -54,6 +54,7 @@ namespace RivalAI.Helpers {
         public Vector3D TargetVelocity;
         public Vector3D TargetDirection;
         public double Distance;
+        public double Altitude;
         public double TargetAngle;
 
         public DateTime TargetEvaluationTime;
@@ -122,14 +123,26 @@ namespace RivalAI.Helpers {
 
             }
 
-            //MyAPIGateway.Parallel.Start(EvaluateParallel);
+            try {
+            
+            
+            
+            } catch (Exception e) {
+
+                Logger.WriteLog("Exception in target eval");
+                Logger.WriteLog(e.ToString());
+
+            }
+
             EvaluateParallel();
 
         }
 
         public void EvaluateParallel() {
 
-            //Logger.AddMsg("Target Evaluation", true);
+            //Logger.MsgDebug("Target Evaluation Start: ", DebugTypeEnum.Target);
+            var start = DateTime.Now;
+            var stepTime = DateTime.Now;
             //Check If Entity Exists
             if(this.TargetType == TargetTypeEnum.Block) {
 
@@ -192,7 +205,7 @@ namespace RivalAI.Helpers {
 
             }
 
-            //Logger.AddMsg("Target Exists", true);
+            //Logger.MsgDebug("Target Exists: ", DebugTypeEnum.Target);
             this.TargetExists = true;
             this.TargetEvaluationTime = MyAPIGateway.Session.GameDateTime;
 
@@ -200,14 +213,17 @@ namespace RivalAI.Helpers {
             this.TargetCoords = this.Target.PositionComp.WorldAABB.Center;
 
             this.Distance = Vector3D.Distance(this.MyPosition, this.TargetCoords);
+            this.Altitude = VectorHelper.GetAltitudeAtPosition(this.TargetCoords);
             this.TargetDirection = Vector3D.Normalize(this.TargetCoords - this.MyPosition);
-            this.TargetAngle = VectorHelper.GetAngleBetweenDirections(this.MyDirection, this.TargetDirection);
-            this.InSafeZone = TargetHelper.IsPositionInSafeZone(this.TargetCoords);
+            //this.TargetAngle = VectorHelper.GetAngleBetweenDirections(this.MyDirection, this.TargetDirection);
+            //this.InSafeZone = TargetHelper.IsPositionInSafeZone(this.TargetCoords);
 
+            //Logger.MsgDebug("Target moving: ", DebugTypeEnum.Target);
             //IsMoving
             this.TargetVelocity = Vector3D.Zero;
+            this.IsMoving = false;
 
-            if(TargetType == TargetTypeEnum.Block) {
+            if (TargetType == TargetTypeEnum.Block) {
 
                 if(TargetBlock?.SlimBlock?.CubeGrid?.Physics != null) {
 
@@ -217,39 +233,54 @@ namespace RivalAI.Helpers {
 
                         this.IsMoving = true;
 
-                    } else {
-
-                        this.IsMoving = false;
-
                     }
 
                 }
 
             } else {
 
-                if(Target?.Physics != null) {
+                if (Target != null) {
 
-                    this.TargetVelocity = Target.Physics.LinearVelocity;
+                    if (Target?.Physics != null) {
 
-                    if(Target.Physics.LinearVelocity.Length() > 0.1) {
+                        this.TargetVelocity = Target.Physics.LinearVelocity;
 
-                        this.IsMoving = true;
+                        if (Target.Physics.LinearVelocity.Length() > 0.1) {
+
+                            this.IsMoving = true;
+
+                        }
 
                     } else {
 
-                        this.IsMoving = false;
+                        var controller = Target as IMyTerminalBlock;
+
+                        if (controller != null && controller.SlimBlock.CubeGrid.Physics != null) {
+
+                            this.TargetVelocity = controller.SlimBlock.CubeGrid.Physics.LinearVelocity;
+
+                            if (controller.SlimBlock.CubeGrid.Physics.LinearVelocity.Length() > 0.1) {
+
+                                this.IsMoving = true;
+
+                            }
+
+                        }
 
                     }
 
                 }
 
+                
+
             }
 
             //Obstruction To Target (For Weapons)
-            IsTargetObstructed();
+            //IsTargetObstructed(); //Broken?
 
+            //Logger.MsgDebug("Target human control: ", DebugTypeEnum.Target);
             //IsHumanControlled
-            if(TargetType == TargetTypeEnum.Block) {
+            if (TargetType == TargetTypeEnum.Block) {
 
                 this.IsHumanControlled = TargetHelper.IsHumanControllingTarget(this.TargetBlock.SlimBlock.CubeGrid);
 
@@ -267,8 +298,9 @@ namespace RivalAI.Helpers {
 
             }
 
+            //Logger.MsgDebug("Target powered: ", DebugTypeEnum.Target);
             //IsPowered
-            if(TargetType == TargetTypeEnum.Block) {
+            if (TargetType == TargetTypeEnum.Block) {
 
                 this.IsPowered = TargetHelper.IsGridPowered(this.TargetBlock.SlimBlock.CubeGrid);
 
@@ -294,8 +326,9 @@ namespace RivalAI.Helpers {
 
             }
 
+            //Logger.MsgDebug("Target shielded: ", DebugTypeEnum.Target);
             //IsShielded
-            if(RAI_SessionCore.Instance.ShieldApiLoaded == true) {
+            if (RAI_SessionCore.Instance.ShieldApiLoaded == true) {
 
                 var api = RAI_SessionCore.Instance.SApi;
                 this.IsShielded = api.ProtectedByShield(this.Target);
@@ -319,126 +352,17 @@ namespace RivalAI.Helpers {
 
             }
 
+            //Logger.MsgDebug("Target eval end: ", DebugTypeEnum.Target);
+
         }
 
         public void IsTargetObstructed() {
 
-            double targetDistance = Vector3D.Distance(this.TargetCoords, this.MyPosition);
-            TargetObstructionEnum closestThing = TargetObstructionEnum.None;
-            double closestDistance = targetDistance;
 
-            IMyEntity zoneEntity = null;
-            var safezoneCoords = TargetHelper.SafeZoneIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out zoneEntity);
-            double safeZoneDistance = targetDistance + 100;
-
-            if(safezoneCoords != Vector3D.Zero) {
-
-                safeZoneDistance = Vector3D.Distance(safezoneCoords, this.MyPosition);
-
-                if(safeZoneDistance < closestDistance) {
-
-                    closestDistance = safeZoneDistance;
-                    closestThing = TargetObstructionEnum.Safezone;
-
-                }
-
-            }
-
-            var voxelCoords = Vector3D.Zero;
-            double voxelDistance = targetDistance + 100;
-
-            IMyEntity voxelEntity = null;
-            voxelCoords = TargetHelper.VoxelIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out voxelEntity);
-
-            if(voxelCoords != Vector3D.Zero) {
-
-                voxelDistance = Vector3D.Distance(voxelCoords, this.MyPosition);
-
-                if(voxelDistance < closestDistance) {
-
-                    closestDistance = voxelDistance;
-                    closestThing = TargetObstructionEnum.Voxel;
-
-                }
-
-            }
-
-            IMyEntity shieldEntity = null;
-            var shieldCoords = TargetHelper.ShieldIntersectionCheck(this.MyPosition, this.MyDirection, targetDistance, out shieldEntity, this.MyIdentityId);
-            double shieldDistance = targetDistance + 100;
-
-            if(shieldCoords != Vector3D.Zero) {
-
-                shieldDistance = Vector3D.Distance(shieldCoords, this.MyPosition);
-
-                if(shieldDistance < closestDistance) {
-
-                    closestDistance = shieldDistance;
-                    closestThing = TargetObstructionEnum.DefenseShield;
-
-                }
-
-            }
-
-            IMyCubeGrid grid = null;
-            var gridCoords = TargetHelper.TargetIntersectionCheck(this.RemoteControl, this.MyDirection, targetDistance, out grid);
-            double gridDistance = targetDistance + 100;
-
-            if(gridCoords != Vector3D.Zero) {
-
-                gridDistance = Vector3D.Distance(gridCoords, this.MyPosition);
-
-                if(gridDistance < closestDistance) {
-
-                    closestDistance = gridDistance;
-                    closestThing = TargetObstructionEnum.OtherGrid;
-                    this.TargetObstructionEntity = grid;
-
-                }
-
-            }
-
-            this.TargetObstruction = closestThing;
-            this.TargetObstructionDistance = closestDistance;
-
+            
         }
 
         public bool IsTargetReachable() {
-
-            if(this.TargetObstruction == TargetObstructionEnum.None) {
-
-                return true;
-
-            }
-
-            if(this.TargetObstruction == TargetObstructionEnum.Voxel && !_targetData.IgnoredObstructions.HasFlag(TargetObstructionEnum.Voxel)) {
-
-                if(this.Distance > this.TargetObstructionDistance) {
-
-                    return false;
-
-                }
-
-            }
-
-            if (this.TargetObstruction == TargetObstructionEnum.Safezone && !_targetData.IgnoredObstructions.HasFlag(TargetObstructionEnum.Safezone)) {
-
-                if (this.Distance > this.TargetObstructionDistance) {
-
-                    return false;
-
-                }
-
-            }
-
-            if (this.TargetObstruction == TargetObstructionEnum.OtherGrid && this.TargetObstructionEntity != null) {
-
-                var gridRep = OwnershipHelper.GetTargetReputation(this.RemoteControl.OwnerId, (IMyCubeGrid)this.TargetObstructionEntity, true);
-
-                if (OwnershipHelper.CompareAllowedReputation(_targetData.Relations, gridRep))
-                    return true;
-
-            }
 
             return false;
 

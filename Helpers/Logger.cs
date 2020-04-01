@@ -76,6 +76,9 @@ namespace RivalAI.Helpers{
 		public static bool DebugTrigger = true;
 		public static bool DebugWeapon = false;
 
+		public static DateTime StartTimer = DateTime.Now;
+		public static DateTime StepTimer = DateTime.Now;
+
 		public static void MsgDebug(string message, DebugTypeEnum type = DebugTypeEnum.None){
 			
 			if(LoggerDebugMode == false){
@@ -100,6 +103,31 @@ namespace RivalAI.Helpers{
 		public static void WriteLog(string message) {
 
 			MyLog.Default.WriteLineAndConsole(LogDefaultIdentifier + message);
+
+		}
+
+		public static void UseStopwatch(string msg, bool reset = false, bool endTimer = false) {
+
+			if (reset) {
+
+				StepTimer = DateTime.Now;
+				StartTimer = DateTime.Now;
+				WriteLog(msg);
+				return;
+			
+			}
+
+			if (endTimer) {
+
+				var timespanE = DateTime.Now - StartTimer;
+				WriteLog(msg + timespanE.TotalMilliseconds.ToString());
+				return;
+			
+			}
+
+			var timespan = DateTime.Now - StepTimer;
+			WriteLog(msg + timespan.TotalMilliseconds.ToString());
+			StepTimer = DateTime.Now;
 
 		}
 

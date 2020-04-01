@@ -33,88 +33,202 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior {
 
-    public class Strike:CoreBehavior {
+    public class Strike : CoreBehavior, IBehavior {
 
         //Configurable
-        public double StrikePlanetTargetInitialAltitude;
-        public double StrikePlanetEngageFromInitialDistance;
-        public double StrikeBreakawayDistnace;
-        public int StrikeMaximumAttackRuns;
 
-        public Vector3D PlanetInitalTargetCoords;
-        public Vector3D PlanetApproachCoords;
-        public int CurrentAttackRuns;
+        public double StrikeBeginSpaceAttackRunDistance;
+        public double StrikeBeginPlanetAttackRunDistance;
+        public double StrikeBreakawayDistance;
+        public int StrikeOffsetRecalculationTime;
+        public bool StrikeEngageUseSafePlanetPathing;
+        public bool StrikeEngageUseCollisionEvasionSpace;
+        public bool StrikeEngageUseCollisionEvasionPlanet;
 
-        public bool ReceivedEvadeSignal;
-        public bool ReceivedRetreatSignal;
-        public bool ReceivedExternalTarget;
+        private bool _defaultCollisionSettings = false;
+
+        public DateTime LastOffsetCalculation;
+        public bool TargetIsHigh;
 
         public byte Counter;
 
         public Strike() {
 
-            StrikePlanetTargetInitialAltitude = 1200;
-            StrikePlanetEngageFromInitialDistance = 100;
-            StrikeBreakawayDistnace = 450;
-            StrikeMaximumAttackRuns = 10;
-
-            PlanetInitalTargetCoords = Vector3D.Zero;
-            PlanetApproachCoords = Vector3D.Zero;
-            CurrentAttackRuns = 0;
-
-            ReceivedEvadeSignal = false;
-            ReceivedRetreatSignal = false;
-            ReceivedExternalTarget = false;
+            StrikeBeginSpaceAttackRunDistance = 75;
+            StrikeBeginPlanetAttackRunDistance = 100;
+            StrikeBreakawayDistance = 450;
+            StrikeOffsetRecalculationTime = 30;
+            StrikeEngageUseSafePlanetPathing = true;
+            StrikeEngageUseCollisionEvasionSpace = true;
+            StrikeEngageUseCollisionEvasionPlanet = false;
 
             Counter = 0;
 
         }
 
-        public void RunAi() {
+        public override void MainBehavior() {
 
-            if(!IsAIReady())
-                return;
+            bool skipEngageCheck = false;
 
-            RunCoreAi();
 
-            if(EndScript == true) {
+            //Init
+            if (Mode == BehaviorMode.Init) {
 
-                return;
+                if (NewAutoPilot.Targeting.InvalidTarget == true) {
+
+                    ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+
+                } else {
+
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+                    CreateAndMoveToOffset();
+                    skipEngageCheck = true;
+
+                }
 
             }
 
-            Counter++;
+            //Waiting For Target
+            if (Mode == BehaviorMode.WaitingForTarget) {
 
-            if(Counter >= 60) {
+                if (NewAutoPilot.Targeting.InvalidTarget == false) {
 
-                MainBehavior();
-                Counter = 0;
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+                    CreateAndMoveToOffset();
+                    skipEngageCheck = true;
+
+                } else if (Despawn.NoTargetExpire == true) {
+
+                    Despawn.Retreat();
+
+                }
 
             }
+
+            if (NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
+
+                ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+
+            }
+
+            //Approach Target
+            if (Mode == BehaviorMode.ApproachTarget && !skipEngageCheck) {
+
+                double distance = NewAutoPilot.InGravity() ? this.StrikeBeginPlanetAttackRunDistance : this.StrikeBeginSpaceAttackRunDistance;
+
+                if (NewAutoPilot.DistanceToCurrentWaypoint <= distance && !NewAutoPilot.IsAvoidingCollision()) {
+
+                    ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
+                    NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward, RemoteControl.GetPosition(), true, false, StrikeEngageUseSafePlanetPathing);
+                    skipEngageCheck = true;
+
+                }
+
+                if (skipEngageCheck == false) {
+
+                    var timeSpan = MyAPIGateway.Session.GameDateTime - LastOffsetCalculation;
+
+                    if (timeSpan.TotalSeconds >= StrikeOffsetRecalculationTime) {
+
+                        skipEngageCheck = true;
+                        CreateAndMoveToOffset();
+
+                    }
+
+                    if (TargetIsHigh && NewAutoPilot.Targeting.Target.Altitude < NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+
+                        TargetIsHigh = false;
+                        CreateAndMoveToOffset();
+
+                    } else if (!TargetIsHigh && NewAutoPilot.Targeting.Target.Altitude > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+
+                        TargetIsHigh = true;
+                        CreateAndMoveToOffset();
+
+                    }
+
+                }
+
+            }
+
+            //Engage Target
+            if (Mode == BehaviorMode.EngageTarget && !skipEngageCheck) {
+
+                Logger.MsgDebug("Strike: " + StrikeBreakawayDistance.ToString() + " - " + NewAutoPilot.DistanceToInitialWaypoint, DebugTypeEnum.General);
+                if (NewAutoPilot.DistanceToInitialWaypoint <= StrikeBreakawayDistance || (NewAutoPilot.UseVelocityCollisionEvasion && NewAutoPilot.Collision.VelocityResult.CollisionImminent())) {
+
+                    ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+                    CreateAndMoveToOffset();
+
+                }
+            
+            }
+
 
 
         }
 
-        public void MainBehavior() {
+        public override void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-            if(RAI_SessionCore.IsServer == false) {
+            base.ChangeCoreBehaviorMode(newMode);
 
-                return;
+            if (_defaultCollisionSettings == true) {
+
+                if (this.Mode == BehaviorMode.EngageTarget) {
+
+                    this.NewAutoPilot.UseVelocityCollisionEvasion = UseEngageCollisionEvasion();
+
+                } else {
+
+                    this.NewAutoPilot.UseVelocityCollisionEvasion = true;
+
+                }
 
             }
-
 
         }
 
-        public void CheckTarget() {
-            /*
-            if(Targeting.InvalidTarget == true) {
+        private bool UseEngageCollisionEvasion() {
 
-                Mode = BehaviorMode.WaitingForTarget;
-                AutoPilot.ChangeAutoPilotMode(AutoPilotMode.None);
+            return NewAutoPilot.InGravity() ? this.StrikeEngageUseCollisionEvasionPlanet : this.StrikeEngageUseCollisionEvasionSpace;
+        
+        }
 
+
+        private void ChangeOffsetAction() {
+
+            return;
+            if(Mode == BehaviorMode.ApproachTarget)
+                NewAutoPilot.ReverseOffsetDirection(70);
+
+        }
+
+        private void CreateAndMoveToOffset() {
+
+            if (NewAutoPilot.InGravity()) {
+
+                if (NewAutoPilot.Targeting.Target.Altitude > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+
+                    //Logger.MsgDebug("Target Is High", DebugTypeEnum.General);
+                    NewAutoPilot.SetRandomOffset(VectorHelper.RandomDistance(NewAutoPilot.OffsetPlanetMinTargetAltitude, NewAutoPilot.OffsetPlanetMaxTargetAltitude), 0, NewAutoPilot.Targeting.Target.Target);
+
+                } else {
+
+                    //Logger.MsgDebug("Target Is Low", DebugTypeEnum.General);
+                    NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target);
+
+                }
+            
+            } else {
+
+                //Logger.MsgDebug("Target Is Space", DebugTypeEnum.General);
+                NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target);
+            
             }
-            */
+
+            LastOffsetCalculation = MyAPIGateway.Session.GameDateTime;
+            NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward, RemoteControl.GetPosition(), true, true, true);
+
         }
 
         public void BehaviorInit(IMyRemoteControl remoteControl) {
@@ -127,12 +241,21 @@ namespace RivalAI.Behavior {
             NewAutoPilot.Targeting.NeedsTarget = true;
             NewAutoPilot.Weapons.UseStaticGuns = true;
             NewAutoPilot.Collision.CollisionTimeTrigger = 5;
+            NewAutoPilot.CollisionEvasionWaypointCalculatedAwayFromEntity = true;
+            NewAutoPilot.OffsetSpaceMinDistFromTarget = 900;
+            NewAutoPilot.OffsetSpaceMaxDistFromTarget = 1000;
+            NewAutoPilot.OffsetPlanetMinDistFromTarget = 100;
+            NewAutoPilot.OffsetPlanetMaxDistFromTarget = 150;
+            NewAutoPilot.OffsetPlanetMinTargetAltitude = 900;
+            NewAutoPilot.OffsetPlanetMaxTargetAltitude = 1100;
+            NewAutoPilot.WaypointTolerance = 50;
 
             //Get Settings From Custom Data
             InitCoreTags();
+            InitTags();
 
             //Behavior Specific Default Enums (If None is Not Acceptable)
-            if(NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
+            if (NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
 
                 NewAutoPilot.Targeting.TargetType = TargetTypeEnum.Player;
 
@@ -150,15 +273,58 @@ namespace RivalAI.Behavior {
 
             }
 
+            Trigger.BehaviorEventA += ChangeOffsetAction;
+
+            _defaultCollisionSettings = NewAutoPilot.UseVelocityCollisionEvasion;
+
         }
 
         public void InitTags() {
 
-            //Core Tags
+            if (string.IsNullOrWhiteSpace(this.RemoteControl?.CustomData) == false) {
 
+                var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-            //Behavior Tags
+                foreach (var tag in descSplit) {
 
+                    //StrikeBeginSpaceAttackRunDistance
+                    if (tag.Contains("[StrikeBeginSpaceAttackRunDistance:") == true) {
+
+                        this.StrikeBeginSpaceAttackRunDistance = TagHelper.TagDoubleCheck(tag, this.StrikeBeginSpaceAttackRunDistance);
+
+                    }
+
+                    //StrikeBeginPlanetAttackRunDistance
+                    if (tag.Contains("[StrikeBeginPlanetAttackRunDistance:") == true) {
+
+                        this.StrikeBeginPlanetAttackRunDistance = TagHelper.TagDoubleCheck(tag, this.StrikeBeginPlanetAttackRunDistance);
+
+                    }
+
+                    //StrikeBreakawayDistance
+                    if (tag.Contains("[StrikeBreakawayDistance:") == true) {
+
+                        this.StrikeBreakawayDistance = TagHelper.TagDoubleCheck(tag, this.StrikeBreakawayDistance);
+
+                    }
+
+                    //StrikeOffsetRecalculationTime
+                    if (tag.Contains("[StrikeOffsetRecalculationTime:") == true) {
+
+                        this.StrikeOffsetRecalculationTime = TagHelper.TagIntCheck(tag, this.StrikeOffsetRecalculationTime);
+
+                    }
+
+                    //StrikeEngageUseSafePlanetPathing
+                    if (tag.Contains("[StrikeEngageUseSafePlanetPathing:") == true) {
+
+                        this.StrikeEngageUseSafePlanetPathing = TagHelper.TagBoolCheck(tag);
+
+                    }
+
+                }
+
+            }
 
         }
 

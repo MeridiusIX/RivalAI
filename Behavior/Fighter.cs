@@ -33,7 +33,7 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior{
 	
-	public class Fighter : CoreBehavior{
+	public class Fighter : CoreBehavior, IBehavior{
 
 		//Configurable
 		public double FighterEngageDistanceSpace;
@@ -41,24 +41,16 @@ namespace RivalAI.Behavior{
 
 		public double FighterDisengageDistanceSpace;
 		public double FighterDisengageDistancePlanet;
-
-		public bool ReceivedEvadeSignal;
-		public bool ReceivedRetreatSignal;
-		public bool ReceivedExternalTarget;
 		
 		public byte Counter;
 
 		public Fighter() {
 
-			FighterEngageDistanceSpace = 300;
+			FighterEngageDistanceSpace = 400;
 			FighterEngageDistancePlanet = 600;
 
-			FighterDisengageDistanceSpace = 300;
+			FighterDisengageDistanceSpace = 600;
 			FighterDisengageDistancePlanet = 600;
-
-			ReceivedEvadeSignal = false;
-			ReceivedRetreatSignal = false;
-			ReceivedExternalTarget = false;
 			
 			Counter = 0;
 
@@ -200,12 +192,15 @@ namespace RivalAI.Behavior{
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
+			NewAutoPilot.Targeting.NeedsTarget = true;
+			NewAutoPilot.Thrust.StrafeMinDurationMs = 1500;
+			NewAutoPilot.Thrust.StrafeMaxDurationMs = 2000;
+			NewAutoPilot.Thrust.AllowStrafing = true;
+			NewAutoPilot.Weapons.UseStaticGuns = true;
 
 			//Get Settings From Custom Data
 			InitCoreTags();
 			InitTags();
-
-			NewAutoPilot.Targeting.NeedsTarget = true;
 
 			if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
 
@@ -214,8 +209,6 @@ namespace RivalAI.Behavior{
 				NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
 
 			}
-
-			NewAutoPilot.Thrust.AllowStrafing = true;
 
 		}
 
@@ -227,23 +220,37 @@ namespace RivalAI.Behavior{
 
 				foreach(var tag in descSplit) {
 					
-			//FighterEngageDistanceSpace
-			if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
+					//FighterEngageDistanceSpace
+					if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
 
-							this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
+						this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
 
-						}	
+					}	
 			
-			//FighterEngageDistancePlanet
-			if(tag.Contains("[FighterEngageDistancePlanet:") == true) {
+					//FighterEngageDistancePlanet
+					if(tag.Contains("[FighterEngageDistancePlanet:") == true) {
 
-							this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
+						this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
 
-						}
-					
-		}
+					}
+
+					//FighterDisengageDistanceSpace
+					if (tag.Contains("[FighterDisengageDistanceSpace:") == true) {
+
+						this.FighterDisengageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterDisengageDistanceSpace);
+
+					}
+
+					//FighterDisengageDistancePlanet
+					if (tag.Contains("[FighterDisengageDistancePlanet:") == true) {
+
+						this.FighterDisengageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterDisengageDistancePlanet);
+
+					}
+
+				}
 				
-		}
+			}
 
 		}
 

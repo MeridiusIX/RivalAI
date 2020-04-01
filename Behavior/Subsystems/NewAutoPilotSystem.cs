@@ -1,35 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
+﻿using RivalAI.Helpers;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
 using Sandbox.ModAPI;
-using Ingame = Sandbox.ModAPI.Ingame;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
+using Ingame = Sandbox.ModAPI.Ingame;
 
 namespace RivalAI.Behavior.Subsystems {
 
@@ -44,26 +24,28 @@ namespace RivalAI.Behavior.Subsystems {
 
 	[Flags]
 	public enum NewAutoPilotMode {
-	
-		None = 0, 
+
+		None = 0,
 		RotateToWaypoint = 1 << 0,
 		ThrustForward = 1 << 1,
 		Strafe = 1 << 2,
-	
+
 	}
 
 	public enum PathCheckResult {
-		
+
 		Ok,
 		TerrainHigherThanNpc,
 		TerrainHigherThanWaypoint
 
-	
+
 	}
 	public class NewAutoPilotSystem {
 
 		//General Config
 		public float IdealMaxSpeed;
+		public bool UseVanillaCollisionAvoidance;
+		public bool UseStuckMovementCorrection;
 
 		//Planet Config
 		public double MaxPlanetPathCheckDistance;
@@ -72,10 +54,28 @@ namespace RivalAI.Behavior.Subsystems {
 		public double AltitudeTolerance;
 		public double WaypointTolerance;
 
+		//Offset Space Config
+		public double OffsetSpaceMinDistFromTarget;
+		public double OffsetSpaceMaxDistFromTarget;
+
+		//Offset Planet Config
+		public double OffsetPlanetMinDistFromTarget;
+		public double OffsetPlanetMaxDistFromTarget;
+		public double OffsetPlanetMinTargetAltitude;
+		public double OffsetPlanetMaxTargetAltitude;
+
 		//Collision Config
-		public double CollisionEvasionWaypointDistance;
+		public bool UseVelocityCollisionEvasion;
+		public double CollisionEvasionWaypointDistance; //Make Space and Planet Variant - OR... Make This Based on Detection Type!
+		public double CollisionFallEvasionWaypointDistance;
 		public double CollisionEvasionResumeDistance;
 		public int CollisionEvasionResumeTime;
+		public bool CollisionEvasionWaypointCalculatedAwayFromEntity;
+		public double CollisionEvasionWaypointFromEntityMaxAngle;
+
+		//Lead Config
+		public bool UseProjectileLeadPrediction;
+		public bool UseCollisionLeadPrediction;
 
 		//Non-Configurable
 		private IMyRemoteControl _remoteControl;
@@ -87,42 +87,62 @@ namespace RivalAI.Behavior.Subsystems {
 
 		//New AutoPilot
 		public NewAutoPilotMode CurrentMode;
-		public CollisionSystem Collision;
+		public NewCollisionSystem Collision;
 		private RotationSystem _rotation;
 		public TargetingSystem Targeting;
 		public ThrustSystem Thrust;
+		public TriggerSystem Trigger;
 		public NewWeaponSystem Weapons;
 
+		private bool _firstRun;
 		private bool _getInitialWaypointFromTarget;
 		private bool _calculateOffset;
 		private bool _avoidPotentialCollisions;
 		private bool _calculateSafePlanetPath;
 
+		public WaypointModificationEnum DirectWaypointType;
+		public WaypointModificationEnum IndirectWaypointType;
 		private Vector3D _myPosition; //
+		private Vector3D _forwardDir;
 		private Vector3D _previousWaypoint;
 		private Vector3D _initialWaypoint; //A static waypoint or derived from last valid target position.
 		private Vector3D _pendingWaypoint; //Gets calculated in parallel.
 		private Vector3D _currentWaypoint; //Actual position being travelled to.
+		private Vector3D _calculatedOffsetWaypoint;
+		private Vector3D _calculatedPlanetPathWaypoint;
 		private Vector3D _evadeWaypoint;
 		private Vector3D _evadeFromWaypoint;
 		private DateTime _evadeWaypointCreateTime;
+		public double MyAltitude;
+		public Vector3D UpDirectionFromPlanet;
 		private bool _waypointIsOffset;
 		private bool _waypointIsTarget;
 
 		//Offset Stuff
+		private bool _offsetRequiresCalculation;
 		private WaypointOffsetType _offsetType;
 		private double _offsetDistanceFromTarget;
-		private Vector3D _offsetAmount;
-		private MatrixD _offsetMaxtrix;
+		private double _offsetAltitudeFromTarget;
+		private bool _offsetAltitudeIsMinimum;
+		private double _offsetDistance;
+		private Vector3D _offsetDirection;
+		private MatrixD _offsetMatrix;
 		private IMyEntity _offsetRelativeEntity;
+
+		//Autopilot Correction
+		private DateTime _lastAutoPilotCorrection;
 
 		public double DistanceToInitialWaypoint;
 		public double DistanceToCurrentWaypoint;
-
+		public double DistanceToWaypointAtMyAltitude;
+		public double AngleToInitialWaypoint;
+		public double AngleToCurrentWaypoint;
+		public double DistanceToOffsetAtMyAltitude;
 		private bool _requiresClimbToIdealAltitude;
 		private bool _requiresNavigationAroundCollision;
 
 		//PlanetData - Self
+		private bool _inGravityLastUpdate;
 		private MyPlanet _currentPlanet;
 		private Vector3D _upDirection;
 		private double _gravityStrength;
@@ -134,9 +154,14 @@ namespace RivalAI.Behavior.Subsystems {
 		private const double PLANET_PATH_CHECK_DISTANCE = 1000;
 		private const double PLANET_PATH_CHECK_INCREMENT = 50;
 
+		//Debug
+		public List<BoundingBoxD> DebugVoxelHits = new List<BoundingBoxD>();
+
 		public NewAutoPilotSystem(IMyRemoteControl remoteControl = null) {
 
 			IdealMaxSpeed = 100;
+			UseVanillaCollisionAvoidance = false;
+			UseStuckMovementCorrection = false;
 
 			MaxPlanetPathCheckDistance = 1000;
 			IdealPlanetAltitude = 200;
@@ -144,9 +169,24 @@ namespace RivalAI.Behavior.Subsystems {
 			AltitudeTolerance = 10;
 			WaypointTolerance = 10;
 
-			CollisionEvasionWaypointDistance = 150;
+			OffsetSpaceMinDistFromTarget = 100;
+			OffsetSpaceMaxDistFromTarget = 200;
+
+			OffsetPlanetMinDistFromTarget = 100;
+			OffsetPlanetMaxDistFromTarget = 200;
+			OffsetPlanetMinTargetAltitude = 100;
+			OffsetPlanetMaxTargetAltitude = 200;
+
+			UseVelocityCollisionEvasion = true;
+			CollisionEvasionWaypointDistance = 300;
+			CollisionFallEvasionWaypointDistance = 75;
 			CollisionEvasionResumeDistance = 25;
 			CollisionEvasionResumeTime = 10;
+			CollisionEvasionWaypointCalculatedAwayFromEntity = false;
+			CollisionEvasionWaypointFromEntityMaxAngle = 15;
+
+			UseProjectileLeadPrediction = true;
+			UseCollisionLeadPrediction = false;
 
 			_currentAutoPilot = AutoPilotType.None;
 			_autopilotOverride = false;
@@ -155,11 +195,15 @@ namespace RivalAI.Behavior.Subsystems {
 
 			CurrentMode = NewAutoPilotMode.None;
 
+			_firstRun = false;
 			_getInitialWaypointFromTarget = false;
 			_calculateOffset = false;
 			_calculateSafePlanetPath = false;
 
+			DirectWaypointType = WaypointModificationEnum.None;
+			IndirectWaypointType = WaypointModificationEnum.None;
 			_myPosition = Vector3D.Zero;
+			_forwardDir = Vector3D.Zero;
 			_previousWaypoint = Vector3D.Zero;
 			_initialWaypoint = Vector3D.Zero;
 			_pendingWaypoint = Vector3D.Zero;
@@ -167,7 +211,21 @@ namespace RivalAI.Behavior.Subsystems {
 			_evadeWaypoint = Vector3D.Zero;
 			_evadeFromWaypoint = Vector3D.Zero;
 			_evadeWaypointCreateTime = DateTime.Now;
+			MyAltitude = 0;
+			UpDirectionFromPlanet = Vector3D.Zero;
 			_waypointIsTarget = false;
+
+			_offsetRequiresCalculation = false;
+			_offsetType = WaypointOffsetType.None;
+			_offsetDistanceFromTarget = 0;
+			_offsetAltitudeFromTarget = 0;
+			_offsetAltitudeIsMinimum = false;
+			_offsetDistance = 0;
+			_offsetDirection = Vector3D.Zero;
+			_offsetMatrix = MatrixD.Identity;
+			_offsetRelativeEntity = null;
+
+			_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
 
 			_requiresClimbToIdealAltitude = false;
 			_requiresNavigationAroundCollision = false;
@@ -181,7 +239,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
 
 				_remoteControl = remoteControl;
-				Collision = new CollisionSystem(_remoteControl);
+				Collision = new NewCollisionSystem(_remoteControl, this);
 				_rotation = new RotationSystem(_remoteControl);
 				Targeting = new TargetingSystem(_remoteControl);
 				Thrust = new ThrustSystem(_remoteControl);
@@ -191,62 +249,278 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences() {
+		public void SetupReferences(TriggerSystem trigger) {
 
-			Thrust.SetupReferences(Collision);
+			Thrust.SetupReferences(this);
+			Trigger = trigger;
+			Weapons.SetupReferences(this);
 
 		}
 
 		public void InitTags() {
 
-			//Do Stuff
+			if (string.IsNullOrWhiteSpace(_remoteControl.CustomData) == false) {
 
-			Targeting.InitTags();
-			Weapons.InitTags();
+				var descSplit = _remoteControl.CustomData.Split('\n');
 
-		}
+				foreach (var tag in descSplit) {
 
-		public void StartCalculations() {
+					//IdealMaxSpeed
+					if (tag.Contains("[IdealMaxSpeed:") == true) {
 
-			if (Collision.RequestVelocityCheckCollisions()) {
+						this.IdealMaxSpeed = TagHelper.TagFloatCheck(tag, this.IdealMaxSpeed);
 
-				MyAPIGateway.Parallel.Start(Collision.CheckVelocityCollisionsThreaded, FinishCollisionChecking);
+					}
 
-			} else {
+					//UseVanillaCollisionAvoidance
+					if (tag.Contains("[UseVanillaCollisionAvoidance:") == true) {
 
-				FinishCollisionChecking();
+						this.UseVanillaCollisionAvoidance = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//UseStuckMovementCorrection
+					if (tag.Contains("[UseStuckMovementCorrection:") == true) {
+
+						this.UseStuckMovementCorrection = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MaxPlanetPathCheckDistance
+					if (tag.Contains("[MaxPlanetPathCheckDistance:") == true) {
+
+						this.MaxPlanetPathCheckDistance = TagHelper.TagDoubleCheck(tag, this.MaxPlanetPathCheckDistance);
+
+					}
+
+					//IdealPlanetAltitude
+					if (tag.Contains("[IdealPlanetAltitude:") == true) {
+
+						this.IdealPlanetAltitude = TagHelper.TagDoubleCheck(tag, this.IdealPlanetAltitude);
+
+					}
+
+					//MinimumPlanetAltitude
+					if (tag.Contains("[MinimumPlanetAltitude:") == true) {
+
+						this.MinimumPlanetAltitude = TagHelper.TagDoubleCheck(tag, this.MinimumPlanetAltitude);
+
+					}
+
+					//AltitudeTolerance
+					if (tag.Contains("[AltitudeTolerance:") == true) {
+
+						this.AltitudeTolerance = TagHelper.TagDoubleCheck(tag, this.AltitudeTolerance);
+
+					}
+
+					//WaypointTolerance
+					if (tag.Contains("[WaypointTolerance:") == true) {
+
+						this.WaypointTolerance = TagHelper.TagDoubleCheck(tag, this.WaypointTolerance);
+
+					}
+
+					//OffsetSpaceMinDistFromTarget
+					if (tag.Contains("[OffsetSpaceMinDistFromTarget:") == true) {
+
+						this.OffsetSpaceMinDistFromTarget = TagHelper.TagDoubleCheck(tag, this.OffsetSpaceMinDistFromTarget);
+
+					}
+
+					//OffsetSpaceMaxDistFromTarget
+					if (tag.Contains("[OffsetSpaceMaxDistFromTarget:") == true) {
+
+						this.OffsetSpaceMaxDistFromTarget = TagHelper.TagDoubleCheck(tag, this.OffsetSpaceMaxDistFromTarget);
+
+					}
+
+					//OffsetPlanetMinDistFromTarget
+					if (tag.Contains("[OffsetPlanetMinDistFromTarget:") == true) {
+
+						this.OffsetPlanetMinDistFromTarget = TagHelper.TagDoubleCheck(tag, this.OffsetPlanetMinDistFromTarget);
+
+					}
+
+					//OffsetPlanetMaxDistFromTarget
+					if (tag.Contains("[OffsetPlanetMaxDistFromTarget:") == true) {
+
+						this.OffsetPlanetMaxDistFromTarget = TagHelper.TagDoubleCheck(tag, this.OffsetPlanetMaxDistFromTarget);
+
+					}
+
+					//OffsetPlanetMinTargetAltitude
+					if (tag.Contains("[OffsetPlanetMinTargetAltitude:") == true) {
+
+						this.OffsetPlanetMinTargetAltitude = TagHelper.TagDoubleCheck(tag, this.OffsetPlanetMinTargetAltitude);
+
+					}
+
+					//OffsetPlanetMaxTargetAltitude
+					if (tag.Contains("[OffsetPlanetMaxTargetAltitude:") == true) {
+
+						this.OffsetPlanetMaxTargetAltitude = TagHelper.TagDoubleCheck(tag, this.OffsetPlanetMaxTargetAltitude);
+
+					}
+
+					//UseVelocityCollisionEvasion
+					if (tag.Contains("[UseVelocityCollisionEvasion:") == true) {
+
+						this.UseVelocityCollisionEvasion = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinimumSpeedForVelocityChecks
+					if (tag.Contains("[MinimumSpeedForVelocityChecks:") == true) {
+
+						this.Collision.MinimumSpeedForVelocityChecks = TagHelper.TagDoubleCheck(tag, this.Collision.MinimumSpeedForVelocityChecks);
+
+					}
+
+					//CollisionAsteroidUsesBoundingBoxForVelocity
+					if (tag.Contains("[CollisionAsteroidUsesBoundingBoxForVelocity:") == true) {
+
+						this.Collision.CollisionAsteroidUsesBoundingBoxForVelocity = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CollisionTimeTrigger
+					if (tag.Contains("[CollisionTimeTrigger:") == true) {
+
+						this.Collision.CollisionTimeTrigger = TagHelper.TagIntCheck(tag, this.Collision.CollisionTimeTrigger);
+
+					}
+
+					//CollisionEvasionWaypointDistance
+					if (tag.Contains("[CollisionEvasionWaypointDistance:") == true) {
+
+						this.CollisionEvasionWaypointDistance = TagHelper.TagDoubleCheck(tag, this.CollisionEvasionWaypointDistance);
+
+					}
+
+					//CollisionFallEvasionWaypointDistance
+					if (tag.Contains("[CollisionFallEvasionWaypointDistance:") == true) {
+
+						this.CollisionFallEvasionWaypointDistance = TagHelper.TagDoubleCheck(tag, this.CollisionFallEvasionWaypointDistance);
+
+					}
+
+					//CollisionEvasionResumeDistance
+					if (tag.Contains("[CollisionEvasionResumeDistance:") == true) {
+
+						this.CollisionEvasionResumeDistance = TagHelper.TagDoubleCheck(tag, this.CollisionEvasionResumeDistance);
+
+					}
+
+					//CollisionEvasionResumeTime
+					if (tag.Contains("[CollisionEvasionResumeTime:") == true) {
+
+						this.CollisionEvasionResumeTime = TagHelper.TagIntCheck(tag, this.CollisionEvasionResumeTime);
+
+					}
+
+					//UseProjectileLeadPrediction
+					if (tag.Contains("[UseProjectileLeadPrediction:") == true) {
+
+						this.UseProjectileLeadPrediction = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//UseCollisionLeadPrediction
+					if (tag.Contains("[UseCollisionLeadPrediction:") == true) {
+
+						this.UseCollisionLeadPrediction = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					////////////////////
+					//Rotation and Thrust
+					////////////////////
+
+					//RotationMultiplier
+					if (tag.Contains("[RotationMultiplier:") == true) {
+
+						this._rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this._rotation.RotationMultiplier);
+
+					}
+
+					//AngleAllowedForForwardThrust
+					if (tag.Contains("[AngleAllowedForForwardThrust:") == true) {
+
+						this.Thrust.AngleAllowedForForwardThrust = TagHelper.TagDoubleCheck(tag, this.Thrust.AngleAllowedForForwardThrust);
+
+					}
+
+					//AllowStrafing
+					if (tag.Contains("[AllowStrafing:") == true) {
+
+						this.Thrust.AllowStrafing = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//StrafeMinDurationMs
+					if (tag.Contains("[StrafeMinDurationMs:") == true) {
+
+						this.Thrust.StrafeMinDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinDurationMs);
+
+					}
+
+					//StrafeMaxDurationMs
+					if (tag.Contains("[StrafeMaxDurationMs:") == true) {
+
+						this.Thrust.StrafeMaxDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxDurationMs);
+
+					}
+
+					//StrafeMinCooldownMs
+					if (tag.Contains("[StrafeMinCooldownMs:") == true) {
+
+						this.Thrust.StrafeMinCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinCooldownMs);
+
+					}
+
+					//StrafeMaxCooldownMs
+					if (tag.Contains("[StrafeMaxCooldownMs:") == true) {
+
+						this.Thrust.StrafeMaxCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxCooldownMs);
+
+					}
+
+					//StrafeSpeedCutOff
+					if (tag.Contains("[StrafeSpeedCutOff:") == true) {
+
+						this.Thrust.StrafeSpeedCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeSpeedCutOff);
+
+					}
+
+					//StrafeDistanceCutOff
+					if (tag.Contains("[StrafeDistanceCutOff:") == true) {
+
+						this.Thrust.StrafeDistanceCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeDistanceCutOff);
+
+					}
+
+					//AllowedStrafingDirectionsSpace
+
+
+					//AllowedStrafingDirectionsPlanet
+
+
+				}
+
+				Targeting.InitTags();
+				Weapons.InitTags();
 
 			}
-				
-		
-		}
-
-		private void FinishCollisionChecking() {
-
-			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
-				Targeting.RequestTarget();
-				MyAPIGateway.Parallel.Start(Targeting.RequestTargetParallel, FinishTargetChecking);
-
-			});
-		
-		}
-
-		private void FinishTargetChecking() {
-
-			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
-				Logger.MsgDebug("Beginning Autopilot Pathing Calculations", DebugTypeEnum.Dev);
-				ThreadedAutoPilotCalculations();
-
-
-			});
 
 		}
 
-		private void ThreadedAutoPilotCalculations() {
+		public void ThreadedAutoPilotCalculations() {
 
 			_myPosition = _remoteControl.GetPosition();
+			_forwardDir = _remoteControl.WorldMatrix.Forward;
+			DirectWaypointType = WaypointModificationEnum.None;
+			IndirectWaypointType = WaypointModificationEnum.None;
 
 			if (_autopilotOverride) {
 
@@ -260,21 +534,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (_autopilotOverride) {
 
-					FinishWaypointCalculations();
+					//FinishWaypointCalculations();
 					return;
 
 				}
-					
+
 
 			}
 
-			if (_currentAutoPilot == AutoPilotType.None) {
+			if (_currentAutoPilot == AutoPilotType.None && _firstRun) {
 
-				FinishWaypointCalculations();
+				//FinishWaypointCalculations();
 				return;
 
 			}
-				
+
 
 			_previousWaypoint = _currentWaypoint;
 
@@ -282,74 +556,64 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (!Targeting.InvalidTarget) {
 
-					_waypointIsTarget = true;
+					DirectWaypointType = WaypointModificationEnum.TargetIsInitialWaypoint;
 					_initialWaypoint = Targeting.GetTargetPosition();
 
-				} else {
-
-					_waypointIsTarget = false;
-
-				}	
+				}
 
 			}
 
-			MyAPIGateway.Parallel.Start(() => {
+			try {
 
-				try {
-
-					CalculateCurrentWaypoint();
-
-				} catch (Exception exc) {
-
-					Logger.MsgDebug("Caught Exception While Calculating Autopilot Pathing", DebugTypeEnum.General);
-					Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
-
-				}
-			
-			}, FinishWaypointCalculations);
-
-		}
-
-		private void FinishWaypointCalculations() {
-
-			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
-
+				CalculateCurrentWaypoint();
 				_currentWaypoint = _pendingWaypoint;
 				this.DistanceToInitialWaypoint = Vector3D.Distance(_myPosition, _initialWaypoint);
 				this.DistanceToCurrentWaypoint = Vector3D.Distance(_myPosition, _currentWaypoint);
+				this.AngleToInitialWaypoint = VectorHelper.GetAngleBetweenDirections(_forwardDir, Vector3D.Normalize(_initialWaypoint - _myPosition));
+				this.AngleToCurrentWaypoint = VectorHelper.GetAngleBetweenDirections(_forwardDir, Vector3D.Normalize(_currentWaypoint - _myPosition));
+				this.DistanceToWaypointAtMyAltitude = VectorHelper.GetDistanceToTargetAtMyAltitude(_myPosition, _currentWaypoint, _currentPlanet);
+				this.DistanceToOffsetAtMyAltitude = VectorHelper.GetDistanceToTargetAtMyAltitude(_myPosition, _calculatedOffsetWaypoint, _currentPlanet);
+				this.MyAltitude = _surfaceDistance;
+				this.UpDirectionFromPlanet = _upDirection;
 
-				if (_currentAutoPilot == AutoPilotType.Legacy)
-					UpdateLegacyAutoPilot();
+				_firstRun = true;
 
-				if (_currentAutoPilot == AutoPilotType.RivalAI)
-					UpdateNewAutoPilot();
+			} catch (Exception exc) {
 
-				if (_currentWaypoint == Vector3D.Zero)
-					Logger.MsgDebug("No Current Waypoint", DebugTypeEnum.Dev);
+				Logger.MsgDebug("Caught Exception While Calculating Autopilot Pathing", DebugTypeEnum.General);
+				Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
 
-				StartWeaponCalculations();
+			}
 
-			});
+		}
+
+		public void EngageAutoPilot() {
+
+			if (_currentAutoPilot == AutoPilotType.Legacy)
+				UpdateLegacyAutoPilot();
+
+			if (_currentAutoPilot == AutoPilotType.RivalAI)
+				UpdateNewAutoPilot();
+
+			if (_currentWaypoint == Vector3D.Zero)
+				Logger.MsgDebug("No Current Waypoint", DebugTypeEnum.Dev);
+
+			//StartWeaponCalculations();
 
 		}
 
 		private void StartWeaponCalculations() {
 
-			Logger.MsgDebug("Checking Weapon Readiness", DebugTypeEnum.Dev);
+			
 			MyAPIGateway.Parallel.Start(Weapons.CheckWeaponReadiness, WeaponFinish);
 
 		}
 
 		private void WeaponFinish() {
 
-			MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+			
+			OnComplete?.Invoke(); //This is where Autopilot ends
 
-				Logger.MsgDebug("Autopilot Done, Handing Off To Next Action", DebugTypeEnum.Dev);
-				Weapons.FireWeapons();
-				OnComplete?.Invoke(); //This is where Autopilot ends
-
-			});
-		
 		}
 
 		private void UpdateLegacyAutoPilot() {
@@ -359,6 +623,24 @@ namespace RivalAI.Behavior.Subsystems {
 
 			_remoteControl.SetAutoPilotEnabled(false);
 			_remoteControl.ClearWaypoints();
+
+			if (UseStuckMovementCorrection && _upDirection != Vector3D.Zero) {
+
+				var timeSpan = MyAPIGateway.Session.GameDateTime - _lastAutoPilotCorrection;
+
+				if (timeSpan.TotalSeconds > 5) {
+
+					if (Collision.Velocity.Length() < 4 && VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(Collision.Velocity)) <= 1) {
+
+						_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
+						return;
+
+					}
+
+				}
+
+			}
+
 			_remoteControl.AddWaypoint(_currentWaypoint, "Current Waypoint Target");
 			_remoteControl.FlightMode = Ingame.FlightMode.OneWay;
 			_remoteControl.SetAutoPilotEnabled(true);
@@ -370,25 +652,25 @@ namespace RivalAI.Behavior.Subsystems {
 			if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
 
 				_rotation.StartCalculation(_currentWaypoint, _remoteControl, _upDirection);
-			
+
 			}
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
 
-				Logger.MsgDebug("Process Strafe", DebugTypeEnum.Dev);
+				//Logger.MsgDebug("Process Strafe", DebugTypeEnum.Dev);
 				Thrust.ProcessStrafing();
 
 			}
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.ThrustForward)) {
 
-				Thrust.ProcessForwardThrust();
+				Thrust.ProcessForwardThrust(AngleToCurrentWaypoint);
 
 			}
 
 		}
 
-		public void ActivateAutoPilot(AutoPilotType type, NewAutoPilotMode newType, Vector3D initialWaypoint, bool getWaypointFromTarget = false, bool useWaypointOffset = false, bool useSafePlanetPathing = false, bool avoidCollisions = true) {
+		public void ActivateAutoPilot(AutoPilotType type, NewAutoPilotMode newType, Vector3D initialWaypoint, bool getWaypointFromTarget = false, bool useWaypointOffset = false, bool useSafePlanetPathing = false) {
 
 			DeactivateAutoPilot();
 			_currentAutoPilot = type;
@@ -397,9 +679,7 @@ namespace RivalAI.Behavior.Subsystems {
 			_getInitialWaypointFromTarget = getWaypointFromTarget;
 			_calculateOffset = useWaypointOffset;
 			_calculateSafePlanetPath = useSafePlanetPathing;
-			_avoidPotentialCollisions = avoidCollisions;
 			_remoteControl.SpeedLimit = IdealMaxSpeed;
-			//ThreadedAutoPilotCalculations();
 
 		}
 
@@ -408,32 +688,34 @@ namespace RivalAI.Behavior.Subsystems {
 			_currentAutoPilot = AutoPilotType.None;
 			CurrentMode = NewAutoPilotMode.None;
 			_remoteControl.SetAutoPilotEnabled(false);
+			_requiresNavigationAroundCollision = false;
+			_requiresClimbToIdealAltitude = false;
 			_rotation.StopAllRotation();
 			Thrust.StopAllThrust();
-		
+
 		}
 
 		public Vector3D GetInitialCoords() {
 
 			return _initialWaypoint;
-		
+
 		}
 
 		public bool InGravity() {
 
 			return (_gravityStrength > 0);
-		
+
 		}
 
 		public void SetInitialWaypoint(Vector3D coords) {
 
 			_initialWaypoint = coords;
-		
+
 		}
 
 		private void CalculateCurrentWaypoint() {
 
-			if (_initialWaypoint == Vector3D.Zero)
+			if (_initialWaypoint == Vector3D.Zero && _firstRun)
 				return;
 
 			if (_currentPlanet == null || !MyAPIGateway.Entities.Exist(_currentPlanet))
@@ -448,8 +730,15 @@ namespace RivalAI.Behavior.Subsystems {
 
 				_upDirection = Vector3D.Normalize(_myPosition - planetEntity.GetPosition());
 				_gravityStrength = gravityProvider.GetWorldGravity(_myPosition).Length();
-				_surfaceDistance = Vector3D.Distance(VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, _currentPlanet), _myPosition); 
+				_surfaceDistance = Vector3D.Distance(VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, _currentPlanet), _myPosition);
 				_airDensity = _currentPlanet.GetAirDensity(_myPosition);
+
+				if (!_inGravityLastUpdate && (_offsetType == WaypointOffsetType.RandomOffsetFixed || _offsetType == WaypointOffsetType.RandomOffsetRelativeEntity)) {
+
+					_offsetRequiresCalculation = true;
+					_inGravityLastUpdate = true;
+
+				}
 
 			} else {
 
@@ -457,53 +746,83 @@ namespace RivalAI.Behavior.Subsystems {
 				_gravityStrength = 0;
 				_airDensity = 0;
 
-			}
+				if (_inGravityLastUpdate && (_offsetType == WaypointOffsetType.RandomOffsetFixed || _offsetType == WaypointOffsetType.RandomOffsetRelativeEntity)) {
 
-			//Collision
-			if (Collision.VelocityResult.CollisionImminent == true) {
-
-				if ((_gravityStrength <= 0 && Collision.VelocityResult.Type == CollisionDetectType.Voxel) || Collision.VelocityResult.Type != CollisionDetectType.Voxel) {
-
-					if (!_requiresNavigationAroundCollision) {
-
-						CalculateEvadeCoords();
-						_requiresNavigationAroundCollision = true;
-						
-
-					} else {
-
-						var directionToOldCollision = Vector3D.Normalize(_evadeFromWaypoint - _myPosition);
-						var directionToNewCollision = Vector3D.Normalize(Collision.VelocityResult.Coords - _myPosition);
-						if(VectorHelper.GetAngleBetweenDirections(directionToOldCollision, directionToNewCollision) > 45)
-							CalculateEvadeCoords();
-
-					}
+					_offsetRequiresCalculation = true;
+					_inGravityLastUpdate = false;
 
 				}
 
 			}
 
+			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
+
+				return;
+
+			}
+
+			//Collision
+			if (this.UseVelocityCollisionEvasion && Collision.VelocityResult.CollisionImminent()) {
+
+				if ((_gravityStrength <= 0 && Collision.VelocityResult.Type == CollisionType.Voxel) || Collision.VelocityResult.Type != CollisionType.Voxel) {
+
+					if (!_requiresNavigationAroundCollision) {
+
+						CalculateEvadeCoords();
+
+
+					} else {
+
+						var directionToOldCollision = Vector3D.Normalize(_evadeFromWaypoint - _myPosition);
+						var directionToNewCollision = Vector3D.Normalize(Collision.VelocityResult.GetCollisionCoords() - _myPosition);
+						if (VectorHelper.GetAngleBetweenDirections(directionToOldCollision, directionToNewCollision) > 45)
+							CalculateEvadeCoords();
+
+					}
+
+				} else if (Collision.VelocityResult.Type == CollisionType.Voxel && _gravityStrength > 0 && VectorHelper.GetAngleBetweenDirections(Vector3D.Normalize(Collision.Velocity), _upDirection) < 15) {
+
+					CalculateFallEvadeCoords();
+
+				}
+
+			} 
+
 			if (_requiresNavigationAroundCollision) {
 
+				//Logger.MsgDebug("Collision Evasion Required", DebugTypeEnum.General);
+				IndirectWaypointType |= WaypointModificationEnum.Collision;
 				var timeDiff = MyAPIGateway.Session.GameDateTime - _evadeWaypointCreateTime;
+				var evadeCoordsDistanceFromTarget = Vector3D.Distance(_evadeWaypoint, _evadeFromWaypoint);
+				var myDistEvadeFromCoords = Vector3D.Distance(_myPosition, _evadeFromWaypoint);
 
-				if(Vector3D.Distance(_myPosition, _evadeWaypoint) > this.CollisionEvasionResumeDistance && timeDiff.TotalSeconds < this.CollisionEvasionResumeTime)
+				if (myDistEvadeFromCoords < evadeCoordsDistanceFromTarget && Vector3D.Distance(_myPosition, _evadeWaypoint) > this.WaypointTolerance && timeDiff.TotalSeconds < this.CollisionEvasionResumeTime) {
+
+					_pendingWaypoint = _evadeWaypoint;
 					return;
-
+				
+				}
+				
 				_requiresNavigationAroundCollision = false;
 
 
 			}
 
 			//Offset
+			
+			if(_calculateOffset)
+				CalculateOffsetWaypoint();
 
 			//PlanetPathing
 			if (_calculateSafePlanetPath && _gravityStrength > 0) {
 
 				CalculateSafePlanetPathWaypoint(_currentPlanet);
 
-				if (_initialWaypoint != _pendingWaypoint)
-					_waypointIsTarget = false;
+				if (_initialWaypoint != _pendingWaypoint) {
+
+					IndirectWaypointType |= WaypointModificationEnum.Offset;
+
+				}	
 
 			}
 
@@ -511,57 +830,111 @@ namespace RivalAI.Behavior.Subsystems {
 
 				bool gotLead = false;
 
-				if (Targeting.TargetData.UseCollisionLead && !gotLead) {
+				if (UseCollisionLeadPrediction && !gotLead) {
 
 					gotLead = true;
+					DirectWaypointType |= WaypointModificationEnum.CollisionLeading;
 					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, Targeting.Target.MyVelocity, (float)Targeting.Target.MyVelocity.Length(), _pendingWaypoint, Targeting.Target.TargetVelocity);
 
 				}
 
-				if (Targeting.TargetData.UseProjectileLead && !gotLead) {
+				if (UseProjectileLeadPrediction && !gotLead) {
 
 					gotLead = true;
-					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, Targeting.Target.MyVelocity, Weapons.MostCommonAmmoSpeed(), _pendingWaypoint, Targeting.Target.TargetVelocity);
+					DirectWaypointType |= WaypointModificationEnum.WeaponLeading;
+					//Logger.MsgDebug("Weapon Lead, Target Velocity: " + Targeting.Target.TargetVelocity.ToString(), DebugTypeEnum.Weapon);
+					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, Targeting.Target.MyVelocity, Weapons.MostCommonAmmoSpeed(true), _pendingWaypoint, Targeting.Target.TargetVelocity);
 
 				}
-			
+
 			}
 
 		}
 
 		private void CalculateEvadeCoords() {
 
-			var dirFromCollision = Vector3D.Normalize(_myPosition - Collision.VelocityResult.Coords);
+			if (!this.CollisionEvasionWaypointCalculatedAwayFromEntity) {
 
-			for (int i = 0; i < 6; i++) {
+				Collision.RunSecondaryCollisionChecks();
+				var dirFromCollision = Vector3D.Normalize(_myPosition - Collision.VelocityResult.GetCollisionCoords());
+				var evadeCoordList = new List<Vector3D>();
 
-				var randomPerpDir = MyUtils.GetRandomPerpendicularVector(ref dirFromCollision);
-				Collision.CheckPotentialEvasionCollisionThreaded(randomPerpDir, this.CollisionEvasionWaypointDistance);
+				if (FoundEvadeCoords(Collision.ForwardResult))
+					evadeCoordList.Add(_evadeWaypoint);
 
-				if (FoundEvadeCoords(randomPerpDir))
+				if (FoundEvadeCoords(Collision.UpResult))
+					evadeCoordList.Add(_evadeWaypoint);
+
+				if (FoundEvadeCoords(Collision.DownResult))
+					evadeCoordList.Add(_evadeWaypoint);
+
+				if (FoundEvadeCoords(Collision.LeftResult))
+					evadeCoordList.Add(_evadeWaypoint);
+
+				if (FoundEvadeCoords(Collision.RightResult))
+					evadeCoordList.Add(_evadeWaypoint);
+
+				if (FoundEvadeCoords(Collision.BackwardResult))
+					evadeCoordList.Add(_evadeWaypoint);
+
+				Vector3D closestToTarget = Vector3D.Zero;
+				double closestDistanceToTarget = -1;
+
+				foreach (var coords in evadeCoordList) {
+
+					var distToTarget = Vector3D.Distance(coords, _pendingWaypoint);
+
+					if (distToTarget < closestDistanceToTarget || closestDistanceToTarget == -1) {
+
+						closestToTarget = coords;
+						closestDistanceToTarget = distToTarget;
+
+					}
+
+				}
+
+				if (closestDistanceToTarget != -1) {
+
+					_evadeWaypoint = closestToTarget;
 					return;
 
-				randomPerpDir *= -1;
-				Collision.CheckPotentialEvasionCollisionThreaded(randomPerpDir, this.CollisionEvasionWaypointDistance);
+				}
 
-				if (FoundEvadeCoords(randomPerpDir))
-					return;
+				//If we got here, no evade coords could be calculated
+				//GuessIllJustDie.jpg
+				Logger.MsgDebug("No Collision Coords Found: ", DebugTypeEnum.Collision);
+
+
+			} else {
+
+				if (Collision.VelocityResult.GetCollisionEntity()?.PositionComp != null) {
+
+					GetEvadeCoordsAwayFromEntity(Collision.VelocityResult.GetCollisionEntity().PositionComp.WorldAABB.Center);
+
+				}
 
 			}
+			
+		}
 
-			//If we got here, no evade coords could be calculated
-			//GuessIllJustDie.jpg
+		private void CalculateFallEvadeCoords() {
+
+			_requiresNavigationAroundCollision = true;
+			_evadeWaypointCreateTime = MyAPIGateway.Session.GameDateTime;
+			_evadeFromWaypoint = Collision.VelocityResult.GetCollisionCoords();
+			_evadeWaypoint = Vector3D.Normalize(Collision.Velocity * -1) * this.CollisionFallEvasionWaypointDistance + _myPosition;
 
 		}
 
-		private bool FoundEvadeCoords(Vector3D direction) {
+		private bool FoundEvadeCoords(NewCollisionResult result) {
 
-			if (Collision.EvasionResult.Coords == Vector3D.Zero) {
+			if (result.Type == CollisionType.None || result.GetCollisionDistance() > this.CollisionEvasionWaypointDistance) {
 
 				_requiresNavigationAroundCollision = true;
 				_evadeWaypointCreateTime = MyAPIGateway.Session.GameDateTime;
-				_evadeFromWaypoint = Collision.VelocityResult.Coords;
-				_evadeWaypoint = direction * this.CollisionEvasionWaypointDistance + _myPosition;
+				_evadeFromWaypoint = Collision.VelocityResult.GetCollisionCoords();
+				_evadeWaypoint = result.Direction * this.CollisionEvasionWaypointDistance + _myPosition;
+				_evadeWaypoint = _evadeWaypoint + (VectorHelper.RandomPerpendicular(result.Direction) * 10);
 				return true;
 
 			}
@@ -570,35 +943,131 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
+		private void GetEvadeCoordsAwayFromEntity(Vector3D entityCoords) {
+
+			Logger.MsgDebug("Get Collision Evasion Waypoint Away From Entity", DebugTypeEnum.Collision);
+			_requiresNavigationAroundCollision = true;
+			_evadeWaypointCreateTime = MyAPIGateway.Session.GameDateTime;
+			_evadeFromWaypoint = entityCoords;
+			_evadeWaypoint = (Vector3D.Normalize(_myPosition - entityCoords)) * this.CollisionEvasionWaypointDistance + _myPosition;
+
+		}
+
 		private void CalculateOffsetWaypoint() {
+
+			//Logger.MsgDebug(_offsetType.ToString(), DebugTypeEnum.General);
+
+			if (_offsetRequiresCalculation)
+				CreateRandomOffset(_offsetDistanceFromTarget, _offsetAltitudeFromTarget, _offsetAltitudeIsMinimum);
 
 			_waypointIsOffset = false;
 
 			if (_offsetType == WaypointOffsetType.None)
 				return;
 
-			if (_offsetType == WaypointOffsetType.DistanceFromTarget && _offsetDistanceFromTarget > 0) {
+			if (_offsetType == WaypointOffsetType.DistanceFromTarget && _offsetDistance > 0) {
 
+				IndirectWaypointType |= WaypointModificationEnum.Offset;
 				_waypointIsOffset = true;
-				var tempCoords = Vector3D.Normalize(_myPosition - _pendingWaypoint) * _offsetDistanceFromTarget + _pendingWaypoint;
+				var tempCoords = Vector3D.Normalize(_myPosition - _pendingWaypoint) * _offsetDistance + _pendingWaypoint;
 				_pendingWaypoint = tempCoords;
+				_calculatedOffsetWaypoint = _pendingWaypoint;
 				return;
 
 			}
 
-			if (_offsetAmount != Vector3D.Zero) {
+			if (_offsetDirection != Vector3D.Zero) {
 
+				IndirectWaypointType |= WaypointModificationEnum.Offset;
 				_waypointIsOffset = true;
 
-				if (_offsetType == WaypointOffsetType.FixedMatrixRelativePosition && _offsetRelativeEntity?.PositionComp != null && MyAPIGateway.Entities.Exist(_offsetRelativeEntity)) {
+				if (_offsetType == WaypointOffsetType.RandomOffsetRelativeEntity && _offsetRelativeEntity?.PositionComp != null && MyAPIGateway.Entities.Exist(_offsetRelativeEntity)) {
 
-					_offsetMaxtrix.Translation = _offsetRelativeEntity.PositionComp.WorldMatrix.Translation;
-				
+					_offsetMatrix.Translation = _offsetRelativeEntity.PositionComp.WorldMatrix.Translation;
+
+				} else {
+
+					if (Targeting.Target.Target != null) {
+
+						_offsetRelativeEntity = Targeting.Target.Target;
+						_offsetMatrix.Translation = _offsetRelativeEntity.PositionComp.WorldMatrix.Translation;
+
+					}
+
 				}
 
-				var tempCoords = Vector3D.Transform(_offsetAmount, _offsetMaxtrix);
+				var tempCoords = _offsetDirection * _offsetDistance + _offsetMatrix.Translation;
 				_pendingWaypoint = tempCoords;
+				_calculatedOffsetWaypoint = _pendingWaypoint;
 				return;
+
+			}
+
+			_calculatedOffsetWaypoint = Vector3D.Zero;
+
+		}
+
+		private void CreateRandomOffset(double distance, double altitude = 0, bool altitudeIsMinimum = false) {
+
+			_offsetRequiresCalculation = false;
+
+			if (!InGravity()) {
+
+				_offsetDistance = distance;
+				var directionRand = VectorHelper.RandomDirection();
+				var directionRandInv = directionRand * -1;
+				var dirDist = Vector3D.Distance(_pendingWaypoint + directionRand, _myPosition);
+				var dirDistInv = Vector3D.Distance(_pendingWaypoint + directionRandInv, _myPosition);
+				_offsetDirection = dirDist < dirDistInv ? directionRand : directionRandInv;
+
+			} else {
+
+				var upAtTarget = Vector3D.Normalize(_pendingWaypoint - _currentPlanet.PositionComp.WorldAABB.Center);
+				var perpendicularDir = VectorHelper.RandomPerpendicular(upAtTarget);
+
+				if (Vector3D.Distance(perpendicularDir * -1, _myPosition) < Vector3D.Distance(perpendicularDir, _myPosition))
+					perpendicularDir *= -1;
+
+				_offsetMatrix = MatrixD.CreateWorld(_pendingWaypoint, perpendicularDir, upAtTarget);
+				var roughCoords = perpendicularDir * distance + _pendingWaypoint;
+				var roughCoordsSurface = VectorHelper.GetPlanetSurfaceCoordsAtPosition(roughCoords, _currentPlanet);
+				var roughCoordsDistance = Vector3D.Distance(roughCoordsSurface, roughCoords);
+
+				if (_offsetAltitudeIsMinimum) {
+
+					if (roughCoordsDistance >= altitude) {
+
+						_offsetDirection = perpendicularDir;
+						_offsetDistance = distance;
+
+					} else {
+
+						var altitudeDiff = altitude - roughCoordsDistance;
+						var newRoughCoords = Vector3D.Normalize(roughCoords - roughCoordsSurface) * altitudeDiff + roughCoords;
+						_offsetDistance = Vector3D.Distance(newRoughCoords, _pendingWaypoint);
+						_offsetDirection = Vector3D.Normalize(newRoughCoords - _pendingWaypoint);
+
+					}
+
+				} else {
+
+					Vector3D newRoughCoords = Vector3D.Zero;
+
+					if (roughCoordsDistance < MinimumPlanetAltitude || Vector3D.Distance(_currentPlanet.PositionComp.WorldAABB.Center, roughCoords) < Vector3D.Distance(_currentPlanet.PositionComp.WorldAABB.Center, roughCoordsSurface)) {
+
+						newRoughCoords = Vector3D.Normalize(roughCoordsSurface - _currentPlanet.PositionComp.WorldAABB.Center) * MinimumPlanetAltitude + roughCoordsSurface;
+
+					} else {
+
+						newRoughCoords = Vector3D.Normalize(roughCoordsSurface - _currentPlanet.PositionComp.WorldAABB.Center) * altitude + roughCoords;
+						
+
+					}
+
+					_offsetDistance = Vector3D.Distance(newRoughCoords, _pendingWaypoint);
+					_offsetDirection = Vector3D.Normalize(newRoughCoords - _pendingWaypoint);
+
+				}
 
 			}
 
@@ -608,7 +1077,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			Vector3D directionToTarget = Vector3D.Normalize(_pendingWaypoint - _myPosition);
 			double distanceToTarget = Vector3D.Distance(_pendingWaypoint, _myPosition);
-			
+
 			double requiredAltitude = _requiresClimbToIdealAltitude ? this.IdealPlanetAltitude : this.MinimumPlanetAltitude;
 			Vector3D planetPosition = planet.PositionComp.WorldAABB.Center;
 
@@ -649,6 +1118,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//Logger.MsgDebug("Planet Pathing: Terrain Higher Than NPC", DebugTypeEnum.Dev);
 				_requiresClimbToIdealAltitude = true;
 				_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+				_calculatedPlanetPathWaypoint = _pendingWaypoint;
 				return;
 
 			}
@@ -663,16 +1133,18 @@ namespace RivalAI.Behavior.Subsystems {
 				} else {
 
 					_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+					_calculatedPlanetPathWaypoint = _pendingWaypoint;
 					return;
 
 				}
-			
+
 			}
 
 			//No Obstruction Case
 			if (waypointAltitudeDifferenceFromHighestTerrain >= this.MinimumPlanetAltitude) {
 
 				Logger.MsgDebug("Planet Pathing: No Obstruction", DebugTypeEnum.AutoPilot);
+				_calculatedPlanetPathWaypoint = _pendingWaypoint;
 				return;
 
 			}
@@ -680,6 +1152,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//Terrain Higher Than NPC
 			Vector3D waypointCoreDirection = Vector3D.Normalize(_pendingWaypoint - planetPosition);
 			_pendingWaypoint = waypointCoreDirection * (highestTerrainCoreDistance + waypointAltitude) + planetPosition;
+			_calculatedPlanetPathWaypoint = _pendingWaypoint;
 			Logger.MsgDebug("Planet Pathing: Terrain Higher Than Target " + waypointAltitudeDifferenceFromHighestTerrain.ToString(), DebugTypeEnum.AutoPilot); ;
 
 		}
@@ -691,12 +1164,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 			var upDirectionFromStep = Vector3D.Normalize(roughForwardStep - planetPosition);
 			return upDirectionFromStep * (highestTerrainDistanceFromCore + this.IdealPlanetAltitude) + planetPosition;
-		
+
 		}
 
-		private List<Vector3D> GetPlanetPathSteps(Vector3D startCoords, Vector3D directionToTarget, double distanceToTarget) {
+		public List<Vector3D> GetPlanetPathSteps(Vector3D startCoords, Vector3D directionToTarget, double distanceToTarget, bool overrideMaxDistance = false) {
 
-			var distanceToUse = MathHelper.Clamp(distanceToTarget, 0, this.MaxPlanetPathCheckDistance);
+			var distanceToUse = MathHelper.Clamp(distanceToTarget, 0, overrideMaxDistance ? distanceToTarget : this.MaxPlanetPathCheckDistance);
 			var result = new List<Vector3D>();
 			double currentPathDistance = 0;
 
@@ -717,7 +1190,7 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			return result;
-		
+
 		}
 
 		private bool CheckAltitudeTolerance(double currentCoreDistance, double targetCoreDistance, double tolerance) {
@@ -726,7 +1199,7 @@ namespace RivalAI.Behavior.Subsystems {
 				return false;
 
 			return true;
-		
+
 		}
 
 		public void SetOffsetNone() {
@@ -738,35 +1211,173 @@ namespace RivalAI.Behavior.Subsystems {
 		public void SetOffsetDirectionFromTarget(double distance) {
 
 			_offsetType = WaypointOffsetType.DistanceFromTarget;
-			_offsetDistanceFromTarget = distance;
+			_offsetDistance = distance;
 
 		}
 
-		public void SetOffsetWithMatrix(MatrixD matrix, Vector3D offset, IMyEntity entity = null) {
+		public void SetRandomOffset(IMyEntity entity = null, bool altitudeIsMinimum = false) {
 
-			_offsetType = (entity == null) ? WaypointOffsetType.FixedMatrix : WaypointOffsetType.FixedMatrixRelativePosition;
-			_offsetMaxtrix = matrix;
-			_offsetAmount = offset;
+			double distance = 0;
+			double altitude = 0;
+
+			if (_gravityStrength > 0) {
+
+				distance = VectorHelper.RandomDistance(this.OffsetPlanetMinDistFromTarget, this.OffsetPlanetMaxDistFromTarget);
+				altitude = VectorHelper.RandomDistance(this.OffsetPlanetMinTargetAltitude, this.OffsetPlanetMaxTargetAltitude);
+
+			} else {
+
+				distance = VectorHelper.RandomDistance(this.OffsetSpaceMinDistFromTarget, this.OffsetSpaceMaxDistFromTarget);
+
+			}
+
+			SetRandomOffset(distance, altitude, entity, altitudeIsMinimum);
+
+		}
+
+		public void SetRandomOffset(double distance, double altitude, IMyEntity entity, bool altitudeIsMinimum = false) {
+
+			_offsetType = (entity == null) ? WaypointOffsetType.RandomOffsetFixed : WaypointOffsetType.RandomOffsetRelativeEntity;
+			_offsetAltitudeIsMinimum = altitudeIsMinimum;
 			_offsetRelativeEntity = entity;
+			_offsetRequiresCalculation = true;
+			_offsetDistanceFromTarget = distance;
+			_offsetAltitudeFromTarget = altitude;
+
+		}
+
+		public void ReverseOffsetDirection(double minSafeAngle = 80) {
+
+			if (InGravity()) {
+
+				if (VectorHelper.GetAngleBetweenDirections(-_offsetDirection, _upDirection) < minSafeAngle)
+					return;
+			
+			}
+
+			_offsetDirection *= -1;
+
 
 		}
 
 		public bool InvalidTarget() {
 
 			return Targeting.InvalidTarget;
+
+		}
+
+		public Vector3D GetCurrentWaypoint() {
+
+			return _currentWaypoint;
+		
+		}
+
+		public MyPlanet GetCurrentPlanet() {
+
+			return _currentPlanet;
+		
+		}
+
+		public bool IsAvoidingCollision() {
+
+			return _requiresNavigationAroundCollision;
+		
+		}
+
+		public bool IsWaypointThroughVelocityCollision(int timeToCollision = -1, CollisionType type = CollisionType.None) {
+
+			if (!Collision.VelocityResult.CollisionImminent(timeToCollision) || Collision.VelocityResult.Type == CollisionType.None)
+				return false;
+
+			if (Collision.VelocityResult.Type != type && type != CollisionType.None)
+				return false;
+
+			if (DistanceToCurrentWaypoint > Collision.VelocityResult.GetCollisionDistance() && VectorHelper.GetAngleBetweenDirections(Collision.VelocityResult.Direction, Vector3D.Normalize(_currentWaypoint - _myPosition)) < 15)
+				return true;
+
+			return false;
 		
 		}
 
 		public void DebugDrawingToWaypoints() {
 
 			Vector4 colorRed = new Vector4(1, 0, 0, 1);
+			Vector4 colorOrange = new Vector4(1, 0.5f, 0, 1);
 			Vector4 colorGreen = new Vector4(0, 1, 0, 1);
 			Vector4 colorCyan = new Vector4(0, 1, 1, 1);
 			Vector4 colorMajenta = new Vector4(1, 0, 1, 1);
 
-			MySimpleObjectDraw.DrawLine(_myPosition, _initialWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorGreen, 2.1f);
-			MySimpleObjectDraw.DrawLine(_myPosition, _currentWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorMajenta, 2.1f);
+			//MySimpleObjectDraw.DrawLine(_initialWaypoint, _offsetDirection * 5 + _initialWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
 
+			if (_evadeWaypoint != Vector3D.Zero) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, _evadeWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+				MySimpleObjectDraw.DrawLine(_evadeFromWaypoint, _evadeWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorOrange, 1.1f);
+
+			}
+
+			if (_currentWaypoint != Vector3D.Zero) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, _currentWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorGreen, 1.1f);
+
+			}
+
+			if (_calculatedOffsetWaypoint != Vector3D.Zero) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, _calculatedOffsetWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorCyan, 1.1f);
+
+			}
+
+			if (_calculatedPlanetPathWaypoint != Vector3D.Zero) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, _calculatedPlanetPathWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorMajenta, 1.1f);
+
+			}
+
+			//Collisions
+			/*
+			if (Collision.ForwardResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.ForwardResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+
+			if (Collision.BackwardResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.BackwardResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+
+			if (Collision.LeftResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.LeftResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+
+			if (Collision.RightResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.RightResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+
+			if (Collision.UpResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.UpResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+
+			if (Collision.DownResult.Type != CollisionType.None) {
+
+				MySimpleObjectDraw.DrawLine(_myPosition, Collision.DownResult.GetCollisionCoords(), MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
+
+			}
+			*/
+		}
+
+		public void DebugDisplayCoords() {
+
+			Logger.MsgDebug("Initial Waypoint: ");
+		
 		}
 
 	}

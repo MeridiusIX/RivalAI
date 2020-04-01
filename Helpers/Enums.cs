@@ -190,12 +190,26 @@ namespace RivalAI.Helpers {
 
     }
 
+    [Flags]
+    public enum WaypointModificationEnum {
+    
+        None = 0,
+        Collision = 1 << 0,
+        Offset = 1 << 1,
+        PlanetPathing = 1 << 2,
+        CollisionLeading = 1 << 3,
+        WeaponLeading = 1 << 4,
+        TargetIsInitialWaypoint = 1 << 5,
+
+    
+    }
+
     public enum WaypointOffsetType {
     
         None,
         DistanceFromTarget,
-        FixedMatrix,
-        FixedMatrixRelativePosition
+        RandomOffsetFixed,
+        RandomOffsetRelativeEntity
     
     }
 

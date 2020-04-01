@@ -51,10 +51,14 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<TriggerProfile> DamageTriggers;
 		public List<TriggerProfile> CommandTriggers;
 
+		public bool TimedTriggersProcessed;
+
 		public bool CommandListenerRegistered;
 		public bool DamageHandlerRegistered;
 		public MyDamageInformation DamageInfo;
 		public bool PendingDamage;
+
+		public Action BehaviorEventA;
 
 		public DateTime LastTriggerRun;
 
@@ -71,6 +75,8 @@ namespace RivalAI.Behavior.Subsystems {
 			DamageTriggers = new List<TriggerProfile>();
 			CommandTriggers = new List<TriggerProfile>();
 
+			TimedTriggersProcessed = false;
+
 			CommandListenerRegistered = false;
 
 			LastTriggerRun = MyAPIGateway.Session.GameDateTime;
@@ -83,10 +89,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 			var timeDifference = MyAPIGateway.Session.GameDateTime - this.LastTriggerRun;
 
-			if (timeDifference.TotalMilliseconds >= 500) {
+			if (timeDifference.TotalMilliseconds < 500) {
 
-				Logger.MsgDebug("Triggers Not Ready, Handing Off to Next Action", DebugTypeEnum.Dev);
-				OnComplete?.Invoke();
+				Logger.MsgDebug("Triggers Not Ready (total ms elapsed: "+ timeDifference.TotalMilliseconds.ToString() + "), Handing Off to Next Action", DebugTypeEnum.Dev);
+				//OnComplete?.Invoke();
 				return;
 			
 			}
@@ -94,136 +100,141 @@ namespace RivalAI.Behavior.Subsystems {
 			Logger.MsgDebug("Checking Triggers", DebugTypeEnum.Dev);
 			this.LastTriggerRun = MyAPIGateway.Session.GameDateTime;
 
-			MyAPIGateway.Parallel.Start(() => {
+			for (int i = 0; i < this.Triggers.Count; i++) {
 
-				for(int i = 0;i < this.Triggers.Count;i++) {
+				var trigger = this.Triggers[i];
 
-					var trigger = this.Triggers[i];
+				//Timer
+				if (trigger.Type == "Timer") {
 
-					//Timer
-					if (trigger.Type == "Timer") {
+					Logger.MsgDebug("Checking Timer Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
 
-						if (trigger.UseTrigger == true) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-						continue;
+						trigger.ActivateTrigger();
 
 					}
 
-					//PlayerNear
-					if (trigger.Type == "PlayerNear") {
+					continue;
 
-						if(trigger.UseTrigger == true) {
-
-							if(IsPlayerNearby(trigger, trigger.PlayerNearPositionOffset)) {
-
-								trigger.ActivateTrigger();
-
-							}
-
-						}
-
-						continue;
-
-					}
-
-					//TurretTarget
-					if(trigger.Type == "TurretTarget") {
-
-						if(trigger.UseTrigger == true) {
-
-							var turretTarget = _autopilot.Weapons.GetTurretTarget();
-
-							if(turretTarget != 0) {
-
-								trigger.ActivateTrigger();
-
-								if(trigger.Triggered == true) {
-
-									trigger.DetectedEntityId = turretTarget;
-
-								}
-
-							}
-
-						}
-
-						continue;
-
-					}
-
-					//NoWeapon
-					if(trigger.Type == "NoWeapon") {
-
-						if(trigger.UseTrigger == true && _autopilot.Weapons.HasWorkingWeapons()) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-						continue;
-
-					}
-
-					//TargetInSafezone
-					if(trigger.Type == "TargetInSafezone") {
-
-						if(trigger.UseTrigger == true) {
-
-							if(_autopilot.Targeting.Target.TargetExists == true && _autopilot.Targeting.Target.InSafeZone == true) {
-
-								trigger.ActivateTrigger();
-
-							}
-
-						}
-
-						continue;
-
-					}
-
-					//Grounded
-					if(trigger.Type == "Grounded") {
-
-						if(trigger.UseTrigger == true) {
-
-							//Check if Grounded
-							trigger.ActivateTrigger();
-
-						}
-
-						continue;
-
-					}
-				
 				}
 
-			}, () => {
+				//PlayerNear
+				if (trigger.Type == "PlayerNear") {
 
-				MyAPIGateway.Utilities.InvokeOnGameThread(() => {
+					Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
 
-					for(int i = 0;i < this.Triggers.Count;i++) {
+						if (IsPlayerNearby(trigger)) {
 
-						ProcessTrigger(this.Triggers[i]);
+							trigger.ActivateTrigger();
+
+						}
 
 					}
 
-					Logger.MsgDebug("Trigger Actions Complete, Handing Off to Next Action", DebugTypeEnum.Dev);
-					this.OnComplete?.Invoke();
+					continue;
 
-				});
+				}
 
-			});
+				//TurretTarget
+				if (trigger.Type == "TurretTarget") {
 
+					Logger.MsgDebug("Checking TurretTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						var turretTarget = _autopilot.Weapons.GetTurretTarget();
+
+						if (turretTarget != 0) {
+
+							trigger.ActivateTrigger();
+
+							if (trigger.Triggered == true) {
+
+								trigger.DetectedEntityId = turretTarget;
+
+							}
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//NoWeapon
+				if (trigger.Type == "NoWeapon") {
+
+					Logger.MsgDebug("Checking NoWeapon Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true && !_autopilot.Weapons.HasWorkingWeapons()) {
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//TargetInSafezone
+				if (trigger.Type == "TargetInSafezone") {
+
+					Logger.MsgDebug("Checking TargetInSafezone Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (_autopilot.Targeting.Target.TargetExists == true && _autopilot.Targeting.Target.InSafeZone == true) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//Grounded
+				if (trigger.Type == "Grounded") {
+
+					if (trigger.UseTrigger == true) {
+
+						//Check if Grounded
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+			}
+
+			TimedTriggersProcessed = true;
+
+		}
+
+		public void ProcessActivatedTriggers() {
+
+			if (!TimedTriggersProcessed)
+				return;
+
+			TimedTriggersProcessed = false;
+
+			for (int i = 0; i < this.Triggers.Count; i++) {
+
+				ProcessTrigger(this.Triggers[i]);
+
+			}
+
+			//Logger.MsgDebug("Trigger Actions Complete", DebugTypeEnum.Actions);
+			//this.OnComplete?.Invoke();
 
 		}
 
 		public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
 
-			//Logger.AddMsg("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), true);
+			Logger.MsgDebug("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
 			if (info.Amount <= 0)
 				return;
 
@@ -244,7 +255,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 						if(trigger.Triggered == true) {
 
-							//Logger.AddMsg("Process Damage Actions", true);
+							Logger.MsgDebug("Process Damage Actions", DebugTypeEnum.Trigger);
 							ProcessTrigger(trigger, info.AttackerId, true);
 
 						}
@@ -315,8 +326,10 @@ namespace RivalAI.Behavior.Subsystems {
 			trigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
 			trigger.TriggerCount++;
 
+			Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Performing Eligible Actions", DebugTypeEnum.Action);
+
 			//ChatBroadcast
-			if(trigger.Actions.UseChatBroadcast == true) {
+			if (trigger.Actions.UseChatBroadcast == true) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Chat Broadcast", DebugTypeEnum.Action);
 				_broadcast.BroadcastRequest(trigger.Actions.ChatData);
@@ -556,19 +569,21 @@ namespace RivalAI.Behavior.Subsystems {
 			foreach (var variable in trigger.Actions.ResetCounters)
 				_settings.SetCustomCounter(variable, 0, true);
 
-
+			//BehaviorSpecificEventA
+			if (trigger.Actions.BehaviorSpecificEventA)
+				BehaviorEventA?.Invoke();
 
 		}
 
-		public bool IsPlayerNearby(TriggerProfile control, Vector3D offset) {
+		public bool IsPlayerNearby(TriggerProfile control) {
 
 			IMyPlayer player = null;
 
-			var remotePosition = Vector3D.Transform(offset, this.RemoteControl.WorldMatrix);
+			var remotePosition = Vector3D.Transform(control.PlayerNearPositionOffset, this.RemoteControl.WorldMatrix);
 
 			if(control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
 
-				player = TargetHelper.GetClosestPlayerWithReputation(remotePosition, _owner.FactionId, control.MinPlayerReputation, control.MaxPlayerReputation);
+				player = TargetHelper.GetClosestPlayerWithReputation(remotePosition, _owner.FactionId, control);
 
 			} else {
 

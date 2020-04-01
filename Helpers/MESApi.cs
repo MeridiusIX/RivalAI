@@ -110,16 +110,28 @@ namespace RivalAI.Helpers {
 
 			}
 
-			MESApiReady = true;
-			_addKnownPlayerLocation = (Action<Vector3D, string, double, int, int>)dict["AddKnownPlayerLocation"];
-			_customSpawnRequest = (Func<List<string>, MatrixD, Vector3, bool, string, bool>)dict["CustomSpawnRequest"];
-			_getSpawnGroupBlackList = (Func<List<string>>)dict["GetSpawnGroupBlackList"];
-			_getNpcNameBlackList = (Func<List<string>>)dict["GetNpcNameBlackList"];
-			_isPositionInKnownPlayerLocation = (Func<Vector3D, bool, string, bool>)dict["IsPositionInKnownPlayerLocation"];
-			_convertRandomNamePatterns = (Func<string, string>)dict["ConvertRandomNamePatterns"];
-			_getNpcStartCoordinates = (Func<IMyCubeGrid, Vector3D>)dict["GetNpcStartCoordinates"];
-			_getNpcEndCoordinates = (Func<IMyCubeGrid, Vector3D>)dict["GetNpcEndCoordinates"];
-			_setSpawnerIgnoreForDespawn = (Func<IMyCubeGrid, bool, bool>)dict["SetSpawnerIgnoreForDespawn"];
+			try {
+
+				_addKnownPlayerLocation = (Action<Vector3D, string, double, int, int>)dict["AddKnownPlayerLocation"];
+				_customSpawnRequest = (Func<List<string>, MatrixD, Vector3, bool, string, bool>)dict["CustomSpawnRequest"];
+				_getSpawnGroupBlackList = (Func<List<string>>)dict["GetSpawnGroupBlackList"];
+				_getNpcNameBlackList = (Func<List<string>>)dict["GetNpcNameBlackList"];
+				_isPositionInKnownPlayerLocation = (Func<Vector3D, bool, string, bool>)dict["IsPositionInKnownPlayerLocation"];
+				_convertRandomNamePatterns = (Func<string, string>)dict["ConvertRandomNamePatterns"];
+				_getNpcStartCoordinates = (Func<IMyCubeGrid, Vector3D>)dict["GetNpcStartCoordinates"];
+				_getNpcEndCoordinates = (Func<IMyCubeGrid, Vector3D>)dict["GetNpcEndCoordinates"];
+				_setSpawnerIgnoreForDespawn = (Func<IMyCubeGrid, bool, bool>)dict["SetSpawnerIgnoreForDespawn"];
+				MESApiReady = true;
+				Logger.WriteLog("Modular Encounters Spawner API Loaded Successfully");
+
+			} catch (Exception x) {
+
+				Logger.WriteLog("Exception Encountered While Loading Modular Encounters Spawner API");
+				Logger.WriteLog(x.ToString());
+
+			}
+
+			
 
 		}
 

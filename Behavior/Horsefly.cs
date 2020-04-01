@@ -33,74 +33,31 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior {
 
-	public class Horsefly:CoreBehavior {
+	public class Horsefly : CoreBehavior, IBehavior {
 
 		//Configurable
-		public double HorseflyMinDistFromWaypoint;
-		public double HorseflyMinDistFromTarget;
-		public double HorseflyMaxDistFromTarget;
 		public int HorseflyWaypointWaitTimeTrigger;
 		public int HorseflyWaypointAbandonTimeTrigger;
 
-		public bool ReceivedEvadeSignal;
-		public bool ReceivedRetreatSignal;
-		public bool ReceivedExternalTarget;
-
 		public byte Counter;
-		public int HorseflyWaypointWaitTime;
-		public int HorseflyWaypointAbandonTime;
+		public DateTime HorseflyWaypointWaitTime;
+		public DateTime HorseflyWaypointAbandonTime;
+
+		private bool _previouslyAvoidingCollision = false;
 
 		public Horsefly() {
 
-			HorseflyMinDistFromWaypoint = 50;
-			HorseflyMinDistFromTarget = 150;
-			HorseflyMaxDistFromTarget = 300;
 			HorseflyWaypointWaitTimeTrigger = 5;
 			HorseflyWaypointAbandonTimeTrigger = 30;
 
-			ReceivedEvadeSignal = false;
-			ReceivedRetreatSignal = false;
-			ReceivedExternalTarget = false;
-
 			Counter = 0;
-			HorseflyWaypointWaitTime = 0;
-			HorseflyWaypointAbandonTime = 0;
+			HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
+			HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
 
 		}
 
-		public void RunAi() {
+		public override void MainBehavior() {
 
-			if(!IsAIReady())
-				return;
-
-			RunCoreAi();
-
-			if(EndScript == true) {
-
-				return;
-
-			}
-
-			Counter++;
-
-			if(Counter >= 60) {
-
-				MainBehavior();
-				Counter = 0;
-
-			}
-
-
-		}
-
-		public void MainBehavior() {
-
-			if(RAI_SessionCore.IsServer == false) {
-
-				return;
-
-			}
-			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
 				Mode = BehaviorMode.Retreat;
@@ -108,6 +65,7 @@ namespace RivalAI.Behavior {
 
 			}
 
+			//Init
 			if(Mode == BehaviorMode.Init) {
 
 				if(NewAutoPilot.Targeting.InvalidTarget == true) {
@@ -117,19 +75,21 @@ namespace RivalAI.Behavior {
 				} else {
 
 					Mode = BehaviorMode.WaitAtWaypoint;
-					this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
+					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				}
 
 			}
 
+			//Waiting For Target
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
 				if(NewAutoPilot.Targeting.InvalidTarget == false) {
 
-					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
-					this.HorseflyWaypointWaitTime = this.HorseflyWaypointWaitTimeTrigger;
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				} else if(Despawn.NoTargetExpire == true) {
@@ -146,27 +106,104 @@ namespace RivalAI.Behavior {
 
 			}
 
-			//WaitAtWaypoint
-			if(Mode == BehaviorMode.WaitAtWaypoint == true) {
+			//Approach
+			if(Mode == BehaviorMode.ApproachTarget) {
 
+				var timeSpan = MyAPIGateway.Session.GameDateTime - this.HorseflyWaypointAbandonTime;
+				//Logger.MsgDebug("Distance To Waypoint: " + NewAutoPilot.DistanceToCurrentWaypoint.ToString(), DebugTypeEnum.General);
 
+				if (ArrivedAtWaypoint()) {
+
+					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+
+				} else if (timeSpan.TotalSeconds >= this.HorseflyWaypointAbandonTimeTrigger) {
+
+					Logger.MsgDebug("Horsefly Timeout, Getting New Offset", DebugTypeEnum.General);
+					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+
+				} else if (NewAutoPilot.IsWaypointThroughVelocityCollision()) {
+
+					Logger.MsgDebug("Horsefly Velocity Through Collision, Getting New Offset", DebugTypeEnum.General);
+					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+
+				}
 
 			}
 
-			//Approach
-			if(Mode == BehaviorMode.ApproachTarget) {
-				
+			//WaitAtWaypoint
+			if (Mode == BehaviorMode.WaitAtWaypoint) {
 
+				var timeSpan = MyAPIGateway.Session.GameDateTime - this.HorseflyWaypointWaitTime;
+
+				if (timeSpan.TotalSeconds >= this.HorseflyWaypointWaitTimeTrigger) {
+
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+
+				}
 
 			}
 
 			//Retreat
-			if(Mode == BehaviorMode.Retreat) {
+			if (Mode == BehaviorMode.Retreat) {
 
-				
+				if (Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
+
+					//Logger.AddMsg("DespawnCoordsCreated", true);
+					NewAutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
+
+				}
 
 			}
 
+		}
+
+		public bool ArrivedAtWaypoint() {
+
+			if (NewAutoPilot.InGravity() && NewAutoPilot.MyAltitude < NewAutoPilot.IdealPlanetAltitude) {
+
+				if (NewAutoPilot.DistanceToWaypointAtMyAltitude == -1 || NewAutoPilot.DistanceToOffsetAtMyAltitude == -1)
+					return false;
+
+				if (NewAutoPilot.DistanceToWaypointAtMyAltitude < NewAutoPilot.WaypointTolerance && NewAutoPilot.DistanceToOffsetAtMyAltitude < NewAutoPilot.WaypointTolerance) {
+
+					Logger.MsgDebug("Offset Compensation", DebugTypeEnum.General);
+					return true;
+
+				}
+
+				return false;
+
+			}
+
+			if (NewAutoPilot.DistanceToCurrentWaypoint < NewAutoPilot.WaypointTolerance)
+				return true;
+
+			/*
+			if (NewAutoPilot.IsAvoidingCollision() && !_previouslyAvoidingCollision) {
+
+				_previouslyAvoidingCollision = true;
+				return false;
+
+			}
+
+			if (_previouslyAvoidingCollision && !NewAutoPilot.IsAvoidingCollision()) {
+
+				_previouslyAvoidingCollision = false;
+				return true;
+
+
+			}
+			*/
+
+			return false;
+		
 		}
 
 		public void BehaviorInit(IMyRemoteControl remoteControl) {
@@ -177,12 +214,22 @@ namespace RivalAI.Behavior {
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
 			NewAutoPilot.Targeting.NeedsTarget = true;
+			NewAutoPilot.MinimumPlanetAltitude = 200;
+			NewAutoPilot.IdealPlanetAltitude = 300;
+			NewAutoPilot.WaypointTolerance = 30;
+			NewAutoPilot.OffsetSpaceMinDistFromTarget = 150;
+			NewAutoPilot.OffsetSpaceMaxDistFromTarget = 300;
+			NewAutoPilot.OffsetPlanetMinDistFromTarget = 150;
+			NewAutoPilot.OffsetPlanetMaxDistFromTarget = 300;
+			NewAutoPilot.OffsetPlanetMinTargetAltitude = -200;
+			NewAutoPilot.OffsetPlanetMaxTargetAltitude = 200;
 
 			//Get Settings From Custom Data
 			InitCoreTags();
+			InitTags();
 
 			//Behavior Specific Default Enums (If None is Not Acceptable)
-			if(NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
+			if (NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
 
 				NewAutoPilot.Targeting.TargetType = TargetTypeEnum.Player;
 
@@ -204,10 +251,29 @@ namespace RivalAI.Behavior {
 
 		public void InitTags() {
 
-			//Core Tags
+			if (string.IsNullOrWhiteSpace(this.RemoteControl?.CustomData) == false) {
 
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-			//Behavior Tags
+				foreach (var tag in descSplit) {
+
+					//HorseflyWaypointWaitTimeTrigger
+					if (tag.Contains("[HorseflyWaypointWaitTimeTrigger:") == true) {
+
+						this.HorseflyWaypointWaitTimeTrigger = TagHelper.TagIntCheck(tag, this.HorseflyWaypointWaitTimeTrigger);
+
+					}
+
+					//HorseflyWaypointAbandonTimeTrigger
+					if (tag.Contains("[HorseflyWaypointAbandonTimeTrigger:") == true) {
+
+						this.HorseflyWaypointAbandonTimeTrigger = TagHelper.TagIntCheck(tag, this.HorseflyWaypointAbandonTimeTrigger);
+
+					}
+
+				}
+
+			}
 
 
 		}

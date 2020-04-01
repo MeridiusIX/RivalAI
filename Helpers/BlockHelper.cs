@@ -47,13 +47,13 @@ namespace RivalAI.Helpers {
 
             foreach(var block in blockList.Where(x => x.FatBlock != null)) {
 
-                if((block as IMyTerminalBlock) == null) {
+                if((block.FatBlock as IMyTerminalBlock) == null) {
 
                     continue;
 
                 }
 
-                if((block as IMyTerminalBlock).CustomName == name) {
+                if((block.FatBlock as IMyTerminalBlock).CustomName == name) {
 
                     return block as IMyTerminalBlock;
 
@@ -62,6 +62,26 @@ namespace RivalAI.Helpers {
             }
 
             return null;
+
+        }
+
+        public static List<IMyTerminalBlock> GetBlocksOfType<T>(IMyCubeGrid cubeGrid) where T : class {
+
+            var blockList = TargetHelper.GetAllBlocks(cubeGrid);
+            var resultList = new List<IMyTerminalBlock>();
+
+            foreach (IMySlimBlock block in blockList.Where(x => x.FatBlock != null)) {
+
+                IMyTerminalBlock terminalBlock = block.FatBlock as IMyTerminalBlock;
+
+                if (terminalBlock == null || terminalBlock as T == null)
+                    continue;
+
+                resultList.Add(terminalBlock);
+
+            }
+
+            return resultList;
 
         }
 
