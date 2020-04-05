@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 //Change namespace to your mod's namespace
@@ -12,7 +13,7 @@ namespace RivalAI.Helpers {
 
 		private static long _mesModId = 1521905890;
 		private static Action<Vector3D, string, double, int, int> _addKnownPlayerLocation;
-		private static Func<List<string>, MatrixD, Vector3, bool, string, bool> _customSpawnRequest;
+		private static Func<List<string>, MatrixD, Vector3, bool, string, string, bool> _customSpawnRequest;
 		private static Func<List<string>> _getSpawnGroupBlackList;
 		private static Func<List<string>> _getNpcNameBlackList;
 		private static Func<Vector3D, bool, string, bool> _isPositionInKnownPlayerLocation;
@@ -47,7 +48,7 @@ namespace RivalAI.Helpers {
 		/// <param name="forwardDir">Forward Direction vector for the spawn</param>
 		/// <param name="upDir">Up Direction Vector for the spawn</param>
 		/// <param name="velocity">Velocity vector</param>
-		public static bool CustomSpawnRequest(List<string> spawnGroups, MatrixD spawningMatrix, Vector3 velocity, bool ignoreSafetyCheck, string factionOverride) => _customSpawnRequest?.Invoke(spawnGroups, spawningMatrix, velocity, ignoreSafetyCheck, factionOverride) ?? false;
+		public static bool CustomSpawnRequest(List<string> spawnGroups, MatrixD spawningMatrix, Vector3 velocity, bool ignoreSafetyCheck, string factionOverride, string spawnProfileId) => _customSpawnRequest?.Invoke(spawnGroups, spawningMatrix, velocity, ignoreSafetyCheck, factionOverride, spawnProfileId) ?? false;
 
 		/// <summary>
 		/// Get a String List of all Current SpawnGroup SubtypeNames Currently in the MES Blacklist
@@ -100,20 +101,27 @@ namespace RivalAI.Helpers {
 		/// <returns>Returns a bool indicating if the change was successful or not</returns>
 		public static bool SetSpawnerIgnoreForDespawn(IMyCubeGrid cubeGrid, bool ignoreSetting) => _setSpawnerIgnoreForDespawn?.Invoke(cubeGrid, ignoreSetting) ?? false;
 
+		//Run This Method in your SessionComponent UnloadData() Method
+		public static void UnregisterListener() {
+
+			MyAPIGateway.Utilities.UnregisterMessageHandler(_mesModId, APIListener);
+
+		}
+
 		public static void APIListener(object data) {
-
-			var dict = data as Dictionary<string, Delegate>;
-
-			if (dict == null) {
-
-				return;
-
-			}
 
 			try {
 
+				var dict = data as Dictionary<string, Delegate>;
+
+				if (dict == null) {
+
+					return;
+
+				}
+
 				_addKnownPlayerLocation = (Action<Vector3D, string, double, int, int>)dict["AddKnownPlayerLocation"];
-				_customSpawnRequest = (Func<List<string>, MatrixD, Vector3, bool, string, bool>)dict["CustomSpawnRequest"];
+				_customSpawnRequest = (Func<List<string>, MatrixD, Vector3, bool, string, string, bool>)dict["CustomSpawnRequest"];
 				_getSpawnGroupBlackList = (Func<List<string>>)dict["GetSpawnGroupBlackList"];
 				_getNpcNameBlackList = (Func<List<string>>)dict["GetNpcNameBlackList"];
 				_isPositionInKnownPlayerLocation = (Func<Vector3D, bool, string, bool>)dict["IsPositionInKnownPlayerLocation"];
@@ -122,17 +130,16 @@ namespace RivalAI.Helpers {
 				_getNpcEndCoordinates = (Func<IMyCubeGrid, Vector3D>)dict["GetNpcEndCoordinates"];
 				_setSpawnerIgnoreForDespawn = (Func<IMyCubeGrid, bool, bool>)dict["SetSpawnerIgnoreForDespawn"];
 				MESApiReady = true;
-				Logger.WriteLog("Modular Encounters Spawner API Loaded Successfully");
 
-			} catch (Exception x) {
 
-				Logger.WriteLog("Exception Encountered While Loading Modular Encounters Spawner API");
-				Logger.WriteLog(x.ToString());
+			} catch (Exception e) {
+
+				MyLog.Default.WriteLineAndConsole("Modular Encounters Spawner API Client Failed To Load On: " + MyAPIGateway.Utilities.GamePaths.ModScopeName);
+				MyLog.Default.WriteLineAndConsole(e.ToString());
 
 			}
 
 			
-
 		}
 
 	}

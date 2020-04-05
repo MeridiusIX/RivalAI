@@ -618,10 +618,14 @@ namespace RivalAI.Behavior.Subsystems {
 
 		private void UpdateLegacyAutoPilot() {
 
-			if (_remoteControl.IsAutoPilotEnabled && Vector3D.Distance(_previousWaypoint, _currentWaypoint) < this.WaypointTolerance)
+			if (_remoteControl.IsAutoPilotEnabled && Vector3D.Distance(_previousWaypoint, _currentWaypoint) < this.WaypointTolerance) {
+
 				return;
 
-			_remoteControl.SetAutoPilotEnabled(false);
+			}
+				
+
+			_remoteControl.SetAutoPilotEnabled(false); //
 			_remoteControl.ClearWaypoints();
 
 			if (UseStuckMovementCorrection && _upDirection != Vector3D.Zero) {
@@ -630,8 +634,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (timeSpan.TotalSeconds > 5) {
 
-					if (Collision.Velocity.Length() < 4 && VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(Collision.Velocity)) <= 1) {
+					if (Collision.Velocity.Length() < 4 && VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(Collision.Velocity)) <= 2) {
 
+						Logger.MsgDebug("AutoPilot Stuck, Attempting Fix", DebugTypeEnum.General);
 						_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
 						return;
 

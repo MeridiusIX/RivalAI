@@ -116,7 +116,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (block as IMyLargeTurretBase != null) {
 
-				Logger.MsgDebug(block.CustomName + " Is Regular Static Weapon", DebugTypeEnum.Weapon);
+				Logger.MsgDebug(block.CustomName + " Is Regular Turret Weapon", DebugTypeEnum.Weapon);
 				iWeapon = new TurretWeaponProfile(_remoteControl, block);
 
 			} else if (block as IMyUserControllableGun != null) {

@@ -132,6 +132,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				this.HighestRadius = chat.IgnoredAntennaRangeOverride;
 				this.HighestAntennaRangeName = "";
+				this.AntennaCoords = this.RemoteControl.GetPosition();
 
 			} else {
 
@@ -180,7 +181,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
 
-					continue;
+					continue; //player too far
 
 				}
 

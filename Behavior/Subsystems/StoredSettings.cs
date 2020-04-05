@@ -64,6 +64,9 @@ namespace RivalAI.Behavior.Subsystems{
 		[ProtoMember(9)]
 		public DateTime LastDamageTakenTime;
 
+		[ProtoMember(10)]
+		public string CustomTargetProfile;
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -78,8 +81,41 @@ namespace RivalAI.Behavior.Subsystems{
 			TotalDamageAccumulated = 0;
 			LastDamageTakenTime = MyAPIGateway.Session.GameDateTime;
 
+			CustomTargetProfile = "";
+
 		}
-		
+
+		public StoredSettings(StoredSettings oldSettings, bool preserveSettings, bool preserveTriggers, bool preserveTargetProfile) : base() {
+
+			//Stuff From Old Settings
+			if (!preserveSettings)
+				return;
+
+			this.Mode = oldSettings.Mode;
+			this.StoredCustomBooleans = oldSettings.StoredCustomBooleans;
+			this.StoredCustomCounters = oldSettings.StoredCustomCounters;
+			this.TotalDamageAccumulated = oldSettings.TotalDamageAccumulated;
+			this.LastDamageTakenTime = oldSettings.LastDamageTakenTime;
+
+			//Triggers
+			if (preserveTriggers) {
+
+				this.Triggers = oldSettings.Triggers;
+				this.DamageTriggers = oldSettings.DamageTriggers;
+				this.CommandTriggers = oldSettings.CommandTriggers;
+
+			}
+
+			//TargetProfile
+			if (preserveTargetProfile) {
+
+				this.CustomTargetProfile = oldSettings.CustomTargetProfile;
+				this.CurrentTargetEntityId = oldSettings.CurrentTargetEntityId;
+
+			}
+
+		}
+
 		public bool GetCustomBoolResult(string name){
 
 			if (string.IsNullOrWhiteSpace(name))

@@ -325,7 +325,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				
 			}
 
-			if (this.CheckMESBlacklistedSpawnGroups == true) {
+			if (MESApi.MESApiReady && this.CheckMESBlacklistedSpawnGroups) {
 
 				var blackList = MESApi.GetSpawnGroupBlackList();
 
@@ -356,7 +356,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					usedConditions++;
 					foreach (var group in this.SpawnGroupBlacklistContainsAll) {
 
-						if (blackList.Contains(group) == true) {
+						if (blackList.Contains(group)) {
 
 							Logger.MsgDebug(this.ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
 							satisfiedConditions++;

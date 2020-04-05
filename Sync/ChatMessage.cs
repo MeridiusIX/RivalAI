@@ -75,11 +75,11 @@ namespace RivalAI.Sync {
 
 		public bool ProcessDebugMode() {
 
-			// /RAI.DebugMode.true
+			// /RAI.Debug.Mode.true
 
 			var msg = this.Message.Split('.');
 
-			if(msg.Length < 3) {
+			if(msg.Length != 4) {
 
 				this.ReturnMessage = "Command Received Could Not Be Read Properly.";
 				return false;
@@ -88,70 +88,42 @@ namespace RivalAI.Sync {
 
 			bool result = false;
 
-			if(bool.TryParse(msg[2], out result) == false) {
+			if(bool.TryParse(msg[3], out result) == false) {
 
 				this.ReturnMessage = "Debug Mode Value Not Recognized. Accepts true or false.";
 				return true;
 
 			}
 
-			if(msg[1] == "DebugMode")
+			if (Logger.EnableDebugOption(msg[2], result)) {
+
+				Logger.SaveDebugToSandbox();
+				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
+				return true;
+
+			}
+
+			if (msg[2] == "DebugMode") {
+
+				Logger.SaveDebugToSandbox();
+				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
 				Logger.LoggerDebugMode = result;
-
-			if (msg[1] == "DebugWriteToLog")
 				Logger.DebugWriteToLog = result;
+				return true;
 
-			if (msg[1] == "DebugNotification")
-				Logger.DebugNotification = result;
+			}
 
-			if (msg[1] == "DebugAction")
-				Logger.DebugAction = result;
+			if (msg[2] == "RemoveAll" && result) {
 
-			if (msg[1] == "DebugAutoPilot")
-				Logger.DebugAutoPilot = result;
-
-			if (msg[1] == "DebugChat")
-				Logger.DebugChat = result;
-
-			if (msg[1] == "DebugCollision")
-				Logger.DebugCollision = result;
-
-			if (msg[1] == "DebugCondition")
-				Logger.DebugCondition = result;
-
-			if (msg[1] == "DebugDespawn")
-				Logger.DebugDespawn = result;
-
-			if (msg[1] == "DebugDev")
-				Logger.DebugDev = result;
-
-			if (msg[1] == "DebugGeneral")
-				Logger.DebugGeneral = result;
-
-			if (msg[1] == "DebugOwner")
-				Logger.DebugOwner = result;
-
-			if (msg[1] == "DebugSpawn")
-				Logger.DebugSpawn = result;
-
-			if (msg[1] == "DebugTarget")
-				Logger.DebugTarget = result;
-
-			if (msg[1] == "DebugTrigger")
-				Logger.DebugTrigger = result;
-
-			if (msg[1] == "DebugWeapon")
-				Logger.DebugWeapon = result;
-
-			if (msg[1] == "DebugFullEnable" && result)
-				Logger.EnableAllOptions();
-
-			if (msg[1] == "DebugFullEnable" && !result)
+				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
+				Logger.SaveDebugToSandbox();
 				Logger.DisableAllOptions();
+				return true;
 
-			Logger.SaveDebugToSandbox();
-			this.ReturnMessage = msg[1] + " Set: " + result.ToString();
-			return true;
+			}
+
+			this.ReturnMessage = "Debug Command Not Recognized: " + msg[2];
+			return false;
 
 		}
 

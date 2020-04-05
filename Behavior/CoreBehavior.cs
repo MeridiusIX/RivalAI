@@ -30,25 +30,40 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior {
 
-	public class CoreBehavior {
+	public class CoreBehavior : IBehavior {
 
 		public IMyRemoteControl RemoteControl;
 		public IMyCubeGrid CubeGrid;
 
 		//public BaseSystems Systems;
 
-		public NewAutoPilotSystem NewAutoPilot;
-		public BroadcastSystem Broadcast;
-		public DamageSystem Damage;
-		public DespawnSystem Despawn;
-		public ExtrasSystem Extras;
-		public OwnerSystem Owner;
-		public SpawningSystem Spawning;
-		public StoredSettings Settings;
-		public TriggerSystem Trigger;
+		private bool _behaviorTerminated;
+
+		private NewAutoPilotSystem _newAutoPilot;
+		private BroadcastSystem _broadcast;
+		private DamageSystem _damage;
+		private DespawnSystem _despawn;
+		private ExtrasSystem _extras;
+		private OwnerSystem _owner;
+		private SpawningSystem _spawning;
+		private StoredSettings _settings;
+		private TriggerSystem _trigger;
+
+		public NewAutoPilotSystem NewAutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
+		public BroadcastSystem Broadcast { get { return _broadcast; } set { _broadcast = value; } }
+		public DamageSystem Damage { get { return _damage; } set { _damage = value; } }
+		public DespawnSystem Despawn { get { return _despawn; } set { _despawn = value; } }
+		public ExtrasSystem Extras { get { return _extras; } set { _extras = value; } }
+		public OwnerSystem Owner { get { return _owner; } set { _owner = value; } }
+		public SpawningSystem Spawning { get { return _spawning; } set { _spawning = value; } }
+		public StoredSettings Settings { get { return _settings; } set { _settings = value; } }
+		public TriggerSystem Trigger { get { return _trigger; } set { _trigger = value; } }
+
+		public bool BehaviorTerminated { get { return _behaviorTerminated; } set { _behaviorTerminated = value; } }
 
 		public BehaviorMode Mode;
 		public BehaviorMode PreviousMode;
@@ -56,7 +71,7 @@ namespace RivalAI.Behavior {
 		public bool SetupCompleted;
 		public bool SetupFailed;
 		public bool ConfigCheck;
-		public bool EndScript;
+		
 
 		private DateTime _despawnCheckTimer;
 		private DateTime _behaviorRunTimer;
@@ -87,7 +102,7 @@ namespace RivalAI.Behavior {
 			SetupCompleted = false;
 			SetupFailed = false;
 			ConfigCheck = false;
-			EndScript = false;
+			BehaviorTerminated = false;
 
 			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
 			_behaviorRunTimer = MyAPIGateway.Session.GameDateTime;
@@ -112,9 +127,15 @@ namespace RivalAI.Behavior {
 		//--------------START INTERFACE METHODS-----------------------------------
 		//------------------------------------------------------------------------
 
+		public virtual void BehaviorInit(IMyRemoteControl remoteControl) {
+		
+			
+		
+		}
+
 		public bool IsAIReady() {
 
-			return (IsWorking && PhysicsValid && Owner.NpcOwned && !EndScript);
+			return (IsWorking && PhysicsValid && Owner.NpcOwned && !BehaviorTerminated && SetupCompleted);
 
 		}
 
@@ -214,13 +235,83 @@ namespace RivalAI.Behavior {
 
 		public bool IsClosed() {
 
-			return (IsEntityClosed || EndScript);
+			return (IsEntityClosed || BehaviorTerminated);
 		
 		}
 
 		public void DebugDrawWaypoints() {
 
 			NewAutoPilot.DebugDrawingToWaypoints();
+		
+		}
+
+		public void ChangeBehavior(string newBehaviorSubtypeID, bool preserveSettings = false, bool preserveTriggers = false, bool preserveTargetData = false) {
+
+			string behaviorString = "";
+
+			if (!TagHelper.BehaviorTemplates.TryGetValue(newBehaviorSubtypeID, out behaviorString)) {
+
+				Logger.MsgDebug("Behavior With Following Name Not Found: " + newBehaviorSubtypeID, DebugTypeEnum.General);
+				return;
+			
+			}
+
+			this.BehaviorTerminated = true;
+			this.RemoteControl.CustomData = behaviorString;
+			var newSettings = new StoredSettings(Settings, preserveSettings, preserveTriggers, preserveTargetData);
+			var tempSettingsBytes = MyAPIGateway.Utilities.SerializeToBinary<StoredSettings>(newSettings);
+			var tempSettingsString = Convert.ToBase64String(tempSettingsBytes);
+
+			if (this.RemoteControl.Storage == null) {
+
+				this.RemoteControl.Storage = new MyModStorageComponent();
+
+			}
+
+			if (this.RemoteControl.Storage.ContainsKey(_settingsStorageKey)) {
+
+				this.RemoteControl.Storage[_settingsStorageKey] = tempSettingsString;
+
+			} else {
+
+				this.RemoteControl.Storage.Add(_settingsStorageKey, tempSettingsString);
+
+			}
+
+			MyAPIGateway.Parallel.Start(() => {
+
+				BehaviorManager.RegisterBehaviorFromRemoteControl(this.RemoteControl);
+
+			});
+
+		}
+
+		public void ChangeTargetProfile(string newTargetProfile) {
+
+			byte[] targetProfileBytes;
+
+			if (!TagHelper.TargetObjectTemplates.TryGetValue(newTargetProfile, out targetProfileBytes))
+				return;
+
+			TargetProfile targetProfile;
+
+			try {
+
+				targetProfile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(targetProfileBytes);
+
+				if (targetProfile != null && !string.IsNullOrWhiteSpace(targetProfile.ProfileSubtypeId)) {
+
+					NewAutoPilot.Targeting.TargetData = targetProfile;
+					NewAutoPilot.Targeting.UpdateTargetRequested = true;
+					Settings.CustomTargetProfile = newTargetProfile;
+
+				}
+
+			} catch (Exception e) {
+			
+				
+			
+			}
 		
 		}
 
@@ -234,14 +325,6 @@ namespace RivalAI.Behavior {
 
 		}
 
-		
-
-		public void ChangeBehavior(string newBehaviorSubtypeID) {
-
-
-
-		}
-
 		public virtual void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
 			Logger.MsgDebug("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
@@ -251,11 +334,11 @@ namespace RivalAI.Behavior {
 
 		public void CoreSetup(IMyRemoteControl remoteControl) {
 
-			Logger.MsgDebug("Beginning Core Setup On Remote Control", DebugTypeEnum.General);
+			Logger.MsgDebug("Beginning Core Setup On Remote Control", DebugTypeEnum.BehaviorSetup);
 
 			if (remoteControl == null) {
 
-				Logger.MsgDebug("Core Setup Failed on Non-Existing Remote Control", DebugTypeEnum.General);
+				Logger.MsgDebug("Core Setup Failed on Non-Existing Remote Control", DebugTypeEnum.BehaviorSetup);
 				SetupFailed = true;
 				return;
 
@@ -270,14 +353,14 @@ namespace RivalAI.Behavior {
 
 				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) && (!valA && !valB)) {
 
-
-					this.EndScript = true;
+					this.BehaviorTerminated = true;
 					return;
 
 				}
 
 			}
 
+			Logger.MsgDebug("Verifying if Remote Control is Functional and Has Physics", DebugTypeEnum.BehaviorSetup);
 			this.RemoteControl = remoteControl;
 			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
 			this.RemoteControl.OnClosing += (e) => { this.IsEntityClosed = true; };
@@ -287,6 +370,10 @@ namespace RivalAI.Behavior {
 			
 			this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
 			PhysicsValidCheck(this.CubeGrid);
+
+			Logger.MsgDebug("Remote Control Working: " + IsWorking.ToString(), DebugTypeEnum.BehaviorSetup);
+			Logger.MsgDebug("Remote Control Has Physics: " + PhysicsValid.ToString(), DebugTypeEnum.BehaviorSetup);
+			Logger.MsgDebug("Setting Up Subsystems", DebugTypeEnum.BehaviorSetup);
 
 			NewAutoPilot = new NewAutoPilotSystem(remoteControl);
 			Broadcast = new BroadcastSystem(remoteControl);
@@ -298,16 +385,17 @@ namespace RivalAI.Behavior {
 			Settings = new StoredSettings();
 			Trigger = new TriggerSystem(remoteControl);
 
+			Logger.MsgDebug("Setting Up Subsystem References", DebugTypeEnum.BehaviorSetup);
 			NewAutoPilot.SetupReferences(Trigger);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
-			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings);
+			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this);
 
 		}
 
 		public void InitCoreTags() {
 
-			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.General);
+			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.BehaviorSetup);
 
 			NewAutoPilot.InitTags();
 			NewAutoPilot.Targeting.InitTags();
@@ -326,23 +414,26 @@ namespace RivalAI.Behavior {
 		
 		public void PostTagsSetup() {
 
-			Logger.MsgDebug("Post Tag Setup for " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+			Logger.MsgDebug("Post Tag Setup for " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
 
-			if (Logger.DebugTrigger) {
+			if (Logger.IsMessageValid(DebugTypeEnum.BehaviorSetup)) {
 
-				Logger.MsgDebug("Total Triggers: " + Trigger.Triggers.Count.ToString(), DebugTypeEnum.Trigger);
-				Logger.MsgDebug("Total Damage Triggers: " + Trigger.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
-				Logger.MsgDebug("Total Command Triggers: " + Trigger.CommandTriggers.Count.ToString(), DebugTypeEnum.Trigger);
+				Logger.MsgDebug("Total Triggers: " + Trigger.Triggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
+				Logger.MsgDebug("Total Damage Triggers: " + Trigger.DamageTriggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
+				Logger.MsgDebug("Total Command Triggers: " + Trigger.CommandTriggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
 
 			}
 
 			if (Trigger.DamageTriggers.Count > 0)
 				Damage.UseDamageDetection = true;
 
+			Logger.MsgDebug("Beginning Weapon Setup", DebugTypeEnum.BehaviorSetup);
 			NewAutoPilot.Weapons.Setup();
+
+			Logger.MsgDebug("Beginning Damage Handler Setup", DebugTypeEnum.BehaviorSetup);
 			Damage.SetupDamageHandler();
 
-			//TODO: Restore Storage Data
+			Logger.MsgDebug("Beginning Stored Settings Init/Retrieval", DebugTypeEnum.BehaviorSetup);
 			bool foundStoredSettings = false;
 
 			if (this.RemoteControl.Storage != null) {
@@ -362,14 +453,14 @@ namespace RivalAI.Behavior {
 
 							Settings = tempSettings;
 							foundStoredSettings = true;
-							Logger.MsgDebug("Loaded Stored Settings For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+							Logger.MsgDebug("Loaded Stored Settings For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
 							Trigger.Triggers = Settings.Triggers;
 							Trigger.DamageTriggers = Settings.DamageTriggers;
 							Trigger.CommandTriggers = Settings.CommandTriggers;
 
 						} else {
 
-							Logger.MsgDebug("Stored Settings Invalid For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+							Logger.MsgDebug("Stored Settings Invalid For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
 
 						}
 
@@ -377,8 +468,8 @@ namespace RivalAI.Behavior {
 	
 				} catch (Exception e) {
 
-					Logger.MsgDebug("Failed to Deserialize Existing Stored Remote Control Data on Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
-					Logger.MsgDebug(e.ToString(), DebugTypeEnum.Dev);
+					Logger.MsgDebug("Failed to Deserialize Existing Stored Remote Control Data on Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
+					Logger.MsgDebug(e.ToString(), DebugTypeEnum.BehaviorSetup);
 
 				}
 
@@ -386,7 +477,7 @@ namespace RivalAI.Behavior {
 
 			if (!foundStoredSettings) {
 
-				Logger.MsgDebug("Stored Settings Not Found For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Dev);
+				Logger.MsgDebug("Stored Settings Not Found For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
 				Settings.Triggers = Trigger.Triggers;
 				Settings.DamageTriggers = Trigger.DamageTriggers;
 				Settings.CommandTriggers = Trigger.CommandTriggers;
@@ -394,6 +485,8 @@ namespace RivalAI.Behavior {
 			}
 
 			//TODO: Refactor This Into TriggerSystem
+
+			Logger.MsgDebug("Beginning Individual Trigger Reference Setup", DebugTypeEnum.BehaviorSetup);
 			foreach (var trigger in Trigger.Triggers) {
 
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
@@ -423,7 +516,10 @@ namespace RivalAI.Behavior {
 
 			}
 
+			Logger.MsgDebug("Setting Callbacks", DebugTypeEnum.BehaviorSetup);
 			SetupCallbacks();
+
+			Logger.MsgDebug("Core Settings Setup Complete", DebugTypeEnum.BehaviorSetup);
 
 		}
 
@@ -436,6 +532,9 @@ namespace RivalAI.Behavior {
 		}
 
 		public void SaveData() {
+
+			if (!IsAIReady())
+				return;
 
 			_settingSaveCounter = 0;
 

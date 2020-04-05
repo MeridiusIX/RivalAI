@@ -170,8 +170,25 @@ namespace RivalAI.Helpers {
 			}
 
 			//Get All Behavior
+			foreach (var def in definitionList) {
+
+				if (string.IsNullOrWhiteSpace(def.DescriptionText)) {
+
+					continue;
+
+				}
+
+				if ((def.DescriptionText.Contains("[RivalAI Behavior]") || def.DescriptionText.Contains("[Rival AI Behavior]")) && BehaviorTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+					BehaviorTemplates.Add(def.Id.SubtypeName, def.DescriptionText);
+					continue;
+
+				}
+
+			}
 
 			//Print Profile Names To Log:
+			BuildKeyListAndWriteToLog("Behavior", BehaviorTemplates.Keys);
 			BuildKeyListAndWriteToLog("Trigger", TriggerObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Condition", ConditionObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Action", ActionObjectTemplates.Keys);

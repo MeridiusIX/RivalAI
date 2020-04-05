@@ -82,7 +82,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public string NewBehavior;
 		
 		[ProtoMember(17)]
-		public bool ClearSettingsOnBehaviorSwitch;
+		public bool PreserveSettingsOnBehaviorSwitch;
 		
 		[ProtoMember(18)]
 		public bool RefreshTarget;
@@ -216,6 +216,42 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(61)]
 		public bool BehaviorSpecificEventA;
 
+		[ProtoMember(62)]
+		public bool BehaviorSpecificEventB;
+
+		[ProtoMember(63)]
+		public bool BehaviorSpecificEventC;
+
+		[ProtoMember(64)]
+		public bool BehaviorSpecificEventD;
+
+		[ProtoMember(65)]
+		public bool BehaviorSpecificEventE;
+
+		[ProtoMember(66)]
+		public bool BehaviorSpecificEventF;
+
+		[ProtoMember(67)]
+		public bool BehaviorSpecificEventG;
+
+		[ProtoMember(68)]
+		public bool BehaviorSpecificEventH;
+
+		[ProtoMember(69)]
+		public bool TerminateBehavior; //Doc
+
+		[ProtoMember(70)]
+		public bool ChangeTargetProfile; //Doc
+
+		[ProtoMember(71)]
+		public string NewTargetProfileId; //Imp
+
+		[ProtoMember(72)]
+		public bool PreserveTriggersOnBehaviorSwitch; //Doc
+
+		[ProtoMember(73)]
+		public bool PreserveTargetDataOnBehaviorSwitch; //Doc
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
@@ -241,8 +277,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			SwitchToBehavior = false;
 			NewBehavior = "";
-			ClearSettingsOnBehaviorSwitch = false;
-			
+			PreserveSettingsOnBehaviorSwitch = false;
+			PreserveTriggersOnBehaviorSwitch = false;
+			PreserveTargetDataOnBehaviorSwitch = false;
+
 			RefreshTarget = false;
 			
 			TriggerTimerBlocks = false;
@@ -292,12 +330,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			IncreaseSandboxCounters = new List<string>();
 			DecreaseSandboxCounters = new List<string>();
 			ResetSandboxCounters = new List<string>();
-			
-			
 
 			BroadcastGenericCommand = false;
 
 			BehaviorSpecificEventA = false;
+			BehaviorSpecificEventB = false;
+			BehaviorSpecificEventC = false;
+			BehaviorSpecificEventD = false;
+			BehaviorSpecificEventE = false;
+			BehaviorSpecificEventF = false;
+			BehaviorSpecificEventG = false;
+			BehaviorSpecificEventH = false;
+
+			TerminateBehavior = false;
+
+			ChangeTargetProfile = false;
+			NewTargetProfileId = "";
 
 			ProfileSubtypeId = "";
 
@@ -452,9 +500,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						this.Retreat = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
+					//TerminateBehavior
+					if (tag.Contains("[TerminateBehavior:") == true) {
+
+						this.TerminateBehavior = TagHelper.TagBoolCheck(tag);
+
+					}
+
 					//BroadcastCurrentTarget
-					if(tag.Contains("[BroadcastCurrentTarget:") == true) {
+					if (tag.Contains("[BroadcastCurrentTarget:") == true) {
 
 						this.BroadcastCurrentTarget = TagHelper.TagBoolCheck(tag);
 
@@ -488,15 +543,29 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 					
-					//ClearSettingsOnBehaviorSwitch
-					if(tag.Contains("[ClearSettingsOnBehaviorSwitch:") == true) {
+					//PreserveSettingsOnBehaviorSwitch
+					if(tag.Contains("[PreserveSettingsOnBehaviorSwitch:") == true) {
 
-						this.ClearSettingsOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+						this.PreserveSettingsOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
+					//PreserveTriggersOnBehaviorSwitch
+					if (tag.Contains("[PreserveTriggersOnBehaviorSwitch:") == true) {
+
+						this.PreserveTriggersOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//PreserveTargetDataOnBehaviorSwitch
+					if (tag.Contains("[PreserveTargetDataOnBehaviorSwitch:") == true) {
+
+						this.PreserveTargetDataOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+
+					}
+
 					//RefreshTarget
-					if(tag.Contains("[RefreshTarget:") == true) {
+					if (tag.Contains("[RefreshTarget:") == true) {
 
 						this.RefreshTarget = TagHelper.TagBoolCheck(tag);
 

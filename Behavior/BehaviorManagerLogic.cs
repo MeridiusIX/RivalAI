@@ -86,43 +86,22 @@ namespace RivalAI.Behavior{
 		
 		public override void UpdateBeforeSimulation(){
 
-			if(BehaviorChangeRequest == true) {
-
-				BehaviorChangeTimeBuffer++;
-
-				if(BehaviorChangeTimeBuffer < 10) {
-
-					return;
-
-				}
-
-				BehaviorChangeTimeBuffer = 0;
-				BehaviorChangeRequest = false;
-				SetupComplete = false;
-				ValidBehavior = false;
-				//TODO: Replace Custom Data
-				BehaviorProfileChangeTo = "";
-
-			}
+			NeedsUpdate = MyEntityUpdateEnum.NONE;
 
 			if(SetupComplete == false){
 
 				if(MyAPIGateway.Multiplayer.IsServer == false) {
 
-					NeedsUpdate = MyEntityUpdateEnum.NONE;
 					return;
 
 				}
 
-				BehaviorRun = null;
-				BehaviorRemove = null;
 				SetupComplete = true;
 				RemoteControl = Entity as IMyRemoteControl;
 
 				if(string.IsNullOrEmpty(RemoteControl?.CustomData) == true){
 				
 					Logger.MsgDebug("Remote Control Null Or Has No Behavior Data In CustomData.", DebugTypeEnum.General);
-					NeedsUpdate = MyEntityUpdateEnum.NONE;
 					return;
 					
 				}
@@ -130,85 +109,13 @@ namespace RivalAI.Behavior{
 				if(RemoteControl.CustomData.Contains("[RivalAI Behavior]") == false && RemoteControl.CustomData.Contains("[Rival AI Behavior]") == false) {
 
 					Logger.MsgDebug("Remote Control CustomData Does Not Contain Initializer.", DebugTypeEnum.General);
-					NeedsUpdate = MyEntityUpdateEnum.NONE;
 					return;
 
 				}
 
 				MyAPIGateway.Parallel.Start(() => {
 
-					try {
-
-						//CoreBehavior
-						if (RemoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
-
-							ValidBehavior = true;
-							CoreBehaviorInstance = new CoreBehavior();
-							CoreBehaviorInstance.CoreSetup(RemoteControl);
-							//BehaviorRun += CoreBehaviorInstance.RunCoreAi;
-
-						}
-
-						//Fighter
-						if (RemoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
-
-							ValidBehavior = true;
-							MainBehavior = new Fighter();
-							BehaviorName = "Fighter";
-							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							MainBehavior.BehaviorInit(RemoteControl);
-							//BehaviorRun += FighterBehaviorInstance.RunCoreAi;
-							BehaviorManager.Behaviors.Add(MainBehavior);
-
-						}
-
-						//Horsefly
-						if (RemoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
-
-							ValidBehavior = true;
-							MainBehavior = new Horsefly();
-							BehaviorName = "Horsefly";
-							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							MainBehavior.BehaviorInit(RemoteControl);
-							//BehaviorRun += HorseflyBehaviorInstance.RunCoreAi;
-							BehaviorManager.Behaviors.Add(MainBehavior);
-
-						}
-
-						//Passive
-						if (RemoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
-
-							Logger.MsgDebug("Initializing Passive Behavior On Grid " + RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.General);
-							ValidBehavior = true;
-							MainBehavior = new Passive();
-							BehaviorName = "Passive";
-							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							MainBehavior.BehaviorInit(RemoteControl);
-							//BehaviorRun += PassiveBehaviorInstance.RunCoreAi;
-							BehaviorManager.Behaviors.Add(MainBehavior);
-
-						}
-
-						//Strike
-						if (RemoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
-
-							ValidBehavior = true;
-							MainBehavior = new Strike();
-							BehaviorName = "Strike";
-							GridName = RemoteControl.SlimBlock.CubeGrid.CustomName;
-							MainBehavior.BehaviorInit(RemoteControl);
-							//BehaviorRun += StrikeBehaviorInstance.RunCoreAi;
-							BehaviorManager.Behaviors.Add(MainBehavior);
-
-						}
-
-					} catch (Exception exc) {
-
-						Logger.MsgDebug("Exception Found During Behavior Setup: ", DebugTypeEnum.General);
-						Logger.MsgDebug(exc.ToString(), DebugTypeEnum.General);
-
-					}
-					
+					BehaviorManager.RegisterBehaviorFromRemoteControl(RemoteControl);
 
 				});
 

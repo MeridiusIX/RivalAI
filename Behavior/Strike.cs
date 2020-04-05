@@ -231,7 +231,7 @@ namespace RivalAI.Behavior {
 
         }
 
-        public void BehaviorInit(IMyRemoteControl remoteControl) {
+        public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
             //Core Setup
             CoreSetup(remoteControl);
@@ -255,27 +255,19 @@ namespace RivalAI.Behavior {
             InitTags();
 
             //Behavior Specific Default Enums (If None is Not Acceptable)
-            if (NewAutoPilot.Targeting.TargetType == TargetTypeEnum.None) {
+            if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
 
-                NewAutoPilot.Targeting.TargetType = TargetTypeEnum.Player;
-
-            }
-
-            if(NewAutoPilot.Targeting.TargetRelation == TargetRelationEnum.None) {
-
-                NewAutoPilot.Targeting.TargetRelation = TargetRelationEnum.Enemy;
-
-            }
-
-            if(NewAutoPilot.Targeting.TargetOwner == TargetOwnerEnum.None) {
-
-                NewAutoPilot.Targeting.TargetOwner = TargetOwnerEnum.Player;
+                NewAutoPilot.Targeting.TargetData.Target = TargetTypeEnum.Player;
+                NewAutoPilot.Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
+                NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
 
             }
 
             Trigger.BehaviorEventA += ChangeOffsetAction;
 
             _defaultCollisionSettings = NewAutoPilot.UseVelocityCollisionEvasion;
+
+            SetupCompleted = true;
 
         }
 

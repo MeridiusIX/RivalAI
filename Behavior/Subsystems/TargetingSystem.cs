@@ -205,7 +205,7 @@ namespace RivalAI.Behavior.Subsystems{
 					if (duration.TotalSeconds > this.TimeUntilNewTarget) {
 
 						Logger.MsgDebug("Target Expired. Refreshing...", DebugTypeEnum.Target);
-						this.InvalidTarget = false;
+						this.InvalidTarget = true;
 						SetNewTimeout();
 
 					}

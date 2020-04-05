@@ -58,7 +58,7 @@ namespace RivalAI.Behavior{
 
 		}
 
-		public void BehaviorInit(IMyRemoteControl remoteControl) {
+		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
 			//Core Setup
 			CoreSetup(remoteControl);
@@ -70,6 +70,8 @@ namespace RivalAI.Behavior{
 
 			//Get Settings From Custom Data
 			InitCoreTags();
+
+			SetupCompleted = true;
 
 		}
 

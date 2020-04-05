@@ -40,6 +40,8 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<IMyRadioAntenna> AntennaList = new List<IMyRadioAntenna>();
 		public List<IMyLargeTurretBase> TurretList = new List<IMyLargeTurretBase>();
 
+		private IBehavior _behavior;
+
 		private NewAutoPilotSystem _autopilot;
 		private BroadcastSystem _broadcast;
 		private DespawnSystem _despawn;
@@ -107,7 +109,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//Timer
 				if (trigger.Type == "Timer") {
 
-					Logger.MsgDebug("Checking Timer Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					//Logger.MsgDebug("Checking Timer Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger == true) {
 
 						trigger.ActivateTrigger();
@@ -121,7 +123,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//PlayerNear
 				if (trigger.Type == "PlayerNear") {
 
-					Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger == true) {
 
 						if (IsPlayerNearby(trigger)) {
@@ -139,7 +141,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//TurretTarget
 				if (trigger.Type == "TurretTarget") {
 
-					Logger.MsgDebug("Checking TurretTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					//Logger.MsgDebug("Checking TurretTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger == true) {
 
 						var turretTarget = _autopilot.Weapons.GetTurretTarget();
@@ -165,10 +167,46 @@ namespace RivalAI.Behavior.Subsystems {
 				//NoWeapon
 				if (trigger.Type == "NoWeapon") {
 
-					Logger.MsgDebug("Checking NoWeapon Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true && !_autopilot.Weapons.HasWorkingWeapons()) {
+					//Logger.MsgDebug("Checking NoWeapon Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger && !_autopilot.Weapons.HasWorkingWeapons()) {
 
 						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//NoTarget
+				if (trigger.Type == "NoTarget") {
+
+					//Logger.MsgDebug("Checking NoTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger) {
+
+						if (!_autopilot.Targeting.Target.TargetExists) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//HasTarget
+				if (trigger.Type == "HasTarget") {
+
+					//Logger.MsgDebug("Checking HasTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger) {
+
+						if (_autopilot.Targeting.Target.TargetExists) {
+
+							trigger.ActivateTrigger();
+
+						}
 
 					}
 
@@ -179,7 +217,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//TargetInSafezone
 				if (trigger.Type == "TargetInSafezone") {
 
-					Logger.MsgDebug("Checking TargetInSafezone Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					//Logger.MsgDebug("Checking TargetInSafezone Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger == true) {
 
 						if (_autopilot.Targeting.Target.TargetExists == true && _autopilot.Targeting.Target.InSafeZone == true) {
@@ -374,7 +412,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//SpawnReinforcements
 			if (trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
 
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Action);
+				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Spawn);
 				if (trigger.Actions.Spawner.IsReadyToSpawn()) {
 
 					//Logger.AddMsg("Do Spawn", true);
@@ -427,6 +465,14 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			//TerminateBehavior
+			if (trigger.Actions.TerminateBehavior == true) {
+
+				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
+				_behavior.BehaviorTerminated = true;
+
+			}
+
 			//BroadcastGenericCommand
 			if (trigger.Actions.BroadcastGenericCommand == true) {
 
@@ -460,7 +506,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//SwitchToBehavior
 			if(trigger.Actions.SwitchToBehavior == true) {
 
-				//TODO:
+				_behavior.ChangeBehavior(trigger.Actions.NewBehavior, trigger.Actions.PreserveSettingsOnBehaviorSwitch, trigger.Actions.PreserveTriggersOnBehaviorSwitch, trigger.Actions.PreserveTargetDataOnBehaviorSwitch);
 
 			}
 
@@ -646,7 +692,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences(NewAutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings) {
+		public void SetupReferences(NewAutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, IBehavior behavior) {
 
 			this._autopilot = autopilot;
 			this._broadcast = broadcast;
@@ -654,6 +700,7 @@ namespace RivalAI.Behavior.Subsystems {
 			this._extras = extras;
 			this._owner = owners;
 			this._settings = settings;
+			this._behavior = behavior;
 
 		}
 		

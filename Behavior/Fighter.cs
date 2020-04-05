@@ -183,7 +183,7 @@ namespace RivalAI.Behavior{
 
 		}
 
-		public void BehaviorInit(IMyRemoteControl remoteControl) {
+		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
 			Logger.MsgDebug("Beginning Behavior Init For Fighter", DebugTypeEnum.General);
 
@@ -209,6 +209,8 @@ namespace RivalAI.Behavior{
 				NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
 
 			}
+
+			SetupCompleted = true;
 
 		}
 

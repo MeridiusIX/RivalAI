@@ -122,38 +122,34 @@ namespace RivalAI.Helpers {
 		}
 
 		private static void CompleteSpawning() {
-			
-			MyAPIGateway.Utilities.InvokeOnGameThread(() =>{
 
-				if (_spawnMatrix == MatrixD.Identity) {
+			if (_spawnMatrix == MatrixD.Identity) {
 
-					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Coords Could Not Be Calculated. Aborting Process", DebugTypeEnum.Spawn);
-					PerformNextSpawn();
-					return;
-
-				}
-
-				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
-				var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
-				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks, _currentSpawn.CurrentFactionTag);
-
-				if (result == true) {
-
-					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
-					_currentSpawn.SpawnCount++;
-
-
-
-				} else {
-
-					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
-
-				}
-
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Coords Could Not Be Calculated. Aborting Process", DebugTypeEnum.Spawn);
 				PerformNextSpawn();
+				return;
 
-			});
-   
+			}
+
+			Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
+			var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
+			var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks, _currentSpawn.CurrentFactionTag, _currentSpawn.ProfileSubtypeId);
+
+			if (result == true) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+				_currentSpawn.SpawnCount++;
+
+
+
+			} else {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+			}
+
+			PerformNextSpawn();
+
 		}
 
 		private static void PerformNextSpawn() {

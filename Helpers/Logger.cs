@@ -37,7 +37,12 @@ namespace RivalAI.Helpers{
 
 		None,
 		Action,
+		ActionChat,
 		AutoPilot,
+		AutoPilotStuck,
+		AutoPilotOffset,
+		AutoPilotPlanetPath,
+		BehaviorSetup,
 		Chat,
 		Condition,
 		Despawn,
@@ -48,6 +53,7 @@ namespace RivalAI.Helpers{
 		Spawn,
 		Target,
 		Trigger,
+		TriggerPlayerNear,
 		Weapon
 
 	}
@@ -62,30 +68,18 @@ namespace RivalAI.Helpers{
 		public static bool DebugWriteToLog = false;
 		public static bool DebugNotification = false;
 
-		public static bool DebugAction = false;
-		public static bool DebugAutoPilot = false;
-		public static bool DebugChat = false;
-		public static bool DebugCollision = false;
-		public static bool DebugCondition = false;
-		public static bool DebugDespawn = false;
-		public static bool DebugDev = false;
-		public static bool DebugGeneral = false;
-		public static bool DebugOwner = false;
-		public static bool DebugSpawn = false;
-		public static bool DebugTarget = false;
-		public static bool DebugTrigger = true;
-		public static bool DebugWeapon = false;
+		public static List<DebugTypeEnum> CurrentDebugTypeList = new List<DebugTypeEnum>();
 
 		public static DateTime StartTimer = DateTime.Now;
 		public static DateTime StepTimer = DateTime.Now;
 
 		public static void MsgDebug(string message, DebugTypeEnum type = DebugTypeEnum.None){
-			
-			if(LoggerDebugMode == false){
-				
+
+			if (!LoggerDebugMode)
 				return;
-				
-			}
+
+			if (string.IsNullOrWhiteSpace(message))
+				return;
 
 			if (!IsMessageValid(type))
 				return;
@@ -95,12 +89,12 @@ namespace RivalAI.Helpers{
 			if(DebugWriteToLog)
 				MyLog.Default.WriteLineAndConsole(LogDefaultIdentifier + typeModifier + message);
 
-			if(DebugNotification)
-				MyVisualScriptLogicProvider.ShowNotificationToAll(typeModifier + message, 4000);
-			
 		}
 
 		public static void WriteLog(string message) {
+
+			if (string.IsNullOrWhiteSpace(message))
+				return;
 
 			MyLog.Default.WriteLineAndConsole(LogDefaultIdentifier + message);
 
@@ -134,6 +128,7 @@ namespace RivalAI.Helpers{
 		public static void LoadDebugFromSandbox() {
 
 			bool result = false;
+			string listStringResult = "";
 
 			if(MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugMode", out result))
 				Logger.LoggerDebugMode = result;
@@ -144,86 +139,59 @@ namespace RivalAI.Helpers{
 			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugNotification", out result))
 				Logger.DebugNotification = result;
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugAction", out result))
-				Logger.DebugAction = result;
+			if (MyAPIGateway.Utilities.GetVariable<string>("RAI-Setting-DebugTypes", out listStringResult)) {
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugAutoPilot", out result))
-				Logger.DebugAutoPilot = result;
+				try {
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugChat", out result))
-				Logger.DebugChat = result;
+					var resultBytes = Convert.FromBase64String(listStringResult);
+					var resultList = MyAPIGateway.Utilities.SerializeFromBinary<List<DebugTypeEnum>>(resultBytes);
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugCollision", out result))
-				Logger.DebugCollision = result;
+					if (resultList != null && resultList.Count > 0) {
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugCondition", out result))
-				Logger.DebugCondition = result;
+						CurrentDebugTypeList = resultList;
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugDespawn", out result))
-				Logger.DebugDespawn = result;
+					}
 
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugDev", out result))
-				Logger.DebugDev = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugGeneral", out result))
-				Logger.DebugGeneral = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugOwner", out result))
-				Logger.DebugOwner = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugSpawn", out result))
-				Logger.DebugSpawn = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugTarget", out result))
-				Logger.DebugTarget = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugTrigger", out result))
-				Logger.DebugTrigger = result;
-
-			if (MyAPIGateway.Utilities.GetVariable<bool>("RAI-Setting-DebugWeapon", out result))
-				Logger.DebugWeapon = result;
+				} catch (Exception e) {
+				
+				
+				
+				}
+				
+			
+			}
 
 		}
 
-		public static void EnableAllOptions() {
+		public static bool EnableDebugOption(string type, bool mode) {
 
-			LoggerDebugMode = true;
-			DebugWriteToLog = true;
-			DebugNotification = true;
-			DebugAction = true;
-			DebugAutoPilot = true;
-			DebugChat = true;
-			DebugCollision = true;
-			DebugCondition = true;
-			DebugDespawn = true;
-			DebugDev = true;
-			DebugGeneral = true;
-			DebugOwner = true;
-			DebugSpawn = true;
-			DebugTarget = true;
-			DebugTrigger = true;
-			DebugWeapon = true;
+			DebugTypeEnum debugEnum = DebugTypeEnum.None;
 
+			if (!DebugTypeEnum.TryParse(type, out debugEnum))
+				return false;
+
+			if (mode) {
+
+				if (!CurrentDebugTypeList.Contains(debugEnum))
+					CurrentDebugTypeList.Add(debugEnum);
+
+			} else {
+
+				if (CurrentDebugTypeList.Contains(debugEnum))
+					CurrentDebugTypeList.Remove(debugEnum);
+
+			}
+
+			return true;
+		
 		}
 
 		public static void DisableAllOptions() {
 
 			LoggerDebugMode = false;
 			DebugWriteToLog = false;
-			DebugNotification = false;
-			DebugAction = false;
-			DebugAutoPilot = false;
-			DebugChat = false;
-			DebugCollision = false;
-			DebugCondition = false;
-			DebugDespawn = false;
-			DebugDev = false;
-			DebugGeneral = false;
-			DebugOwner = false;
-			DebugSpawn = false;
-			DebugTarget = false;
-			DebugTrigger = false;
-			DebugWeapon = false;
+
+			CurrentDebugTypeList.Clear();
 
 		}
 
@@ -232,64 +200,25 @@ namespace RivalAI.Helpers{
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugMode", Logger.LoggerDebugMode);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugWriteToLog", Logger.DebugWriteToLog);
 			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugNotification", Logger.DebugNotification);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugAction", Logger.DebugAction);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugAutoPilot", Logger.DebugAutoPilot);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugChat", Logger.DebugChat);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugCollision", Logger.DebugCollision);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugCondition", Logger.DebugCondition);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugDespawn", Logger.DebugDespawn);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugDev", Logger.DebugDev);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugGeneral", Logger.DebugGeneral);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugOwner", Logger.DebugOwner);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugSpawn", Logger.DebugSpawn);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugTarget", Logger.DebugTarget);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugTrigger", Logger.DebugTrigger);
-			MyAPIGateway.Utilities.SetVariable<bool>("RAI-Setting-DebugWeapon", Logger.DebugWeapon);
+
+			try {
+
+				var resultBytes = MyAPIGateway.Utilities.SerializeToBinary<List<DebugTypeEnum>>(CurrentDebugTypeList);
+				var resultList = Convert.ToBase64String(resultBytes);
+				MyAPIGateway.Utilities.SetVariable<string>("RAI-Setting-DebugTypes", resultList);
+
+			} catch (Exception e) {
+
+				//WriteLog("Could Not Save DebugTypes As Base64");
+				//WriteLog(e.ToString());
+
+			}
 
 		}
 
 		public static bool IsMessageValid(DebugTypeEnum type) {
 
-			if (type == DebugTypeEnum.Action && DebugAction)
-				return true;
-
-			if (type == DebugTypeEnum.AutoPilot && DebugAutoPilot)
-				return true;
-
-			if (type == DebugTypeEnum.Chat && DebugChat)
-				return true;
-
-			if (type == DebugTypeEnum.Condition && DebugCondition)
-				return true;
-
-			if (type == DebugTypeEnum.Collision && DebugCollision)
-				return true;
-
-			if (type == DebugTypeEnum.Despawn && DebugDespawn)
-				return true;
-
-			if (type == DebugTypeEnum.Dev && DebugDev)
-				return true;
-
-			if (type == DebugTypeEnum.General && DebugGeneral)
-				return true;
-
-			if (type == DebugTypeEnum.Owner && DebugOwner)
-				return true;
-
-			if (type == DebugTypeEnum.Spawn && DebugSpawn)
-				return true;
-
-			if (type == DebugTypeEnum.Target && DebugTarget)
-				return true;
-
-			if (type == DebugTypeEnum.Trigger && DebugTrigger)
-				return true;
-
-			if (type == DebugTypeEnum.Weapon && DebugWeapon)
-				return true;
-
-			return false;
+			return CurrentDebugTypeList.Contains(type);
 
 		}
 		

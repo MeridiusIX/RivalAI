@@ -88,7 +88,7 @@ namespace RivalAI.Behavior {
 
 				for (int i = Behaviors.Count - 1; i >= 0; i--) {
 
-					if (Behaviors[i].IsClosed()) {
+					if (Behaviors[i].IsClosed() || Behaviors[i].BehaviorTerminated) {
 
 						Behaviors.RemoveAt(i);
 						continue;
@@ -100,6 +100,73 @@ namespace RivalAI.Behavior {
 				//Logger.MsgDebug("Start Parallel For All Behaviors", DebugTypeEnum.General);
 				Mode = BehaviorManagerMode.Parallel;
 				_behaviorCounter = 0;
+
+			}
+
+		}
+
+		public static void RegisterBehaviorFromRemoteControl(IMyRemoteControl remoteControl) {
+
+			try {
+
+				Logger.MsgDebug("Determining Behavior Type of RemoteControl", DebugTypeEnum.BehaviorSetup);
+				//CoreBehavior
+				if (remoteControl.CustomData.Contains("[BehaviorName:CoreBehavior]")) {
+
+					var CoreBehaviorInstance = new CoreBehavior();
+					CoreBehaviorInstance.CoreSetup(remoteControl);
+					return;
+
+				}
+
+				//Fighter
+				if (remoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
+
+					Logger.MsgDebug("Behavior: Fighter", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Fighter();
+					MainBehavior.BehaviorInit(remoteControl);
+					BehaviorManager.Behaviors.Add(MainBehavior);
+					return;
+
+				}
+
+				//Horsefly
+				if (remoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
+
+					Logger.MsgDebug("Behavior: Horsefly", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Horsefly();
+					MainBehavior.BehaviorInit(remoteControl);
+					BehaviorManager.Behaviors.Add(MainBehavior);
+					return;
+
+				}
+
+				//Passive
+				if (remoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
+
+					Logger.MsgDebug("Behavior: Passive", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Passive();
+					MainBehavior.BehaviorInit(remoteControl);
+					BehaviorManager.Behaviors.Add(MainBehavior);
+					return;
+
+				}
+
+				//Strike
+				if (remoteControl.CustomData.Contains("[BehaviorName:Strike]")) {
+
+					Logger.MsgDebug("Behavior: Strike", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Strike();
+					MainBehavior.BehaviorInit(remoteControl);
+					BehaviorManager.Behaviors.Add(MainBehavior);
+					return;
+
+				}
+
+			} catch (Exception exc) {
+
+				Logger.WriteLog("Exception Found During Behavior Setup:");
+				Logger.WriteLog(exc.ToString());
 
 			}
 
