@@ -75,7 +75,7 @@ namespace RivalAI.Behavior{
 			
 			if(Mode == BehaviorMode.Init) {
 
-				if(NewAutoPilot.Targeting.InvalidTarget == true) {
+				if(!NewAutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -96,7 +96,7 @@ namespace RivalAI.Behavior{
 
 				}
 
-				if(NewAutoPilot.Targeting.InvalidTarget == false) {
+				if(NewAutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
@@ -109,7 +109,7 @@ namespace RivalAI.Behavior{
 
 			}
 
-			if(NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+			if(!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
@@ -172,17 +172,6 @@ namespace RivalAI.Behavior{
 
 		}
 
-		public void CheckTarget() {
-
-			if(NewAutoPilot.Targeting.InvalidTarget == true) {
-
-				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
-
-			}
-
-		}
-
 		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
 			Logger.MsgDebug("Beginning Behavior Init For Fighter", DebugTypeEnum.General);
@@ -192,7 +181,6 @@ namespace RivalAI.Behavior{
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
-			NewAutoPilot.Targeting.NeedsTarget = true;
 			NewAutoPilot.Thrust.StrafeMinDurationMs = 1500;
 			NewAutoPilot.Thrust.StrafeMaxDurationMs = 2000;
 			NewAutoPilot.Thrust.AllowStrafing = true;
@@ -202,11 +190,12 @@ namespace RivalAI.Behavior{
 			InitCoreTags();
 			InitTags();
 
-			if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
+			if (NewAutoPilot.Targeting.Data.UseCustomTargeting == false) {
 
-				NewAutoPilot.Targeting.TargetData.Target = TargetTypeEnum.Player;
-				NewAutoPilot.Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
-				NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
+				NewAutoPilot.Targeting.Data.UseCustomTargeting = true;
+				NewAutoPilot.Targeting.Data.Target = TargetTypeEnum.Player;
+				NewAutoPilot.Targeting.Data.Relations = TargetRelationEnum.Enemy;
+				NewAutoPilot.Targeting.Data.Owners = TargetOwnerEnum.Player;
 
 			}
 

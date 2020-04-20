@@ -164,7 +164,6 @@ namespace RivalAI.Helpers {
         public IMyTerminalBlock GetShieldBlock(IMyEntity entity) => _getShieldBlock?.Invoke(entity) ?? null;
         public IMyTerminalBlock MatchEntToShieldFast(IMyEntity entity, bool onlyIfOnline) => _matchEntToShieldFast?.Invoke(entity, onlyIfOnline) ?? null;
         public MyTuple<float?, IMyTerminalBlock> ClosestShieldInLine(LineD line, bool onlyIfOnline) => _closestShieldInLine?.Invoke(line, onlyIfOnline) ?? new MyTuple<float?, IMyTerminalBlock>();
-
         public bool IsShieldBlock(IMyTerminalBlock block) => _isShieldBlock?.Invoke(block) ?? false;
         public IMyTerminalBlock GetClosestShield(Vector3D pos) => _getClosestShield?.Invoke(pos) ?? null;
         public double GetDistanceToShield(IMyTerminalBlock block, Vector3D pos) => _getDistanceToShield?.Invoke(block, pos) ?? -1;

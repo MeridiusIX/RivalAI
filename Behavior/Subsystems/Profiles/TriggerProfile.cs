@@ -105,6 +105,24 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(24)]
 		public double CustomReputationRangeCheck;
 
+		[ProtoMember(25)]
+		public string InventoryBlockName;
+
+		[ProtoMember(26)]
+		public string InventoryItemDefinitionId;
+
+		[ProtoMember(27)]
+		public float InventoryItemMin;
+
+		[ProtoMember(28)]
+		public float InventoryItemMax;
+
+		[ProtoMember(29)]
+		public string InsideAntennaName;
+
+		[ProtoMember(30)]
+		public List<string> ExcludedDamageTypes;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -115,6 +133,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			UseTrigger = false;
 			TargetDistance = 3000;
 			InsideAntenna = false;
+			InsideAntennaName = "";
 			PlayerNearPositionOffset = Vector3D.Zero;
 			MinCooldownMs = 0;
 			MaxCooldownMs = 1;
@@ -138,6 +157,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			AllPlayersMustMatchReputation = false;
 			CustomReputationRangeCheck = 5000;
 
+			InventoryBlockName = "";
+			InventoryItemDefinitionId = "";
+			InventoryItemMin = -1;
+			InventoryItemMax = -1;
+
 			CommandReceiveCode = "";
 
 			ProfileSubtypeId = "";
@@ -147,7 +171,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		}
 
-		public void ActivateTrigger() {
+		public void ActivateTrigger(Func<bool> mainTriggerCheck = null) {
 
 			if(MaxActions >= 0 && TriggerCount >= MaxActions) {
 
@@ -162,6 +186,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastTriggerTime;
 
 				if(duration.TotalMilliseconds >= CooldownTime) {
+
+					if (mainTriggerCheck != null) {
+					
+						
+					
+					}
 
 					if (Conditions.UseConditions == true) {
 
@@ -187,6 +217,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 				}
 
 			} else {
+
+				if (mainTriggerCheck != null) {
+
+
+
+				}
 
 				if (Conditions.UseConditions == true) {
 
@@ -256,8 +292,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//InsideAntennaName
+					if (tag.Contains("[InsideAntennaName:") == true) {
+
+						InsideAntennaName = TagHelper.TagStringCheck(tag);
+
+					}
+
 					//TargetDistance
-					if(tag.Contains("[TargetDistance:") == true) {
+					if (tag.Contains("[TargetDistance:") == true) {
 
 						TargetDistance = TagHelper.TagDoubleCheck(tag, TargetDistance);
 

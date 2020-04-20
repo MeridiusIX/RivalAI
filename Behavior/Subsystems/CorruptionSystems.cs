@@ -48,8 +48,7 @@ namespace RivalAI.Behavior.Subsystems {
         GyroSpin,
         ThrustOverride,
         WeaponDisarm,
-        TurretConfusion,
-        ItemDisassembly
+        TurretConfusion
 
     }
 

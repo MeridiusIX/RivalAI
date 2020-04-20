@@ -49,7 +49,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (!WeaponIsFunctional()) {
 
-				//Logger.MsgDebug("Non Functional Weapon", DebugTypeEnum.Weapon);
+				Logger.MsgDebug("Non Functional Weapon", DebugTypeEnum.WeaponStaticCore);
 				return;
 
 			}
@@ -59,7 +59,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (!_firing && ready) {
 
-				Logger.MsgDebug("Start Fire " + _weaponBlock.CustomName, DebugTypeEnum.Weapon);
+				Logger.MsgDebug("Start Fire " + _weaponBlock.CustomName, DebugTypeEnum.WeaponStaticCore);
 				RAI_SessionCore.Instance.WeaponCore.ToggleWeaponFire(_weaponBlock, true, false, _weaponIndex);
 				_firing = true;
 
@@ -67,7 +67,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (_firing && !ready) {
 
-				Logger.MsgDebug("Cease Fire " + _weaponBlock.CustomName, DebugTypeEnum.Weapon);
+				Logger.MsgDebug("Cease Fire " + _weaponBlock.CustomName, DebugTypeEnum.WeaponStaticCore);
 				RAI_SessionCore.Instance.WeaponCore.ToggleWeaponFire(_weaponBlock, false, false, _weaponIndex);
 				_firing = false;
 
@@ -114,7 +114,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			} else if(!_readyToFire) {
 
-				//Logger.MsgDebug(_weaponBlock.CustomName + " Ready: " + _readyToFire.ToString(), DebugTypeEnum.Weapon);
+				Logger.MsgDebug(_weaponBlock.CustomName + " Ready: " + _readyToFire.ToString(), DebugTypeEnum.WeaponStaticCore);
 				return;
 			
 			}
@@ -123,46 +123,65 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			_currentAngle = VectorHelper.GetAngleBetweenDirections(_weaponBlock.WorldMatrix.Forward, Vector3D.Normalize(_currentTargetWaypoint - _weaponBlock.GetPosition()));
 			
 
-			_angleCheckPassed = _currentAngle > _weaponSystem.WeaponMaxAngleFromTarget || !_waypointIsTarget;
-			_weaponCoreAngleCheckPassed = RAI_SessionCore.Instance.WeaponCore.IsTargetAligned(_weaponBlock, _currentTargetEntity, _weaponIndex);
+			_angleCheckPassed = _currentAngle < _weaponSystem.WeaponMaxAngleFromTarget && _waypointIsTarget;
 			_currentAmmoIsHoming = IsCurrentAmmoHoming();
 			_currentAmmoIsBeam = IsCurrentAmmoLaser();
 
-			if(!_angleCheckPassed && !_weaponCoreAngleCheckPassed && !_currentAmmoIsHoming)
+			if(!_angleCheckPassed && !_currentAmmoIsHoming)
 				_readyToFire = false;
 
-			//Logger.MsgDebug(_weaponBlock.CustomName + " Ready: " + _readyToFire.ToString(), DebugTypeEnum.Weapon);
+			//Logger.MsgDebug(_weaponBlock.CustomName + " Ready: " + _readyToFire.ToString(), DebugTypeEnum.WeaponStaticCore);
 
 		}
 
 		public override bool IsReadyToFire(bool targetIsWaypoint, bool isBarrage = false) {
 
-			if (_currentDistance > _weaponCurrentRange)
+			if (_currentDistance > _weaponCurrentRange) {
+
+				Logger.MsgDebug(_weaponBlock.CustomName + " Not Ready: Out Of Range", DebugTypeEnum.WeaponStaticCore);
 				return false;
+
+			}
+				
 
 			if (!_currentAmmoIsHoming && !_currentAmmoIsBeam) {
 
-				if ((isBarrage && !IsBarrageWeapon()) || (!isBarrage && IsBarrageWeapon()))
+				if ((isBarrage && !IsBarrageWeapon()) || (!isBarrage && IsBarrageWeapon())) {
+
+					Logger.MsgDebug(_weaponBlock.CustomName + " Not Ready: Not Barrage Ready", DebugTypeEnum.WeaponStaticCore);
 					return false;
 
-				if (_angleCheckPassed/* || _weaponCoreAngleCheckPassed*/)
+				}
+
+
+				if (_angleCheckPassed) {
+
+					Logger.MsgDebug(_weaponBlock.CustomName + " Ready: Within Angle", DebugTypeEnum.WeaponStaticCore);
 					return true;
 
+				}
+					
 			}
 
 			if (_currentAmmoIsHoming && _currentTargetEntity != null) {
 
+				Logger.MsgDebug(_weaponBlock.CustomName + " Ready: Homing Has Target", DebugTypeEnum.WeaponStaticCore);
 				return true;
 			
 			}
 
 			if (_currentAmmoIsBeam) {
 
-				if (_angleCheckPassed/* || _weaponCoreAngleCheckPassed*/)
+				if (_angleCheckPassed) {
+
+					Logger.MsgDebug(_weaponBlock.CustomName + " Ready: Beam Within Angle", DebugTypeEnum.WeaponStaticCore);
 					return true;
 
+				}
+	
 			}
 
+			Logger.MsgDebug(_weaponBlock.CustomName + " Not Ready: Out of angle or Other", DebugTypeEnum.WeaponStaticCore);
 			return false;
 
 		}

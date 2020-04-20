@@ -54,7 +54,11 @@ namespace RivalAI.Helpers{
 		Target,
 		Trigger,
 		TriggerPlayerNear,
-		Weapon
+		Weapon,
+		WeaponBarrage,
+		WeaponCore,
+		WeaponStaticCore,
+		WeaponStaticRegular
 
 	}
 
@@ -184,6 +188,23 @@ namespace RivalAI.Helpers{
 
 			return true;
 		
+		}
+
+		public static void EnableAllOptions() {
+
+			LoggerDebugMode = true;
+			DebugWriteToLog = true;
+
+			CurrentDebugTypeList.Clear();
+
+			var values = Enum.GetValues(typeof(DebugTypeEnum)).Cast<DebugTypeEnum>();
+
+			foreach (var debugType in values) {
+
+				CurrentDebugTypeList.Add(debugType);
+
+			}
+
 		}
 
 		public static void DisableAllOptions() {

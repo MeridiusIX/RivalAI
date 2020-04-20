@@ -161,7 +161,7 @@ namespace RivalAI.Helpers {
 
         }
 
-        public static IMyRadioAntenna GetAntennaWithHighestRange(List<IMyRadioAntenna> antennaList) {
+        public static IMyRadioAntenna GetAntennaWithHighestRange(List<IMyRadioAntenna> antennaList, string antennaName = "") {
 
             IMyRadioAntenna resultAntenna = null;
             float range = 0;
@@ -179,6 +179,9 @@ namespace RivalAI.Helpers {
                     continue;
 
                 }
+
+                if (!string.IsNullOrWhiteSpace(antennaName) && antennaName != antenna.CustomName)
+                    continue;
 
                 if(antenna.Radius > range) {
 
@@ -212,6 +215,72 @@ namespace RivalAI.Helpers {
             }
 
             return resultList;
+        
+        }
+
+        public static void RenameBlocks(IMyCubeGrid cubeGrid, List<string> oldNames, List<string> newNames, string actionId) {
+
+            if (oldNames.Count != newNames.Count) {
+
+                Logger.MsgDebug(actionId + ": ChangeBlockNames From and To lists not the same count. Aborting operation", DebugTypeEnum.Action);
+                return;
+
+            }
+
+            var dictionary = new Dictionary<string, string>();
+
+            for (int i = 0; i < oldNames.Count; i++) {
+
+                if (!dictionary.ContainsKey(oldNames[i]))
+                    dictionary.Add(oldNames[i], newNames[i]);
+
+            }
+
+            var blocks = GetBlocksOfType<IMyTerminalBlock>(cubeGrid);
+
+            foreach (var block in blocks) {
+
+                if (oldNames.Contains(block.CustomName))
+                    block.CustomName = dictionary[block.CustomName];
+
+            }
+
+        }
+
+        public static void SetGridAntennaRanges(List<IMyRadioAntenna> antennas, List<string> names, string operation, float amount) {
+
+            bool checkNames = names.Count > 0 ? true : false;
+
+            foreach (var antenna in antennas) {
+
+                if (antenna == null || antenna.MarkedForClose || antenna.Closed)
+                    continue;
+
+                if (checkNames && !names.Contains(antenna.CustomName))
+                    continue;
+
+                if (operation == "Set") {
+
+                    antenna.Radius = amount;
+                    continue;
+
+                }
+
+                if (operation == "Increase") {
+
+                    antenna.Radius += amount;
+                    continue;
+
+                }
+
+                if (operation == "Decrease") {
+
+                    antenna.Radius -= amount;
+                    continue;
+
+                }
+
+            }
         
         }
 

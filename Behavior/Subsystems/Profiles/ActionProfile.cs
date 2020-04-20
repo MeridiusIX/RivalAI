@@ -238,19 +238,55 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public bool BehaviorSpecificEventH;
 
 		[ProtoMember(69)]
-		public bool TerminateBehavior; //Doc
+		public bool TerminateBehavior;
 
 		[ProtoMember(70)]
-		public bool ChangeTargetProfile; //Doc
+		public bool ChangeTargetProfile;
 
 		[ProtoMember(71)]
-		public string NewTargetProfileId; //Imp
+		public string NewTargetProfileId; //Implement
 
 		[ProtoMember(72)]
-		public bool PreserveTriggersOnBehaviorSwitch; //Doc
+		public bool PreserveTriggersOnBehaviorSwitch;
 
 		[ProtoMember(73)]
-		public bool PreserveTargetDataOnBehaviorSwitch; //Doc
+		public bool PreserveTargetDataOnBehaviorSwitch;
+
+		[ProtoMember(74)]
+		public bool ChangeBlockNames;
+
+		[ProtoMember(75)]
+		public List<string> ChangeBlockNamesFrom;
+
+		[ProtoMember(76)]
+		public List<string> ChangeBlockNamesTo;
+
+		[ProtoMember(77)]
+		public bool ChangeAntennaRanges;
+
+		[ProtoMember(78)]
+		public List<string> AntennaNamesForRangeChange;
+
+		[ProtoMember(79)]
+		public string AntennaRangeChangeType;
+
+		[ProtoMember(80)]
+		public float AntennaRangeChangeAmount;
+
+		[ProtoMember(81)]
+		public bool ForceDespawn;
+
+		[ProtoMember(82)]
+		public bool ResetCooldownTimeOfTriggers;
+
+		[ProtoMember(83)]
+		public List<string> ResetTriggerCooldownNames;
+
+		[ProtoMember(84)]
+		public bool ChangeInertiaDampeners;
+
+		[ProtoMember(85)]
+		public bool InertiaDampenersEnable;
 
 		public ActionProfile(){
 
@@ -346,6 +382,23 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			ChangeTargetProfile = false;
 			NewTargetProfileId = "";
+
+			ChangeBlockNames = false;
+			ChangeBlockNamesFrom = new List<string>();
+			ChangeBlockNamesTo = new List<string>();
+
+			ChangeAntennaRanges = false;
+			AntennaNamesForRangeChange = new List<string>();
+			AntennaRangeChangeType = "Set";
+			AntennaRangeChangeAmount = 0;
+
+			ForceDespawn = false;
+
+			ResetCooldownTimeOfTriggers = false;
+			ResetTriggerCooldownNames = new List<string>();
+
+			ChangeInertiaDampeners = false;
+			InertiaDampenersEnable = false;
 
 			ProfileSubtypeId = "";
 
@@ -924,10 +977,125 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//NewTargetProfileId
+					if (tag.Contains("[NewTargetProfileId:") == true) {
+
+						this.NewTargetProfileId = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//ChangeBlockNames
+					if (tag.Contains("[ChangeBlockNames:") == true) {
+
+						this.ChangeBlockNames = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangeBlockNamesFrom
+					if (tag.Contains("[ChangeBlockNamesFrom:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.ChangeBlockNamesFrom.Add(tempvalue);
+
+						}
+
+					}
+
+					//ChangeBlockNamesTo
+					if (tag.Contains("[ChangeBlockNamesTo:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.ChangeBlockNamesTo.Add(tempvalue);
+
+						}
+
+					}
+
+					//ChangeAntennaRanges
+					if (tag.Contains("[ChangeAntennaRanges:") == true) {
+
+						this.ChangeAntennaRanges = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//AntennaNamesForRangeChange
+					if (tag.Contains("[AntennaNamesForRangeChange:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.AntennaNamesForRangeChange.Add(tempvalue);
+
+						}
+
+					}
+
+					//AntennaRangeChangeType
+					if (tag.Contains("[AntennaRangeChangeType:") == true) {
+
+						this.AntennaRangeChangeType = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//AntennaRangeChangeAmount
+					if (tag.Contains("[AntennaRangeChangeAmount:") == true) {
+
+						this.AntennaRangeChangeAmount = TagHelper.TagFloatCheck(tag, this.AntennaRangeChangeAmount);
+
+					}
+
+					//ForceDespawn
+					if (tag.Contains("[ForceDespawn:") == true) {
+
+						this.ForceDespawn = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ResetCooldownTimeOfTriggers
+					if (tag.Contains("[ResetCooldownTimeOfTriggers:") == true) {
+
+						this.ResetCooldownTimeOfTriggers = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ResetTriggerCooldownNames
+					if (tag.Contains("[ResetTriggerCooldownNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.ResetTriggerCooldownNames.Add(tempvalue);
+
+						}
+
+					}
+
 					//BehaviorSpecificEventA
 					if (tag.Contains("[BehaviorSpecificEventA:") == true) {
 
 						this.BehaviorSpecificEventA = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangeInertiaDampeners
+					if (tag.Contains("[ChangeInertiaDampeners:") == true) {
+
+						this.ChangeInertiaDampeners = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//InertiaDampenersEnable
+					if (tag.Contains("[InertiaDampenersEnable:") == true) {
+
+						this.InertiaDampenersEnable = TagHelper.TagBoolCheck(tag);
 
 					}
 

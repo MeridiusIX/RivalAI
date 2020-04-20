@@ -61,6 +61,13 @@ namespace RivalAI.Behavior.Subsystems {
 		public bool PendingDamage;
 
 		public Action BehaviorEventA;
+		public Action BehaviorEventB;
+		public Action BehaviorEventC;
+		public Action BehaviorEventD;
+		public Action BehaviorEventE;
+		public Action BehaviorEventF;
+		public Action BehaviorEventG;
+		public Action BehaviorEventH;
 
 		public DateTime LastTriggerRun;
 
@@ -184,7 +191,7 @@ namespace RivalAI.Behavior.Subsystems {
 					//Logger.MsgDebug("Checking NoTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger) {
 
-						if (!_autopilot.Targeting.Target.TargetExists) {
+						if (!_autopilot.Targeting.HasTarget()) {
 
 							trigger.ActivateTrigger();
 
@@ -202,7 +209,7 @@ namespace RivalAI.Behavior.Subsystems {
 					//Logger.MsgDebug("Checking HasTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger) {
 
-						if (_autopilot.Targeting.Target.TargetExists) {
+						if (_autopilot.Targeting.HasTarget()) {
 
 							trigger.ActivateTrigger();
 
@@ -220,7 +227,7 @@ namespace RivalAI.Behavior.Subsystems {
 					//Logger.MsgDebug("Checking TargetInSafezone Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
 					if (trigger.UseTrigger == true) {
 
-						if (_autopilot.Targeting.Target.TargetExists == true && _autopilot.Targeting.Target.InSafeZone == true) {
+						if (_autopilot.Targeting.HasTarget() && _autopilot.Targeting.Target.InSafeZone()) {
 
 							trigger.ActivateTrigger();
 
@@ -458,15 +465,22 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Retreat
-			if(trigger.Actions.Retreat == true) {
+			if(trigger.Actions.Retreat) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Retreat", DebugTypeEnum.Action);
 				_despawn.Retreat();
 
 			}
 
+			//ForceDespawn
+			if (trigger.Actions.ForceDespawn) {
+
+				_despawn.DespawnGrid();
+
+			}
+
 			//TerminateBehavior
-			if (trigger.Actions.TerminateBehavior == true) {
+			if (trigger.Actions.TerminateBehavior) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
 				_behavior.BehaviorTerminated = true;
@@ -555,13 +569,18 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			//ActivateAssertiveAntennas
-			if(trigger.Actions.ActivateAssertiveAntennas == true) {
+			//ChangeBlockNames
+			if (trigger.Actions.ChangeBlockNames) {
 
-				/*TODO:
-				_extras.SetAssertiveAntennas(true);
-				_extras.AssertiveEngage = true;
-				*/
+				BlockHelper.RenameBlocks(RemoteControl.CubeGrid, trigger.Actions.ChangeBlockNamesFrom, trigger.Actions.ChangeBlockNamesTo, trigger.Actions.ProfileSubtypeId);
+
+			}
+
+			//ChangeAntennaRanges
+			if (trigger.Actions.ChangeAntennaRanges) {
+
+				BlockHelper.SetGridAntennaRanges(AntennaList, trigger.Actions.AntennaNamesForRangeChange, trigger.Actions.AntennaRangeChangeType, trigger.Actions.AntennaRangeChangeAmount);
+
 			}
 
 			//ChangeAntennaOwnership
@@ -595,6 +614,39 @@ namespace RivalAI.Behavior.Subsystems {
 					
 			}
 
+			//ResetCooldownTimeOfTriggers
+			if (trigger.Actions.ResetCooldownTimeOfTriggers) {
+
+				foreach (var resetTrigger in Triggers) {
+
+					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+				}
+
+				foreach (var resetTrigger in DamageTriggers) {
+
+					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+				}
+
+				foreach (var resetTrigger in CommandTriggers) {
+
+					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+				}
+
+			}
+
+			//ChangeInertiaDampeners
+			if (trigger.Actions.ChangeInertiaDampeners) {
+
+				RemoteControl.DampenersOverride = trigger.Actions.InertiaDampenersEnable;
+
+			}
+
 			//SetBooleansTrue
 			foreach (var variable in trigger.Actions.SetBooleansTrue)
 				_settings.SetCustomBool(variable, true);
@@ -618,6 +670,34 @@ namespace RivalAI.Behavior.Subsystems {
 			//BehaviorSpecificEventA
 			if (trigger.Actions.BehaviorSpecificEventA)
 				BehaviorEventA?.Invoke();
+
+			//BehaviorSpecificEventB
+			if (trigger.Actions.BehaviorSpecificEventB)
+				BehaviorEventB?.Invoke();
+
+			//BehaviorSpecificEventC
+			if (trigger.Actions.BehaviorSpecificEventC)
+				BehaviorEventC?.Invoke();
+
+			//BehaviorSpecificEventD
+			if (trigger.Actions.BehaviorSpecificEventD)
+				BehaviorEventD?.Invoke();
+
+			//BehaviorSpecificEventE
+			if (trigger.Actions.BehaviorSpecificEventE)
+				BehaviorEventE?.Invoke();
+
+			//BehaviorSpecificEventF
+			if (trigger.Actions.BehaviorSpecificEventF)
+				BehaviorEventF?.Invoke();
+
+			//BehaviorSpecificEventG
+			if (trigger.Actions.BehaviorSpecificEventG)
+				BehaviorEventG?.Invoke();
+
+			//BehaviorSpecificEventH
+			if (trigger.Actions.BehaviorSpecificEventH)
+				BehaviorEventH?.Invoke();
 
 		}
 
@@ -655,7 +735,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if(control.InsideAntenna == true) {
 
-				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList, control.InsideAntennaName);
 
 				if(antenna != null) {
 

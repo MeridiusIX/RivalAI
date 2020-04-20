@@ -74,7 +74,7 @@ namespace RivalAI.Behavior {
             //Init
             if (Mode == BehaviorMode.Init) {
 
-                if (NewAutoPilot.Targeting.InvalidTarget == true) {
+                if (!NewAutoPilot.Targeting.HasTarget()) {
 
                     ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -91,7 +91,7 @@ namespace RivalAI.Behavior {
             //Waiting For Target
             if (Mode == BehaviorMode.WaitingForTarget) {
 
-                if (NewAutoPilot.Targeting.InvalidTarget == false) {
+                if (NewAutoPilot.Targeting.HasTarget()) {
 
                     ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     CreateAndMoveToOffset();
@@ -105,7 +105,7 @@ namespace RivalAI.Behavior {
 
             }
 
-            if (NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
+            if (!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
 
                 ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -135,12 +135,12 @@ namespace RivalAI.Behavior {
 
                     }
 
-                    if (TargetIsHigh && NewAutoPilot.Targeting.Target.Altitude < NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+                    if (TargetIsHigh && NewAutoPilot.Targeting.Target.CurrentAltitude() < NewAutoPilot.OffsetPlanetMinTargetAltitude) {
 
                         TargetIsHigh = false;
                         CreateAndMoveToOffset();
 
-                    } else if (!TargetIsHigh && NewAutoPilot.Targeting.Target.Altitude > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+                    } else if (!TargetIsHigh && NewAutoPilot.Targeting.Target.CurrentAltitude() > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
 
                         TargetIsHigh = true;
                         CreateAndMoveToOffset();
@@ -207,22 +207,22 @@ namespace RivalAI.Behavior {
 
             if (NewAutoPilot.InGravity()) {
 
-                if (NewAutoPilot.Targeting.Target.Altitude > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+                if (NewAutoPilot.Targeting.Target.CurrentAltitude() > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
 
                     //Logger.MsgDebug("Target Is High", DebugTypeEnum.General);
-                    NewAutoPilot.SetRandomOffset(VectorHelper.RandomDistance(NewAutoPilot.OffsetPlanetMinTargetAltitude, NewAutoPilot.OffsetPlanetMaxTargetAltitude), 0, NewAutoPilot.Targeting.Target.Target);
+                    NewAutoPilot.SetRandomOffset(VectorHelper.RandomDistance(NewAutoPilot.OffsetPlanetMinTargetAltitude, NewAutoPilot.OffsetPlanetMaxTargetAltitude), 0, NewAutoPilot.Targeting.Target.GetEntity());
 
                 } else {
 
                     //Logger.MsgDebug("Target Is Low", DebugTypeEnum.General);
-                    NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target);
+                    NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity());
 
                 }
             
             } else {
 
                 //Logger.MsgDebug("Target Is Space", DebugTypeEnum.General);
-                NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target);
+                NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity());
             
             }
 
@@ -238,7 +238,6 @@ namespace RivalAI.Behavior {
 
             //Behavior Specific Defaults
             Despawn.UseNoTargetTimer = true;
-            NewAutoPilot.Targeting.NeedsTarget = true;
             NewAutoPilot.Weapons.UseStaticGuns = true;
             NewAutoPilot.Collision.CollisionTimeTrigger = 5;
             NewAutoPilot.CollisionEvasionWaypointCalculatedAwayFromEntity = true;
@@ -255,11 +254,12 @@ namespace RivalAI.Behavior {
             InitTags();
 
             //Behavior Specific Default Enums (If None is Not Acceptable)
-            if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
+            if (NewAutoPilot.Targeting.Data.UseCustomTargeting == false) {
 
-                NewAutoPilot.Targeting.TargetData.Target = TargetTypeEnum.Player;
-                NewAutoPilot.Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
-                NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
+                NewAutoPilot.Targeting.Data.UseCustomTargeting = true;
+                NewAutoPilot.Targeting.Data.Target = TargetTypeEnum.Player;
+                NewAutoPilot.Targeting.Data.Relations = TargetRelationEnum.Enemy;
+                NewAutoPilot.Targeting.Data.Owners = TargetOwnerEnum.Player;
 
             }
 

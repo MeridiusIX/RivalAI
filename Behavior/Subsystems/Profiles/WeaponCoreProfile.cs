@@ -62,6 +62,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					_weaponValid = false;
 					return;
 
+				} else {
+
+					Logger.MsgDebug("Total MyAmmoMagazineDefinition counts: " + _allAmmoMagazines.Count.ToString(), DebugTypeEnum.WeaponCore);
+
 				}
 
 			} else {
@@ -87,15 +91,19 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			var ammo = RAI_SessionCore.Instance.WeaponCore.GetActiveAmmo(_weaponBlock, _weaponIndex);
 
-			if (string.IsNullOrWhiteSpace(ammo)) {
+			if (string.IsNullOrWhiteSpace(ammo) && _weaponCoreAmmoDefinition.AmmoMagazine != "Energy") {
 
+				Logger.MsgDebug("Ammo Is Null", DebugTypeEnum.WeaponCore);
 				return;
 
 			}
 
-			if (ammo != _weaponCoreAmmoMagazineId) {
+			if (ammo != _weaponCoreAmmoMagazineId || string.IsNullOrWhiteSpace(_weaponCoreAmmoMagazineId)) {
 
 				foreach (var ammoDef in _weaponCoreDefinition.Ammos) {
+
+					if (ammoDef.AmmoMagazine == "Energy")
+						ammo = "Energy";
 
 					if (ammoDef.AmmoMagazine == ammo) {
 
@@ -176,6 +184,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			if (OwnershipHelper.IsNPC(block.OwnerId)) {
 
+				Logger.MsgDebug("Disabling Power Requirement For NPC Owned Weapon: " + block.CustomName, DebugTypeEnum.WeaponCore);
 				RAI_SessionCore.Instance.WeaponCore.DisableRequiredPower(block);
 
 			}

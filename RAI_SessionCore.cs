@@ -30,6 +30,7 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Sync;
+using RivalAI.Entities;
 
 namespace RivalAI {
 
@@ -37,7 +38,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.4.0";
+		public static string ReleaseVersion = "0.6.0";
 
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
@@ -245,6 +246,7 @@ namespace RivalAI {
 			SyncManager.Close();
 			DamageHelper.UnregisterEntityWatchers();
 			BehaviorManager.Behaviors.Clear();
+			EntityWatcher.UnregisterWatcher();
 
 		}
 

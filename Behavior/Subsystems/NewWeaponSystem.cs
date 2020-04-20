@@ -290,7 +290,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			foreach (var weapon in Weapons) {
 
-				weapon.SetCurrentTargetAndAllowedAngle(_autoPilot.GetCurrentWaypoint(), this.WeaponMaxAngleFromTarget, this.MaxStaticWeaponRange, _validWaypoint, _autoPilot.Targeting.Target.Target);
+				weapon.SetCurrentTargetAndAllowedAngle(_autoPilot.GetCurrentWaypoint(), this.WeaponMaxAngleFromTarget, this.MaxStaticWeaponRange, _validWaypoint, _autoPilot.Targeting.Target.GetEntity());
 
 			}
 
@@ -353,7 +353,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			foreach (var weapon in Weapons) {
 
-				weapon.SetCurrentTargetAndAllowedAngle(_autoPilot.GetCurrentWaypoint(), this.WeaponMaxAngleFromTarget, this.MaxStaticWeaponRange, _validWaypoint, _autoPilot.Targeting.Target.Target);
+				weapon.SetCurrentTargetAndAllowedAngle(_autoPilot.GetCurrentWaypoint(), this.WeaponMaxAngleFromTarget, this.MaxStaticWeaponRange, _validWaypoint, _autoPilot.Targeting.Target.GetEntity());
 				weapon.DetermineWeaponReadiness();
 
 			}
@@ -371,6 +371,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (_pendingBarrageTrigger) {
 
+				Logger.MsgDebug("Pending Parallel For Barrage", DebugTypeEnum.WeaponBarrage);
 				_pendingBarrageTrigger = false;
 				FireBarrageWeapons();
 
@@ -390,7 +391,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (_parallelWorkInProgress) {
 
-				Logger.MsgDebug("Pending Parallel For Barrage", DebugTypeEnum.Weapon);
+				Logger.MsgDebug("Pending Parallel For Barrage", DebugTypeEnum.WeaponBarrage);
 				_pendingBarrageTrigger = true;
 				return;
 
@@ -420,7 +421,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					if (weapon.WeaponIsFunctional() && weapon.IsReadyToFire(_validWaypoint, true)) {
 
-						//Logger.MsgDebug("Fire Barrage Weapon", DebugTypeEnum.Weapon);
+						Logger.MsgDebug("Fire Barrage Weapon", DebugTypeEnum.WeaponBarrage);
 						weapon.FireWeaponOnce();
 						break;
 

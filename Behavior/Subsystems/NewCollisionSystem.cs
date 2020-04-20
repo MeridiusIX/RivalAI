@@ -84,7 +84,7 @@ namespace RivalAI.Behavior {
 
 		}
 
-		public void RunSecondaryCollisionChecks() {
+		public void RunSecondaryCollisionChecks(bool onlyUseWithinTargetDirection = false, Vector3D targetDirection = new Vector3D()) {
 
 			if (!this.UseCollisionDetection)
 				return;

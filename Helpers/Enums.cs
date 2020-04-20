@@ -109,15 +109,16 @@ namespace RivalAI.Helpers {
 
     }
 
-    [Flags]
     public enum TargetFilterEnum {
 
-        None = 0,
-        IgnoreSafeZone = 1,
-        IsBroadcasting = 2,
-        IgnoreUnderground = 4,
-        IncludeGridMinorityOwners = 8,
-
+        None,
+        Altitude,
+        Broadcasting,
+        Gravity,
+        OutsideOfSafezone,
+        Powered,
+        Shielded,
+        Speed,
 
     }
 

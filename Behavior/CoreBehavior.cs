@@ -147,8 +147,7 @@ namespace RivalAI.Behavior {
 
 		public void ProcessTargetingChecks() {
 
-			NewAutoPilot.Targeting.RequestTarget();
-			NewAutoPilot.Targeting.RequestTargetParallel();
+			NewAutoPilot.Targeting.CheckForTarget();
 
 		}
 
@@ -288,31 +287,10 @@ namespace RivalAI.Behavior {
 
 		public void ChangeTargetProfile(string newTargetProfile) {
 
-			byte[] targetProfileBytes;
+			NewAutoPilot.Targeting.UseNewTargetProfile = true;
+			NewAutoPilot.Targeting.NewTargetProfileName = newTargetProfile;
 
-			if (!TagHelper.TargetObjectTemplates.TryGetValue(newTargetProfile, out targetProfileBytes))
-				return;
 
-			TargetProfile targetProfile;
-
-			try {
-
-				targetProfile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(targetProfileBytes);
-
-				if (targetProfile != null && !string.IsNullOrWhiteSpace(targetProfile.ProfileSubtypeId)) {
-
-					NewAutoPilot.Targeting.TargetData = targetProfile;
-					NewAutoPilot.Targeting.UpdateTargetRequested = true;
-					Settings.CustomTargetProfile = newTargetProfile;
-
-				}
-
-			} catch (Exception e) {
-			
-				
-			
-			}
-		
 		}
 
 		//------------------------------------------------------------------------
@@ -386,7 +364,7 @@ namespace RivalAI.Behavior {
 			Trigger = new TriggerSystem(remoteControl);
 
 			Logger.MsgDebug("Setting Up Subsystem References", DebugTypeEnum.BehaviorSetup);
-			NewAutoPilot.SetupReferences(Trigger);
+			NewAutoPilot.SetupReferences(Settings, Trigger);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
 			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this);

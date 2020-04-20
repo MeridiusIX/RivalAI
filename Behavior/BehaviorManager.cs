@@ -125,7 +125,10 @@ namespace RivalAI.Behavior {
 					Logger.MsgDebug("Behavior: Fighter", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Fighter();
 					MainBehavior.BehaviorInit(remoteControl);
-					BehaviorManager.Behaviors.Add(MainBehavior);
+
+					lock(Behaviors)
+						Behaviors.Add(MainBehavior);
+
 					return;
 
 				}
@@ -136,7 +139,10 @@ namespace RivalAI.Behavior {
 					Logger.MsgDebug("Behavior: Horsefly", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Horsefly();
 					MainBehavior.BehaviorInit(remoteControl);
-					BehaviorManager.Behaviors.Add(MainBehavior);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
 					return;
 
 				}
@@ -147,7 +153,10 @@ namespace RivalAI.Behavior {
 					Logger.MsgDebug("Behavior: Passive", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Passive();
 					MainBehavior.BehaviorInit(remoteControl);
-					BehaviorManager.Behaviors.Add(MainBehavior);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
 					return;
 
 				}
@@ -158,7 +167,10 @@ namespace RivalAI.Behavior {
 					Logger.MsgDebug("Behavior: Strike", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Strike();
 					MainBehavior.BehaviorInit(remoteControl);
-					BehaviorManager.Behaviors.Add(MainBehavior);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
 					return;
 
 				}
@@ -295,7 +307,25 @@ namespace RivalAI.Behavior {
 
 		private static void ProcessWeaponsBarrage() {
 
+			//TODO
+			//Mexpex reported single unreproducible crash here
+			//Do some testing here just to be sure.
+
+			if (Behaviors == null) {
+
+				Logger.WriteLog("ERROR: Behaviors List in BehaviorManager is NULL");
+				return;
+			
+			}
+
 			for (int i = Behaviors.Count - 1; i >= 0; i--) {
+
+				if (Behaviors[i] == null) {
+
+					Logger.WriteLog("ERROR: Behavior in Active Behaviors is NULL");
+					continue;
+
+				}
 
 				if (!Behaviors[i].IsAIReady())
 					continue;

@@ -68,7 +68,7 @@ namespace RivalAI.Behavior {
 			//Init
 			if(Mode == BehaviorMode.Init) {
 
-				if(NewAutoPilot.Targeting.InvalidTarget == true) {
+				if(!NewAutoPilot.Targeting.HasTarget()) {
 
 					Mode = BehaviorMode.WaitingForTarget;
 
@@ -85,11 +85,11 @@ namespace RivalAI.Behavior {
 			//Waiting For Target
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(NewAutoPilot.Targeting.InvalidTarget == false) {
+				if(NewAutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				} else if(Despawn.NoTargetExpire == true) {
@@ -100,7 +100,7 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if(NewAutoPilot.Targeting.InvalidTarget == true && Mode != BehaviorMode.Retreat) {
+			if(!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -122,13 +122,13 @@ namespace RivalAI.Behavior {
 
 					Logger.MsgDebug("Horsefly Timeout, Getting New Offset", DebugTypeEnum.General);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
 
 				} else if (NewAutoPilot.IsWaypointThroughVelocityCollision()) {
 
 					Logger.MsgDebug("Horsefly Velocity Through Collision, Getting New Offset", DebugTypeEnum.General);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
 
 				}
 
@@ -143,7 +143,7 @@ namespace RivalAI.Behavior {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.Target, false);
+					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 
 				}
@@ -213,7 +213,6 @@ namespace RivalAI.Behavior {
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = true;
-			NewAutoPilot.Targeting.NeedsTarget = true;
 			NewAutoPilot.MinimumPlanetAltitude = 200;
 			NewAutoPilot.IdealPlanetAltitude = 300;
 			NewAutoPilot.WaypointTolerance = 30;
@@ -229,11 +228,12 @@ namespace RivalAI.Behavior {
 			InitTags();
 
 			//Behavior Specific Default Enums (If None is Not Acceptable)
-			if (NewAutoPilot.Targeting.TargetData.UseCustomTargeting == false) {
+			if (NewAutoPilot.Targeting.Data.UseCustomTargeting == false) {
 
-				NewAutoPilot.Targeting.TargetData.Target = TargetTypeEnum.Player;
-				NewAutoPilot.Targeting.TargetData.Relations = TargetRelationEnum.Enemy;
-				NewAutoPilot.Targeting.TargetData.Owners = TargetOwnerEnum.Player;
+				NewAutoPilot.Targeting.Data.UseCustomTargeting = true;
+				NewAutoPilot.Targeting.Data.Target = TargetTypeEnum.Player;
+				NewAutoPilot.Targeting.Data.Relations = TargetRelationEnum.Enemy;
+				NewAutoPilot.Targeting.Data.Owners = TargetOwnerEnum.Player;
 
 			}
 

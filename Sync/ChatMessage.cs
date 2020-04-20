@@ -97,18 +97,29 @@ namespace RivalAI.Sync {
 
 			if (Logger.EnableDebugOption(msg[2], result)) {
 
-				Logger.SaveDebugToSandbox();
 				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
+				Logger.SaveDebugToSandbox();
 				return true;
 
 			}
 
 			if (msg[2] == "DebugMode") {
 
-				Logger.SaveDebugToSandbox();
+				
 				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
 				Logger.LoggerDebugMode = result;
 				Logger.DebugWriteToLog = result;
+				Logger.SaveDebugToSandbox();
+				return true;
+
+			}
+
+			if (msg[2] == "EnableAll" && result) {
+
+				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
+				Logger.EnableAllOptions();
+				Logger.SaveDebugToSandbox();
+				
 				return true;
 
 			}
@@ -116,8 +127,9 @@ namespace RivalAI.Sync {
 			if (msg[2] == "RemoveAll" && result) {
 
 				this.ReturnMessage = "Debug Type: " + msg[2] + " Set: " + result.ToString();
-				Logger.SaveDebugToSandbox();
 				Logger.DisableAllOptions();
+				Logger.SaveDebugToSandbox();
+				
 				return true;
 
 			}

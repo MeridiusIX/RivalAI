@@ -33,72 +33,91 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 	[ProtoContract]
 	public class TargetProfile {
 
-		[ProtoMember(1)]
 		public bool UseCustomTargeting;
 
-		[ProtoMember(2)]
-		public BlockTargetTypes BlockTargets;
+		public int TimeUntilTargetAcquisition;
 
-		[ProtoMember(3)]
-		public TargetDistanceEnum Distance;
+		public bool UseTargetRefresh;
 
-		[ProtoMember(4)]
-		public TargetFilterEnum Filters;
+		public int TimeUntilNextRefresh;
 
-		[ProtoMember(5)]
-		public TargetOwnerEnum Owners;
+		public bool UseTargetLastKnownPosition;
 
-		[ProtoMember(6)]
-		public TargetRelationEnum Relations;
+		public int TimeUntilNextEvaluation;
 
-		[ProtoMember(7)]
 		public TargetTypeEnum Target;
 
-		[ProtoMember(8)]
-		public bool UseTimeout;
+		public BlockTargetTypes BlockTargets;
 
-		[ProtoMember(9)]
-		public int MinTimeout;
+		public TargetDistanceEnum Distance;
 
-		[ProtoMember(10)]
-		public int MaxTimeout;
-
-		[ProtoMember(11)]
-		public double NonBroadcastingMaxDistance; //TODO: Build Feature For This First
-
-		[ProtoMember(12)]
 		public double MaxDistance;
 
-		[ProtoMember(13)]
-		public bool UseProjectileLead;
+		public List<TargetFilterEnum> MatchAllFilters;
 
-		[ProtoMember(14)]
-		public bool UseCollisionLead;
+		public List<TargetFilterEnum> MatchAnyFilters;
 
-		[ProtoMember(15)]
+		public TargetOwnerEnum Owners;
+
+		public TargetRelationEnum Relations;
+
+		public double MinAltitude;
+
+		public double MaxAltitude;
+
+		public double NonBroadcastVisualRange;
+
+		public double MinGravity;
+
+		public double MaxGravity;
+
+		public double MinSpeed;
+
+		public double MaxSpeed;
+
 		public string ProfileSubtypeId;
 
-		[ProtoMember(16)]
-		public TargetObstructionEnum IgnoredObstructions;
+		public bool BuiltUniqueFilterList;
+
+		public List<TargetFilterEnum> AllUniqueFilters;
+
+
 
 		public TargetProfile() {
 
 			UseCustomTargeting = false;
+
+			TimeUntilTargetAcquisition = 1;
+			UseTargetRefresh = false;
+			TimeUntilNextRefresh = 60;
+			TimeUntilNextEvaluation = 1;
+
+			Target = TargetTypeEnum.None;
 			BlockTargets = BlockTargetTypes.None;
+
 			Distance = TargetDistanceEnum.Closest;
-			Filters = TargetFilterEnum.None;
+			MaxDistance = 12000;
+
+			MatchAllFilters = new List<TargetFilterEnum>();
+			MatchAnyFilters = new List<TargetFilterEnum>();
+
 			Owners = TargetOwnerEnum.None;
 			Relations = TargetRelationEnum.None;
-			Target = TargetTypeEnum.None;
-			UseTimeout = false;
-			MinTimeout = 0;
-			MaxTimeout = 1;
-			NonBroadcastingMaxDistance = 3000;
-			MaxDistance = 12000;
-			UseProjectileLead = false;
-			UseCollisionLead = false;
+
+			MinAltitude = 0;
+			MaxAltitude = 10000;
+
+			NonBroadcastVisualRange = 1500;
+
+			MinGravity = 0;
+			MaxGravity = 1.1;
+
+			MinSpeed = 0;
+			MaxSpeed = 110;
+
 			ProfileSubtypeId = "";
-			IgnoredObstructions = TargetObstructionEnum.None;
+			BuiltUniqueFilterList = false;
+			AllUniqueFilters = new List<TargetFilterEnum>();
 
 		}
 		
@@ -137,19 +156,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 					
-					//Filters
-					if(tag.Contains("[Filters:") == true) {
-
-						var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
-
-						if(this.Filters.HasFlag(tempValue) == false) {
-
-							this.Filters |= tempValue;
-
-						}
-
-					}
-					
 					//Owners
 					if(tag.Contains("[Owners:") == true) {
 
@@ -183,31 +189,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 					
-					//UseTimeout
-					if(tag.Contains("[UseTimeout:") == true) {
-
-						this.UseTimeout = TagHelper.TagBoolCheck(tag);
-
-					}
-					
-					//MinTimeout
-					if(tag.Contains("[MinTimeout:") == true) {
-
-						this.MinTimeout = TagHelper.TagIntCheck(tag, this.MinTimeout);
-
-					}
-					
-					//MaxTimeout
-					if(tag.Contains("[MaxTimeout:") == true) {
-
-						this.MaxTimeout = TagHelper.TagIntCheck(tag, this.MaxTimeout);
-
-					}
-					
 					//NonBroadcastingMaxDistance
 					if(tag.Contains("[NonBroadcastingMaxDistance:") == true) {
 
-						this.NonBroadcastingMaxDistance = TagHelper.TagDoubleCheck(tag, this.NonBroadcastingMaxDistance);
+						this.NonBroadcastVisualRange = TagHelper.TagDoubleCheck(tag, this.NonBroadcastVisualRange);
 
 					}
 					
@@ -218,27 +203,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 					
-					//UseProjectileLead
-					if(tag.Contains("[UseProjectileLead:") == true) {
-
-						this.UseProjectileLead = TagHelper.TagBoolCheck(tag);
-
-					}
-					
-					//UseCollisionLead
-					if(tag.Contains("[UseCollisionLead:") == true) {
-
-						this.UseCollisionLead = TagHelper.TagBoolCheck(tag);
-
-					}
-					
 				}
-
-			}
-
-			if(MinTimeout > MaxTimeout) {
-
-				MinTimeout = MaxTimeout + 1;
 
 			}
 

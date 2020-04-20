@@ -92,7 +92,7 @@ namespace RivalAI.Behavior.Subsystems {
 			StrafeMinCooldownMs = 1000;
 			StrafeMaxCooldownMs = 3000;
 			StrafeSpeedCutOff = 100;
-			StrafeDistanceCutOff = 1000;
+			StrafeDistanceCutOff = 100;
 
 			StrafeMinimumTargetDistance = 250;
 			StrafeMinimumSafeAngleFromTarget = 25;
