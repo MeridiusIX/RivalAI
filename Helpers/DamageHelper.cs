@@ -36,7 +36,7 @@ namespace RivalAI.Helpers {
 
 	public static class DamageHelper {
 
-		public static HashSet<IMyCubeGrid> MonitoredGrids = new HashSet<IMyCubeGrid>();
+		public static List<IMyCubeGrid> MonitoredGrids = new List<IMyCubeGrid>();
 		public static Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>> RegisteredDamageHandlers = new Dictionary<IMyCubeGrid, Action<object, MyDamageInformation>>();
 
 		public static List<MissileProfile> CurrentMissiles = new List<MissileProfile>();

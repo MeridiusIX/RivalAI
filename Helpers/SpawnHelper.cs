@@ -139,7 +139,7 @@ namespace RivalAI.Helpers {
 
 				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
 				_currentSpawn.SpawnCount++;
-
+				_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
 
 
 			} else {

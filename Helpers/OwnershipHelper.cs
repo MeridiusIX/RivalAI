@@ -30,8 +30,10 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Sync;
 
 namespace RivalAI.Helpers {
+
 	public class OwnershipHelper {
 
 		public static void ChangeAntennaBlockOwnership(List<IMyRadioAntenna> blocks, string factionTag){
@@ -162,7 +164,18 @@ namespace RivalAI.Helpers {
 
 					var newRep = oldRep + amount;
 					MyAPIGateway.Session.Factions.SetReputationBetweenPlayerAndFaction(playerId, faction.FactionId, newRep);
-					MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, amount.ToString()), 2000, color, playerId);
+					//MyVisualScriptLogicProvider.ShowNotification(string.Format("Reputation With {0} {1} By: {2}", faction.Tag, modifier, amount.ToString()), 2000, color, playerId);
+
+					var steamId = MyAPIGateway.Players.TryGetSteamId(playerId);
+
+					if (steamId > 0) {
+
+						//Logger.MsgDebug("Send Rep Sync Message", DebugTypeEnum.Owner);
+						var message = new ReputationMessage(amount, tag, steamId);
+						var syncContainer = new SyncContainer(message);
+						SyncManager.SendSyncMesage(syncContainer, steamId);
+					
+					}
 
 				}
 

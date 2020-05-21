@@ -38,7 +38,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.6.0";
+		public static string ReleaseVersion = "0.8.0";
 
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
@@ -147,7 +147,7 @@ namespace RivalAI {
 
 			if (Instance.WeaponCore.IsReady) {
 
-				Logger.WriteLog("WeaponCore Successfully Loaded");
+				Logger.WriteLog("WeaponCore API Successfully Loaded");
 				WeaponCoreLoaded = true;
 				Instance.WeaponCore.GetAllCoreWeapons(Utilities.AllWeaponCoreBlocks);
 				Instance.WeaponCore.GetAllCoreStaticLaunchers(Utilities.AllWeaponCoreGuns);
@@ -223,8 +223,7 @@ namespace RivalAI {
 			if(!IsServer)
 				return;
 
-			
-
+			EntityWatcher.RegisterWatcher();
 			Logger.LoadDebugFromSandbox();
 			MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(75, DamageHelper.DamageHandler);
 

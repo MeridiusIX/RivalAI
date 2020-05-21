@@ -42,7 +42,6 @@ namespace RivalAI.Entities {
 
 			}
 
-
 		}
 
 		public void EnabledChanged(IMyTerminalBlock block) {
@@ -64,7 +63,7 @@ namespace RivalAI.Entities {
 
 		public bool ActiveEntity() {
 
-			if (Closed || !Functional || !Working)
+			if (Closed || !IsPowered())
 				return false;
 
 			return true;
@@ -76,16 +75,85 @@ namespace RivalAI.Entities {
 
 		}
 
-		public bool IsNpcOwned() {
+		public string FactionOwner() {
 
-			if (IsClosed() || Block?.SlimBlock?.CubeGrid?.BigOwners == null)
-				return false;
+			var result = "";
 
-			if (Block.SlimBlock.CubeGrid.BigOwners.Count > 0)
-				return EntityEvaluator.IsIdentityNPC(Block.SlimBlock.CubeGrid.BigOwners[0]);
+			if (Block?.SlimBlock?.CubeGrid?.BigOwners != null) {
 
-			return false;
+				if (Block.SlimBlock.CubeGrid.BigOwners.Count > 0) {
 
+					var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(Block.SlimBlock.CubeGrid.BigOwners[0]);
+
+					if (faction != null) {
+
+						return faction.Tag;
+
+					}
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var result = new List<long>();
+
+			if (!ActiveEntity())
+				return result;
+
+			if (!onlyGetCurrentEntity) {
+
+				if (Block.OwnerId != 0) {
+
+					result.Add(Block.OwnerId);
+					return result;
+
+				}
+
+			}
+
+			foreach (var grid in LinkedGrids) {
+
+				if (!grid.ActiveEntity())
+					continue;
+
+				if (onlyGetCurrentEntity && grid.CubeGrid != Block.SlimBlock.CubeGrid)
+					continue;
+
+				if (grid.CubeGrid?.BigOwners != null) {
+
+					foreach (var owner in grid.CubeGrid.BigOwners) {
+
+						if (!result.Contains(owner))
+							result.Add(owner);
+
+					}
+
+				}
+
+				if (!includeMinorityOwners)
+					continue;
+
+				if (grid.CubeGrid?.SmallOwners != null) {
+
+					foreach (var owner in grid.CubeGrid.SmallOwners) {
+
+						if (!result.Contains(owner))
+							result.Add(owner);
+
+					}
+
+				}
+
+			}
+
+			return result;
+		
 		}
 
 		public bool IsPowered() {
@@ -111,23 +179,49 @@ namespace RivalAI.Entities {
 
 		}
 
-		public bool IsUnowned() {
+		public bool IsSameGrid(IMyEntity entity) {
 
-			if (IsClosed() || Block?.SlimBlock?.CubeGrid?.BigOwners == null)
+			if (!ActiveEntity())
 				return false;
 
-			if (Block.SlimBlock.CubeGrid.BigOwners.Count == 0) {
+			foreach (var grid in LinkedGrids) {
 
-				return true;
+				if (!grid.ActiveEntity())
+					continue;
 
-			} else {
-
-				if (Block.SlimBlock.CubeGrid.BigOwners[0] == 0)
+				if (grid.CubeGrid.EntityId == entity.EntityId)
 					return true;
-			
+
 			}
 
 			return false;
+
+		}
+
+		public bool IsStatic() {
+
+			if (!ActiveEntity())
+				return false;
+
+			return Block.SlimBlock.CubeGrid.IsStatic;
+
+		}
+
+		public string Name() {
+
+			if (!ActiveEntity())
+				return "N/A";
+
+			string blockName = !string.IsNullOrWhiteSpace(Block.CustomName) ? Block.CustomName : "(Unnamed Block)";
+			string gridName = !string.IsNullOrWhiteSpace(Block.CubeGrid.CustomName) ? Block.CubeGrid.CustomName : "(Unnamed Grid)";
+			return blockName + "//" + gridName;
+
+		}
+
+		public OwnerTypeEnum OwnerTypes(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
+			return EntityEvaluator.GetOwnersFromList(owners);
 
 		}
 
@@ -137,21 +231,16 @@ namespace RivalAI.Entities {
 
 		}
 
-		public void RefreshSubGrids() {
+		public RelationTypeEnum RelationTypes(long ownerId, bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
 
-			LinkedGrids = EntityEvaluator.GetAttachedGrids(Block.SlimBlock.CubeGrid);
+			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
+			return EntityEvaluator.GetRelationsFromList(ownerId, owners);
 
 		}
 
-		public int Reputation(long ownerId) {
+		public void RefreshSubGrids() {
 
-			if (IsClosed() || Block?.SlimBlock?.CubeGrid?.BigOwners == null)
-				return -1000;
-
-			if (Block.SlimBlock.CubeGrid.BigOwners.Count > 0)
-				return EntityEvaluator.GetReputationBetweenIdentities(ownerId, Block.SlimBlock.CubeGrid.BigOwners[0]);
-
-			return -1000;
+			LinkedGrids = EntityEvaluator.GetAttachedGrids(Block.SlimBlock.CubeGrid);
 
 		}
 

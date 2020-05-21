@@ -44,7 +44,9 @@ namespace RivalAI.Helpers {
         private Func<IMyEntity, float> _getOptimalDps;
         private Func<IMyTerminalBlock, int, string> _getActiveAmmo;
         private Action<IMyTerminalBlock, int, string> _setActiveAmmo;
-
+        private Action<Action<Vector3, float>> _registerProjectileAdded;
+        private Action<Action<Vector3, float>> _unRegisterProjectileAdded;
+        private Func<IMyEntity, float> _getConstructEffectiveDps;
         private const long Channel = 67549756549;
         private bool _getWeaponDefinitions;
         private bool _isRegistered;
@@ -88,22 +90,33 @@ namespace RivalAI.Helpers {
         }
 
         private void HandleMessage(object obj) {
-            if (_apiInit || obj is string) // the sent "ApiEndpointRequest" will also be received here, explicitly ignoring that
+            if (_apiInit || obj is string) {
+
+                //Logger.WriteLog("API Already Init or obj is string");
                 return;
 
+            } // the sent "ApiEndpointRequest" will also be received here, explicitly ignoring that
+
+            //Logger.WriteLog("WC convert obj to dict");
             var dict = obj as IReadOnlyDictionary<string, Delegate>;
 
-            if (dict == null)
+            if (dict == null) {
+
+                //Logger.WriteLog("Dict Null");
                 return;
 
+            }
+
+           // Logger.WriteLog("WC ApiAssign Method");
             ApiAssign(dict, _getWeaponDefinitions);
 
+            //Logger.WriteLog("API Ready Flag");
             IsReady = true;
             _readyCallback?.Invoke();
         }
 
         public void ApiAssign(IReadOnlyDictionary<string, Delegate> delegates, bool getWeaponDefinitions = false) {
-            _apiInit = (delegates != null);
+            _apiInit = delegates != null;
 
             AssignMethod(delegates, "GetAllWeaponDefinitions", ref _getAllWeaponDefinitions);
             AssignMethod(delegates, "GetCoreWeapons", ref _getCoreWeapons);
@@ -135,6 +148,10 @@ namespace RivalAI.Helpers {
             AssignMethod(delegates, "GetOptimalDps", ref _getOptimalDps);
             AssignMethod(delegates, "GetActiveAmmo", ref _getActiveAmmo);
             AssignMethod(delegates, "SetActiveAmmo", ref _setActiveAmmo);
+            AssignMethod(delegates, "RegisterProjectileAdded", ref _registerProjectileAdded);
+            //AssignMethod(delegates, "UnRegisterProjectileAdded", ref _unRegisterProjectileAdded);
+            AssignMethod(delegates, "GetConstructEffectiveDps", ref _getConstructEffectiveDps);
+
 
             if (getWeaponDefinitions) {
                 var byteArrays = new List<byte[]>();
@@ -190,6 +207,10 @@ namespace RivalAI.Helpers {
         public float GetOptimalDps(IMyEntity entity) => _getOptimalDps?.Invoke(entity) ?? 0f;
         public string GetActiveAmmo(IMyTerminalBlock weapon, int weaponId) => _getActiveAmmo?.Invoke(weapon, weaponId) ?? null;
         public void SetActiveAmmo(IMyTerminalBlock weapon, int weaponId, string ammoType) => _setActiveAmmo?.Invoke(weapon, weaponId, ammoType);
+        public void RegisterProjectileAddedCallback(Action<Vector3, float> action) => _registerProjectileAdded?.Invoke(action);
+        public void UnRegisterProjectileAddedCallback(Action<Vector3, float> action) => _unRegisterProjectileAdded?.Invoke(action);
+        public float GetConstructEffectiveDps(IMyEntity entity) => _getConstructEffectiveDps?.Invoke(entity) ?? 0f;
+
     }
 
     public static class WcApiDef {
@@ -247,7 +268,12 @@ namespace RivalAI.Helpers {
                 [ProtoMember(6)] internal bool ClosestFirst;
                 [ProtoMember(7)] internal BlockTypes[] SubSystems;
                 [ProtoMember(8)] internal Threat[] Threats;
+                [ProtoMember(9)] internal float MaxTargetDistance;
+                [ProtoMember(10)] internal float MinTargetDistance;
+                [ProtoMember(11)] internal bool IgnoreDumbProjectiles;
+                [ProtoMember(12)] internal bool LockedSmartOnly;
             }
+
 
             [ProtoContract]
             public struct AnimationDef {
@@ -364,6 +390,7 @@ namespace RivalAI.Helpers {
                     [ProtoMember(13)] internal bool DegradeRof;
                     [ProtoMember(14)] internal int BarrelSpinRate;
                     [ProtoMember(15)] internal bool FireFullBurst;
+                    [ProtoMember(16)] internal bool GiveUpAfterBurst;
                 }
 
 
@@ -407,6 +434,7 @@ namespace RivalAI.Helpers {
                     [ProtoMember(5)] internal string FiringSound;
                     [ProtoMember(6)] internal bool FiringSoundPerShot;
                     [ProtoMember(7)] internal string PreFiringSound;
+                    [ProtoMember(8)] internal uint FireSoundEndDelay;
                 }
 
                 [ProtoContract]
@@ -417,6 +445,7 @@ namespace RivalAI.Helpers {
                     [ProtoMember(4)] internal bool MuzzleCheck;
                     [ProtoMember(5)] internal bool Debug;
                 }
+
                 [ProtoContract]
                 public struct HardPointParticleDef {
                     [ProtoMember(1)] internal ParticleDef Barrel1;
@@ -444,6 +473,8 @@ namespace RivalAI.Helpers {
                 [ProtoMember(16)] internal GraphicDef AmmoGraphics;
                 [ProtoMember(17)] internal AmmoAudioDef AmmoAudio;
                 [ProtoMember(18)] internal bool HardPointUsable;
+                [ProtoMember(19)] internal AmmoPatternDef Pattern;
+                [ProtoMember(20)] internal int EnergyMagazineSize;
 
                 [ProtoContract]
                 public struct DamageScaleDef {
@@ -560,6 +591,23 @@ namespace RivalAI.Helpers {
                             [ProtoMember(2)] internal float Length;
                             [ProtoMember(3)] internal float Width;
                             [ProtoMember(4)] internal Vector4 Color;
+                            [ProtoMember(5)] internal uint VisualFadeStart;
+                            [ProtoMember(6)] internal uint VisualFadeEnd;
+                            [ProtoMember(7)] internal SegmentDef Segmentation;
+
+                            [ProtoContract]
+                            public struct SegmentDef {
+                                [ProtoMember(1)] internal string Material;
+                                [ProtoMember(2)] internal double SegmentLength;
+                                [ProtoMember(3)] internal double SegmentGap;
+                                [ProtoMember(4)] internal double Speed;
+                                [ProtoMember(5)] internal Vector4 Color;
+                                [ProtoMember(6)] internal double WidthMultiplier;
+                                [ProtoMember(7)] internal bool Reverse;
+                                [ProtoMember(8)] internal bool UseLineVariance;
+                                [ProtoMember(9)] internal Randomize ColorVariance;
+                                [ProtoMember(10)] internal Randomize WidthVariance;
+                            }
                         }
 
                         [ProtoContract]
@@ -596,6 +644,16 @@ namespace RivalAI.Helpers {
                     [ProtoMember(7)] internal bool RandomizeDir;
                 }
 
+                [ProtoContract]
+                public struct AmmoPatternDef {
+                    [ProtoMember(1)] internal string[] Ammos;
+                    [ProtoMember(2)] internal bool Enable;
+                    [ProtoMember(3)] internal float TriggerChance;
+                    [ProtoMember(4)] internal bool SkipParent;
+                    [ProtoMember(5)] internal bool Random;
+                    [ProtoMember(6)] internal int RandomMin;
+                    [ProtoMember(7)] internal int RandomMax;
+                }
 
                 [ProtoContract]
                 public struct AreaDamageDef {
@@ -629,6 +687,10 @@ namespace RivalAI.Helpers {
                     public struct PulseDef {
                         [ProtoMember(1)] internal int Interval;
                         [ProtoMember(2)] internal int PulseChance;
+                        [ProtoMember(3)] internal int GrowTime;
+                        [ProtoMember(4)] internal bool HideModel;
+                        [ProtoMember(5)] internal bool ShowParticle;
+                        [ProtoMember(6)] internal ParticleDef Particle;
                     }
 
                     [ProtoContract]
@@ -666,6 +728,10 @@ namespace RivalAI.Helpers {
                     [ProtoMember(2)] internal string HitSound;
                     [ProtoMember(3)] internal float HitPlayChance;
                     [ProtoMember(4)] internal bool HitPlayShield;
+                    [ProtoMember(5)] internal string VoxelHitSound;
+                    [ProtoMember(6)] internal string PlayerHitSound;
+                    [ProtoMember(7)] internal string FloatingHitSound;
+                    [ProtoMember(8)] internal string ShieldHitSound;
                 }
 
                 [ProtoContract]
@@ -693,6 +759,7 @@ namespace RivalAI.Helpers {
                     [ProtoMember(11)] internal SmartsDef Smarts;
                     [ProtoMember(12)] internal MinesDef Mines;
                     [ProtoMember(13)] internal float GravityMultiplier;
+                    [ProtoMember(14)] internal uint MaxTrajectoryTime;
 
                     [ProtoContract]
                     public struct SmartsDef {
@@ -703,6 +770,8 @@ namespace RivalAI.Helpers {
                         [ProtoMember(5)] internal int MaxChaseTime;
                         [ProtoMember(6)] internal bool OverideTarget;
                         [ProtoMember(7)] internal int MaxTargets;
+                        [ProtoMember(8)] internal bool NoTargetExpire;
+                        [ProtoMember(9)] internal bool Roam;
                     }
 
                     [ProtoContract]
@@ -731,6 +800,7 @@ namespace RivalAI.Helpers {
                 [ProtoMember(5)] internal bool Restart;
                 [ProtoMember(6)] internal float HitPlayChance;
             }
+
 
             [ProtoContract]
             public struct ParticleDef {

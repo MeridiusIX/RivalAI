@@ -96,6 +96,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(21)]
 		public List<string> ChatAvatar;
 
+		[ProtoMember(22)]
+		public bool SendToAllOnlinePlayers;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -118,6 +121,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			IgnoredAntennaRangeOverride = 0;
 			UseRandomNameGeneratorFromMES = false;
 			ChatAvatar = new List<string>();
+			SendToAllOnlinePlayers = false;
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;
@@ -270,6 +274,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 							ChatAvatar.Add(tempValue);
 
 						}
+
+					}
+
+					//SendToAllOnlinePlayers
+					if (tag.Contains("[SendToAllOnlinePlayers:") == true) {
+
+						SendToAllOnlinePlayers = TagHelper.TagBoolCheck(tag);
 
 					}
 

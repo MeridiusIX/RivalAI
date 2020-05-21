@@ -16,9 +16,15 @@ namespace RivalAI.Behavior {
 		SpawningSystem Spawning { get; }
 		StoredSettings Settings { get; }
 		TriggerSystem Trigger { get; }
-
 		bool BehaviorTerminated { get; set; }
-
+		bool BehaviorTriggerA { get; set; }
+		bool BehaviorTriggerB { get; set; }
+		bool BehaviorTriggerC { get; set; }
+		bool BehaviorTriggerD { get; set; }
+		bool BehaviorTriggerE { get; set; }
+		bool BehaviorTriggerF { get; set; }
+		bool BehaviorTriggerG { get; set; }
+		bool BehaviorTriggerH { get; set; }
 		void BehaviorInit(IMyRemoteControl remoteControl);
 		bool IsAIReady();
 		void ProcessCollisionChecks();

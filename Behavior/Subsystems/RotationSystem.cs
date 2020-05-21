@@ -36,17 +36,22 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public float RotationMultiplier;
 		
-			public bool RotationEnabled;
+		public bool RotationEnabled;
 		public IMyGyro ControlGyro;
 		public IMyRemoteControl RemoteControl;
 		public IMyTerminalBlock ReferenceBlock;
 		public IMyCubeGrid CubeGrid;
 		public List<IMyGyro> BrokenGyros;
 
+		public IBehavior Behavior;
+
+		public Direction RotationDirection;
+
 		public bool ControlGyroNotFound;
 		public bool NewGyroFound;
 
 		public MatrixD RefBlockMatrix;
+		public MatrixD RefBlockMatrixRotation;
 		public MatrixD GyroMatrix;
 		
 		public Vector3D RotationTarget;
@@ -55,7 +60,6 @@ namespace RivalAI.Behavior.Subsystems{
 		public bool ControlYaw;
 		public bool ControlPitch;
 		public bool ControlRoll;
-
 		
 		public float ControlGyroStrength;
 
@@ -86,6 +90,8 @@ namespace RivalAI.Behavior.Subsystems{
 			ReferenceBlock = null;
 			BrokenGyros = new List<IMyGyro>();
 
+			RotationDirection = Direction.Forward;
+
 			ControlGyroNotFound = false;
 			NewGyroFound = false;
 
@@ -95,8 +101,7 @@ namespace RivalAI.Behavior.Subsystems{
 			ControlYaw = true;
 			ControlPitch = true;
 			ControlRoll = true;
-			
-			
+
 			ControlGyroStrength = 1;
 
 			UpdateMassAndForceBeforeRotation = true;
@@ -222,10 +227,35 @@ namespace RivalAI.Behavior.Subsystems{
 			this.ReferenceBlock = block;
 			this.RotationTarget = rotationTarget;
 			this.RefBlockMatrix = this.ReferenceBlock.WorldMatrix;
+			this.RefBlockMatrixRotation = GetReferenceMatrix(this.ReferenceBlock.WorldMatrix);
 			this.GyroMatrix = this.ControlGyro.WorldMatrix;
 			this.UpDirection = upDirection;
 			MyAPIGateway.Parallel.Start(CalculateGyroRotation, ApplyGyroRotation);
 			
+		}
+
+		public MatrixD GetReferenceMatrix(MatrixD originalMatrix) {
+
+			if (Behavior.Settings.RotationDirection == Direction.Forward)
+				return originalMatrix;
+
+			if (Behavior.Settings.RotationDirection == Direction.Backward)
+				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Backward, originalMatrix.Up);
+
+			if (Behavior.Settings.RotationDirection == Direction.Left)
+				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Left, originalMatrix.Up);
+
+			if (Behavior.Settings.RotationDirection == Direction.Right)
+				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Right, originalMatrix.Up);
+
+			if (Behavior.Settings.RotationDirection == Direction.Down)
+				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Down, originalMatrix.Forward);
+
+			if (Behavior.Settings.RotationDirection == Direction.Up)
+				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Up, originalMatrix.Backward);
+
+			return originalMatrix;
+
 		}
 
 		public void StopAllRotation() {
@@ -275,13 +305,17 @@ namespace RivalAI.Behavior.Subsystems{
 
 				}
 
+				/*
 				this.ControlGyro.GyroPower = this.ControlGyroStrength;
 				this.ControlGyro.Yaw = this.RotationToApply.Y * this.RotationMultiplier;
 				this.ControlGyro.Pitch = this.RotationToApply.X * this.RotationMultiplier;
 				this.ControlGyro.Roll = this.RotationToApply.Z * this.RotationMultiplier;
 				//Logger.AddMsg(this.ControlGyro.Pitch.ToString() + " - " + this.ControlGyro.Yaw.ToString() + " - " + this.ControlGyro.Roll.ToString(), true);
+				*/
 
-				if(this?.ControlGyro?.SlimBlock?.CubeGrid?.Physics != null && this.BarrelRollEnabled == false) {
+				ApplyGyroOverride(this.RotationToApply.X * this.RotationMultiplier, this.RotationToApply.Y * this.RotationMultiplier, this.RotationToApply.Z * this.RotationMultiplier);
+
+				if (this?.ControlGyro?.SlimBlock?.CubeGrid?.Physics != null && this.BarrelRollEnabled == false) {
 
 					if(this.CurrentAngleToTarget < 45) {
 
@@ -302,7 +336,23 @@ namespace RivalAI.Behavior.Subsystems{
 			});
 			
 		}
-		
+
+		void ApplyGyroOverride(double pitch_speed, double yaw_speed, double roll_speed) {
+
+			var rotationVec = new Vector3D(-pitch_speed, yaw_speed, roll_speed); //because keen does some weird stuff with signs 
+			var shipMatrix = this.RefBlockMatrixRotation;
+			var relativeRotationVec = Vector3D.TransformNormal(rotationVec, shipMatrix);
+
+			var gyroMatrix = this.ControlGyro.WorldMatrix;
+			var transformedRotationVec = Vector3D.TransformNormal(relativeRotationVec, Matrix.Transpose(gyroMatrix));
+
+			this.ControlGyro.Pitch = (float)transformedRotationVec.X;
+			this.ControlGyro.Yaw = (float)transformedRotationVec.Y;
+			this.ControlGyro.Roll = (float)transformedRotationVec.Z;
+			this.ControlGyro.GyroOverride = true;
+
+		}
+
 		//Updated Method
 		public void CalculateGyroRotation(){
 
@@ -337,14 +387,14 @@ namespace RivalAI.Behavior.Subsystems{
 
 			if(this.ReferenceBlock == null){
 
-			  return;
+				return;
 				
 			}
 
 			if(this.NewGyroFound == true) {
 
 				this.NewGyroFound = false;
-				this.ControlGyroRotationTranslation = VectorHelper.GetTransformedGyroRotations(this.RefBlockMatrix, this.GyroMatrix);
+				//this.ControlGyroRotationTranslation = VectorHelper.GetTransformedGyroRotations(this.RefBlockMatrixRotation, this.GyroMatrix);
 
 			}
 
@@ -355,7 +405,7 @@ namespace RivalAI.Behavior.Subsystems{
 				
 			}
 
-			MatrixD referenceMatrix = this.RefBlockMatrix;
+			MatrixD referenceMatrix = this.RefBlockMatrixRotation;
 			Vector3D directionToTarget = Vector3D.Normalize(this.RotationTarget - referenceMatrix.Translation);
 			Vector3 gyroRotation = new Vector3(0,0,0); // Pitch,Yaw,Roll
 
@@ -410,25 +460,10 @@ namespace RivalAI.Behavior.Subsystems{
 
 			}
 			
-			
-			if(this.ControlYaw == false){
-				
-				gyroRotation.Y = 0;
-				
-			}
-			
-			if(this.ControlPitch == false){
-				
-				gyroRotation.X = 0;
-				
-			}
-			
-			if(this.ControlRoll == false){
-				
-				gyroRotation.Z = 0;
-				
-			}
+			this.RotationToApply = gyroRotation;
+			return;
 
+			/*
 			var pitchVector = Vector3D.Zero;
 			var yawVector = Vector3D.Zero;
 			var rollVector = Vector3D.Zero;
@@ -442,7 +477,7 @@ namespace RivalAI.Behavior.Subsystems{
 			rollVector *= gyroRotation.Z;
 			this.RotationToApply = pitchVector + yawVector + rollVector;
 			
-			/*
+			
 			var sb = new StringBuilder();
 			sb.Append("RotationData:").AppendLine();
 

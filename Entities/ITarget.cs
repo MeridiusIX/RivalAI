@@ -9,23 +9,30 @@ namespace RivalAI.Entities {
 		
 		bool ActiveEntity(); 
 		double BroadcastRange(bool onlyAntenna = false);
+		Vector3D CurrentAcceleration();
 		double CurrentAltitude();
 		double CurrentGravity();
 		double CurrentSpeed();
 		Vector3D CurrentVelocity();
 		double Distance(Vector3D coords);
+		string FactionOwner();
 		IMyEntity GetEntity();
+		long GetEntityId();
+		List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false);
 		IMyEntity GetParentEntity();
 		Vector3D GetPosition();
+		double MaxSpeed();
+		string Name();
 		bool InSafeZone();
 		bool IsClosed();
-		bool IsNpcOwned();
 		bool IsPowered();
-		bool IsUnowned();
+		bool IsSameGrid(IMyEntity entity);
+		bool IsStatic();
+		OwnerTypeEnum OwnerTypes(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false);
 		Vector2 PowerOutput(); // Current/Max
 		bool ProtectedByShields();
 		void RefreshSubGrids();
-		int Reputation(long owner);
+		RelationTypeEnum RelationTypes(long owner, bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false);
 		float TargetValue();
 		bool ValidEntity();
 		int WeaponCount();

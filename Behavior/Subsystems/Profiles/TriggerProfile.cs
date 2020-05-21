@@ -228,7 +228,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					if (Conditions.AreConditionsMets()) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Conditions Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
@@ -457,6 +457,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ConditionCheckResetsTimer:") == true) {
 
 						ConditionCheckResetsTimer = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CommandReceiveCode
+					if (tag.Contains("[CommandReceiveCode:") == true) {
+
+						CommandReceiveCode = TagHelper.TagStringCheck(tag);
 
 					}
 

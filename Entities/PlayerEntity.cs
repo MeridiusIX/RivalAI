@@ -3,6 +3,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -91,6 +92,9 @@ namespace RivalAI.Entities {
 			this.PlayerEntityChanged = false;
 			this.IsParentEntityGrid = false;
 
+			if (!this.Online)
+				return;
+
 			if (Player?.Controller?.ControlledEntity?.Entity == null)
 				return;
 
@@ -104,6 +108,7 @@ namespace RivalAI.Entities {
 
 			if (character != null) {
 
+				//RivalAI.Helpers.Logger.MsgDebug("Player Character Entity: ", Helpers.DebugTypeEnum.BehaviorMode);
 				this.Closed = false;
 				this.Entity = character;
 				this.ParentEntity = character;
@@ -115,6 +120,7 @@ namespace RivalAI.Entities {
 
 			if (controller != null) {
 
+				//RivalAI.Helpers.Logger.MsgDebug("Player Character Entity: ", Helpers.DebugTypeEnum.BehaviorMode);
 				this.Closed = false;
 				this.Entity = controller;
 				this.ParentEntity = controller.SlimBlock.CubeGrid;
@@ -131,7 +137,10 @@ namespace RivalAI.Entities {
 
 		public bool ActiveEntity() {
 
-			if (Closed || !Online)
+			if (PlayerEntityChanged)
+				RefreshPlayerEntity();
+
+			if (IsClosed() || !Online)
 				return false;
 
 			return true;
@@ -170,6 +179,48 @@ namespace RivalAI.Entities {
 
 		}
 
+		public string FactionOwner() {
+
+			var result = "";
+
+			if (!ActiveEntity())
+				return result;
+
+			var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(Player.IdentityId);
+
+			if (faction == null)
+				return result;
+
+			return faction.Tag;
+
+		}
+
+		public override IMyEntity GetEntity() {
+
+			var result = base.GetEntity();
+
+			if ((this.Online && result == null) || PlayerEntityChanged) {
+
+				RefreshPlayerEntity();
+				return base.GetEntity();
+
+			}
+
+			return result;
+		}
+
+		public List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var result = new List<long>();
+
+			if (!ActiveEntity())
+				return result;
+
+			result.Add(Player.IdentityId);
+			return result;
+		
+		}
+
 		public override bool IsClosed() {
 
 			//If player is not online, they're considered
@@ -181,12 +232,6 @@ namespace RivalAI.Entities {
 
 			return Closed;
 
-		}
-
-		public bool IsNpcOwned() {
-
-			return Player.IsBot;
-		
 		}
 
 		public bool IsPowered() {
@@ -203,13 +248,44 @@ namespace RivalAI.Entities {
 
 		}
 
-		public bool IsUnowned() {
+		public bool IsSameGrid(IMyEntity entity) {
 
-			//There shouldnt be a situation where a 'player'
-			//is unowned, so this is always false here.
+			if (!IsParentEntityGrid || !ActiveEntity())
+				return false;
+
+			foreach (var grid in LinkedGrids) {
+
+				if (!grid.ActiveEntity())
+					continue;
+
+				if (grid.CubeGrid.EntityId == entity.EntityId)
+					return true;
+
+			}
 
 			return false;
-				
+
+		}
+
+		public bool IsStatic() {
+
+			return false;
+		
+		}
+
+		public string Name() {
+
+			if (!ActiveEntity())
+				return "N/A";
+
+			return Player.DisplayName;
+
+		}
+
+		public OwnerTypeEnum OwnerTypes(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			return ActiveEntity() ? OwnerTypeEnum.Player : OwnerTypeEnum.Unowned;
+
 		}
 
 		public Vector2 PowerOutput() {
@@ -242,6 +318,13 @@ namespace RivalAI.Entities {
 
 		}
 
+		public RelationTypeEnum RelationTypes(long ownerId, bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
+			return EntityEvaluator.GetRelationsFromList(ownerId, owners);
+
+		}
+
 		public void RefreshSubGrids() {
 
 			if (IsParentEntityGrid) {
@@ -255,12 +338,6 @@ namespace RivalAI.Entities {
 
 			}
 
-		}
-
-		public int Reputation(long ownerId) {
-
-			return EntityEvaluator.GetReputationBetweenIdentities(ownerId, Player.IdentityId);
-		
 		}
 
 		public float TargetValue() {

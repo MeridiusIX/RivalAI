@@ -64,9 +64,14 @@ namespace RivalAI.Entities {
 
 			if (cubeGrid != null) {
 
-				var gridEntity = new GridEntity(entity);
-				UnloadEntities += gridEntity.Unload;
-				GridManager.Grids.Add(gridEntity);
+				lock (GridManager.Grids) {
+
+					var gridEntity = new GridEntity(entity);
+					UnloadEntities += gridEntity.Unload;
+					GridManager.Grids.Add(gridEntity);
+
+				}
+				
 				return;
 			
 			}

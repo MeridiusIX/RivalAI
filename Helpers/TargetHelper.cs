@@ -375,6 +375,44 @@ namespace RivalAI.Helpers {
 			
 		}
 
+		public static IMyPlayer GetFurthestPlayer(Vector3D coords) {
+
+			var activePlayers = new List<IMyPlayer>();
+			MyAPIGateway.Players.GetPlayers(activePlayers);
+			IMyPlayer furthestPlayer = null;
+			double furthestPlayerDist = 0;
+
+			foreach (var player in activePlayers) {
+
+				if (player.Controller.ControlledEntity.Entity == null || player.IsBot == true) {
+
+					continue;
+
+				}
+
+				var distance = Vector3D.Distance(player.GetPosition(), coords);
+
+				if (furthestPlayer == null) {
+
+					furthestPlayer = player;
+					furthestPlayerDist = distance;
+					continue;
+
+				}
+
+				if (distance > furthestPlayerDist) {
+
+					furthestPlayer = player;
+					furthestPlayerDist = distance;
+
+				}
+
+			}
+
+			return furthestPlayer;
+
+		}
+
 		public static IMyPlayer GetClosestPlayerWithReputation(Vector3D coords, long factionId, TriggerProfile control) {
 
 			var activePlayers = new List<IMyPlayer>();
@@ -432,18 +470,18 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static IMyEntity GetEntityAtDistance(Vector3D coords, List<IMyEntity> entityList, TargetDistanceEnum distanceEnum) {
+		public static IMyEntity GetEntityAtDistance(Vector3D coords, List<IMyEntity> entityList, TargetSortEnum distanceEnum) {
 
 			IMyEntity result = null;
 			double closestDistance = -1;
 
-			if(distanceEnum == TargetDistanceEnum.Any && entityList.Count > 0) {
+			if(distanceEnum == TargetSortEnum.Random && entityList.Count > 0) {
 
 				return entityList[Rnd.Next(0, entityList.Count)];
 
 			}
 
-			if(distanceEnum == TargetDistanceEnum.Closest) {
+			if(distanceEnum == TargetSortEnum.ClosestDistance) {
 
 				foreach(var entity in entityList) {
 
@@ -460,7 +498,7 @@ namespace RivalAI.Helpers {
 
 			}
 
-			if(distanceEnum == TargetDistanceEnum.Furthest) {
+			if(distanceEnum == TargetSortEnum.FurthestDistance) {
 
 				foreach(var entity in entityList) {
 

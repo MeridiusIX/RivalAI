@@ -43,6 +43,7 @@ namespace RivalAI.Behavior.Subsystems {
 	public class ThrustSystem{
 
 		public double AngleAllowedForForwardThrust;
+		public double MaxVelocityAngleForSpeedControl;
 		public bool AllowStrafing;
 		public int StrafeMinDurationMs;
 		public int StrafeMaxDurationMs;
@@ -62,8 +63,12 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<ThrustProfile> ThrustProfiles;
 		public Random Rnd;
 
+		public IBehavior Behavior;
 		private NewAutoPilotSystem _autoPilot;
 		private NewCollisionSystem _collision;
+
+		private bool _orientationCalculated;
+		private MyBlockOrientation _referenceOrientation;
 
 		public Vector3I PreviousAllowedThrust;
 		public Vector3I PreviousRequiredThrust;
@@ -86,6 +91,7 @@ namespace RivalAI.Behavior.Subsystems {
 		public ThrustSystem(IMyRemoteControl remoteControl){
 
 			AngleAllowedForForwardThrust = 35;
+			MaxVelocityAngleForSpeedControl = 5;
 			AllowStrafing = false;
 			StrafeMinDurationMs = 750;
 			StrafeMaxDurationMs = 1500;
@@ -119,6 +125,8 @@ namespace RivalAI.Behavior.Subsystems {
 				StrafeMaxCooldownMs = StrafeMinCooldownMs + 1;
 
 			}
+
+			_referenceOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
 
 			Strafing = false;
 			CurrentStrafeDirections = Vector3I.Zero;
@@ -475,18 +483,48 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void ProcessForwardThrust(double currentAngle = 180) {
 
-			if (this.Strafing)
+			if (this.Strafing || this.RemoteControl?.SlimBlock?.CubeGrid?.Physics == null)
 				return;
 
 			if (currentAngle > this.AngleAllowedForForwardThrust) {
 
+				//Logger.MsgDebug(string.Format("thrust target angle not matched: {0} / {1}", currentAngle, this.AngleAllowedForForwardThrust), DebugTypeEnum.Thrust);
 				SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
 				return;
 
 			}
 
+			var velocityToTargetAngle = VectorHelper.GetAngleBetweenDirections(Vector3D.Normalize(_autoPilot.GetCurrentWaypoint() - RemoteControl.WorldMatrix.Translation), Vector3D.Normalize(RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity));
+			var velocityAmount = RemoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity.Length();
 
-			SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, 1));
+			//Logger.MsgDebug(string.Format("Velocity Angle and Speed: {0} / {1}", velocityToTargetAngle, velocityAmount), DebugTypeEnum.Thrust);
+
+			if (velocityToTargetAngle > this.MaxVelocityAngleForSpeedControl) {
+
+				SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, 1));
+				return;
+
+			}
+			
+			//Logger.MsgDebug(string.Format("Forward Thrust Check: {0} / {1}", velocityAmount, _autoPilot.IdealMaxSpeed - _autoPilot.MaxSpeedTolerance), DebugTypeEnum.Thrust);
+			if (velocityAmount < _autoPilot.IdealMaxSpeed - _autoPilot.MaxSpeedTolerance) {
+
+				SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, 1));
+				return;
+
+			}
+
+			//Logger.MsgDebug(string.Format("Reverse Thrust Check: {0} / {1}", velocityAmount, _autoPilot.IdealMaxSpeed + _autoPilot.MaxSpeedTolerance), DebugTypeEnum.Thrust);
+			if (velocityAmount > _autoPilot.IdealMaxSpeed + _autoPilot.MaxSpeedTolerance) {
+
+				Logger.MsgDebug("thrust reverse", DebugTypeEnum.Thrust);
+				SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, -1));
+				return;
+
+			}
+
+			//Logger.MsgDebug("thrust drift", DebugTypeEnum.Thrust);
+			SetThrust(new Vector3I(0, 0, 1), new Vector3I(0, 0, 0));
 
 		}
 
@@ -589,6 +627,82 @@ namespace RivalAI.Behavior.Subsystems {
 
 			this.Strafing = false;
 			this.SetThrust(new Vector3I(0, 0, 0), new Vector3I(0, 0, 0));
+
+		}
+
+		public Vector3I TransformThrustData(Vector3I originalData) {
+
+			Vector3I newThrustData = new Vector3I();
+			_referenceOrientation = Behavior.Settings.BlockOrientation;
+
+			if (originalData.X != 0) {
+
+				var axisDir = originalData.X == 1 ? _referenceOrientation.TransformDirection(Base6Directions.Direction.Right) : _referenceOrientation.TransformDirection(Base6Directions.Direction.Left);
+				DirectionToVector(axisDir, ref newThrustData);
+
+			}
+
+			if (originalData.Y != 0) {
+
+				var axisDir = originalData.Y == 1 ? _referenceOrientation.TransformDirection(Base6Directions.Direction.Up) : _referenceOrientation.TransformDirection(Base6Directions.Direction.Down);
+				DirectionToVector(axisDir, ref newThrustData);
+
+			}
+
+			if (originalData.Z != 0) {
+
+				var axisDir = originalData.Z == 1 ? _referenceOrientation.TransformDirection(Base6Directions.Direction.Forward) : _referenceOrientation.TransformDirection(Base6Directions.Direction.Backward);
+				DirectionToVector(axisDir, ref newThrustData);
+
+			}
+
+			return newThrustData;
+
+		}
+
+		public void DirectionToVector(Base6Directions.Direction direction, ref Vector3I vectorData) {
+
+			if (direction == Base6Directions.Direction.Forward) {
+
+				vectorData.Z = 1;
+				return;
+
+			}
+
+			if (direction == Base6Directions.Direction.Backward) {
+
+				vectorData.Z = -1;
+				return;
+
+			}
+
+			if (direction == Base6Directions.Direction.Up) {
+
+				vectorData.Y = 1;
+				return;
+
+			}
+
+			if (direction == Base6Directions.Direction.Down) {
+
+				vectorData.Y = -1;
+				return;
+
+			}
+
+			if (direction == Base6Directions.Direction.Right) {
+
+				vectorData.X = 1;
+				return;
+
+			}
+
+			if (direction == Base6Directions.Direction.Left) {
+
+				vectorData.X = -1;
+				return;
+
+			}
 
 		}
 

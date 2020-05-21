@@ -88,10 +88,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public bool RefreshTarget;
 
 		[ProtoMember(19)]
-		public bool SwitchTargetProfile;
+		public bool SwitchTargetProfile; //Obsolete
 
 		[ProtoMember(20)]
-		public string NewTargetProfile;
+		public string NewTargetProfile; //Obsolete
 
 		[ProtoMember(21)]
 		public bool TriggerTimerBlocks;
@@ -288,6 +288,51 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(85)]
 		public bool InertiaDampenersEnable;
 
+		[ProtoMember(86)]
+		public bool CreateWeatherAtPosition;
+
+		[ProtoMember(87)]
+		public string WeatherSubtypeId;
+
+		[ProtoMember(88)]
+		public double WeatherRadius;
+
+		[ProtoMember(89)]
+		public bool StaggerWarheadDetonation;
+
+		[ProtoMember(90)]
+		public bool EnableTriggers;
+
+		[ProtoMember(91)]
+		public List<string> EnableTriggerNames;
+
+		[ProtoMember(92)]
+		public bool DisableTriggers;
+
+		[ProtoMember(93)]
+		public List<string> DisableTriggerNames;
+
+		[ProtoMember(94)]
+		public bool ChangeRotationDirection;
+
+		[ProtoMember(95)]
+		public Direction RotationDirection;
+
+		[ProtoMember(96)]
+		public int WeatherDuration;
+
+		[ProtoMember(97)]
+		public bool GenerateExplosion;
+
+		[ProtoMember(98)]
+		public Vector3D ExplosionOffsetFromRemote;
+
+		[ProtoMember(99)]
+		public int ExplosionDamage;
+
+		[ProtoMember(100)]
+		public int ExplosionRange;
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
@@ -303,7 +348,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			Spawner = new SpawnProfile();
 
 			SelfDestruct = false;
-			
+			StaggerWarheadDetonation = false;
+
 			Retreat = false;
 
 			BroadcastCurrentTarget = false;
@@ -399,6 +445,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			ChangeInertiaDampeners = false;
 			InertiaDampenersEnable = false;
+
+			EnableTriggers = false;
+			EnableTriggerNames = new List<string>();
+
+			DisableTriggers = false;
+			DisableTriggerNames = new List<string>();
+
+			ChangeRotationDirection = false;
+			RotationDirection = Direction.None;
+
+			GenerateExplosion = false;
+			ExplosionOffsetFromRemote = Vector3D.Zero;
+			ExplosionDamage = 1;
+			ExplosionRange = 1;
 
 			ProfileSubtypeId = "";
 
@@ -581,9 +641,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						this.BroadcastDamagerTarget = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
+					//BroadcastSendCode
+					if (tag.Contains("[BroadcastSendCode:") == true) {
+
+						this.BroadcastSendCode = TagHelper.TagStringCheck(tag);
+
+					}
+
 					//SwitchToBehavior
-					if(tag.Contains("[SwitchToBehavior:") == true) {
+					if (tag.Contains("[SwitchToBehavior:") == true) {
 
 						this.SwitchToBehavior = TagHelper.TagBoolCheck(tag);
 
@@ -977,6 +1044,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//ChangeTargetProfile
+					if (tag.Contains("[ChangeTargetProfile:") == true) {
+
+						this.ChangeTargetProfile = TagHelper.TagBoolCheck(tag);
+
+					}
+
 					//NewTargetProfileId
 					if (tag.Contains("[NewTargetProfileId:") == true) {
 
@@ -1078,6 +1152,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//BroadcastGenericCommand
+					if (tag.Contains("[BroadcastGenericCommand:") == true) {
+
+						this.BroadcastGenericCommand = TagHelper.TagBoolCheck(tag);
+
+					}
+
 					//BehaviorSpecificEventA
 					if (tag.Contains("[BehaviorSpecificEventA:") == true) {
 
@@ -1099,6 +1180,94 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//EnableTriggers
+					if (tag.Contains("[EnableTriggers:") == true) {
+
+						this.EnableTriggers = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//EnableTriggerNames
+					if (tag.Contains("[EnableTriggerNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.EnableTriggerNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//DisableTriggers
+					if (tag.Contains("[DisableTriggers:") == true) {
+
+						this.DisableTriggers = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//DisableTriggerNames
+					if (tag.Contains("[DisableTriggerNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.DisableTriggerNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//StaggerWarheadDetonation
+					if (tag.Contains("[StaggerWarheadDetonation:") == true) {
+
+						this.StaggerWarheadDetonation = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangeRotationDirection
+					if (tag.Contains("[ChangeRotationDirection:") == true) {
+
+						this.ChangeRotationDirection = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RotationDirection
+					if (tag.Contains("[RotationDirection:") == true) {
+
+						this.RotationDirection = TagHelper.TagDirectionEnumCheck(tag);
+
+					}
+
+					//GenerateExplosion
+					if (tag.Contains("[GenerateExplosion:") == true) {
+
+						this.GenerateExplosion = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ExplosionOffsetFromRemote
+					if (tag.Contains("[ExplosionOffsetFromRemote:") == true) {
+
+						this.ExplosionOffsetFromRemote = TagHelper.TagVector3DCheck(tag);
+
+					}
+
+					//ExplosionRange
+					if (tag.Contains("[ExplosionRange:") == true) {
+
+						this.ExplosionRange = TagHelper.TagIntCheck(tag, ExplosionRange);
+
+					}
+
+					//ExplosionDamage
+					if (tag.Contains("[ExplosionDamage:") == true) {
+
+						this.ExplosionDamage = TagHelper.TagIntCheck(tag, ExplosionDamage);
+
+					}
 
 				}
 

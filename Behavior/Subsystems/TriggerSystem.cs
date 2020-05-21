@@ -52,6 +52,10 @@ namespace RivalAI.Behavior.Subsystems {
 		public List<TriggerProfile> Triggers;
 		public List<TriggerProfile> DamageTriggers;
 		public List<TriggerProfile> CommandTriggers;
+		public List<TriggerProfile> CompromisedTriggers;
+		public List<string> ExistingTriggers;
+
+		public bool RemoteControlCompromised;
 
 		public bool TimedTriggersProcessed;
 
@@ -83,6 +87,10 @@ namespace RivalAI.Behavior.Subsystems {
 			Triggers = new List<TriggerProfile>();
 			DamageTriggers = new List<TriggerProfile>();
 			CommandTriggers = new List<TriggerProfile>();
+			CompromisedTriggers = new List<TriggerProfile>();
+			ExistingTriggers = new List<string>();
+
+			RemoteControlCompromised = false;
 
 			TimedTriggersProcessed = false;
 
@@ -221,6 +229,44 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 
+				//AcquiredTarget
+				if (trigger.Type == "AcquiredTarget") {
+
+					//Logger.MsgDebug("Checking NoTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger) {
+
+						if (_autopilot.Targeting.TargetAcquired) {
+
+							_autopilot.Targeting.TargetAcquired = false;
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//LostTarget
+				if (trigger.Type == "LostTarget") {
+
+					//Logger.MsgDebug("Checking HasTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger) {
+
+						if (_autopilot.Targeting.TargetLost) {
+
+							_autopilot.Targeting.TargetLost = false;
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
 				//TargetInSafezone
 				if (trigger.Type == "TargetInSafezone") {
 
@@ -245,6 +291,34 @@ namespace RivalAI.Behavior.Subsystems {
 					if (trigger.UseTrigger == true) {
 
 						//Check if Grounded
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerA
+				if (trigger.Type == "BehaviorTriggerA") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerA) {
+
+						_behavior.BehaviorTriggerA = false;
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerB
+				if (trigger.Type == "BehaviorTriggerB") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerB) {
+
+						_behavior.BehaviorTriggerB = false;
 						trigger.ActivateTrigger();
 
 					}
@@ -278,6 +352,9 @@ namespace RivalAI.Behavior.Subsystems {
 		}
 
 		public void ProcessDamageTriggerWatchers(object target, MyDamageInformation info) {
+
+			if (!_behavior.IsAIReady())
+				return;
 
 			Logger.MsgDebug("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
 			if (info.Amount <= 0)
@@ -315,7 +392,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
 
-			if(senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
+			if (!_behavior.IsAIReady())
+				return;
+
+			if (senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
 				return;
 			
 			var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
@@ -342,6 +422,33 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
  
+			}
+
+		}
+
+		public void ProcessCompromisedTriggerWatcher(bool validToProcess) {
+
+			if (!validToProcess || RemoteControlCompromised)
+				return;
+
+			this.RemoteControlCompromised = true;
+
+			for (int i = 0; i < this.CompromisedTriggers.Count; i++) {
+
+				var trigger = this.CompromisedTriggers[i];
+
+				if (trigger.UseTrigger == true) {
+
+					trigger.ActivateTrigger();
+
+					if (trigger.Triggered == true) {
+
+						ProcessTrigger(trigger);
+
+					}
+
+				}
+
 			}
 
 		}
@@ -448,11 +555,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 					if(tBlock != null) {
 
-						tBlock.IsArmed = true;
-						tBlock.DetonationTime = 0;
-						tBlock.Detonate();
-						totalWarheads++;
+						if (!trigger.Actions.StaggerWarheadDetonation) {
 
+							tBlock.IsArmed = true;
+							tBlock.DetonationTime = 0;
+							tBlock.Detonate();
+							totalWarheads++;
+
+						} else {
+
+							tBlock.DetonationTime = totalWarheads + 1;
+							tBlock.StartCountdown();
+							totalWarheads++;
+
+						}
+						
 					}
 
 				}
@@ -483,6 +600,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (trigger.Actions.TerminateBehavior) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
+				_autopilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
 				_behavior.BehaviorTerminated = true;
 
 			}
@@ -513,7 +631,8 @@ namespace RivalAI.Behavior.Subsystems {
 			if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Switch to Received Target Data", DebugTypeEnum.Action);
-				_autopilot.Targeting.UpdateSpecificTarget = detectedEntity;
+				_autopilot.Targeting.ForceTargetEntity = detectedEntity;
+				_autopilot.Targeting.ForceRefresh = true;
 
 			}
 
@@ -528,12 +647,21 @@ namespace RivalAI.Behavior.Subsystems {
 			if(trigger.Actions.RefreshTarget == true) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Target Refresh", DebugTypeEnum.Action);
-				_autopilot.Targeting.UpdateTargetRequested = true;
+				_autopilot.Targeting.ForceRefresh = true;
+
+			}
+
+			//ChangeTargetProfile
+			if (trigger.Actions.ChangeTargetProfile == true) {
+
+				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Target Change", DebugTypeEnum.Action);
+				_autopilot.Targeting.UseNewTargetProfile = true;
+				_autopilot.Targeting.NewTargetProfileName = trigger.Actions.NewTargetProfileId;
 
 			}
 
 			//ChangeReputationWithPlayers
-			if(trigger.Actions.ChangeReputationWithPlayers == true) {
+			if (trigger.Actions.ChangeReputationWithPlayers == true) {
 
 				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Reputation Change With Players In Radius", DebugTypeEnum.Action);
 				OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
@@ -640,10 +768,75 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			if (trigger.Actions.EnableTriggers) {
+
+				foreach (var resetTrigger in Triggers) {
+
+					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = true;
+
+				}
+
+				foreach (var resetTrigger in DamageTriggers) {
+
+					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = true;
+
+				}
+
+				foreach (var resetTrigger in CommandTriggers) {
+
+					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = true;
+
+				}
+
+			}
+
+			if (trigger.Actions.DisableTriggers) {
+
+				foreach (var resetTrigger in Triggers) {
+
+					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = false;
+
+				}
+
+				foreach (var resetTrigger in DamageTriggers) {
+
+					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = false;
+
+				}
+
+				foreach (var resetTrigger in CommandTriggers) {
+
+					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+						resetTrigger.UseTrigger = false;
+
+				}
+
+			}
+
 			//ChangeInertiaDampeners
 			if (trigger.Actions.ChangeInertiaDampeners) {
 
 				RemoteControl.DampenersOverride = trigger.Actions.InertiaDampenersEnable;
+
+			}
+
+			//ChangeRotationDirection
+			if (trigger.Actions.ChangeRotationDirection) {
+
+				_behavior.Settings.SetRotation(trigger.Actions.RotationDirection);
+
+			}
+
+			//GenerateExplosion
+			if (trigger.Actions.GenerateExplosion) {
+
+				var coords = Vector3D.Transform(trigger.Actions.ExplosionOffsetFromRemote, RemoteControl.WorldMatrix);
+				MyVisualScriptLogicProvider.CreateExplosion(coords, trigger.Actions.ExplosionRange, trigger.Actions.ExplosionDamage);
 
 			}
 
@@ -666,6 +859,26 @@ namespace RivalAI.Behavior.Subsystems {
 			//ResetCounters
 			foreach (var variable in trigger.Actions.ResetCounters)
 				_settings.SetCustomCounter(variable, 0, true);
+
+			//SetSandboxBooleansTrue
+			foreach (var variable in trigger.Actions.SetSandboxBooleansTrue)
+				SetSandboxBool(variable, true);
+
+			//SetSandboxBooleansFalse
+			foreach (var variable in trigger.Actions.SetSandboxBooleansFalse)
+				SetSandboxBool(variable, false);
+
+			//IncreaseSandboxCounters
+			foreach (var variable in trigger.Actions.IncreaseSandboxCounters)
+				SetSandboxCounter(variable, 1);
+
+			//DecreaseSandboxCounters
+			foreach (var variable in trigger.Actions.DecreaseSandboxCounters)
+				SetSandboxCounter(variable, -1);
+
+			//ResetSandboxCounters
+			foreach (var variable in trigger.Actions.ResetSandboxCounters)
+				SetSandboxCounter(variable, 0);
 
 			//BehaviorSpecificEventA
 			if (trigger.Actions.BehaviorSpecificEventA)
@@ -698,6 +911,43 @@ namespace RivalAI.Behavior.Subsystems {
 			//BehaviorSpecificEventH
 			if (trigger.Actions.BehaviorSpecificEventH)
 				BehaviorEventH?.Invoke();
+
+		}
+
+		public void SetSandboxBool(string boolName, bool mode) {
+
+			MyAPIGateway.Utilities.SetVariable<bool>(boolName, mode);
+		
+		}
+
+		public void SetSandboxCounter(string counterName, int amount) {
+
+			int existingCounter = 0;
+
+			MyAPIGateway.Utilities.GetVariable<int>(counterName, out existingCounter);
+
+			if (amount == 0) {
+
+				MyAPIGateway.Utilities.SetVariable<int>(counterName, 0);
+				return;
+
+			}
+
+			if (amount == 1) {
+
+				MyAPIGateway.Utilities.SetVariable<int>(counterName, existingCounter++);
+				return;
+
+			}
+
+			if (amount == -1) {
+
+				existingCounter--;
+				MyAPIGateway.Utilities.SetVariable<int>(counterName, existingCounter < 0 ? 0 : existingCounter);
+				return;
+
+			}
+
 
 		}
 
@@ -794,6 +1044,45 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
+		public bool AddTrigger(TriggerProfile trigger) {
+
+			if (ExistingTriggers.Contains(trigger.ProfileSubtypeId)) {
+
+				Logger.MsgDebug("Trigger Already Added: " + trigger.ProfileSubtypeId, DebugTypeEnum.BehaviorSetup);
+				return false;
+
+			}
+				
+
+			ExistingTriggers.Add(trigger.ProfileSubtypeId);
+
+			if (trigger.Type == "Damage") {
+
+				this.DamageTriggers.Add(trigger);
+				return true;
+
+			}
+
+			if (trigger.Type == "CommandReceived") {
+
+				this.CommandTriggers.Add(trigger);
+				RegisterCommandListener();
+				return true;
+
+			}
+
+			if (trigger.Type == "Compromised") {
+
+				this.CompromisedTriggers.Add(trigger);
+				return true;
+
+			}
+
+			this.Triggers.Add(trigger);
+			return true;
+
+		}
+
 		public void InitTags() {
 
 			//TODO: Try To Get Triggers From Block Storage At Start
@@ -827,28 +1116,53 @@ namespace RivalAI.Behavior.Subsystems {
 
 								if(profile != null) {
 
-									if(profile.Type == "Damage") {
-
-										this.DamageTriggers.Add(profile);
-										continue;
-
-									}
-									
-									if(profile.Type == "CommandReceived"){
-
-										this.CommandTriggers.Add(profile);
-										RegisterCommandListener();
-										continue;
-
-									}
-
-									this.Triggers.Add(profile);
-									gotTrigger = true;
-
+									gotTrigger = AddTrigger(profile);
 
 								}
 
-							} catch(Exception) {
+							} catch(Exception e) {
+
+								Logger.MsgDebug("Exception In Trigger Setup for Tag: " + tag, DebugTypeEnum.BehaviorSetup);
+								Logger.MsgDebug(e.ToString(), DebugTypeEnum.BehaviorSetup);
+
+							}
+
+						}
+
+					}
+
+					if (!gotTrigger)
+						Logger.MsgDebug("Could Not Find Trigger Profile Associated To Tag: " + tag, DebugTypeEnum.BehaviorSetup);
+
+				}
+
+				//TriggerGroups
+				if (tag.Contains("[TriggerGroups:") == true) {
+
+					bool gotTrigger = false;
+					var tempValue = TagHelper.TagStringCheck(tag);
+
+					if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+						byte[] byteData = { };
+
+						if (TagHelper.TriggerGroupObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+							try {
+
+								var profile = MyAPIGateway.Utilities.SerializeFromBinary<TriggerGroupProfile>(byteData);
+
+								if (profile != null) {
+
+									foreach (var trigger in profile.Triggers) {
+
+										AddTrigger(trigger);
+
+									}
+
+								}
+
+							} catch (Exception) {
 
 
 

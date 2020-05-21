@@ -167,11 +167,20 @@ namespace RivalAI.Behavior.Subsystems {
             foreach(var grid in this.CurrentGrids) {
 
                 grid.OnGridSplit += GridSplit;
-                DamageHelper.MonitoredGrids.Add(grid);
 
-                if(DamageHelper.RegisteredDamageHandlers.ContainsKey(grid) == false) {
+                lock (DamageHelper.MonitoredGrids) {
 
-                    DamageHelper.RegisteredDamageHandlers.Add(grid, new Action<object, MyDamageInformation>(DamageHandler));
+                    DamageHelper.MonitoredGrids.Add(grid);
+
+                }
+
+                if(!DamageHelper.RegisteredDamageHandlers.ContainsKey(grid)) {
+
+                    lock (DamageHelper.RegisteredDamageHandlers) {
+
+                        DamageHelper.RegisteredDamageHandlers.Add(grid, new Action<object, MyDamageInformation>(DamageHandler));
+
+                    }
 
                 }
 
@@ -190,7 +199,7 @@ namespace RivalAI.Behavior.Subsystems {
                 }
 
                 grid.OnGridSplit -= GridSplit;
-                DamageHelper.MonitoredGrids.Remove(grid);
+                DamageHelper.MonitoredGrids.RemoveAll(g => g == grid);
                 DamageHelper.RegisteredDamageHandlers.Remove(grid);
 
             }

@@ -48,13 +48,13 @@ namespace RivalAI.Behavior {
 
 			AutoPilot = autoPilot;
 
-			VelocityResult = new NewCollisionResult(this);
-			ForwardResult = new NewCollisionResult(this);
-			BackwardResult = new NewCollisionResult(this);
-			UpResult = new NewCollisionResult(this);
-			DownResult = new NewCollisionResult(this);
-			LeftResult = new NewCollisionResult(this);
-			RightResult = new NewCollisionResult(this);
+			VelocityResult = new NewCollisionResult(this, Direction.None);
+			ForwardResult = new NewCollisionResult(this, Direction.Forward);
+			BackwardResult = new NewCollisionResult(this, Direction.Backward);
+			UpResult = new NewCollisionResult(this, Direction.Up);
+			DownResult = new NewCollisionResult(this, Direction.Down);
+			LeftResult = new NewCollisionResult(this, Direction.Left);
+			RightResult = new NewCollisionResult(this, Direction.Right);
 
 		}
 
@@ -112,6 +112,32 @@ namespace RivalAI.Behavior {
 			sb.Append(" - ").Append("Right: " + RightResult.Type.ToString() + ", " + RightResult.GetCollisionDistance().ToString()).AppendLine();
 			Logger.MsgDebug(sb.ToString(), DebugTypeEnum.Collision);
 			*/
+		}
+
+		
+
+		public NewCollisionResult GetResult(Direction direction) {
+
+			if (direction == Direction.Forward)
+				return ForwardResult;
+
+			if (direction == Direction.Backward)
+				return BackwardResult;
+
+			if (direction == Direction.Up)
+				return UpResult;
+
+			if (direction == Direction.Down)
+				return DownResult;
+
+			if (direction == Direction.Left)
+				return LeftResult;
+
+			if (direction == Direction.Right)
+				return RightResult;
+
+			return null;
+
 		}
 
 	}

@@ -112,6 +112,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(25)]
 		public float MaxAccumulatedDamage;
 
+		[ProtoMember(26)]
+		public bool CheckTrueSandboxBooleans;
+
+		[ProtoMember(27)]
+		public List<string> TrueSandboxBooleans;
+
+		[ProtoMember(28)]
+		public bool CheckCustomSandboxCounters;
+
+		[ProtoMember(29)]
+		public List<string> CustomSandboxCounters;
+
+		[ProtoMember(30)]
+		public List<int> CustomSandboxCountersTargets;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -156,6 +171,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			CheckCustomCounters = false;
 			CustomCounters = new List<string>();
 			CustomCountersTargets = new List<int>();
+
+			CheckTrueSandboxBooleans = false;
+			TrueSandboxBooleans = new List<string>();
+
+			CheckCustomSandboxCounters = false;
+			CustomSandboxCounters = new List<string>();
+			CustomSandboxCountersTargets = new List<int>();
 
 			CheckGridSpeed = false;
 			MinGridSpeed = -1;
@@ -254,7 +276,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					if (!_settings.GetCustomBoolResult(boolName)) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Booleam Not True: " + boolName, DebugTypeEnum.Condition);
+						Logger.MsgDebug(this.ProfileSubtypeId + ": Boolean Not True: " + boolName, DebugTypeEnum.Condition);
 						failedCheck = true;
 						break;
 
@@ -306,8 +328,85 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					satisfiedConditions++;
 
 			}
-			
-			if(this.CheckGridSpeed == true){
+
+			if (this.CheckTrueSandboxBooleans == true) {
+
+				usedConditions++;
+				bool failedCheck = false;
+
+				for (int i = 0; i < this.TrueSandboxBooleans.Count; i++) {
+
+					try {
+
+						bool output = false;
+						var result = MyAPIGateway.Utilities.GetVariable<bool>(this.TrueSandboxBooleans[i], out output);
+
+						if (!result || !output) {
+
+							Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Boolean False: " + this.TrueSandboxBooleans[i], DebugTypeEnum.Condition);
+							failedCheck = true;
+							break;
+
+						}
+
+					} catch (Exception e) {
+
+						Logger.MsgDebug("Exception: ", DebugTypeEnum.Condition);
+						Logger.MsgDebug(e.ToString(), DebugTypeEnum.Condition);
+
+					}
+
+				}
+
+				if (!failedCheck)
+					satisfiedConditions++;
+
+			}
+
+			if (this.CheckCustomSandboxCounters == true) {
+
+				usedConditions++;
+				bool failedCheck = false;
+
+				if (this.CustomCounters.Count == this.CustomCountersTargets.Count) {
+
+					for (int i = 0; i < this.CustomCounters.Count; i++) {
+
+						try {
+
+							int counter = 0;
+							var result = MyAPIGateway.Utilities.GetVariable<int>(this.CustomCounters[i], out counter);
+
+							if (!result || counter < this.CustomCountersTargets[i]) {
+
+								Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Counter Amount Not High Enough: " + this.CustomSandboxCounters[i], DebugTypeEnum.Condition);
+								failedCheck = true;
+								break;
+
+							}
+
+						} catch (Exception e) {
+
+							Logger.MsgDebug("Exception: ", DebugTypeEnum.Condition);
+							Logger.MsgDebug(e.ToString(), DebugTypeEnum.Condition);
+
+						}
+
+					}
+
+				} else {
+
+					Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
+					failedCheck = true;
+
+				}
+
+				if (!failedCheck)
+					satisfiedConditions++;
+
+			}
+
+			if (this.CheckGridSpeed == true){
 				
 				usedConditions++;
 				float speed = (float)_remoteControl.GetShipSpeed();
@@ -389,13 +488,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			if(this.MatchAnyCondition == false){
 
 				bool result = (satisfiedConditions >= usedConditions);
-				Logger.MsgDebug(this.ProfileSubtypeId + ": Any Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": All Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
 				return result;
 				
 			}else{
 
 				bool result = (satisfiedConditions > 0);
-				Logger.MsgDebug(this.ProfileSubtypeId + ": All Conditions Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(this.ProfileSubtypeId + ": Any Condition(s) Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
 				return result;
 				
 			}
@@ -714,6 +815,59 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 						if (tempValue != 0) {
 
 							this.CustomCountersTargets.Add(tempValue);
+
+						}
+
+					}
+
+					//CheckTrueSandboxBooleans
+					if (tag.Contains("[CheckTrueSandboxBooleans:") == true) {
+
+						this.CheckTrueSandboxBooleans = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//TrueSandboxBooleans
+					if (tag.Contains("[TrueSandboxBooleans:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							this.TrueSandboxBooleans.Add(tempValue);
+
+						}
+
+					}
+
+					//CheckCustomSandboxCounters
+					if (tag.Contains("[CheckCustomSandboxCounters:") == true) {
+
+						this.CheckCustomSandboxCounters = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CustomSandboxCounters
+					if (tag.Contains("[CustomSandboxCounters:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							this.CustomSandboxCounters.Add(tempValue);
+
+						}
+
+					}
+
+					//CustomSandboxCountersTargets
+					if (tag.Contains("[CustomSandboxCountersTargets:") == true) {
+
+						var tempValue = TagHelper.TagIntCheck(tag, 0);
+
+						if (tempValue != 0) {
+
+							this.CustomSandboxCountersTargets.Add(tempValue);
 
 						}
 

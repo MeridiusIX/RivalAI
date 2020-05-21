@@ -3,6 +3,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using VRage.Game;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -803,6 +804,130 @@ namespace RivalAI.Helpers {
 			var refDir = Vector3D.Normalize(referenceDir);
 			return Vector3D.Normalize(MyUtils.GetRandomPerpendicularVector(ref refDir));
 			
+		}
+
+		//Following Code Provided By Whiplash141, DarkStar, and WeaponCore Team
+		public static Vector3D TrajectoryEstimation(Vector3D targetPos, Vector3D targetVel, Vector3D targetAcc, double targetMaxSpeed, Vector3D shooterPos, Vector3D shooterVel, double projectileMaxSpeed, double projectileInitSpeed = 0, double projectileAccMag = 0, double gravityMultiplier = 0, Vector3D gravity = default(Vector3D), bool basic = false) {
+			
+			Vector3D deltaPos = targetPos - shooterPos;
+			Vector3D deltaVel = targetVel - shooterVel;
+
+			Vector3D deltaPosNorm;
+			if (Vector3D.IsZero(deltaPos)) deltaPosNorm = Vector3D.Zero;
+			else if (Vector3D.IsUnit(ref deltaPos)) deltaPosNorm = deltaPos;
+			else deltaPosNorm = Vector3D.Normalize(deltaPos);
+
+			double closingSpeed = Vector3D.Dot(deltaVel, deltaPosNorm);
+			Vector3D closingVel = closingSpeed * deltaPosNorm;
+			Vector3D lateralVel = deltaVel - closingVel;
+			double projectileMaxSpeedSqr = projectileMaxSpeed * projectileMaxSpeed;
+			double ttiDiff = projectileMaxSpeedSqr - lateralVel.LengthSquared();
+			double projectileClosingSpeed = Math.Sqrt(ttiDiff) - closingSpeed;
+			double closingDistance = Vector3D.Dot(deltaPos, deltaPosNorm);
+			double timeToIntercept = ttiDiff < 0 ? 0 : closingDistance / projectileClosingSpeed;
+			double maxSpeedSqr = targetMaxSpeed * targetMaxSpeed;
+			double shooterVelScaleFactor = 1;
+			bool projectileAccelerates = projectileAccMag > 1e-6;
+			bool hasGravity = gravityMultiplier > 1e-6;
+
+			if (projectileAccelerates) {
+				/*
+				This is a rough estimate to smooth out our initial guess based upon the missile parameters.
+				The reasoning is that the longer it takes to reach max velocity, the more the initial velocity
+				has an overall impact on the estimated impact point.
+				*/
+				shooterVelScaleFactor = Math.Min(1, (projectileMaxSpeed - projectileInitSpeed) / projectileAccMag);
+			}
+
+			/*
+			Estimate our predicted impact point and aim direction
+			*/
+
+			Vector3D estimatedImpactPoint = targetPos + timeToIntercept * (targetVel - shooterVel * shooterVelScaleFactor);
+			
+			if (basic) return estimatedImpactPoint;
+
+			Vector3D aimDirection = estimatedImpactPoint - shooterPos;
+
+			Vector3D projectileVel = shooterVel;
+			Vector3D projectilePos = shooterPos;
+
+			Vector3D aimDirectionNorm;
+
+			if (projectileAccelerates) {
+
+				if (Vector3D.IsZero(deltaPos)) aimDirectionNorm = Vector3D.Zero;
+				else if (Vector3D.IsUnit(ref deltaPos)) aimDirectionNorm = aimDirection;
+				else aimDirectionNorm = Vector3D.Normalize(aimDirection);
+				projectileVel += aimDirectionNorm * projectileInitSpeed;
+
+			} else {
+
+				if (targetAcc.LengthSquared() < 1 && !hasGravity)
+					return estimatedImpactPoint;
+
+				if (Vector3D.IsZero(deltaPos)) aimDirectionNorm = Vector3D.Zero;
+				else if (Vector3D.IsUnit(ref deltaPos)) aimDirectionNorm = aimDirection;
+				else aimDirectionNorm = Vector3D.Normalize(aimDirection);
+
+				projectileVel += aimDirectionNorm * projectileMaxSpeed;
+
+			}
+
+			var count = projectileAccelerates ? 600 : 60;
+
+			double dt = Math.Max(MyEngineConstants.UPDATE_STEP_SIZE_IN_SECONDS, timeToIntercept / count); // This can be a const somewhere
+			double dtSqr = dt * dt;
+			Vector3D targetAccStep = targetAcc * dt;
+			Vector3D projectileAccStep = aimDirectionNorm * projectileAccMag * dt;
+			Vector3D gravityStep = gravity * gravityMultiplier * dt;
+			Vector3D aimOffset = Vector3D.Zero;
+			double minDiff = double.MaxValue;
+
+			for (int i = 0; i < count; ++i) {
+
+				targetVel += targetAccStep;
+
+				if (targetVel.LengthSquared() > maxSpeedSqr)
+					targetVel = Vector3D.Normalize(targetVel) * targetMaxSpeed;
+
+				targetPos += targetVel * dt;
+
+				if (projectileAccelerates) {
+					projectileVel += projectileAccStep;
+
+					if (projectileVel.LengthSquared() > projectileMaxSpeedSqr) {
+
+						projectileVel = Vector3D.Normalize(projectileVel) * projectileMaxSpeed;
+
+					}
+
+				}
+
+				if (hasGravity)
+					projectileVel += gravityStep;
+
+				projectilePos += projectileVel * dt;
+				Vector3D diff = (targetPos - projectilePos);
+				double diffLenSq = diff.LengthSquared();
+
+				if (diffLenSq < projectileMaxSpeedSqr * dtSqr) {
+
+					aimOffset = diff;
+					break;
+
+				}
+
+				if (diffLenSq < minDiff) {
+
+					minDiff = diffLenSq;
+					aimOffset = diff;
+
+				}
+
+			}
+
+			return estimatedImpactPoint + aimOffset;
 		}
 
 

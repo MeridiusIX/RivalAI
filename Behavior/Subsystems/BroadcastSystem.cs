@@ -128,7 +128,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if (chat.IgnoreAntennaRequirement) {
+			if (chat.IgnoreAntennaRequirement || chat.SendToAllOnlinePlayers) {
 
 				this.HighestRadius = chat.IgnoredAntennaRangeOverride;
 				this.HighestAntennaRangeName = "";
@@ -170,16 +170,20 @@ namespace RivalAI.Behavior.Subsystems {
 			if (this.RemoteControl?.SlimBlock?.CubeGrid?.CustomName != null && authorName.Contains("{GridName}"))
 				authorName = authorName.Replace("{GridName}", this.RemoteControl.SlimBlock.CubeGrid.CustomName);
 
+			bool sentToAll = false;
 
 			foreach (var player in playerList) {
 
-				if(player.IsBot == true || player.Character == null) {
+				var playerId = chat.SendToAllOnlinePlayers ? 0 : player.IdentityId;
+				var playerName = chat.SendToAllOnlinePlayers ? "Player" : player.DisplayName;
+
+				if (!chat.SendToAllOnlinePlayers && (player.IsBot == true || player.Character == null)) {
 
 					continue;
 
 				}
 
-				if(Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius) {
+				if(!chat.SendToAllOnlinePlayers && (Vector3D.Distance(player.GetPosition(), this.AntennaCoords) > this.HighestRadius)) {
 
 					continue; //player too far
 
@@ -189,7 +193,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if(modifiedMsg.Contains("{PlayerName}") == true) {
 
-					modifiedMsg = modifiedMsg.Replace("{PlayerName}", player.DisplayName);
+					modifiedMsg = modifiedMsg.Replace("{PlayerName}", playerName);
 
 				}
 
@@ -218,15 +222,27 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 
-				if(broadcastType == BroadcastType.Chat || broadcastType == BroadcastType.Both) {
+				if (!sentToAll) {
 
-					MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, authorName, player.IdentityId, authorColor);
+					if (broadcastType == BroadcastType.Chat || broadcastType == BroadcastType.Both) {
 
-				}
+						MyVisualScriptLogicProvider.SendChatMessage(modifiedMsg, authorName, playerId, authorColor);
 
-				if(broadcastType == BroadcastType.Notify || broadcastType == BroadcastType.Both) {
+					}
 
-					MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, 6000, authorColor, player.IdentityId);
+					if (broadcastType == BroadcastType.Notify || broadcastType == BroadcastType.Both) {
+
+						if (playerId == 0) {
+
+							MyVisualScriptLogicProvider.ShowNotificationToAll(modifiedMsg, 6000, authorColor);
+
+						} else {
+
+							MyVisualScriptLogicProvider.ShowNotification(modifiedMsg, 6000, authorColor, playerId);
+
+						}
+
+					}
 
 				}
 
@@ -240,6 +256,9 @@ namespace RivalAI.Behavior.Subsystems {
 					SyncManager.SendSyncMesage(sync, player.SteamUserId);
 
 				}
+
+				if (playerId == 0)
+					sentToAll = true;
 
 			}
 

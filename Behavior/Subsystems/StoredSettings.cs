@@ -67,6 +67,17 @@ namespace RivalAI.Behavior.Subsystems{
 		[ProtoMember(10)]
 		public string CustomTargetProfile;
 
+		[ProtoMember(11)]
+		public List<TriggerProfile> CompromisedTriggers;
+
+		[ProtoMember(12)]
+		public Direction RotationDirection;
+
+		[ProtoMember(13)]
+		public SerializableBlockOrientation BlockOrientation;
+
+
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -77,11 +88,15 @@ namespace RivalAI.Behavior.Subsystems{
 			Triggers = new List<TriggerProfile>();
 			DamageTriggers = new List<TriggerProfile>();
 			CommandTriggers = new List<TriggerProfile>();
+			CompromisedTriggers = new List<TriggerProfile>();
 
 			TotalDamageAccumulated = 0;
 			LastDamageTakenTime = MyAPIGateway.Session.GameDateTime;
 
 			CustomTargetProfile = "";
+
+			RotationDirection = Direction.Forward;
+			BlockOrientation = new SerializableBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
 
 		}
 
@@ -103,6 +118,7 @@ namespace RivalAI.Behavior.Subsystems{
 				this.Triggers = oldSettings.Triggers;
 				this.DamageTriggers = oldSettings.DamageTriggers;
 				this.CommandTriggers = oldSettings.CommandTriggers;
+				this.CompromisedTriggers = oldSettings.CompromisedTriggers;
 
 			}
 
@@ -113,6 +129,8 @@ namespace RivalAI.Behavior.Subsystems{
 				this.CurrentTargetEntityId = oldSettings.CurrentTargetEntityId;
 
 			}
+
+			this.SetRotation(RotationDirection);
 
 		}
 
@@ -187,7 +205,31 @@ namespace RivalAI.Behavior.Subsystems{
 			}
 			
 		}
-		
+
+		public void SetRotation(Direction newDirection) {
+
+			RotationDirection = newDirection;
+
+			if (RotationDirection == Direction.Forward || RotationDirection == Direction.None)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
+
+			if (RotationDirection == Direction.Left)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Left, Base6Directions.Direction.Up);
+
+			if (RotationDirection == Direction.Backward)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
+
+			if (RotationDirection == Direction.Right)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
+
+			if (RotationDirection == Direction.Up)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Up, Base6Directions.Direction.Backward);
+
+			if (RotationDirection == Direction.Forward)
+				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Down, Base6Directions.Direction.Forward);
+
+		}
+
 	}
 	
 }

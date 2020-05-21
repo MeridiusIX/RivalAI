@@ -30,6 +30,8 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Entities;
+using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior{
 	
@@ -132,6 +134,7 @@ namespace RivalAI.Behavior{
 
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe, Vector3D.Zero, true, false, false);
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
+					BehaviorTriggerA = true;
 
 				}
 
@@ -152,6 +155,7 @@ namespace RivalAI.Behavior{
 
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					BehaviorTriggerB = true;
 
 				}
 
@@ -190,12 +194,29 @@ namespace RivalAI.Behavior{
 			InitCoreTags();
 			InitTags();
 
-			if (NewAutoPilot.Targeting.Data.UseCustomTargeting == false) {
+			if (string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.Data.ProfileSubtypeId)) {
 
-				NewAutoPilot.Targeting.Data.UseCustomTargeting = true;
-				NewAutoPilot.Targeting.Data.Target = TargetTypeEnum.Player;
-				NewAutoPilot.Targeting.Data.Relations = TargetRelationEnum.Enemy;
-				NewAutoPilot.Targeting.Data.Owners = TargetOwnerEnum.Player;
+				byte[] byteData = { };
+
+				if (TagHelper.TargetObjectTemplates.TryGetValue("RivalAI-GenericTargetProfile-EnemyPlayer", out byteData) == true) {
+
+					try {
+
+						var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
+
+						if (profile != null) {
+
+							NewAutoPilot.Targeting.Data = profile;
+
+						}
+
+					} catch (Exception) {
+
+
+
+					}
+
+				}
 
 			}
 

@@ -30,6 +30,7 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Entities;
 
 namespace RivalAI.Helpers {
 
@@ -43,6 +44,7 @@ namespace RivalAI.Helpers {
 		public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> TriggerGroupObjectTemplates = new Dictionary<string, byte[]>();
 
 		public static void Setup() {
 
@@ -166,6 +168,29 @@ namespace RivalAI.Helpers {
 
 				}
 
+			}
+
+			//Get All TriggerGroups
+			foreach (var def in definitionList) {
+
+				if (string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
+
+					continue;
+
+				}
+
+				if (def.DescriptionText.Contains("[RivalAI TriggerGroup]") == true && TriggerObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+					var triggerObject = new TriggerGroupProfile();
+					triggerObject.InitTags(def.DescriptionText);
+					triggerObject.ProfileSubtypeId = def.Id.SubtypeName;
+					var triggerBytes = MyAPIGateway.Utilities.SerializeToBinary<TriggerGroupProfile>(triggerObject);
+					//Logger.WriteLog("Trigger Profile Added: " + def.Id.SubtypeName);
+					TriggerGroupObjectTemplates.Add(def.Id.SubtypeName, triggerBytes);
+					continue;
+
+				}
+
 
 			}
 
@@ -252,16 +277,16 @@ namespace RivalAI.Helpers {
 			
 		}
 
-		public static BlockTargetTypes TagBlockTargetTypesCheck(string tag) {
+		public static BlockTypeEnum TagBlockTargetTypesCheck(string tag) {
 
-			BlockTargetTypes result = BlockTargetTypes.All;
+			BlockTypeEnum result = BlockTypeEnum.None;
 			var tagSplit = ProcessTag(tag);
 
 			if(tagSplit.Length == 2) {
 
-				if(BlockTargetTypes.TryParse(tagSplit[1], out result) == false) {
+				if(BlockTypeEnum.TryParse(tagSplit[1], out result) == false) {
 
-					return BlockTargetTypes.All;
+					return BlockTypeEnum.None;
 
 				}
 
@@ -311,6 +336,44 @@ namespace RivalAI.Helpers {
 				if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
 
 					return BroadcastType.None;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static CheckEnum TagCheckEnumCheck(string tag) {
+
+			CheckEnum result = CheckEnum.Ignore;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (CheckEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return CheckEnum.Ignore;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static Direction TagDirectionEnumCheck(string tag) {
+
+			Direction result = Direction.None;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (Direction.TryParse(tagSplit[1], out result) == false) {
+
+					return Direction.None;
 
 				}
 
@@ -430,16 +493,16 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static TargetDistanceEnum TagTargetDistanceEnumCheck(string tag) {
+		public static TargetSortEnum TagTargetDistanceEnumCheck(string tag) {
 
-			TargetDistanceEnum result = TargetDistanceEnum.Any;
+			TargetSortEnum result = TargetSortEnum.Random;
 			var tagSplit = ProcessTag(tag);
 
 			if(tagSplit.Length == 2) {
 
-				if(TargetDistanceEnum.TryParse(tagSplit[1], out result) == false) {
+				if(TargetSortEnum.TryParse(tagSplit[1], out result) == false) {
 
-					return TargetDistanceEnum.Any;
+					return TargetSortEnum.Random;
 
 				}
 
@@ -487,16 +550,16 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static TargetOwnerEnum TagTargetOwnerEnumCheck(string tag) {
+		public static OwnerTypeEnum TagTargetOwnerEnumCheck(string tag) {
 
-			TargetOwnerEnum result = TargetOwnerEnum.None;
+			OwnerTypeEnum result = OwnerTypeEnum.None;
 			var tagSplit = ProcessTag(tag);
 
 			if(tagSplit.Length == 2) {
 
-				if(TargetOwnerEnum.TryParse(tagSplit[1], out result) == false) {
+				if(OwnerTypeEnum.TryParse(tagSplit[1], out result) == false) {
 
-					return TargetOwnerEnum.None;
+					return OwnerTypeEnum.None;
 
 				}
 
@@ -506,16 +569,35 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static TargetRelationEnum TagTargetRelationEnumCheck(string tag) {
+		public static RelationTypeEnum TagTargetRelationEnumCheck(string tag) {
 
-			TargetRelationEnum result = TargetRelationEnum.None;
+			RelationTypeEnum result = RelationTypeEnum.None;
 			var tagSplit = ProcessTag(tag);
 
 			if(tagSplit.Length == 2) {
 
-				if(TargetRelationEnum.TryParse(tagSplit[1], out result) == false) {
+				if(RelationTypeEnum.TryParse(tagSplit[1], out result) == false) {
 
-					return TargetRelationEnum.None;
+					return RelationTypeEnum.None;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static TargetSortEnum TagTargetSortEnumCheck(string tag) {
+
+			TargetSortEnum result = TargetSortEnum.Random;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (TargetSortEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return TargetSortEnum.Random;
 
 				}
 

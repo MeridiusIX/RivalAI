@@ -28,13 +28,15 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
 using RivalAI.Behavior.Subsystems;
+using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Profiles {
 
     public class ThrustProfile {
 
         public IMyThrust ThrustBlock;
-        public Vector3I Direction;
+        private Direction _direction;
+        public Vector3I DirectionVector;
 
         public float CurrentOverride;
 
@@ -46,37 +48,43 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Backward) {
 
-                Direction = new Vector3I(0, 0, 1);
+                DirectionVector = new Vector3I(0, 0, 1);
+                _direction = Direction.Forward;
 
             }
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Forward) {
 
-                Direction = new Vector3I(0, 0, -1);
+                DirectionVector = new Vector3I(0, 0, -1);
+                _direction = Direction.Backward;
 
             }
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Down) {
 
-                Direction = new Vector3I(0, 1, 0);
+                DirectionVector = new Vector3I(0, 1, 0);
+                _direction = Direction.Up;
 
             }
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Up) {
 
-                Direction = new Vector3I(0, -1, 0);
+                DirectionVector = new Vector3I(0, -1, 0);
+                _direction = Direction.Down;
 
             }
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Right) {
 
-                Direction = new Vector3I(-1, 0, 0);
+                DirectionVector = new Vector3I(-1, 0, 0);
+                _direction = Direction.Left;
 
             }
 
             if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Left) {
 
-                Direction = new Vector3I(1, 0, 0);
+                DirectionVector = new Vector3I(1, 0, 0);
+                _direction = Direction.Right;
 
             }
 
@@ -85,11 +93,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
         public void UpdateThrust(Vector3I allowedUpdates, Vector3I requiredUpdates) {
 
             //Left/Right
-            if(Direction.X != 0) {
+            if(DirectionVector.X != 0) {
 
                 if(allowedUpdates.X != 0) {
 
-                    if(requiredUpdates.X == Direction.X) {
+                    if(requiredUpdates.X == DirectionVector.X) {
 
                         SetThrustOverride(1);
 
@@ -114,11 +122,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             }
 
             //Up/Down
-            if(Direction.Y != 0) {
+            if(DirectionVector.Y != 0) {
 
                 if(allowedUpdates.Y != 0) {
 
-                    if(requiredUpdates.Y == Direction.Y) {
+                    if(requiredUpdates.Y == DirectionVector.Y) {
 
                         SetThrustOverride(1);
 
@@ -143,11 +151,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             }
 
             //Forward/Backward
-            if(Direction.Z != 0) {
+            if(DirectionVector.Z != 0) {
 
                 if(allowedUpdates.Z != 0) {
 
-                    if(requiredUpdates.Z == Direction.Z) {
+                    if(requiredUpdates.Z == DirectionVector.Z) {
 
                         if(CurrentOverride != 1) {
 
@@ -187,7 +195,6 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
             CurrentOverride = thrustOvr;
 
         }
-
 
     }
 

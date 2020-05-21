@@ -69,7 +69,7 @@ namespace RivalAI.Behavior.Subsystems{
 			PlayerDistanceTrigger = 25000;
 
 			UseNoTargetTimer = false;
-			NoTargetTimerTrigger = 10;
+			NoTargetTimerTrigger = 60;
 
 			UseRetreatTimer = false;
 			RetreatTimerTrigger = 600;
@@ -264,6 +264,12 @@ namespace RivalAI.Behavior.Subsystems{
 
 				}
 				
+			}
+
+			if (DoDespawn) {
+
+				DespawnGrid();
+			
 			}
 		
 		}

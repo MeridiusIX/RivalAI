@@ -39,6 +39,7 @@ namespace RivalAI.Sync {
         BehaviorChange,
         Effect,
         ChatCommand,
+        ReputationAlert,
 
     }
 
@@ -70,6 +71,13 @@ namespace RivalAI.Sync {
             this.Mode = SyncMode.Effect;
             this.Data = MyAPIGateway.Utilities.SerializeToBinary<Effects>(effect);
         
+        }
+
+        public SyncContainer(ReputationMessage repAlert) {
+
+            this.Mode = SyncMode.ReputationAlert;
+            this.Data = MyAPIGateway.Utilities.SerializeToBinary<ReputationMessage>(repAlert);
+
         }
 
     }

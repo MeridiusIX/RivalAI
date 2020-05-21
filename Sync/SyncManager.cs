@@ -103,6 +103,18 @@ namespace RivalAI.Sync {
 
                 }
 
+                if (container.Mode == SyncMode.ReputationAlert) {
+
+                    var alertData = MyAPIGateway.Utilities.SerializeFromBinary<ReputationMessage>(container.Data);
+
+                    if (alertData != null) {
+
+                        ReputationAnnounceManager.ProcessMessage(alertData);
+
+                    }
+
+                }
+
             } catch(Exception exc) {
 
                 Logger.MsgDebug("Exception in NetworkMessageReceiver", DebugTypeEnum.General);

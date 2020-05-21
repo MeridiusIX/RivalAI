@@ -1,4 +1,5 @@
-﻿using RivalAI.Helpers;
+﻿using RivalAI.Behavior.Subsystems.Weapons;
+using RivalAI.Helpers;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -44,6 +45,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		//General Config
 		public float IdealMaxSpeed;
+		public float MaxSpeedTolerance;
 		public bool UseVanillaCollisionAvoidance;
 
 		public bool UseStuckMovementCorrection;
@@ -92,11 +94,11 @@ namespace RivalAI.Behavior.Subsystems {
 		//New AutoPilot
 		public NewAutoPilotMode CurrentMode;
 		public NewCollisionSystem Collision;
-		private RotationSystem _rotation;
+		public RotationSystem Rotation;
 		public NewTargetingSystem Targeting;
 		public ThrustSystem Thrust;
 		public TriggerSystem Trigger;
-		public NewWeaponSystem Weapons;
+		public WeaponSystem Weapons;
 
 		private bool _firstRun;
 		private bool _getInitialWaypointFromTarget;
@@ -124,7 +126,7 @@ namespace RivalAI.Behavior.Subsystems {
 		private bool _waypointIsTarget;
 
 		private bool _staticGrid;
-		private Vector3D _myVelocity;
+		public Vector3D MyVelocity;
 
 		//Offset Stuff
 		private bool _offsetRequiresCalculation;
@@ -165,9 +167,10 @@ namespace RivalAI.Behavior.Subsystems {
 		//Debug
 		public List<BoundingBoxD> DebugVoxelHits = new List<BoundingBoxD>();
 
-		public NewAutoPilotSystem(IMyRemoteControl remoteControl = null) {
+		public NewAutoPilotSystem(IMyRemoteControl remoteControl, IBehavior behavior) {
 
 			IdealMaxSpeed = 100;
+			MaxSpeedTolerance = 15;
 			UseVanillaCollisionAvoidance = false;
 
 			UseStuckMovementCorrection = false;
@@ -250,22 +253,23 @@ namespace RivalAI.Behavior.Subsystems {
 			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
 
 				_remoteControl = remoteControl;
+				_behavior = behavior;
 				Collision = new NewCollisionSystem(_remoteControl, this);
-				_rotation = new RotationSystem(_remoteControl);
+				Rotation = new RotationSystem(_remoteControl);
 				Targeting = new NewTargetingSystem(_remoteControl);
 				Thrust = new ThrustSystem(_remoteControl);
-				Weapons = new NewWeaponSystem(_remoteControl);
+				Weapons = new WeaponSystem(_remoteControl, _behavior);
 
 			}
 
 		}
 
-		public void SetupReferences(StoredSettings settings, TriggerSystem trigger) {
+		public void SetupReferences(IBehavior behavior, StoredSettings settings, TriggerSystem trigger) {
 
+			
 			Targeting.SetupReferences(settings);
 			Thrust.SetupReferences(this);
 			Trigger = trigger;
-			Weapons.SetupReferences(this);
 
 		}
 
@@ -281,6 +285,13 @@ namespace RivalAI.Behavior.Subsystems {
 					if (tag.Contains("[IdealMaxSpeed:") == true) {
 
 						this.IdealMaxSpeed = TagHelper.TagFloatCheck(tag, this.IdealMaxSpeed);
+
+					}
+
+					//MaxSpeedTolerance
+					if (tag.Contains("[MaxSpeedTolerance:") == true) {
+
+						this.MaxSpeedTolerance = TagHelper.TagFloatCheck(tag, this.MaxSpeedTolerance);
 
 					}
 
@@ -466,7 +477,7 @@ namespace RivalAI.Behavior.Subsystems {
 					//RotationMultiplier
 					if (tag.Contains("[RotationMultiplier:") == true) {
 
-						this._rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this._rotation.RotationMultiplier);
+						this.Rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.Rotation.RotationMultiplier);
 
 					}
 
@@ -526,6 +537,20 @@ namespace RivalAI.Behavior.Subsystems {
 
 					}
 
+					//StrafeMinimumTargetDistance
+					if (tag.Contains("[StrafeMinimumTargetDistance:") == true) {
+
+						this.Thrust.StrafeMinimumTargetDistance = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeMinimumTargetDistance);
+
+					}
+
+					//StrafeMinimumSafeAngleFromTarget
+					if (tag.Contains("[StrafeMinimumSafeAngleFromTarget:") == true) {
+
+						this.Thrust.StrafeMinimumSafeAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeMinimumSafeAngleFromTarget);
+
+					}
+
 					//AllowedStrafingDirectionsSpace
 
 
@@ -550,11 +575,11 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (_remoteControl.Physics != null) {
 
-				_myVelocity = _remoteControl.Physics.LinearVelocity;
+				MyVelocity = _remoteControl.Physics.LinearVelocity;
 
 			} else {
 
-				_myVelocity = Vector3D.Zero;
+				MyVelocity = Vector3D.Zero;
 
 			}
 
@@ -594,6 +619,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 					DirectWaypointType = WaypointModificationEnum.TargetIsInitialWaypoint;
 					_initialWaypoint = Targeting.GetTargetCoords();
+
+				} else {
+
+					//Logger.MsgDebug(" - Autopilot Has No Target", DebugTypeEnum.TargetEvaluation);
 
 				}
 
@@ -638,20 +667,6 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		private void StartWeaponCalculations() {
-
-			
-			MyAPIGateway.Parallel.Start(Weapons.CheckWeaponReadiness, WeaponFinish);
-
-		}
-
-		private void WeaponFinish() {
-
-			
-			OnComplete?.Invoke(); //This is where Autopilot ends
-
-		}
-
 		private void UpdateLegacyAutoPilot() {
 
 			if (_remoteControl.IsAutoPilotEnabled && Vector3D.Distance(_previousWaypoint, _currentWaypoint) < this.WaypointTolerance) {
@@ -687,6 +702,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			_remoteControl.AddWaypoint(_currentWaypoint, "Current Waypoint Target");
 			_remoteControl.FlightMode = Ingame.FlightMode.OneWay;
+			_remoteControl.SetCollisionAvoidance(this.UseVanillaCollisionAvoidance);
 			_remoteControl.SetAutoPilotEnabled(true);
 
 		}
@@ -695,7 +711,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
 
-				_rotation.StartCalculation(_currentWaypoint, _remoteControl, _upDirection);
+				Rotation.StartCalculation(_currentWaypoint, _remoteControl, _upDirection);
 
 			}
 
@@ -734,7 +750,7 @@ namespace RivalAI.Behavior.Subsystems {
 			_remoteControl.SetAutoPilotEnabled(false);
 			_requiresNavigationAroundCollision = false;
 			_requiresClimbToIdealAltitude = false;
-			_rotation.StopAllRotation();
+			Rotation.StopAllRotation();
 			Thrust.StopAllThrust();
 
 		}
@@ -878,7 +894,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					gotLead = true;
 					DirectWaypointType |= WaypointModificationEnum.CollisionLeading;
-					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, _myVelocity, (float)_myVelocity.Length(), _pendingWaypoint, Targeting.Target.CurrentVelocity());
+					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, MyVelocity, (float)MyVelocity.Length(), _pendingWaypoint, Targeting.Target.CurrentVelocity());
 					_calculatedWeaponPredictionWaypoint = _pendingWaypoint;
 
 				}
@@ -888,8 +904,30 @@ namespace RivalAI.Behavior.Subsystems {
 					gotLead = true;
 					DirectWaypointType |= WaypointModificationEnum.WeaponLeading;
 					//Logger.MsgDebug("Weapon Lead, Target Velocity: " + Targeting.Target.TargetVelocity.ToString(), DebugTypeEnum.Weapon);
-					_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, _myVelocity, Weapons.MostCommonAmmoSpeed(true), _pendingWaypoint, Targeting.Target.CurrentVelocity());
-					_calculatedWeaponPredictionWaypoint = _pendingWaypoint;
+					//_pendingWaypoint = VectorHelper.FirstOrderIntercept(_myPosition, _myVelocity, Subsystems.Weapons.MostCommonAmmoSpeed(true), _pendingWaypoint, Targeting.Target.CurrentVelocity());
+					double ammoAccel;
+					double ammoInitVel;
+					double ammoVel;
+
+					Weapons.GetAmmoSpeedDetails(Rotation.RotationDirection, out ammoVel, out ammoInitVel, out ammoAccel);
+
+					if (ammoVel > 0) {
+
+						_pendingWaypoint = VectorHelper.TrajectoryEstimation(
+						Targeting.TargetLastKnownCoords,
+						Targeting.Target.CurrentVelocity(),
+						Targeting.Target.CurrentAcceleration(),
+						Targeting.Target.MaxSpeed(),
+						_myPosition,
+						MyVelocity,
+						ammoVel,
+						ammoInitVel,
+						ammoAccel
+						);
+
+						_calculatedWeaponPredictionWaypoint = _pendingWaypoint;
+
+					}
 
 				}
 
@@ -899,6 +937,8 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 		}
+
+		
 
 		private void CalculateEvadeCoords() {
 
@@ -982,8 +1022,8 @@ namespace RivalAI.Behavior.Subsystems {
 				_requiresNavigationAroundCollision = true;
 				_evadeWaypointCreateTime = MyAPIGateway.Session.GameDateTime;
 				_evadeFromWaypoint = Collision.VelocityResult.GetCollisionCoords();
-				_evadeWaypoint = result.Direction * this.CollisionEvasionWaypointDistance + _myPosition;
-				_evadeWaypoint = _evadeWaypoint + (VectorHelper.RandomPerpendicular(result.Direction) * 10);
+				_evadeWaypoint = result.DirectionVector * this.CollisionEvasionWaypointDistance + _myPosition;
+				_evadeWaypoint = _evadeWaypoint + (VectorHelper.RandomPerpendicular(result.DirectionVector) * 10);
 				return true;
 
 			}
@@ -1341,7 +1381,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (Collision.VelocityResult.Type != type && type != CollisionType.None)
 				return false;
 
-			if (DistanceToCurrentWaypoint > Collision.VelocityResult.GetCollisionDistance() && VectorHelper.GetAngleBetweenDirections(Collision.VelocityResult.Direction, Vector3D.Normalize(_currentWaypoint - _myPosition)) < 15)
+			if (DistanceToCurrentWaypoint > Collision.VelocityResult.GetCollisionDistance() && VectorHelper.GetAngleBetweenDirections(Collision.VelocityResult.DirectionVector, Vector3D.Normalize(_currentWaypoint - _myPosition)) < 15)
 				return true;
 
 			return false;

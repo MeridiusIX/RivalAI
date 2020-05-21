@@ -42,6 +42,7 @@ namespace RivalAI.Helpers{
 		AutoPilotStuck,
 		AutoPilotOffset,
 		AutoPilotPlanetPath,
+		BehaviorMode,
 		BehaviorSetup,
 		Chat,
 		Condition,
@@ -52,11 +53,15 @@ namespace RivalAI.Helpers{
 		Owner,
 		Spawn,
 		Target,
+		TargetAcquisition,
+		TargetEvaluation,
+		Thrust,
 		Trigger,
 		TriggerPlayerNear,
 		Weapon,
 		WeaponBarrage,
 		WeaponCore,
+		WeaponSetup,
 		WeaponStaticCore,
 		WeaponStaticRegular
 

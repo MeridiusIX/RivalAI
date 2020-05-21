@@ -38,6 +38,11 @@ namespace RivalAI.Entities {
 		//-----------Start Interface Methods-----------------
 		//---------------------------------------------------
 
+		public Vector3D CurrentAcceleration() {
+
+			return EntityEvaluator.EntityAcceleration(ParentEntity);
+
+		}
 		public double CurrentAltitude() {
 
 			if (Entity?.PositionComp == null)
@@ -77,13 +82,22 @@ namespace RivalAI.Entities {
 
 		}
 
-		public IMyEntity GetEntity() {
+		public virtual IMyEntity GetEntity() {
 
-			if (Entity == null || !MyAPIGateway.Entities.Exist(Entity))
+			if (Entity == null || Entity.MarkedForClose || Entity.Closed)
 				return null;
 
 			return Entity;
 		
+		}
+
+		public long GetEntityId() {
+
+			if (Entity == null || !MyAPIGateway.Entities.Exist(Entity))
+				return 0;
+
+			return Entity.EntityId;
+
 		}
 
 		public IMyEntity GetParentEntity() {
@@ -116,6 +130,12 @@ namespace RivalAI.Entities {
 		public virtual bool IsClosed() {
 
 			return Closed;
+
+		}
+
+		public double MaxSpeed() {
+
+			return EntityEvaluator.EntityMaxSpeed(ParentEntity);
 
 		}
 

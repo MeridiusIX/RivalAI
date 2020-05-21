@@ -53,6 +53,15 @@ namespace RivalAI.Behavior {
 		private StoredSettings _settings;
 		private TriggerSystem _trigger;
 
+		private bool _behaviorTriggerA;
+		private bool _behaviorTriggerB;
+		private bool _behaviorTriggerC;
+		private bool _behaviorTriggerD;
+		private bool _behaviorTriggerE;
+		private bool _behaviorTriggerF;
+		private bool _behaviorTriggerG;
+		private bool _behaviorTriggerH;
+
 		public NewAutoPilotSystem NewAutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
 		public BroadcastSystem Broadcast { get { return _broadcast; } set { _broadcast = value; } }
 		public DamageSystem Damage { get { return _damage; } set { _damage = value; } }
@@ -64,6 +73,14 @@ namespace RivalAI.Behavior {
 		public TriggerSystem Trigger { get { return _trigger; } set { _trigger = value; } }
 
 		public bool BehaviorTerminated { get { return _behaviorTerminated; } set { _behaviorTerminated = value; } }
+		public bool BehaviorTriggerA { get { return _behaviorTriggerA; } set { _behaviorTriggerA = value; } }
+		public bool BehaviorTriggerB { get { return _behaviorTriggerB; } set { _behaviorTriggerB = value; } }
+		public bool BehaviorTriggerC { get { return _behaviorTriggerC; } set { _behaviorTriggerC = value; } }
+		public bool BehaviorTriggerD { get { return _behaviorTriggerD; } set { _behaviorTriggerD = value; } }
+		public bool BehaviorTriggerE { get { return _behaviorTriggerE; } set { _behaviorTriggerE = value; } }
+		public bool BehaviorTriggerF { get { return _behaviorTriggerF; } set { _behaviorTriggerF = value; } }
+		public bool BehaviorTriggerG { get { return _behaviorTriggerG; } set { _behaviorTriggerG = value; } }
+		public bool BehaviorTriggerH { get { return _behaviorTriggerH; } set { _behaviorTriggerH = value; } }
 
 		public BehaviorMode Mode;
 		public BehaviorMode PreviousMode;
@@ -86,8 +103,12 @@ namespace RivalAI.Behavior {
 		private string _settingsDataPending;
 
 		public bool IsWorking;
+		public bool HasBeenWorking; //block was alive at one point
 		public bool PhysicsValid;
+		public bool HasHasValidPhysics;
 		public bool IsEntityClosed;
+
+		public bool IsParentGridClosed;
 
 		public byte CoreCounter;
 
@@ -159,7 +180,7 @@ namespace RivalAI.Behavior {
 
 		public void ProcessWeaponChecks() {
 
-			NewAutoPilot.Weapons.CheckWeaponReadiness();
+			NewAutoPilot.Weapons.PrepareWeapons();
 
 		}
 
@@ -176,8 +197,9 @@ namespace RivalAI.Behavior {
 		}
 
 		public void SetInitialWeaponReadiness() {
-		
-			NewAutoPilot.Weapons.SetInitialWeaponReadiness();
+			
+			//Attempt Weapon Reloads
+			NewAutoPilot.Weapons.ProcessWeaponReloads();
 
 		}
 
@@ -305,7 +327,7 @@ namespace RivalAI.Behavior {
 
 		public virtual void ChangeCoreBehaviorMode(BehaviorMode newMode) {
 
-			Logger.MsgDebug("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.General);
+			Logger.MsgDebug("Changed Core Mode To: " + newMode.ToString(), DebugTypeEnum.BehaviorMode);
 			this.Mode = newMode;
 
 		}
@@ -345,15 +367,19 @@ namespace RivalAI.Behavior {
 
 			this.RemoteControl.IsWorkingChanged += RemoteIsWorking;
 			RemoteIsWorking(this.RemoteControl);
+
+			this.RemoteControl.OnClosing += RemoteIsClosing;
 			
 			this.CubeGrid.OnPhysicsChanged += PhysicsValidCheck;
 			PhysicsValidCheck(this.CubeGrid);
+
+			this.CubeGrid.OnMarkForClose += GridIsClosing;
 
 			Logger.MsgDebug("Remote Control Working: " + IsWorking.ToString(), DebugTypeEnum.BehaviorSetup);
 			Logger.MsgDebug("Remote Control Has Physics: " + PhysicsValid.ToString(), DebugTypeEnum.BehaviorSetup);
 			Logger.MsgDebug("Setting Up Subsystems", DebugTypeEnum.BehaviorSetup);
 
-			NewAutoPilot = new NewAutoPilotSystem(remoteControl);
+			NewAutoPilot = new NewAutoPilotSystem(remoteControl, this);
 			Broadcast = new BroadcastSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
 			Despawn = new DespawnSystem(remoteControl);
@@ -364,7 +390,7 @@ namespace RivalAI.Behavior {
 			Trigger = new TriggerSystem(remoteControl);
 
 			Logger.MsgDebug("Setting Up Subsystem References", DebugTypeEnum.BehaviorSetup);
-			NewAutoPilot.SetupReferences(Settings, Trigger);
+			NewAutoPilot.SetupReferences(this, Settings, Trigger);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
 			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this);
@@ -435,6 +461,7 @@ namespace RivalAI.Behavior {
 							Trigger.Triggers = Settings.Triggers;
 							Trigger.DamageTriggers = Settings.DamageTriggers;
 							Trigger.CommandTriggers = Settings.CommandTriggers;
+							Trigger.CompromisedTriggers = Settings.CompromisedTriggers;
 
 						} else {
 
@@ -459,6 +486,7 @@ namespace RivalAI.Behavior {
 				Settings.Triggers = Trigger.Triggers;
 				Settings.DamageTriggers = Trigger.DamageTriggers;
 				Settings.CommandTriggers = Trigger.CommandTriggers;
+				Settings.CompromisedTriggers = Trigger.CompromisedTriggers;
 
 			}
 
@@ -493,6 +521,18 @@ namespace RivalAI.Behavior {
 					trigger.ResetTime();
 
 			}
+
+			foreach (var trigger in Trigger.CompromisedTriggers) {
+
+				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
+
+				if (!foundStoredSettings)
+					trigger.ResetTime();
+
+			}
+
+			NewAutoPilot.Rotation.Behavior = this;
+			NewAutoPilot.Thrust.Behavior = this;
 
 			Logger.MsgDebug("Setting Callbacks", DebugTypeEnum.BehaviorSetup);
 			SetupCallbacks();
@@ -569,13 +609,33 @@ namespace RivalAI.Behavior {
 
 			if(this.RemoteControl.IsWorking && this.RemoteControl.IsFunctional) {
 
+				this.HasBeenWorking = true;
 				this.IsWorking = true;
 				return;
 
 			}
 
 			this.IsWorking = false;
+			Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
 
+		}
+
+		public void RemoteIsClosing(IMyEntity entity) {
+
+			Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
+
+		}
+
+		public void GridIsClosing(IMyEntity entity) {
+
+			IsParentGridClosed = true;
+
+		}
+
+		public bool RemoteCompromiseCheck() {
+
+			return !IsWorking && HasBeenWorking && !IsParentGridClosed;
+		
 		}
 
 		public void PhysicsValidCheck(IMyEntity entity) {
@@ -587,6 +647,7 @@ namespace RivalAI.Behavior {
 
 			}
 
+			this.HasHasValidPhysics = true;
 			this.PhysicsValid = true;
 
 		}

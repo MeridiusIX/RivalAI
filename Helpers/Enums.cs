@@ -90,6 +90,18 @@ namespace RivalAI.Helpers {
 
     }
 
+    public enum Direction {
+        
+        None,
+        Forward,
+        Backward,
+        Up,
+        Down,
+        Left,
+        Right
+    
+    }
+
     public enum TargetTypeEnum {
 
         None,
@@ -101,11 +113,21 @@ namespace RivalAI.Helpers {
 
     }
 
-    public enum TargetDistanceEnum {
+    public enum CheckEnum {
 
-        Any,
-        Closest,
-        Furthest
+        Ignore,
+        No,
+        Yes,
+
+    }
+
+    public enum TargetSortEnum {
+
+        Random,
+        ClosestDistance,
+        FurthestDistance,
+        HighestTargetValue,
+        LowestTargetValue,
 
     }
 
@@ -114,11 +136,16 @@ namespace RivalAI.Helpers {
         None,
         Altitude,
         Broadcasting,
+        Faction,
         Gravity,
         OutsideOfSafezone,
+        Owner,
         Powered,
+        Relation,
         Shielded,
         Speed,
+        Static,
+        TargetValue,
 
     }
 

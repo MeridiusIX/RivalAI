@@ -10,25 +10,7 @@ using VRageMath;
 
 namespace RivalAI.Entities {
 
-	public enum BlockTypeEnum {
 	
-		None,
-		All,
-		Antennas,
-		Beacons,
-		Containers,
-		Controllers,
-		Guns,
-		JumpDrives,
-		Mechanical,
-		Production,
-		Power,
-		Shields,
-		Thrusters,
-		Tools,
-		Turrets
-	
-	}
 
 	public class GridEntity : EntityBase, ITarget{
 
@@ -52,7 +34,8 @@ namespace RivalAI.Entities {
 		public List<BlockEntity> Thrusters;
 		public List<BlockEntity> Tools;
 		public List<BlockEntity> Turrets;
-		
+
+		public Dictionary<BlockTypeEnum, List<BlockEntity>> BlockListReference;
 
 		public float ThreatScore;
 		public DateTime LastThreatCalculationTime;
@@ -81,6 +64,23 @@ namespace RivalAI.Entities {
 			Tools = new List<BlockEntity>();
 			Turrets = new List<BlockEntity>();
 
+			BlockListReference = new Dictionary<BlockTypeEnum, List<BlockEntity>>();
+			BlockListReference.Add(BlockTypeEnum.All, AllTerminalBlocks);
+			BlockListReference.Add(BlockTypeEnum.Antennas, Antennas);
+			BlockListReference.Add(BlockTypeEnum.Beacons, Beacons);
+			BlockListReference.Add(BlockTypeEnum.Containers, Containers);
+			BlockListReference.Add(BlockTypeEnum.Controllers, Controllers);
+			BlockListReference.Add(BlockTypeEnum.Guns, Guns);
+			BlockListReference.Add(BlockTypeEnum.JumpDrives, JumpDrives);
+			BlockListReference.Add(BlockTypeEnum.Mechanical, Mechanical);
+			BlockListReference.Add(BlockTypeEnum.NanoBots, NanoBots);
+			BlockListReference.Add(BlockTypeEnum.Production, Production);
+			BlockListReference.Add(BlockTypeEnum.Power, Power);
+			BlockListReference.Add(BlockTypeEnum.Shields, Shields);
+			BlockListReference.Add(BlockTypeEnum.Thrusters, Thrusters);
+			BlockListReference.Add(BlockTypeEnum.Tools, Tools);
+			BlockListReference.Add(BlockTypeEnum.Turrets, Turrets);
+
 			if (CubeGrid.Physics == null) {
 
 				CubeGrid.OnPhysicsChanged += PhysicsCheck;
@@ -104,6 +104,7 @@ namespace RivalAI.Entities {
 			}
 
 			CubeGrid.OnBlockAdded += NewBlockAdded;
+			CubeGrid.OnGridSplit += GridSplit;
 
 		}
 
@@ -146,7 +147,8 @@ namespace RivalAI.Entities {
 			//Controller
 			if (terminalBlock as IMyShipController != null) {
 
-				assignedBlock = AddBlock(terminalBlock, Controllers);
+				if((terminalBlock as IMyShipController).CanControlShip)
+					assignedBlock = AddBlock(terminalBlock, Controllers);
 
 			}
 
@@ -250,8 +252,33 @@ namespace RivalAI.Entities {
 
 			//TODO: Add Some Validation To BlockEntity ctor for a fail case
 
-			collection.Add(blockEntity);
+			lock (collection) {
+
+				collection.Add(blockEntity);
+
+			}
+
 			return true;
+		
+		}
+
+		private void CleanBlockList(List<BlockEntity> collection) {
+
+			if (collection == null)
+				return;
+
+			lock (collection) {
+
+				for (int i = collection.Count - 1; i >= 0; i--) {
+
+					var block = collection[i];
+
+					if (block == null || block.IsClosed() || block.ParentEntity != this.ParentEntity)
+						collection.RemoveAt(i);
+				
+				}
+			
+			}
 		
 		}
 
@@ -261,6 +288,71 @@ namespace RivalAI.Entities {
 			Unload();
 
 		}
+
+		public void GetBlocks(List<ITarget> targetList, List<BlockTypeEnum> types) {
+
+			if (types.Contains(BlockTypeEnum.All)) {
+
+				foreach (var block in AllTerminalBlocks) {
+
+					targetList.Add(block);
+
+				}
+
+				return;
+
+			}
+
+			foreach (var blockType in types) {
+
+				if (blockType == BlockTypeEnum.None)
+					continue;
+
+				foreach (var block in BlockListReference[blockType]) {
+
+					targetList.Add(block);
+
+				}
+			
+			}
+		
+		}
+
+		public void GridSplit(IMyCubeGrid gridA, IMyCubeGrid gridB) {
+
+			CleanBlockLists();
+
+		}
+
+		public void CleanBlockLists() {
+
+			try {
+
+				CleanBlockList(AllTerminalBlocks);
+				CleanBlockList(Antennas);
+				CleanBlockList(Beacons);
+				CleanBlockList(Containers);
+				CleanBlockList(Controllers);
+				CleanBlockList(Guns);
+				CleanBlockList(JumpDrives);
+				CleanBlockList(Mechanical);
+				CleanBlockList(NanoBots);
+				CleanBlockList(Production);
+				CleanBlockList(Power);
+				CleanBlockList(Shields);
+				CleanBlockList(Thrusters);
+				CleanBlockList(Tools);
+				CleanBlockList(Turrets);
+
+			} catch (Exception e) {
+
+				Logger.WriteLog("Caught Error While Cleaning Grid Block Lists");
+
+			}
+
+		}
+
+		
 
 		public void PhysicsCheck(IMyEntity entity) {
 
@@ -277,6 +369,7 @@ namespace RivalAI.Entities {
 		public override void Unload() {
 
 			base.Unload();
+			CubeGrid.OnGridSplit -= GridSplit;
 			CubeGrid.OnBlockAdded -= NewBlockAdded;
 			UnloadEntities?.Invoke();
 
@@ -288,7 +381,7 @@ namespace RivalAI.Entities {
 
 		public bool ActiveEntity() {
 
-			if (Closed)
+			if (Closed || !HasPhysics)
 				return false;
 
 			return true;
@@ -296,30 +389,84 @@ namespace RivalAI.Entities {
 		}
 		public double BroadcastRange(bool onlyAntenna = false) {
 
-			if (Closed)
+			if (!ActiveEntity())
 				return 0;
 
-
-
-			return 0;
+			return EntityEvaluator.GridBroadcastRange(LinkedGrids);
 
 		}
 
-		public bool IsNpcOwned() {
+		public string FactionOwner() {
 
-			if (IsClosed() || CubeGrid?.BigOwners == null)
-				return false;
+			//TODO: Build Method
+			var result = "";
 
-			if (CubeGrid.BigOwners.Count > 0)
-				return EntityEvaluator.IsIdentityNPC(CubeGrid.BigOwners[0]);
+			if (CubeGrid?.BigOwners != null) {
 
-			return false;
+				if (CubeGrid.BigOwners.Count > 0) {
 
+					var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(CubeGrid.BigOwners[0]);
+
+					if (faction != null) {
+
+						return faction.Tag;
+					
+					}
+				
+				}
+			
+			}
+
+			return result;
+		
+		}
+
+		public List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var result = new List<long>();
+
+			foreach (var grid in LinkedGrids) {
+
+				if (!grid.ActiveEntity())
+					continue;
+
+				if (onlyGetCurrentEntity && grid.CubeGrid != CubeGrid)
+					continue;
+
+				if (grid.CubeGrid?.BigOwners != null) {
+
+					foreach (var owner in grid.CubeGrid.BigOwners) {
+
+						if (!result.Contains(owner))
+							result.Add(owner);
+
+					}
+				
+				}
+
+				if (!includeMinorityOwners)
+					continue;
+
+				if (grid.CubeGrid?.SmallOwners != null) {
+
+					foreach (var owner in grid.CubeGrid.SmallOwners) {
+
+						if (!result.Contains(owner))
+							result.Add(owner);
+
+					}
+
+				}
+
+			}
+
+			return result;
+		
 		}
 
 		public bool IsPowered() {
 
-			if (IsClosed())
+			if (!ActiveEntity())
 				return false;
 
 			if (string.IsNullOrWhiteSpace(MyVisualScriptLogicProvider.GetEntityName(CubeGrid.EntityId)))
@@ -329,53 +476,81 @@ namespace RivalAI.Entities {
 
 		}
 
-		public bool IsUnowned() {
+		public bool IsSameGrid(IMyEntity entity) {
 
-			if (IsClosed() || CubeGrid?.BigOwners == null)
+			if (!ActiveEntity())
 				return false;
 
-			if (CubeGrid.BigOwners.Count == 0) {
+			foreach (var grid in LinkedGrids) {
 
-				return true;
+				if (!grid.ActiveEntity())
+					continue;
 
-			} else {
-
-				if (CubeGrid.BigOwners[0] == 0)
+				if (grid.CubeGrid.EntityId == entity.EntityId)
 					return true;
-
+			
 			}
 
 			return false;
 
 		}
 
-		public Vector2 PowerOutput() {
+		public bool IsStatic() {
 
-			return Vector2.Zero;
+			if (!ActiveEntity())
+				return false;
+
+			return CubeGrid.IsStatic;
+		
+		}
+
+		public string Name() {
+
+			if (!ActiveEntity())
+				return "N/A";
+
+			return !string.IsNullOrWhiteSpace(CubeGrid.CustomName) ? CubeGrid.CustomName : "N/A";
 
 		}
 
-		public int Reputation(long ownerId) {
+		public OwnerTypeEnum OwnerTypes(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
 
-			if (IsClosed() || CubeGrid?.BigOwners == null)
-				return -1000;
+			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
+			return EntityEvaluator.GetOwnersFromList(owners);
+		
+		}
 
-			if (CubeGrid.BigOwners.Count > 0)
-				return EntityEvaluator.GetReputationBetweenIdentities(ownerId, CubeGrid.BigOwners[0]);
+		public Vector2 PowerOutput() {
 
-			return -1000;
+			if (!ActiveEntity())
+				return Vector2.Zero;
+
+			return EntityEvaluator.GridPowerOutput(LinkedGrids);
+
+		}
+
+		public RelationTypeEnum RelationTypes(long ownerId, bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {
+
+			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
+			return EntityEvaluator.GetRelationsFromList(ownerId, owners);
 
 		}
 
 		public float TargetValue() {
 
-			return 0;
+			if (!ActiveEntity())
+				return 0;
+
+			return EntityEvaluator.GridTargetValue(LinkedGrids);
 
 		}
 
 		public int WeaponCount() {
 
-			return 0;
+			if (!ActiveEntity())
+				return 0;
+
+			return EntityEvaluator.GridWeaponCount(LinkedGrids);
 
 		}
 

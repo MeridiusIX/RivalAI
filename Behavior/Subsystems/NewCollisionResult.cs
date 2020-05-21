@@ -16,8 +16,10 @@ namespace RivalAI.Behavior {
 
 		private DateTime _lastCollisionCheckTime;
 
+		public Direction CollisionDirection;
+
 		public Vector3D StartPosition;
-		public Vector3D Direction;
+		public Vector3D DirectionVector;
 		public double Distance;
 		public Vector3D EndPosition;
 		public LineD Line;
@@ -52,7 +54,9 @@ namespace RivalAI.Behavior {
 		private List<MyLineSegmentOverlapResult<MyEntity>> _entityScanList;
 		private List<MyVoxelBase> _voxelScanList;
 
-		public NewCollisionResult(NewCollisionSystem collisionSystem) {
+		public NewCollisionResult(NewCollisionSystem collisionSystem, Direction direction) {
+
+			CollisionDirection = direction;
 
 			_collisionSystem = collisionSystem;
 			_lastCollisionCheckTime = MyAPIGateway.Session.GameDateTime;
@@ -60,7 +64,7 @@ namespace RivalAI.Behavior {
 			_voxelScanList = new List<MyVoxelBase>();
 
 			StartPosition = Vector3D.Zero;
-			Direction = Vector3D.Zero;
+			DirectionVector = Vector3D.Zero;
 			Distance = 0;
 			ResetResults();
 
@@ -70,15 +74,15 @@ namespace RivalAI.Behavior {
 
 			var timeSpan = MyAPIGateway.Session.GameDateTime - _lastCollisionCheckTime;
 
-			if (timeSpan.TotalMilliseconds < 200)
+			if (timeSpan.TotalMilliseconds < 240)
 				return;
 
 			_lastCollisionCheckTime = MyAPIGateway.Session.GameDateTime;
 
 			ResetResults();
 			CalculateTime = calculateTime;
-			Direction = direction;
-			Distance = distance;
+			DirectionVector = direction;
+			Distance = GetDistanceFromWeapons(distance, CollisionDirection);
 			StartPosition = _collisionSystem.Matrix.Translation;
 			EndPosition = direction * distance + StartPosition;
 			Line = new LineD(StartPosition, EndPosition);
@@ -86,6 +90,27 @@ namespace RivalAI.Behavior {
 			TargetIntersectionCheck();
 			ShieldIntersectionCheck();
 			VoxelCheckRequest(useAsteroidAABB);
+
+		}
+
+		public double GetDistanceFromWeapons(double defaultDistance, Direction direction) {
+
+			double result = defaultDistance;
+			var weaponDist = _collisionSystem.AutoPilot.Weapons.GetMaxRange(direction);
+
+			if (defaultDistance > weaponDist)
+				return defaultDistance;
+
+			if (weaponDist > _collisionSystem.AutoPilot.Weapons.MaxStaticWeaponRange && _collisionSystem.AutoPilot.Weapons.MaxStaticWeaponRange > 0) {
+
+				if (defaultDistance > _collisionSystem.AutoPilot.Weapons.MaxStaticWeaponRange)
+					return defaultDistance;
+				else
+					return _collisionSystem.AutoPilot.Weapons.MaxStaticWeaponRange;
+
+			}
+
+			return weaponDist;
 
 		}
 
@@ -370,8 +395,8 @@ namespace RivalAI.Behavior {
 				double maxDist = 0;
 				bool boxCheckResult = closestGrid.PositionComp.WorldAABB.Intersect(ref Ray, out minDist, out maxDist);
 
-				Vector3D startBox = boxCheckResult ? (minDist - 5) * Direction + StartPosition : StartPosition;
-				Vector3D endBox = boxCheckResult ? (maxDist + 5) * Direction + StartPosition : EndPosition;
+				Vector3D startBox = boxCheckResult ? (minDist - 5) * DirectionVector + StartPosition : StartPosition;
+				Vector3D endBox = boxCheckResult ? (maxDist + 5) * DirectionVector + StartPosition : EndPosition;
 
 				var blockPos = closestGrid.RayCastBlocks(startBox, endBox);
 
@@ -404,7 +429,7 @@ namespace RivalAI.Behavior {
 			if (closestZone != null) {
 
 				SafezoneEntity = closestZone;
-				SafezoneCoords = closestZoneDistance * Direction + StartPosition;
+				SafezoneCoords = closestZoneDistance * DirectionVector + StartPosition;
 				SafezoneDistance = closestZoneDistance;
 
 			}
@@ -415,7 +440,7 @@ namespace RivalAI.Behavior {
 
 			if (_collisionSystem.AutoPilot.InGravity()) {
 
-				var stepList = _collisionSystem.AutoPilot.GetPlanetPathSteps(StartPosition, Direction, Distance, true);
+				var stepList = _collisionSystem.AutoPilot.GetPlanetPathSteps(StartPosition, DirectionVector, Distance, true);
 				var planet = _collisionSystem.AutoPilot.GetCurrentPlanet();
 				var planetCenter = planet.PositionComp.WorldAABB.Center;
 				int index = -1;
@@ -473,8 +498,8 @@ namespace RivalAI.Behavior {
 						double maxDist = 0;
 						bool boxCheckResult = voxel.PositionComp.WorldAABB.Intersect(ref Ray, out minDist, out maxDist);
 
-						Vector3D startBox = boxCheckResult ? (minDist - 5) * Direction + StartPosition : StartPosition;
-						Vector3D endBox = boxCheckResult ? (maxDist + 5) * Direction + StartPosition : EndPosition;
+						Vector3D startBox = boxCheckResult ? (minDist - 5) * DirectionVector + StartPosition : StartPosition;
+						Vector3D endBox = boxCheckResult ? (maxDist + 5) * DirectionVector + StartPosition : EndPosition;
 						Vector3D? hitPosition = null;
 						LineD voxelLine = new LineD(startBox, endBox);
 						bool gotHit = false;
@@ -511,7 +536,7 @@ namespace RivalAI.Behavior {
 
 						if (voxel.PositionComp.WorldAABB.Contains(StartPosition) == ContainmentType.Contains) {
 
-							var hitDist = Vector3D.Distance(StartPosition, StartPosition + Direction);
+							var hitDist = Vector3D.Distance(StartPosition, StartPosition + DirectionVector);
 
 							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
 
@@ -546,7 +571,7 @@ namespace RivalAI.Behavior {
 
 				VoxelEntity = closestVoxel;
 				VoxelDistance = closestDistance;
-				VoxelCoords = closestDistance * Direction + StartPosition;
+				VoxelCoords = closestDistance * DirectionVector + StartPosition;
 
 
 			}

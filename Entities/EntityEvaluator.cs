@@ -1,4 +1,8 @@
-﻿using Sandbox.ModAPI;
+﻿using Sandbox.Definitions;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Weapons;
+using Sandbox.ModAPI;
+using Sandbox.ModAPI.Weapons;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,6 +12,47 @@ using VRage.ModAPI;
 using VRageMath;
 
 namespace RivalAI.Entities {
+
+	public enum BlockTypeEnum {
+
+		None,
+		All,
+		Antennas,
+		Beacons,
+		Containers,
+		Controllers,
+		Guns,
+		JumpDrives,
+		Mechanical,
+		NanoBots,
+		Power,
+		Production,
+		Shields,
+		Thrusters,
+		Tools,
+		Turrets
+
+	}
+
+	public enum OwnerTypeEnum {
+
+		None = 0,
+		Unowned = 1,
+		Player = 1 << 1,
+		NPC = 1 << 2
+
+	}
+
+	public enum RelationTypeEnum {
+
+		None = 0,
+		Enemy = 1,
+		Neutral = 1 << 1,
+		Friends = 1 << 2,
+		Faction = 1 << 3
+
+	}
+
 	public static class EntityEvaluator {
 
 		public static double AltitudeAtPosition(Vector3D coords) {
@@ -22,14 +67,14 @@ namespace RivalAI.Entities {
 
 			}
 
-			return 0;
+			return -1000000;
 		
 		}
 
 		public static double AltitudeAtPosition(Vector3D coords, PlanetEntity planet) {
 
 			if (planet.Closed)
-				return 0;
+				return -1000000;
 
 			var surfaceCoords = planet.Planet.GetClosestSurfacePointGlobal(coords);
 			var myDistToCore = Vector3D.Distance(coords, planet.GetPosition());
@@ -84,34 +129,99 @@ namespace RivalAI.Entities {
 
 		}
 
-		public static int GetReputationBetweenIdentities(long ownerA, long ownerB) {
+		public static OwnerTypeEnum GetOwnersFromList(List<long> owners) {
+
+			var result = OwnerTypeEnum.Unowned;
+
+			if (owners.Count == 0)
+				return result;
+
+			foreach (var owner in owners) {
+
+				if (EntityEvaluator.IsIdentityNPC(owner)) {
+
+					result |= OwnerTypeEnum.NPC;
+					result &= ~OwnerTypeEnum.Unowned;
+
+				} else {
+
+					result |= OwnerTypeEnum.Player;
+					result &= ~OwnerTypeEnum.Unowned;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static RelationTypeEnum GetRelationsFromList(long ownerId, List<long> owners) {
+
+			var result = RelationTypeEnum.None;
+
+			if (owners.Count == 0) {
+
+				result = RelationTypeEnum.Enemy;
+				return result;
+
+			}
+
+			foreach (var owner in owners) {
+
+				var relation = GetRelationBetweenIdentities(ownerId, owner);
+
+				if (!result.HasFlag(relation))
+					result |= relation;
+
+			}
+
+			return result;
+
+		}
+
+		public static RelationTypeEnum GetRelationBetweenIdentities(long ownerA, long ownerB) {
+
+			var factionA = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerA);
+			var factionB = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerB);
+
+			if (factionA != null && factionA == factionB)
+				return RelationTypeEnum.Faction;
 
 			if (IsIdentityNPC(ownerA)) {
 
-				var factionA = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerA);
-
 				if (factionA != null)
-					return MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(ownerB, factionA.FactionId);
+					return GetRelationFromReputation(MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(ownerB, factionA.FactionId));
 
 			}
 
 			if (IsIdentityNPC(ownerB)) {
 
-				var factionB = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerB);
-
 				if (factionB != null)
-					return MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(ownerA, factionB.FactionId);
+					return GetRelationFromReputation(MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(ownerA, factionB.FactionId));
 
 			}
 
-			var playerFactionA = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerA);
-			var playerFactionB = MyAPIGateway.Session.Factions.TryGetPlayerFaction(ownerB);
+			if (factionA != null && factionB != null) {
 
-			if (playerFactionA != null && playerFactionB != null)
-				return MyAPIGateway.Session.Factions.GetReputationBetweenFactions(playerFactionA.FactionId, playerFactionB.FactionId);
+				return GetRelationFromReputation(MyAPIGateway.Session.Factions.GetReputationBetweenFactions(factionA.FactionId, factionB.FactionId));
 
-			return -1000;
+			}
 
+			return RelationTypeEnum.Enemy;
+
+		}
+
+		public static RelationTypeEnum GetRelationFromReputation(int reputation) {
+
+			if (reputation < -500)
+				return RelationTypeEnum.Enemy;
+
+			if (reputation > 500)
+				return RelationTypeEnum.Friends;
+
+			return RelationTypeEnum.Neutral;
+		
 		}
 
 		public static double GravityAtPosition(Vector3D coords) {
@@ -128,6 +238,115 @@ namespace RivalAI.Entities {
 			}
 
 			return 0;
+
+		}
+
+		public static ITarget GetTargetFromBlockEntity(IMyCubeBlock entity) {
+
+			if (entity == null)
+				return null;
+
+			var grid = entity.SlimBlock.CubeGrid;
+
+			foreach (var gridEntity in GridManager.Grids) {
+
+				if (!gridEntity.ActiveEntity() || grid != gridEntity.CubeGrid)
+					continue;
+
+				foreach (var block in gridEntity.AllTerminalBlocks) {
+
+					if (!block.ActiveEntity())
+						continue;
+
+					if (entity.EntityId == block.Block.EntityId)
+						return block;
+				
+				}
+			
+			}
+
+			return null;
+
+		}
+
+		public static ITarget GetTargetFromEntity(IMyEntity entity) {
+
+			//Try Player
+			var character = entity as IMyCharacter;
+
+			if (character != null) {
+
+				return GetTargetFromPlayerEntity(character);
+
+			} else {
+
+				var toolBase = entity as IMyEngineerToolBase;
+				var gunBase = entity as IMyGunBaseUser;
+
+				if (gunBase != null) {
+
+					return GetTargetFromPlayerEntity(gunBase.Owner as IMyCharacter);
+
+				}
+
+				if (toolBase != null) {
+
+					IMyEntity charEntity = null;
+
+					if (MyAPIGateway.Entities.TryGetEntityById(toolBase.OwnerId, out charEntity))
+						return GetTargetFromPlayerEntity(charEntity as IMyCharacter);
+
+				}
+
+			}
+
+			//Try Block/Grid
+			var grid = entity as IMyCubeGrid;
+			var block = entity as IMyCubeBlock;
+
+			if (grid != null)
+				return GetTargetFromGridEntity(grid);
+
+			if (block != null)
+				return GetTargetFromBlockEntity(block);
+
+			return null;
+
+		}
+
+		public static ITarget GetTargetFromGridEntity(IMyCubeGrid entity) {
+
+			if (entity == null)
+				return null;
+
+			foreach (var gridEntity in GridManager.Grids) {
+
+				if (!gridEntity.ActiveEntity() || entity != gridEntity.CubeGrid)
+					continue;
+
+				return gridEntity;
+
+			}
+
+			return null;
+
+		}
+
+		public static ITarget GetTargetFromPlayerEntity(IMyCharacter entity) {
+
+			if (entity == null)
+				return null;
+
+			foreach (var playerEntity in PlayerManager.Players) {
+
+				if (!playerEntity.ActiveEntity() || entity.EntityId != playerEntity.ParentEntity.EntityId)
+					continue;
+
+				return playerEntity;
+
+			}
+
+			return null;
 
 		}
 
@@ -181,7 +400,7 @@ namespace RivalAI.Entities {
 				if (beacon.IsClosed() || !beacon.Working || !beacon.Functional)
 					continue;
 
-				var beaconBlock = beacon.Block as IMyRadioAntenna;
+				var beaconBlock = beacon.Block as IMyBeacon;
 
 				if (beaconBlock == null)
 					continue;
@@ -412,6 +631,18 @@ namespace RivalAI.Entities {
 		
 		}
 
+		public static Vector3D EntityAcceleration(IMyEntity entity) {
+
+			if (entity == null || entity.MarkedForClose || entity.Closed)
+				return Vector3D.Zero;
+
+			if (entity.Physics == null)
+				return Vector3D.Zero;
+
+			return entity.Physics.LinearAcceleration;
+
+		}
+
 		public static bool EntityShielded(IMyEntity entity) {
 
 			if (entity == null || entity.MarkedForClose || entity.Closed)
@@ -423,6 +654,24 @@ namespace RivalAI.Entities {
 			//End Defense Shield API Check
 			
 			return false;
+
+		}
+
+		public static double EntityMaxSpeed(IMyEntity entity) {
+
+			if (entity == null || entity.MarkedForClose || entity.Closed)
+				return 0;
+
+			if (entity as IMyCubeGrid != null) {
+
+				var grid = entity as IMyCubeGrid;
+
+				if (grid.GridSizeEnum == MyCubeSize.Large)
+					return MyDefinitionManager.Static.EnvironmentDefinition.LargeShipMaxSpeed;
+
+			}
+
+			return MyDefinitionManager.Static.EnvironmentDefinition.SmallShipMaxSpeed;
 
 		}
 
