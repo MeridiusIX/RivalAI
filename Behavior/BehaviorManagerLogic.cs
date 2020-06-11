@@ -66,6 +66,9 @@ namespace RivalAI.Behavior{
 		private bool ValidBehavior = false;
 		private bool SetupComplete = false;
 		private bool SetupFailed = false;
+
+		//Counter
+		private int _counter = 0;
 		
 		public override void Init(MyObjectBuilder_EntityBase objectBuilder){
 			
@@ -86,6 +89,12 @@ namespace RivalAI.Behavior{
 		
 		public override void UpdateBeforeSimulation(){
 
+			/*
+			_counter++;
+
+			if (_counter < 10)
+				return;
+				*/
 			NeedsUpdate = MyEntityUpdateEnum.NONE;
 
 			if(SetupComplete == false){

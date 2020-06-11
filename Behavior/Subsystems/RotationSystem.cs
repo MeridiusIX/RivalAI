@@ -32,18 +32,15 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems{
 	
-	public class RotationSystem{
+	public partial class AutoPilotSystem{
 		
 		public float RotationMultiplier;
 		
 		public bool RotationEnabled;
 		public IMyGyro ControlGyro;
-		public IMyRemoteControl RemoteControl;
 		public IMyTerminalBlock ReferenceBlock;
 		public IMyCubeGrid CubeGrid;
 		public List<IMyGyro> BrokenGyros;
-
-		public IBehavior Behavior;
 
 		public Direction RotationDirection;
 
@@ -79,65 +76,6 @@ namespace RivalAI.Behavior.Subsystems{
 
 		public Vector3 RotationToApply;
 		public Dictionary<string, Vector3D> ControlGyroRotationTranslation;
-		
-		public RotationSystem(IMyRemoteControl remoteControl){
-			
-			RotationMultiplier = 1;
-			
-			RotationEnabled = false;
-			ControlGyro = null;
-			RemoteControl = null;
-			ReferenceBlock = null;
-			BrokenGyros = new List<IMyGyro>();
-
-			RotationDirection = Direction.Forward;
-
-			ControlGyroNotFound = false;
-			NewGyroFound = false;
-
-			RotationTarget = Vector3D.Zero;
-			UpDirection = Vector3D.Zero;
-			
-			ControlYaw = true;
-			ControlPitch = true;
-			ControlRoll = true;
-
-			ControlGyroStrength = 1;
-
-			UpdateMassAndForceBeforeRotation = true;
-			GridMass = 0;
-			GridGyroForce = 0;
-			GyroMaxPower = 100;
-			
-			CurrentAngleToTarget = 0;
-			CurrentYawDifference = 0;
-			CurrentPitchDifference = 0;
-			CurrentRollDifference = 0;
-			DesiredAngleToTarget = 0.5;
-
-			BarrelRollEnabled = false;
-			BarrellRollMagnitudePerEvent = 1;
-			
-			RotationToApply = Vector3.Zero;
-			ControlGyroRotationTranslation = new Dictionary<string, Vector3D>();
-
-			Setup(remoteControl);
-			
-		}
-		
-		private void Setup(IMyRemoteControl remoteControl){
-			
-			if(remoteControl == null){
-
-				return;
-				
-			}
-			
-			this.RemoteControl = remoteControl;
-			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
-			UpdateMassAndGyroForce();
-			
-		}
 		
 		public IMyGyro GetControlGyro(IMyCubeGrid cubeGrid){
 			
@@ -192,7 +130,7 @@ namespace RivalAI.Behavior.Subsystems{
 			
 		}
 		
-		public void StartCalculation(Vector3D rotationTarget, IMyTerminalBlock block = null, Vector3D upDirection = new Vector3D()){
+		public void StartRotationCalculation(Vector3D rotationTarget, IMyTerminalBlock block = null, Vector3D upDirection = new Vector3D()){
 
 			if(this.ControlGyroNotFound == true) {
 
@@ -208,7 +146,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 			if(this.ControlGyro == null || MyAPIGateway.Entities.Exist(this.ControlGyro?.SlimBlock?.CubeGrid) == false) {
 
-				this.ControlGyro = GetControlGyro(this.RemoteControl.SlimBlock.CubeGrid);
+				this.ControlGyro = GetControlGyro(_remoteControl.SlimBlock.CubeGrid);
 
 				if(this.ControlGyro == null) {
 
@@ -236,22 +174,22 @@ namespace RivalAI.Behavior.Subsystems{
 
 		public MatrixD GetReferenceMatrix(MatrixD originalMatrix) {
 
-			if (Behavior.Settings.RotationDirection == Direction.Forward)
+			if (_behavior.Settings.RotationDirection == Direction.Forward)
 				return originalMatrix;
 
-			if (Behavior.Settings.RotationDirection == Direction.Backward)
+			if (_behavior.Settings.RotationDirection == Direction.Backward)
 				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Backward, originalMatrix.Up);
 
-			if (Behavior.Settings.RotationDirection == Direction.Left)
+			if (_behavior.Settings.RotationDirection == Direction.Left)
 				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Left, originalMatrix.Up);
 
-			if (Behavior.Settings.RotationDirection == Direction.Right)
+			if (_behavior.Settings.RotationDirection == Direction.Right)
 				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Right, originalMatrix.Up);
 
-			if (Behavior.Settings.RotationDirection == Direction.Down)
+			if (_behavior.Settings.RotationDirection == Direction.Down)
 				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Down, originalMatrix.Forward);
 
-			if (Behavior.Settings.RotationDirection == Direction.Up)
+			if (_behavior.Settings.RotationDirection == Direction.Up)
 				return MatrixD.CreateWorld(originalMatrix.Translation, originalMatrix.Up, originalMatrix.Backward);
 
 			return originalMatrix;
@@ -563,10 +501,10 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public void UpdateMassAndGyroForce(){
 			
-			this.GridMass = (double)this.RemoteControl.CalculateShipMass().TotalMass;
+			this.GridMass = (double)_remoteControl.CalculateShipMass().TotalMass;
 			//Logger.AddMsg("GridMass: " + this.GridMass.ToString(), true);
 			var blockList = new List<IMySlimBlock>();
-			this.RemoteControl.SlimBlock.CubeGrid.GetBlocks(blockList);
+			_remoteControl.SlimBlock.CubeGrid.GetBlocks(blockList);
 			double totalForceMagnitude = 0;
 			
 			foreach(var block in blockList){

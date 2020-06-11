@@ -43,7 +43,7 @@ namespace RivalAI.Behavior {
 
 		private bool _behaviorTerminated;
 
-		private NewAutoPilotSystem _newAutoPilot;
+		private AutoPilotSystem _newAutoPilot;
 		private BroadcastSystem _broadcast;
 		private DamageSystem _damage;
 		private DespawnSystem _despawn;
@@ -62,7 +62,9 @@ namespace RivalAI.Behavior {
 		private bool _behaviorTriggerG;
 		private bool _behaviorTriggerH;
 
-		public NewAutoPilotSystem NewAutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
+		private List<IMyCubeGrid> _currentGrids;
+
+		public AutoPilotSystem NewAutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
 		public BroadcastSystem Broadcast { get { return _broadcast; } set { _broadcast = value; } }
 		public DamageSystem Damage { get { return _damage; } set { _damage = value; } }
 		public DespawnSystem Despawn { get { return _despawn; } set { _despawn = value; } }
@@ -81,6 +83,8 @@ namespace RivalAI.Behavior {
 		public bool BehaviorTriggerF { get { return _behaviorTriggerF; } set { _behaviorTriggerF = value; } }
 		public bool BehaviorTriggerG { get { return _behaviorTriggerG; } set { _behaviorTriggerG = value; } }
 		public bool BehaviorTriggerH { get { return _behaviorTriggerH; } set { _behaviorTriggerH = value; } }
+
+		public List<IMyCubeGrid> CurrentGrids { get { return _currentGrids; } }
 
 		public BehaviorMode Mode;
 		public BehaviorMode PreviousMode;
@@ -130,6 +134,8 @@ namespace RivalAI.Behavior {
 
 			_settingSaveCounter = 0;
 			_settingSaveCounterTrigger = 5;
+
+			_currentGrids = new List<IMyCubeGrid>();
 
 			_triggerStorageKey = new Guid("8470FBC9-1B64-4603-AB75-ABB2CD28AA02");
 			_settingsStorageKey = new Guid("FF814A67-AEC3-4DF0-ADC4-A9B239FA954F");
@@ -229,7 +235,7 @@ namespace RivalAI.Behavior {
 				return;
 
 			_settingSaveCounter++;
-			Logger.MsgDebug("Checking Despawn Conditions", DebugTypeEnum.Dev);
+			//Logger.MsgDebug("Checking Despawn Conditions", DebugTypeEnum.Dev);
 			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
 			Despawn.ProcessTimers(Mode, NewAutoPilot.InvalidTarget());
 			//MainBehavior();
@@ -379,7 +385,7 @@ namespace RivalAI.Behavior {
 			Logger.MsgDebug("Remote Control Has Physics: " + PhysicsValid.ToString(), DebugTypeEnum.BehaviorSetup);
 			Logger.MsgDebug("Setting Up Subsystems", DebugTypeEnum.BehaviorSetup);
 
-			NewAutoPilot = new NewAutoPilotSystem(remoteControl, this);
+			NewAutoPilot = new AutoPilotSystem(remoteControl, this);
 			Broadcast = new BroadcastSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
 			Despawn = new DespawnSystem(remoteControl);
@@ -402,7 +408,6 @@ namespace RivalAI.Behavior {
 			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.BehaviorSetup);
 
 			NewAutoPilot.InitTags();
-			NewAutoPilot.Targeting.InitTags();
 			NewAutoPilot.Weapons.InitTags();
 			Damage.InitTags();
 			Despawn.InitTags();
@@ -497,6 +502,9 @@ namespace RivalAI.Behavior {
 
 				trigger.Conditions.SetReferences(this.RemoteControl, Settings);
 
+				if (!string.IsNullOrWhiteSpace(trigger.ActionsDefunct?.ProfileSubtypeId))
+					trigger.Actions.Add(trigger.ActionsDefunct);
+
 				if(!foundStoredSettings)
 					trigger.ResetTime();
 
@@ -537,7 +545,85 @@ namespace RivalAI.Behavior {
 			Logger.MsgDebug("Setting Callbacks", DebugTypeEnum.BehaviorSetup);
 			SetupCallbacks();
 
+			Logger.MsgDebug("Setting Grid Split Check", DebugTypeEnum.BehaviorSetup);
+			RemoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplit;
+			_currentGrids = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+
 			Logger.MsgDebug("Core Settings Setup Complete", DebugTypeEnum.BehaviorSetup);
+
+		}
+
+		internal void SetDefaultTargeting() {
+
+			var savedTarget = !string.IsNullOrWhiteSpace(Settings.CustomTargetProfile);
+			var targetProfileName = !savedTarget ? "RivalAI-GenericTargetProfile-EnemyPlayer" : Settings.CustomTargetProfile;
+
+			if (savedTarget || string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.NormalData.ProfileSubtypeId)) {
+
+				byte[] byteData = { };
+
+				if (TagHelper.TargetObjectTemplates.TryGetValue(targetProfileName, out byteData) == true) {
+
+					try {
+
+						var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
+
+						if (profile != null) {
+
+							NewAutoPilot.Targeting.NormalData = profile;
+
+						}
+
+					} catch (Exception) {
+
+
+
+					}
+
+				}
+
+			}
+
+			if (string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.OverrideData.ProfileSubtypeId)) {
+
+				byte[] byteData = { };
+
+				if (TagHelper.TargetObjectTemplates.TryGetValue("RivalAI-GenericTargetProfile-EnemyOverride", out byteData) == true) {
+
+					try {
+
+						var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
+
+						if (profile != null) {
+
+							NewAutoPilot.Targeting.OverrideData = profile;
+
+						}
+
+					} catch (Exception) {
+
+
+
+					}
+
+				}
+
+			}
+
+		}
+
+		private void GridSplit(IMyCubeGrid a, IMyCubeGrid b) {
+
+			a.OnGridSplit -= GridSplit;
+			b.OnGridSplit -= GridSplit;
+			_currentGrids.Clear();
+
+			if (RemoteControl == null || RemoteControl.MarkedForClose)
+				return;
+
+			RemoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplit;
+
+			_currentGrids = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
 
 		}
 
@@ -567,8 +653,8 @@ namespace RivalAI.Behavior {
 
 				} catch (Exception e) {
 
-					Logger.MsgDebug("Exception Occured While Serializing Settings", DebugTypeEnum.Dev);
-					Logger.MsgDebug(e.ToString(), DebugTypeEnum.Dev);
+					Logger.MsgDebug("Exception Occured While Serializing Settings", DebugTypeEnum.General);
+					Logger.MsgDebug(e.ToString(), DebugTypeEnum.General);
 
 				}
 
@@ -582,7 +668,7 @@ namespace RivalAI.Behavior {
 					if (this.RemoteControl.Storage == null) {
 
 						this.RemoteControl.Storage = new MyModStorageComponent();
-						Logger.MsgDebug("Creating Mod Storage on Remote Control", DebugTypeEnum.Dev);
+						Logger.MsgDebug("Creating Mod Storage on Remote Control", DebugTypeEnum.General);
 
 					}
 
@@ -596,7 +682,7 @@ namespace RivalAI.Behavior {
 
 					}
 
-					Logger.MsgDebug("Saved AI Storage Settings To Remote Control", DebugTypeEnum.Dev);
+					Logger.MsgDebug("Saved AI Storage Settings To Remote Control", DebugTypeEnum.General);
 					_readyToSaveSettings = false;
 
 				});
@@ -607,6 +693,15 @@ namespace RivalAI.Behavior {
 
 		public void RemoteIsWorking(IMyCubeBlock cubeBlock) {
 
+			if (this.RemoteControl == null || this.RemoteControl.MarkedForClose) {
+
+				this.IsWorking = false;
+
+				if(Trigger != null)
+					Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
+
+			}
+
 			if(this.RemoteControl.IsWorking && this.RemoteControl.IsFunctional) {
 
 				this.HasBeenWorking = true;
@@ -616,13 +711,16 @@ namespace RivalAI.Behavior {
 			}
 
 			this.IsWorking = false;
-			Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
+
+			if (Trigger != null)
+				Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
 
 		}
 
 		public void RemoteIsClosing(IMyEntity entity) {
 
-			Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
+			if (Trigger != null)
+				Trigger.ProcessCompromisedTriggerWatcher(RemoteCompromiseCheck());
 
 		}
 

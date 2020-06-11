@@ -1,12 +1,15 @@
-﻿using RivalAI.Behavior.Subsystems.Weapons;
+﻿using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.Weapons;
 using RivalAI.Helpers;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -30,6 +33,7 @@ namespace RivalAI.Behavior.Subsystems {
 		RotateToWaypoint = 1 << 0,
 		ThrustForward = 1 << 1,
 		Strafe = 1 << 2,
+		HoverToWaypoint = 1 << 3
 
 	}
 
@@ -41,7 +45,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 
 	}
-	public class NewAutoPilotSystem {
+	public partial class AutoPilotSystem {
 
 		//General Config
 		public float IdealMaxSpeed;
@@ -94,9 +98,9 @@ namespace RivalAI.Behavior.Subsystems {
 		//New AutoPilot
 		public NewAutoPilotMode CurrentMode;
 		public NewCollisionSystem Collision;
-		public RotationSystem Rotation;
+		//public RotationSystem Rotation;
 		public NewTargetingSystem Targeting;
-		public ThrustSystem Thrust;
+		//public ThrustSystem Thrust;
 		public TriggerSystem Trigger;
 		public WeaponSystem Weapons;
 
@@ -141,6 +145,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		//Autopilot Correction
 		private DateTime _lastAutoPilotCorrection;
+		private bool _needsThrustersRetoggled;
 
 		public double DistanceToInitialWaypoint;
 		public double DistanceToCurrentWaypoint;
@@ -167,8 +172,9 @@ namespace RivalAI.Behavior.Subsystems {
 		//Debug
 		public List<BoundingBoxD> DebugVoxelHits = new List<BoundingBoxD>();
 
-		public NewAutoPilotSystem(IMyRemoteControl remoteControl, IBehavior behavior) {
+		public AutoPilotSystem(IMyRemoteControl remoteControl, IBehavior behavior) {
 
+			//Configurable - AutoPilot
 			IdealMaxSpeed = 100;
 			MaxSpeedTolerance = 15;
 			UseVanillaCollisionAvoidance = false;
@@ -202,6 +208,28 @@ namespace RivalAI.Behavior.Subsystems {
 			UseProjectileLeadPrediction = true;
 			UseCollisionLeadPrediction = false;
 
+			//Configurable - Rotation
+			RotationMultiplier = 1;
+
+			//Configurable - Thrust
+			AngleAllowedForForwardThrust = 35;
+			MaxVelocityAngleForSpeedControl = 5;
+			AllowStrafing = false;
+			StrafeMinDurationMs = 750;
+			StrafeMaxDurationMs = 1500;
+			StrafeMinCooldownMs = 1000;
+			StrafeMaxCooldownMs = 3000;
+			StrafeSpeedCutOff = 100;
+			StrafeDistanceCutOff = 100;
+
+			StrafeMinimumTargetDistance = 250;
+			StrafeMinimumSafeAngleFromTarget = 25;
+
+			AllowedStrafingDirectionsSpace = new Vector3I(1, 1, 1);
+			AllowedStrafingDirectionsPlanet = new Vector3I(1, 1, 1);
+
+
+			//Internal - AutoPilot
 			_currentAutoPilot = AutoPilotType.None;
 			_autopilotOverride = false;
 			_strafeOverride = false;
@@ -240,6 +268,7 @@ namespace RivalAI.Behavior.Subsystems {
 			_offsetRelativeEntity = null;
 
 			_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
+			_needsThrustersRetoggled = false;
 
 			_requiresClimbToIdealAltitude = false;
 			_requiresNavigationAroundCollision = false;
@@ -250,15 +279,97 @@ namespace RivalAI.Behavior.Subsystems {
 			_surfaceDistance = 0;
 			_airDensity = 0;
 
+			//Internal - Rotation
+			RotationEnabled = false;
+			ControlGyro = null;
+			ReferenceBlock = null;
+			BrokenGyros = new List<IMyGyro>();
+
+			RotationDirection = Direction.Forward;
+
+			ControlGyroNotFound = false;
+			NewGyroFound = false;
+
+			RotationTarget = Vector3D.Zero;
+			UpDirection = Vector3D.Zero;
+
+			ControlYaw = true;
+			ControlPitch = true;
+			ControlRoll = true;
+
+			ControlGyroStrength = 1;
+
+			UpdateMassAndForceBeforeRotation = true;
+			GridMass = 0;
+			GridGyroForce = 0;
+			GyroMaxPower = 100;
+
+			CurrentAngleToTarget = 0;
+			CurrentYawDifference = 0;
+			CurrentPitchDifference = 0;
+			CurrentRollDifference = 0;
+			DesiredAngleToTarget = 0.5;
+
+			BarrelRollEnabled = false;
+			BarrellRollMagnitudePerEvent = 1;
+
+			RotationToApply = Vector3.Zero;
+			ControlGyroRotationTranslation = new Dictionary<string, Vector3D>();
+
+			//Internal - Thrust
+			Mode = ThrustMode.None;
+			ThrustProfiles = new List<ThrustProfile>();
+			Rnd = new Random();
+
+			CurrentAllowedThrust = Vector3I.Zero;
+			CurrentRequiredThrust = Vector3I.Zero;
+
+			if (StrafeMinDurationMs >= StrafeMaxDurationMs) {
+
+				StrafeMaxDurationMs = StrafeMinDurationMs + 1;
+
+			}
+
+			if (StrafeMinCooldownMs >= StrafeMaxCooldownMs) {
+
+				StrafeMaxCooldownMs = StrafeMinCooldownMs + 1;
+
+			}
+
+			_referenceOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
+
+			Strafing = false;
+			CurrentStrafeDirections = Vector3I.Zero;
+			CurrentAllowedStrafeDirections = Vector3I.Zero;
+			ThisStrafeDuration = Rnd.Next(StrafeMinDurationMs, StrafeMaxDurationMs);
+			ThisStrafeCooldown = Rnd.Next(StrafeMinCooldownMs, StrafeMaxCooldownMs);
+			LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
+			LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
+
+			_collisionStrafeAdjusted = false;
+			_minAngleDistanceStrafeAdjusted = false;
+			_collisionStrafeDirection = Vector3D.Zero;
+
+			//Post Constructor Setup
 			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
 
 				_remoteControl = remoteControl;
 				_behavior = behavior;
 				Collision = new NewCollisionSystem(_remoteControl, this);
-				Rotation = new RotationSystem(_remoteControl);
 				Targeting = new NewTargetingSystem(_remoteControl);
-				Thrust = new ThrustSystem(_remoteControl);
 				Weapons = new WeaponSystem(_remoteControl, _behavior);
+
+				var blockList = new List<IMySlimBlock>();
+				_remoteControl.SlimBlock.CubeGrid.GetBlocks(blockList);
+
+				foreach (var block in blockList.Where(item => item.FatBlock as IMyThrust != null)) {
+
+					this.ThrustProfiles.Add(new ThrustProfile(block.FatBlock as IMyThrust, _remoteControl, _behavior));
+
+				}
+
+				this.CubeGrid = remoteControl.SlimBlock.CubeGrid;
+				UpdateMassAndGyroForce();
 
 			}
 
@@ -266,9 +377,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void SetupReferences(IBehavior behavior, StoredSettings settings, TriggerSystem trigger) {
 
-			
 			Targeting.SetupReferences(settings);
-			Thrust.SetupReferences(this);
 			Trigger = trigger;
 
 		}
@@ -477,77 +586,77 @@ namespace RivalAI.Behavior.Subsystems {
 					//RotationMultiplier
 					if (tag.Contains("[RotationMultiplier:") == true) {
 
-						this.Rotation.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.Rotation.RotationMultiplier);
+						this.RotationMultiplier = TagHelper.TagFloatCheck(tag, this.RotationMultiplier);
 
 					}
 
 					//AngleAllowedForForwardThrust
 					if (tag.Contains("[AngleAllowedForForwardThrust:") == true) {
 
-						this.Thrust.AngleAllowedForForwardThrust = TagHelper.TagDoubleCheck(tag, this.Thrust.AngleAllowedForForwardThrust);
+						this.AngleAllowedForForwardThrust = TagHelper.TagDoubleCheck(tag, this.AngleAllowedForForwardThrust);
 
 					}
 
 					//AllowStrafing
 					if (tag.Contains("[AllowStrafing:") == true) {
 
-						this.Thrust.AllowStrafing = TagHelper.TagBoolCheck(tag);
+						this.AllowStrafing = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//StrafeMinDurationMs
 					if (tag.Contains("[StrafeMinDurationMs:") == true) {
 
-						this.Thrust.StrafeMinDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinDurationMs);
+						this.StrafeMinDurationMs = TagHelper.TagIntCheck(tag, this.StrafeMinDurationMs);
 
 					}
 
 					//StrafeMaxDurationMs
 					if (tag.Contains("[StrafeMaxDurationMs:") == true) {
 
-						this.Thrust.StrafeMaxDurationMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxDurationMs);
+						this.StrafeMaxDurationMs = TagHelper.TagIntCheck(tag, this.StrafeMaxDurationMs);
 
 					}
 
 					//StrafeMinCooldownMs
 					if (tag.Contains("[StrafeMinCooldownMs:") == true) {
 
-						this.Thrust.StrafeMinCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMinCooldownMs);
+						this.StrafeMinCooldownMs = TagHelper.TagIntCheck(tag, this.StrafeMinCooldownMs);
 
 					}
 
 					//StrafeMaxCooldownMs
 					if (tag.Contains("[StrafeMaxCooldownMs:") == true) {
 
-						this.Thrust.StrafeMaxCooldownMs = TagHelper.TagIntCheck(tag, this.Thrust.StrafeMaxCooldownMs);
+						this.StrafeMaxCooldownMs = TagHelper.TagIntCheck(tag, this.StrafeMaxCooldownMs);
 
 					}
 
 					//StrafeSpeedCutOff
 					if (tag.Contains("[StrafeSpeedCutOff:") == true) {
 
-						this.Thrust.StrafeSpeedCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeSpeedCutOff);
+						this.StrafeSpeedCutOff = TagHelper.TagDoubleCheck(tag, this.StrafeSpeedCutOff);
 
 					}
 
 					//StrafeDistanceCutOff
 					if (tag.Contains("[StrafeDistanceCutOff:") == true) {
 
-						this.Thrust.StrafeDistanceCutOff = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeDistanceCutOff);
+						this.StrafeDistanceCutOff = TagHelper.TagDoubleCheck(tag, this.StrafeDistanceCutOff);
 
 					}
 
 					//StrafeMinimumTargetDistance
 					if (tag.Contains("[StrafeMinimumTargetDistance:") == true) {
 
-						this.Thrust.StrafeMinimumTargetDistance = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeMinimumTargetDistance);
+						this.StrafeMinimumTargetDistance = TagHelper.TagDoubleCheck(tag, this.StrafeMinimumTargetDistance);
 
 					}
 
 					//StrafeMinimumSafeAngleFromTarget
 					if (tag.Contains("[StrafeMinimumSafeAngleFromTarget:") == true) {
 
-						this.Thrust.StrafeMinimumSafeAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.Thrust.StrafeMinimumSafeAngleFromTarget);
+						this.StrafeMinimumSafeAngleFromTarget = TagHelper.TagDoubleCheck(tag, this.StrafeMinimumSafeAngleFromTarget);
 
 					}
 
@@ -660,8 +769,10 @@ namespace RivalAI.Behavior.Subsystems {
 			if (_currentAutoPilot == AutoPilotType.RivalAI)
 				UpdateNewAutoPilot();
 
+			/*
 			if (_currentWaypoint == Vector3D.Zero)
 				Logger.MsgDebug("No Current Waypoint", DebugTypeEnum.Dev);
+				*/
 
 			//StartWeaponCalculations();
 
@@ -688,15 +799,39 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (timeSpan.TotalSeconds > 5) {
 
-					if (Collision.Velocity.Length() < this.MaxSpeedWhenStuck && VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(Collision.Velocity)) <= this.MaxUpAngleWhenStuck) {
+					if (Collision.Velocity.Length() < this.MaxSpeedWhenStuck) {
 
-						Logger.MsgDebug("AutoPilot Stuck, Attempting Fix", DebugTypeEnum.General);
-						_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
-						return;
+						bool yawing = false;
+
+						if (_remoteControl?.SlimBlock?.CubeGrid?.Physics != null) {
+
+							var rotationAxis = Vector3D.Normalize(_remoteControl.SlimBlock.CubeGrid.Physics.AngularVelocity);
+							var myUp = _remoteControl.WorldMatrix.Up;
+							var myDown = _remoteControl.WorldMatrix.Down;
+							yawing = VectorHelper.GetAngleBetweenDirections(myUp, rotationAxis) <= 1 || VectorHelper.GetAngleBetweenDirections(myDown, rotationAxis) <= 1;
+
+						}
+
+						if (VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(Collision.Velocity)) <= this.MaxUpAngleWhenStuck || yawing) {
+
+							Logger.MsgDebug("AutoPilot Stuck, Attempting Fix", DebugTypeEnum.General);
+							_lastAutoPilotCorrection = MyAPIGateway.Session.GameDateTime;
+							_needsThrustersRetoggled = true;
+							_remoteControl.ControlThrusters = false;
+							return;
+
+						}
 
 					}
 
 				}
+
+			}
+
+			if (_needsThrustersRetoggled) {
+
+				_needsThrustersRetoggled = false;
+				_remoteControl.ControlThrusters = true;
 
 			}
 
@@ -711,20 +846,27 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
 
-				Rotation.StartCalculation(_currentWaypoint, _remoteControl, _upDirection);
+				StartRotationCalculation(_currentWaypoint, _remoteControl, _upDirection);
 
 			}
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
 
 				//Logger.MsgDebug("Process Strafe", DebugTypeEnum.Dev);
-				Thrust.ProcessStrafing();
+				ProcessThrustStrafing();
 
 			}
 
 			if (CurrentMode.HasFlag(NewAutoPilotMode.ThrustForward)) {
 
-				Thrust.ProcessForwardThrust(AngleToCurrentWaypoint);
+				ProcessForwardThrust(AngleToCurrentWaypoint);
+
+			}
+
+			if (CurrentMode.HasFlag(NewAutoPilotMode.HoverToWaypoint)) {
+
+				ProcessForwardThrust(AngleToCurrentWaypoint);
+				//Thrust.ProcessUpwardThrust();
 
 			}
 
@@ -750,8 +892,8 @@ namespace RivalAI.Behavior.Subsystems {
 			_remoteControl.SetAutoPilotEnabled(false);
 			_requiresNavigationAroundCollision = false;
 			_requiresClimbToIdealAltitude = false;
-			Rotation.StopAllRotation();
-			Thrust.StopAllThrust();
+			StopAllRotation();
+			StopAllThrust();
 
 		}
 
@@ -886,7 +1028,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if (_initialWaypoint == _pendingWaypoint && Targeting.Target.CurrentSpeed() > 0.1) {
+			if (Targeting.Target != null && _initialWaypoint == _pendingWaypoint && Targeting.Target.CurrentSpeed() > 0.1) {
 
 				bool gotLead = false;
 
@@ -909,7 +1051,7 @@ namespace RivalAI.Behavior.Subsystems {
 					double ammoInitVel;
 					double ammoVel;
 
-					Weapons.GetAmmoSpeedDetails(Rotation.RotationDirection, out ammoVel, out ammoInitVel, out ammoAccel);
+					Weapons.GetAmmoSpeedDetails(RotationDirection, out ammoVel, out ammoInitVel, out ammoAccel);
 
 					if (ammoVel > 0) {
 

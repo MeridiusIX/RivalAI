@@ -37,7 +37,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public bool UseChatBroadcast;
 
 		[ProtoMember(2)]
-		public ChatProfile ChatData;
+		public ChatProfile ChatDataDefunct;
 
 		[ProtoMember(3)]
 		public bool BarrelRoll;
@@ -55,7 +55,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public bool SpawnEncounter;
 		
 		[ProtoMember(8)]
-		public SpawnProfile Spawner;
+		public SpawnProfile SpawnerDefunct;
 		
 		[ProtoMember(9)]
 		public bool SelfDestruct;
@@ -333,10 +333,95 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(100)]
 		public int ExplosionRange;
 
+		[ProtoMember(101)]
+		public CheckEnum GridEditable;
+
+		[ProtoMember(102)]
+		public CheckEnum SubGridsEditable;
+
+		[ProtoMember(103)]
+		public CheckEnum GridDestructible;
+
+		[ProtoMember(104)]
+		public CheckEnum SubGridsDestructible;
+
+		[ProtoMember(105)]
+		public bool RecolorGrid;
+
+		[ProtoMember(106)]
+		public bool RecolorSubGrids;
+
+		[ProtoMember(107)]
+		public List<Vector3D> OldBlockColors;
+
+		[ProtoMember(108)]
+		public List<Vector3D> NewBlockColors;
+
+		[ProtoMember(109)]
+		public List<string> NewBlockSkins;
+
+		[ProtoMember(110)]
+		public bool ExplosionIgnoresVoxels;
+
+		[ProtoMember(111)]
+		public bool ChangeBlockOwnership;
+
+		[ProtoMember(112)]
+		public List<string> OwnershipBlockNames;
+
+		[ProtoMember(113)]
+		public List<string> OwnershipBlockFactions;
+
+		[ProtoMember(114)]
+		public bool ChangeBlockDamageMultipliers;
+
+		[ProtoMember(115)]
+		public List<string> DamageMultiplierBlockNames;
+
+		[ProtoMember(116)]
+		public List<int> DamageMultiplierValues;
+
+		[ProtoMember(117)]
+		public int KnownPlayerAreaMinThreatForAvoidingAbandonment;
+
+		[ProtoMember(118)]
+		public bool RazeBlocksWithNames;
+
+		[ProtoMember(119)]
+		public List<string> RazeBlocksNames;
+
+		[ProtoMember(120)]
+		public bool ManuallyActivateTrigger;
+
+		[ProtoMember(121)]
+		public List<string> ManuallyActivatedTriggerNames;
+
+		[ProtoMember(122)]
+		public bool SendCommandWithoutAntenna;
+
+		[ProtoMember(123)]
+		public double SendCommandWithoutAntennaRadius;
+
+		[ProtoMember(124)]
+		public bool SwitchToDamagerTarget;
+
+		[ProtoMember(125)]
+		public List<ChatProfile> ChatData;
+
+		[ProtoMember(126)]
+		public List<SpawnProfile> Spawner;
+
+		[ProtoMember(127)]
+		public bool RemoveKnownPlayerArea;
+
+		[ProtoMember(128)]
+		public bool RemoveAllKnownPlayerAreas;
+
 		public ActionProfile(){
 
 			UseChatBroadcast = false;
-			ChatData = new ChatProfile();
+			ChatData = new List<ChatProfile>();
+			ChatDataDefunct = new ChatProfile();
 
 			BarrelRoll = false;
 			Strafe = false;
@@ -345,7 +430,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			NewAutopilotSpeed = 0;
 			
 			SpawnEncounter = false;
-			Spawner = new SpawnProfile();
+			Spawner = new List<SpawnProfile>();
+			SpawnerDefunct = new SpawnProfile();
 
 			SelfDestruct = false;
 			StaggerWarheadDetonation = false;
@@ -459,6 +545,42 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ExplosionOffsetFromRemote = Vector3D.Zero;
 			ExplosionDamage = 1;
 			ExplosionRange = 1;
+			ExplosionIgnoresVoxels = false;
+
+			GridEditable = CheckEnum.Ignore;
+			SubGridsEditable = CheckEnum.Ignore;
+			GridDestructible = CheckEnum.Ignore;
+			SubGridsDestructible = CheckEnum.Ignore;
+
+			RecolorGrid = false;
+			RecolorSubGrids = false;
+			OldBlockColors = new List<Vector3D>();
+			NewBlockColors = new List<Vector3D>();
+			NewBlockSkins = new List<string>();
+
+			ChangeBlockOwnership = false;
+			OwnershipBlockNames = new List<string>();
+			OwnershipBlockFactions = new List<string>();
+
+			ChangeBlockDamageMultipliers = false;
+			DamageMultiplierBlockNames = new List<string>();
+			DamageMultiplierValues = new List<int>();
+
+			KnownPlayerAreaMinThreatForAvoidingAbandonment = -1;
+
+			RazeBlocksWithNames = false;
+			RazeBlocksNames = new List<string>();
+
+			ManuallyActivateTrigger = false;
+			ManuallyActivatedTriggerNames = new List<string>();
+
+			SendCommandWithoutAntenna = false;
+			SendCommandWithoutAntennaRadius = -1;
+
+			SwitchToDamagerTarget = false;
+
+			RemoveKnownPlayerArea = false;
+			RemoveAllKnownPlayerAreas = false;
 
 			ProfileSubtypeId = "";
 
@@ -497,7 +619,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 									if (profile != null) {
 
-										ChatData = profile;
+										ChatData.Add(profile);
 										gotChat = true;
 
 									} else {
@@ -579,7 +701,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 									if(profile != null) {
 
-										Spawner = profile;
+										Spawner.Add(profile);
 										gotSpawn = true;
 
 									}
@@ -808,9 +930,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						this.KnownPlayerAreaMaxSpawns = TagHelper.TagIntCheck(tag, KnownPlayerAreaMaxSpawns);
 
 					}
-					
+
+					//KnownPlayerAreaMinThreatForAvoidingAbandonment
+					if (tag.Contains("[KnownPlayerAreaMinThreatForAvoidingAbandonment:") == true) {
+
+						this.KnownPlayerAreaMinThreatForAvoidingAbandonment = TagHelper.TagIntCheck(tag, KnownPlayerAreaMinThreatForAvoidingAbandonment);
+
+					}
+
 					//DamageToolAttacker
-					if(tag.Contains("[DamageToolAttacker:") == true) {
+					if (tag.Contains("[DamageToolAttacker:") == true) {
 
 						this.DamageToolAttacker = TagHelper.TagBoolCheck(tag);
 
@@ -1266,6 +1395,211 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ExplosionDamage:") == true) {
 
 						this.ExplosionDamage = TagHelper.TagIntCheck(tag, ExplosionDamage);
+
+					}
+
+					//ExplosionIgnoresVoxels
+					if (tag.Contains("[ExplosionIgnoresVoxels:") == true) {
+
+						this.ExplosionIgnoresVoxels = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//GridEditable
+					if (tag.Contains("[GridEditable:") == true) {
+
+						this.GridEditable = TagHelper.TagCheckEnumCheck(tag);
+
+					}
+
+					//SubGridsEditable
+					if (tag.Contains("[SubGridsEditable:") == true) {
+
+						this.SubGridsEditable = TagHelper.TagCheckEnumCheck(tag);
+
+					}
+
+					//GridDestructible
+					if (tag.Contains("[GridDestructible:") == true) {
+
+						this.GridDestructible = TagHelper.TagCheckEnumCheck(tag);
+
+					}
+
+					//SubGridsDestructible
+					if (tag.Contains("[SubGridsDestructible:") == true) {
+
+						this.SubGridsDestructible = TagHelper.TagCheckEnumCheck(tag);
+
+					}
+
+					//RecolorGrid
+					if (tag.Contains("[RecolorGrid:") == true) {
+
+						this.RecolorGrid = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RecolorSubGrids
+					if (tag.Contains("[RecolorSubGrids:") == true) {
+
+						this.RecolorSubGrids = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//OldBlockColors
+					if (tag.Contains("[OldBlockColors:") == true) {
+
+						var tempvalue = TagHelper.TagVector3DCheck(tag);
+						tempvalue = tempvalue == Vector3D.Zero ? new Vector3D(-10, -10, -10) : tempvalue;
+						this.OldBlockColors.Add(tempvalue);
+
+					}
+
+					//NewBlockColors
+					if (tag.Contains("[NewBlockColors:") == true) {
+
+						var tempvalue = TagHelper.TagVector3DCheck(tag);
+						tempvalue = tempvalue == Vector3D.Zero ? new Vector3D(-10,-10,-10) : tempvalue;
+						this.NewBlockColors.Add(tempvalue);
+
+					}
+
+					//NewBlockSkins
+					if (tag.Contains("[NewBlockSkins:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+						tempvalue = string.IsNullOrWhiteSpace(tempvalue) ? "" : tempvalue;
+						this.NewBlockSkins.Add(tempvalue);
+
+					}
+
+					//ChangeBlockOwnership
+					if (tag.Contains("[ChangeBlockOwnership:") == true) {
+
+						this.ChangeBlockOwnership = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//OwnershipBlockNames
+					if (tag.Contains("[OwnershipBlockNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.OwnershipBlockNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//OwnershipBlockFactions
+					if (tag.Contains("[OwnershipBlockFactions:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.OwnershipBlockFactions.Add(tempvalue);
+
+						}
+
+					}
+
+					//ChangeBlockDamageMultipliers
+					if (tag.Contains("[ChangeBlockDamageMultipliers:") == true) {
+
+						this.ChangeBlockDamageMultipliers = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//DamageMultiplierBlockNames
+					if (tag.Contains("[DamageMultiplierBlockNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.DamageMultiplierBlockNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//DamageMultiplierValues
+					if (tag.Contains("[DamageMultiplierValues:") == true) {
+
+						var tempvalue = TagHelper.TagIntCheck(tag, 1);
+						this.DamageMultiplierValues.Add(tempvalue);
+
+					}
+
+					//RazeBlocksWithNames
+					if (tag.Contains("[RazeBlocksWithNames:") == true) {
+
+						this.RazeBlocksWithNames = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RazeBlocksNames
+					if (tag.Contains("[RazeBlocksNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.DamageMultiplierBlockNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//ManuallyActivateTrigger
+					if (tag.Contains("[ManuallyActivateTrigger:") == true) {
+
+						this.ManuallyActivateTrigger = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ManuallyActivatedTriggerNames
+					if (tag.Contains("[ManuallyActivatedTriggerNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							this.ManuallyActivatedTriggerNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//SendCommandWithoutAntenna
+					if (tag.Contains("[SendCommandWithoutAntenna:") == true) {
+
+						this.SendCommandWithoutAntenna = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//SendCommandWithoutAntennaRadius
+					if (tag.Contains("[SendCommandWithoutAntennaRadius:") == true) {
+
+						this.SendCommandWithoutAntennaRadius = TagHelper.TagDoubleCheck(tag, this.SendCommandWithoutAntennaRadius);
+
+					}
+
+					//RemoveKnownPlayerArea
+					if (tag.Contains("[RemoveKnownPlayerArea:") == true) {
+
+						this.RemoveKnownPlayerArea = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RemoveAllKnownPlayerAreas
+					if (tag.Contains("[RemoveAllKnownPlayerAreas:") == true) {
+
+						this.RemoveAllKnownPlayerAreas = TagHelper.TagBoolCheck(tag);
 
 					}
 

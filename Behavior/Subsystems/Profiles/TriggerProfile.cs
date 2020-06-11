@@ -58,7 +58,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		public int MaxActions;
 
 		[ProtoMember(9)]
-		public ActionProfile Actions;
+		public ActionProfile ActionsDefunct;
 
 		[ProtoMember(10)]
 		public List<string> DamageTypes;
@@ -123,6 +123,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(30)]
 		public List<string> ExcludedDamageTypes;
 
+		[ProtoMember(31)]
+		public List<ActionProfile> Actions;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -139,7 +142,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			MaxCooldownMs = 1;
 			StartsReady = false;
 			MaxActions = -1;
-			Actions = new ActionProfile();
+			Actions = new List<ActionProfile>();
 			DamageTypes = new List<string>();
 			Conditions = new ConditionProfile();
 
@@ -248,16 +251,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		
 			this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
 
-			if (this.Actions?.Spawner != null) {
+			foreach (var actions in this.Actions) {
 
-				this.Actions.Spawner.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+				if (actions?.SpawnerDefunct != null) {
 
-			}
-				
+					actions.SpawnerDefunct.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
 
-			if (this.Actions?.ChatData != null) {
+				}
 
-				this.Actions.ChatData.LastChatTime = MyAPIGateway.Session.GameDateTime;
+
+				if (actions?.ChatDataDefunct != null) {
+
+					actions.ChatDataDefunct.LastChatTime = MyAPIGateway.Session.GameDateTime;
+
+				}
 
 			}
 
@@ -352,7 +359,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 									if(profile != null) {
 
-										Actions = profile;
+										Actions.Add(profile);
 										gotAction = true;
 
 									}

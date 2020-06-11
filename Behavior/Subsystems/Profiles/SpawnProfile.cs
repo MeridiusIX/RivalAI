@@ -96,6 +96,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(21)]
 		public bool ForceSameFactionOwnership;
 
+		[ProtoMember(22)]
+		public SpawnTypeEnum SpawningType;
+
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
 
@@ -131,6 +134,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ProfileSubtypeId = "";
 
 			ForceSameFactionOwnership = false;
+
+			SpawningType = SpawnTypeEnum.CustomSpawn;
 
 			CurrentPositionMatrix = MatrixD.Identity;
 			CurrentFactionTag = "";
@@ -318,6 +323,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ForceSameFactionOwnership:") == true) {
 
 						ForceSameFactionOwnership = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//SpawningType
+					if (tag.Contains("[SpawningType:") == true) {
+
+						SpawningType = TagHelper.TagSpawnTypeEnumCheck(tag);
 
 					}
 

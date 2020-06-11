@@ -493,6 +493,25 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static SpawnTypeEnum TagSpawnTypeEnumCheck(string tag) {
+
+			SpawnTypeEnum result = SpawnTypeEnum.CustomSpawn;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (SpawnTypeEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return SpawnTypeEnum.CustomSpawn;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
 		public static TargetSortEnum TagTargetDistanceEnumCheck(string tag) {
 
 			TargetSortEnum result = TargetSortEnum.Random;

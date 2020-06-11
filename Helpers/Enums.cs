@@ -24,6 +24,9 @@ namespace RivalAI.Helpers {
         ApproachTarget,
         ApproachWaypoint,
         BarrelRoll,
+        CustomModeA,
+        CustomModeB,
+        CustomModeC,
         EngageTarget,
         EvadeCollision,
         Idle,
@@ -109,7 +112,8 @@ namespace RivalAI.Helpers {
         Player,
         Entity,
         Grid,
-        Block
+        Block,
+        Override
 
     }
 
@@ -119,6 +123,17 @@ namespace RivalAI.Helpers {
         No,
         Yes,
 
+    }
+
+    public enum SpawnTypeEnum {
+    
+        CustomSpawn,
+        SpaceCargoShip,
+        RandomEncounter,
+        PlanetaryCargoShip,
+        PlanetaryInstallation,
+        BossEncounter
+    
     }
 
     public enum TargetSortEnum {
@@ -138,8 +153,10 @@ namespace RivalAI.Helpers {
         Broadcasting,
         Faction,
         Gravity,
+        Name,
         OutsideOfSafezone,
         Owner,
+        PlayerControlled,
         Powered,
         Relation,
         Shielded,

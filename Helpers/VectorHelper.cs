@@ -14,6 +14,38 @@ namespace RivalAI.Helpers {
 
 		public static Random Rnd = new Random();
 
+		public static Vector3D GetRandomDespawnCoords(Vector3D coords, double distance = 8000, double altitude = 1500) {
+
+			Vector3D result = Vector3D.Zero;
+
+			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+			var planetEntity = planet as IMyEntity;
+			var gravityProvider = planetEntity?.Components?.Get<MyGravityProviderComponent>();
+
+			if (gravityProvider != null && gravityProvider.IsPositionInRange(coords)) {
+
+				var up = Vector3D.Normalize(coords - planetEntity.GetPosition());
+				Vector3D randDirection = MyUtils.GetRandomPerpendicularVector(up);
+				var surfaceCoords = planet.GetClosestSurfacePointGlobal(randDirection * distance + coords);
+				result = Vector3D.Normalize(surfaceCoords - planetEntity.GetPosition()) * altitude + surfaceCoords;
+
+			} else if (planet != null) {
+
+				var up = Vector3D.Normalize(coords - planetEntity.GetPosition());
+				Vector3D randDirection = MyUtils.GetRandomPerpendicularVector(up);
+				result = randDirection * distance + coords;
+
+			} else {
+
+				Vector3D randDirection = Vector3D.Normalize(MyUtils.GetRandomVector3D());
+				return randDirection * distance + coords;
+
+			}
+
+			return result;
+		
+		}
+
 		public static Vector3D GetRandomDirectionAtAngle(Vector3D direction, int minAngle, int maxAngle) {
 
 			double oldAzimuth = 0;

@@ -288,6 +288,15 @@ namespace RivalAI.Entities {
 
 		}
 
+		public bool PlayerControlled() {
+
+			if (!ActiveEntity())
+				return false;
+
+			return true;
+
+		}
+
 		public Vector2 PowerOutput() {
 
 			if (IsClosed())

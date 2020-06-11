@@ -12,9 +12,9 @@ namespace RivalAI.Entities {
 		public MySafeZone SafeZone;
 
 		public SafeZoneEntity(IMyEntity entity) : base(entity) {
-		
-			
-		
+
+			SafeZone = entity as MySafeZone;
+
 		}
 
 		public bool InZone(Vector3D coords) {

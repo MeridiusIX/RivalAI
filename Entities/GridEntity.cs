@@ -30,6 +30,7 @@ namespace RivalAI.Entities {
 		public List<BlockEntity> NanoBots;
 		public List<BlockEntity> Production;
 		public List<BlockEntity> Power;
+		public List<BlockEntity> RivalAi;
 		public List<BlockEntity> Shields;
 		public List<BlockEntity> Thrusters;
 		public List<BlockEntity> Tools;
@@ -59,6 +60,7 @@ namespace RivalAI.Entities {
 			NanoBots = new List<BlockEntity>();
 			Production = new List<BlockEntity>();
 			Power = new List<BlockEntity>();
+			RivalAi = new List<BlockEntity>();
 			Shields = new List<BlockEntity>();
 			Thrusters = new List<BlockEntity>();
 			Tools = new List<BlockEntity>();
@@ -76,6 +78,7 @@ namespace RivalAI.Entities {
 			BlockListReference.Add(BlockTypeEnum.NanoBots, NanoBots);
 			BlockListReference.Add(BlockTypeEnum.Production, Production);
 			BlockListReference.Add(BlockTypeEnum.Power, Power);
+			BlockListReference.Add(BlockTypeEnum.RivalAi, RivalAi);
 			BlockListReference.Add(BlockTypeEnum.Shields, Shields);
 			BlockListReference.Add(BlockTypeEnum.Thrusters, Thrusters);
 			BlockListReference.Add(BlockTypeEnum.Tools, Tools);
@@ -230,6 +233,13 @@ namespace RivalAI.Entities {
 
 			}
 
+			//RivalAI
+			if (EntityWatcher.RivalAiBlockIds.Contains(block.BlockDefinition.Id)) {
+
+				assignedBlock = AddBlock(terminalBlock, RivalAi);
+
+			}
+
 			//Shields
 			if (EntityWatcher.ShieldBlockIds.Contains(block.BlockDefinition.Id)) {
 
@@ -295,6 +305,9 @@ namespace RivalAI.Entities {
 
 				foreach (var block in AllTerminalBlocks) {
 
+					if (!block.ActiveEntity())
+						continue;
+
 					targetList.Add(block);
 
 				}
@@ -309,6 +322,9 @@ namespace RivalAI.Entities {
 					continue;
 
 				foreach (var block in BlockListReference[blockType]) {
+
+					if (!block.ActiveEntity())
+						continue;
 
 					targetList.Add(block);
 
@@ -518,6 +534,22 @@ namespace RivalAI.Entities {
 			var owners = GetOwners(onlyGetCurrentEntity, includeMinorityOwners);
 			return EntityEvaluator.GetOwnersFromList(owners);
 		
+		}
+
+		public bool PlayerControlled() {
+
+			foreach (var grid in LinkedGrids) {
+
+				if (!grid.ActiveEntity())
+					continue;
+
+				if (EntityEvaluator.IsPlayerControlled(grid))
+					return true;
+
+			}
+
+			return false;
+
 		}
 
 		public Vector2 PowerOutput() {

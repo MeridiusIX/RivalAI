@@ -45,8 +45,6 @@ namespace RivalAI.Behavior {
 		public DateTime HorseflyWaypointWaitTime;
 		public DateTime HorseflyWaypointAbandonTime;
 
-		private bool _previouslyAvoidingCollision = false;
-
 		public Horsefly() {
 
 			HorseflyWaypointWaitTimeTrigger = 5;
@@ -119,6 +117,7 @@ namespace RivalAI.Behavior {
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					BehaviorTriggerA = true;
 
 				} else if (timeSpan.TotalSeconds >= this.HorseflyWaypointAbandonTimeTrigger) {
 
@@ -147,6 +146,7 @@ namespace RivalAI.Behavior {
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
 					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
 					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					BehaviorTriggerB = true;
 
 				}
 
@@ -228,33 +228,7 @@ namespace RivalAI.Behavior {
 			//Get Settings From Custom Data
 			InitCoreTags();
 			InitTags();
-
-			//Behavior Specific Default Enums (If None is Not Acceptable)
-			if (string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.Data.ProfileSubtypeId)) {
-
-				byte[] byteData = { };
-
-				if (TagHelper.TargetObjectTemplates.TryGetValue("RivalAI-GenericTargetProfile-EnemyPlayer", out byteData) == true) {
-
-					try {
-
-						var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
-
-						if (profile != null) {
-
-							NewAutoPilot.Targeting.Data = profile;
-
-						}
-
-					} catch (Exception) {
-
-
-
-					}
-
-				}
-
-			}
+			SetDefaultTargeting();
 
 			SetupCompleted = true;
 

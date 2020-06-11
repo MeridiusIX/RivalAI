@@ -12,6 +12,7 @@ namespace RivalAI.Entities {
 	public static class EntityWatcher {
 
 		public static List<MyDefinitionId> NanobotBlockIds = new List<MyDefinitionId>();
+		public static List<MyDefinitionId> RivalAiBlockIds = new List<MyDefinitionId>();
 		public static List<MyDefinitionId> ShieldBlockIds = new List<MyDefinitionId>();
 
 		public static List<PlanetEntity> Planets = new List<PlanetEntity>();
@@ -52,6 +53,19 @@ namespace RivalAI.Entities {
 			ShieldBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "EmitterSA"));
 			ShieldBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "NPCEmitterLB"));
 			ShieldBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_UpgradeModule), "NPCEmitterSB"));
+
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "RivalAIRemoteControlSmall"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "RivalAIRemoteControlLarge"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_Dropship_Guild_RC"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_TIE_Fighter_RC"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_SpeederBike_FakePilot"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_ProbeDroid_Top_II"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_DroidCarrier_DroidBrain"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_DroidCarrier_DroidBrain_Aggressor"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_NewRepublic_EWing_RC"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_Imperial_RC_Largegrid"));
+			RivalAiBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_RemoteControl), "K_TIE_Drone_Core"));
+
 			NanobotBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_ShipWelder), "SELtdSmallNanobotBuildAndRepairSystem"));
 			NanobotBlockIds.Add(new MyDefinitionId(typeof(MyObjectBuilder_ShipWelder), "SELtdLargeNanobotBuildAndRepairSystem"));
 

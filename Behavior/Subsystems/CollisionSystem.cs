@@ -212,7 +212,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 			}
 
-			Logger.MsgDebug("Potential Evasion Collision Check", DebugTypeEnum.Dev);
+			//Logger.MsgDebug("Potential Evasion Collision Check", DebugTypeEnum.Dev);
 
 			//this.EvasionResult = TargetHelper.CheckCollisions((IMyTerminalBlock)this.RemoteControl, direction, distance, 0, this.CollisionTimeTrigger, this.UseVoxelDetection, this.UseGridDetection, this.UseSafeZoneDetection, this.UseDefenseShieldDetection, this.UsePlayerDetection);
 
@@ -226,7 +226,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 			}
 
-			Logger.MsgDebug("Velocity Collision Check", DebugTypeEnum.Dev);
+			//Logger.MsgDebug("Velocity Collision Check", DebugTypeEnum.Dev);
 
 			//Stress Test This Monday
 			List<IHitInfo> hitInfo = new List<IHitInfo>();

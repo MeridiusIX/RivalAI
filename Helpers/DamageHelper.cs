@@ -210,6 +210,46 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static void CreateExplosion(Vector3D coords, int radius, int damage, IMyEntity ownerEntity, bool damageIgnoreVoxels) {
+
+			MyExplosionTypeEnum explosionType = MyExplosionTypeEnum.WARHEAD_EXPLOSION_50;
+			if (radius < 2f) {
+				explosionType = MyExplosionTypeEnum.WARHEAD_EXPLOSION_02;
+			} else if (radius < 15f) {
+				explosionType = MyExplosionTypeEnum.WARHEAD_EXPLOSION_15;
+			} else if (radius < 30f) {
+				explosionType = MyExplosionTypeEnum.WARHEAD_EXPLOSION_30;
+			}
+			MyExplosionInfo myExplosionInfo = default(MyExplosionInfo);
+			myExplosionInfo.PlayerDamage = damage;
+			myExplosionInfo.Damage = damage;
+			myExplosionInfo.ExplosionType = explosionType;
+			myExplosionInfo.ExplosionSphere = new BoundingSphereD(coords, radius);
+			myExplosionInfo.LifespanMiliseconds = 700;
+			myExplosionInfo.ParticleScale = 1f;
+			myExplosionInfo.Direction = Vector3.Down;
+			myExplosionInfo.VoxelExplosionCenter = coords;
+			myExplosionInfo.ExplosionFlags = (MyExplosionFlags.CREATE_DEBRIS | MyExplosionFlags.APPLY_FORCE_AND_DAMAGE | MyExplosionFlags.CREATE_DECALS | MyExplosionFlags.CREATE_PARTICLE_EFFECT | MyExplosionFlags.CREATE_SHRAPNELS | MyExplosionFlags.APPLY_DEFORMATION);
+
+			if (!damageIgnoreVoxels)
+				myExplosionInfo.ExplosionFlags |= MyExplosionFlags.AFFECT_VOXELS;
+
+			if (ownerEntity as MyEntity != null) {
+
+				myExplosionInfo.OwnerEntity = ownerEntity as MyEntity;
+				myExplosionInfo.OriginEntity = ownerEntity.EntityId;
+
+			}
+			
+			myExplosionInfo.VoxelCutoutScale = !damageIgnoreVoxels ? 1 : 0;
+			myExplosionInfo.PlaySound = true;
+			myExplosionInfo.ApplyForceAndDamage = true;
+			myExplosionInfo.ObjectsRemoveDelayInMiliseconds = 40;
+
+			MyExplosions.AddExplosion(ref myExplosionInfo);
+
+		}
+
 		public static long GetAttackOwnerId(long attackingEntity) {
 
 			IMyEntity entity = null;

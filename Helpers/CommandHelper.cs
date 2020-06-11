@@ -33,9 +33,42 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Helpers {
 
+    public class Command {
+
+        public string CommandCode;
+
+        public IMyRemoteControl RemoteControl;
+
+        public double Radius;
+
+        public bool IgnoreAntennaRequirement;
+
+        public long TargetEntityId;
+
+        public IMyEntity TargetEntity;
+
+        public float DamageAmount;
+
+        public Vector3D Position;
+
+
+        public Command() {
+
+            CommandCode = "";
+            RemoteControl = null;
+            Radius = 0;
+            IgnoreAntennaRequirement = false;
+            TargetEntityId = 0;
+            TargetEntity = null;
+            Position = Vector3D.Zero;
+
+        }
+        
+    }
+
     public static class CommandHelper {
 
-        public static Action<string, IMyRemoteControl, double, long> CommandTrigger;
+        public static Action<Command> CommandTrigger;
     
     }
     

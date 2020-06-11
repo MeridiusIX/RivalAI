@@ -48,6 +48,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 		internal bool _enabled;
 		internal bool _readyToFire;
 		internal bool _firing;
+		internal DateTime _lastFireTime;
 
 		internal bool _isValid;
 
@@ -89,6 +90,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			_enabled = false;
 			_readyToFire = false;
 			_firing = false;
+			_lastFireTime = MyAPIGateway.Session.GameDateTime;
 
 			_isValid = true;
 

@@ -124,6 +124,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(30)]
 		public string ProfileSubtypeId;
 
+		[ProtoMember(31)]
+		public bool PrioritizePlayerControlled;
+
+		[ProtoMember(32)]
+		public List<string> Names;
+
+		[ProtoMember(33)]
+		public bool UsePartialNameMatching;
+
 		[ProtoIgnore]
 		public bool BuiltUniqueFilterList;
 
@@ -171,6 +180,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			MinTargetValue = 0;
 			MaxTargetValue = 1;
+
+			PrioritizePlayerControlled = false;
+
+			Names = new List<string>();
+			UsePartialNameMatching = false;
 
 			ProfileSubtypeId = "";
 			BuiltUniqueFilterList = false;
@@ -431,6 +445,32 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					}
 
+					//PrioritizePlayerControlled
+					if (tag.Contains("[PrioritizePlayerControlled:") == true) {
+
+						this.PrioritizePlayerControlled = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//Names
+					if (tag.Contains("[Names:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (!string.IsNullOrWhiteSpace(tempValue) && !this.Names.Contains(tempValue)) {
+
+							this.Names.Add(tempValue);
+
+						}
+
+					}
+
+					//UsePartialNameMatching
+					if (tag.Contains("[UsePartialNameMatching:") == true) {
+
+						this.UsePartialNameMatching = TagHelper.TagBoolCheck(tag);
+
+					}
 
 				}
 

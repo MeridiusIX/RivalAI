@@ -40,13 +40,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
         public float CurrentOverride;
 
-        public ThrustProfile(IMyThrust thrust, IMyRemoteControl remoteControl) {
+        public IBehavior Behavior;
+        //private bool _gridSplitCheck;
+        private bool _valid;
+        private bool _working;
 
+        public ThrustProfile(IMyThrust thrust, IMyRemoteControl remoteControl, IBehavior behavior) {
+
+            _valid = true;
             ThrustBlock = thrust;
             CurrentOverride = 0;
             ThrustBlock.ThrustOverridePercentage = 0;
+            Behavior = behavior;
 
-            if(thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Backward) {
+            if (thrust.WorldMatrix.Forward == remoteControl.WorldMatrix.Backward) {
 
                 DirectionVector = new Vector3I(0, 0, 1);
                 _direction = Direction.Forward;
@@ -88,9 +95,58 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             }
 
+            //ThrustBlock.SlimBlock.CubeGrid.OnGridSplit += GridSplit;
+            ThrustBlock.OnClosing += CloseEntity;
+            ThrustBlock.IsWorkingChanged += WorkingChange;
+            WorkingChange(ThrustBlock);
+
         }
 
         public void UpdateThrust(Vector3I allowedUpdates, Vector3I requiredUpdates) {
+
+            //Checks
+
+            if (!_valid)
+                return;
+
+            if (ThrustBlock == null || ThrustBlock.MarkedForClose) {
+
+                Logger.MsgDebug("Removed Thrust - Block Null or Closed", DebugTypeEnum.Thrust);
+                _valid = false;
+                return;
+
+            }
+
+            if (!_working)
+                return;
+
+            /*
+            if (_gridSplitCheck) {
+
+                _gridSplitCheck = false;
+
+                if (Behavior?.CurrentGrids != null && ThrustBlock?.SlimBlock?.CubeGrid != null) {
+
+                    if (!Behavior.CurrentGrids.Contains(ThrustBlock.SlimBlock.CubeGrid)) {
+
+                        Logger.MsgDebug("Removed Thrust - Grid No Longer Attached", DebugTypeEnum.Thrust);
+                        _valid = false;
+                        Unload();
+                        return;
+
+                    }
+
+                } else {
+
+                    Logger.MsgDebug("Removed Thrust - Grid Null", DebugTypeEnum.Thrust);
+                    _valid = false;
+                    Unload();
+                    return;
+
+                }
+
+            }
+            */
 
             //Left/Right
             if(DirectionVector.X != 0) {
@@ -193,6 +249,37 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
             ThrustBlock.ThrustOverridePercentage = thrustOvr;
             CurrentOverride = thrustOvr;
+
+        }
+
+        private void GridSplit(IMyCubeGrid a, IMyCubeGrid b) {
+
+            //_gridSplitCheck = true;
+        
+        }
+
+        private void WorkingChange(IMyCubeBlock cubeBlock) {
+
+            _working = ThrustBlock.IsWorking && ThrustBlock.IsFunctional;
+        
+        }
+
+        private void CloseEntity(IMyEntity entity) {
+
+            Logger.MsgDebug("Removed Thrust - Block Closed", DebugTypeEnum.Thrust);
+            _valid = false;
+            Unload();
+
+        }
+
+        private void Unload() {
+
+            if (ThrustBlock == null)
+                return;
+
+            //ThrustBlock.SlimBlock.CubeGrid.OnGridSplit -= GridSplit;
+            ThrustBlock.OnClosing -= CloseEntity;
+            ThrustBlock.IsWorkingChanged -= WorkingChange;
 
         }
 

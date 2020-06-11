@@ -42,7 +42,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		private IBehavior _behavior;
 
-		private NewAutoPilotSystem _autopilot;
+		private AutoPilotSystem _autopilot;
 		private BroadcastSystem _broadcast;
 		private DespawnSystem _despawn;
 		private ExtrasSystem _extras;
@@ -108,13 +108,13 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (timeDifference.TotalMilliseconds < 500) {
 
-				Logger.MsgDebug("Triggers Not Ready (total ms elapsed: "+ timeDifference.TotalMilliseconds.ToString() + "), Handing Off to Next Action", DebugTypeEnum.Dev);
+				//Logger.MsgDebug("Triggers Not Ready (total ms elapsed: "+ timeDifference.TotalMilliseconds.ToString() + "), Handing Off to Next Action", DebugTypeEnum.Dev);
 				//OnComplete?.Invoke();
 				return;
 			
 			}
 
-			Logger.MsgDebug("Checking Triggers", DebugTypeEnum.Dev);
+			//Logger.MsgDebug("Checking Triggers", DebugTypeEnum.Dev);
 			this.LastTriggerRun = MyAPIGateway.Session.GameDateTime;
 
 			for (int i = 0; i < this.Triggers.Count; i++) {
@@ -356,7 +356,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (!_behavior.IsAIReady())
 				return;
 
-			Logger.MsgDebug("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
+			//Logger.MsgDebug("Damage Trigger Count: " + this.DamageTriggers.Count.ToString(), DebugTypeEnum.Trigger);
 			if (info.Amount <= 0)
 				return;
 
@@ -378,7 +378,7 @@ namespace RivalAI.Behavior.Subsystems {
 						if(trigger.Triggered == true) {
 
 							Logger.MsgDebug("Process Damage Actions", DebugTypeEnum.Trigger);
-							ProcessTrigger(trigger, info.AttackerId, true);
+							ProcessTrigger(trigger, info.AttackerId);
 
 						}
 
@@ -390,33 +390,44 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void ProcessCommandReceiveTriggerWatcher(string commandCode, IMyRemoteControl senderRemote, double radius, long entityId) {
+		public void ProcessCommandReceiveTriggerWatcher(Command command) {
 
 			if (!_behavior.IsAIReady())
 				return;
 
-			if (senderRemote?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
+			if (command.RemoteControl?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
 				return;
-			
-			var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
-			
-			if(antenna == null)
-				return;
-			
-			if(Vector3D.Distance(this.RemoteControl.GetPosition(), senderRemote.GetPosition()) > radius)
-				return;
-			
-			for(int i = 0;i < this.CommandTriggers.Count;i++) {
+
+			var dist = Vector3D.Distance(this.RemoteControl.GetPosition(), command.RemoteControl.GetPosition());
+
+			if (!command.IgnoreAntennaRequirement) {
+
+				var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
+
+				if (antenna == null)
+					return;
+
+				if (dist > command.Radius)
+					return;
+
+			} else {
+
+				if (dist > command.Radius)
+					return;
+
+			}
+
+			for (int i = 0;i < this.CommandTriggers.Count;i++) {
 
 				var trigger = this.CommandTriggers[i];
 
-				if(trigger.UseTrigger == true && commandCode == trigger.CommandReceiveCode) {
+				if(trigger.UseTrigger == true && command.CommandCode == trigger.CommandReceiveCode) {
 
 					trigger.ActivateTrigger();
 
 					if(trigger.Triggered == true) {
 
-						ProcessTrigger(trigger, entityId, true);
+						ProcessTrigger(trigger, 0, command);
 
 					}
 
@@ -453,7 +464,23 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0, bool skipOnComplete = false) {
+		public void ProcessManualTrigger(TriggerProfile trigger) {
+
+			if (trigger.UseTrigger == true) {
+
+				trigger.ActivateTrigger();
+
+				if (trigger.Triggered == true) {
+
+					ProcessTrigger(trigger);
+
+				}
+
+			}
+
+		}
+
+		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0, Command command = null) {
 
 			if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
 				return;
@@ -478,439 +505,611 @@ namespace RivalAI.Behavior.Subsystems {
 			trigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
 			trigger.TriggerCount++;
 
-			Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Performing Eligible Actions", DebugTypeEnum.Action);
+			foreach (var actions in trigger.Actions) {
 
-			//ChatBroadcast
-			if (trigger.Actions.UseChatBroadcast == true) {
+				Logger.MsgDebug(actions.ProfileSubtypeId + ": Performing Eligible Actions", DebugTypeEnum.Action);
 
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Chat Broadcast", DebugTypeEnum.Action);
-				_broadcast.BroadcastRequest(trigger.Actions.ChatData);
+				//ChatBroadcast
+				if (actions.UseChatBroadcast == true) {
 
-			}
+					foreach (var chatData in actions.ChatData) {
 
-			//BarrellRoll - Implement Post Release
-			if(trigger.Actions.BarrelRoll == true) {
-
-				//_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
-
-			}
-
-			//Strafe - Implement Post Release
-			if(trigger.Actions.Strafe == true) {
-
-				//_autopilot.ChangeAutoPilotMode(AutoPilotMode.Strafe);
-
-			}
-
-			//ChangeAutopilotSpeed
-			if(trigger.Actions.ChangeAutopilotSpeed == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + trigger.Actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
-				_autopilot.IdealMaxSpeed = trigger.Actions.NewAutopilotSpeed;
-				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
-
-				foreach (var block in blockList.Where(x => x.FatBlock != null)) {
-
-					var tBlock = block.FatBlock as IMyRemoteControl;
-
-					if (tBlock != null) {
-
-						tBlock.SpeedLimit = trigger.Actions.NewAutopilotSpeed;
+						Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Chat Broadcast", DebugTypeEnum.Action);
+						_broadcast.BroadcastRequest(chatData);
 
 					}
+	
+				}
+
+				//BarrellRoll - Implement Post Release
+				if (actions.BarrelRoll == true) {
+
+					//_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
 
 				}
 
-			}
+				//Strafe - Implement Post Release
+				if (actions.Strafe == true) {
 
-			//SpawnReinforcements
-			if (trigger.Actions.SpawnEncounter == true && trigger.Actions.Spawner.UseSpawn) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Spawn);
-				if (trigger.Actions.Spawner.IsReadyToSpawn()) {
-
-					//Logger.AddMsg("Do Spawn", true);
-					trigger.Actions.Spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
-					trigger.Actions.Spawner.CurrentFactionTag = (trigger.Actions.Spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag)) ? _owner.Faction.Tag : "";
-					SpawnHelper.SpawnRequest(trigger.Actions.Spawner);
+					//_autopilot.ChangeAutoPilotMode(AutoPilotMode.Strafe);
 
 				}
 
-			} else {
+				//ChangeAutopilotSpeed
+				if (actions.ChangeAutopilotSpeed == true) {
 
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
+					_autopilot.IdealMaxSpeed = actions.NewAutopilotSpeed;
+					var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
+					foreach (var block in blockList.Where(x => x.FatBlock != null)) {
 
-			}
+						var tBlock = block.FatBlock as IMyRemoteControl;
 
-			//SelfDestruct
-			if(trigger.Actions.SelfDestruct == true) {
+						if (tBlock != null) {
 
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting SelfDestruct", DebugTypeEnum.Action);
-				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
-				int totalWarheads = 0;
-				
-				foreach(var block in blockList.Where(x => x.FatBlock != null)) {
-
-					var tBlock = block.FatBlock as IMyWarhead;
-
-					if(tBlock != null) {
-
-						if (!trigger.Actions.StaggerWarheadDetonation) {
-
-							tBlock.IsArmed = true;
-							tBlock.DetonationTime = 0;
-							tBlock.Detonate();
-							totalWarheads++;
-
-						} else {
-
-							tBlock.DetonationTime = totalWarheads + 1;
-							tBlock.StartCountdown();
-							totalWarheads++;
+							tBlock.SpeedLimit = actions.NewAutopilotSpeed;
 
 						}
+
+					}
+
+				}
+
+				//SpawnReinforcements
+				if (actions.SpawnEncounter == true) {
+
+					foreach (var spawner in actions.Spawner) {
+
+						if (spawner.UseSpawn) {
+
+							Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Spawn);
+							if (spawner.IsReadyToSpawn()) {
+
+								//Logger.AddMsg("Do Spawn", true);
+								spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
+								spawner.CurrentFactionTag = (spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag)) ? _owner.Faction.Tag : "";
+								SpawnHelper.SpawnRequest(spawner);
+
+							}
+
+						}
+
+					}
+
+				} else {
+
+
+
+				}
+
+				//SelfDestruct
+				if (actions.SelfDestruct == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting SelfDestruct", DebugTypeEnum.Action);
+					var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
+					int totalWarheads = 0;
+
+					foreach (var block in blockList.Where(x => x.FatBlock != null)) {
+
+						var tBlock = block.FatBlock as IMyWarhead;
+
+						if (tBlock != null) {
+
+							if (!actions.StaggerWarheadDetonation) {
+
+								tBlock.IsArmed = true;
+								tBlock.DetonationTime = 0;
+								tBlock.Detonate();
+								totalWarheads++;
+
+							} else {
+
+								tBlock.DetonationTime = totalWarheads + 1;
+								tBlock.StartCountdown();
+								totalWarheads++;
+
+							}
+
+						}
+
+					}
+
+					//Logger.AddMsg("TotalBlocks:  " + blockList.Count.ToString(), true);
+					//Logger.AddMsg("TotalWarheads: " + totalWarheads.ToString(), true);
+
+					//TODO: Shield EMP
+
+				}
+
+				//Retreat
+				if (actions.Retreat) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Retreat", DebugTypeEnum.Action);
+					_despawn.Retreat();
+
+				}
+
+				//ForceDespawn
+				if (actions.ForceDespawn) {
+
+					_despawn.DespawnGrid();
+
+				}
+
+				//TerminateBehavior
+				if (actions.TerminateBehavior) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
+					_autopilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					_behavior.BehaviorTerminated = true;
+
+				}
+
+				//BroadcastGenericCommand
+				if (actions.BroadcastGenericCommand == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Broadcast of Generic Command", DebugTypeEnum.Action);
+
+					double sendRadius = 0;
+
+					if (actions.SendCommandWithoutAntenna) {
+
+						sendRadius = actions.SendCommandWithoutAntennaRadius;
+
+					} else {
+
+						var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+
+						if (antenna != null)
+							sendRadius = (double)antenna.Radius;
+
+					}
+
+					if (sendRadius != 0) {
+
+						var newCommand = new Command();
+						newCommand.CommandCode = actions.BroadcastSendCode;
+						newCommand.RemoteControl = this.RemoteControl;
+						newCommand.Radius = sendRadius;
+						CommandHelper.CommandTrigger?.Invoke(command);
+
+					}
+
+				}
+
+				//BroadcastDamagerTarget
+				if (actions.BroadcastDamagerTarget == true && detectedEntity != 0) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Broadcast of Damager", DebugTypeEnum.Action);
+
+					double sendRadius = 0;
+
+					if (actions.SendCommandWithoutAntenna) {
+
+						sendRadius = actions.SendCommandWithoutAntennaRadius;
+
+					} else {
+
+						var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+
+						if (antenna != null)
+							sendRadius = (double)antenna.Radius;
+
+					}
+
+					if (sendRadius != 0) {
+
+						var newCommand = new Command();
+						newCommand.CommandCode = actions.BroadcastSendCode;
+						newCommand.RemoteControl = this.RemoteControl;
+						newCommand.Radius = sendRadius;
+						newCommand.TargetEntityId = detectedEntity;
+						CommandHelper.CommandTrigger?.Invoke(command);
+
+					}
+
+				}
+
+				//SwitchToReceivedTarget
+				if (actions.SwitchToReceivedTarget == true && (command != null || detectedEntity != 0)) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Switch to Received Target Data", DebugTypeEnum.Action);
+					long switchToId = 0;
+
+					if (command != null && command.TargetEntityId != 0) {
+
+						switchToId = command.TargetEntityId;
 						
+
+					} else if (detectedEntity != 0) {
+
+						switchToId = detectedEntity;
+
 					}
 
-				}
+					IMyEntity tempEntity = null;
 
-				//Logger.AddMsg("TotalBlocks:  " + blockList.Count.ToString(), true);
-				//Logger.AddMsg("TotalWarheads: " + totalWarheads.ToString(), true);
+					if (MyAPIGateway.Entities.TryGetEntityById(switchToId, out tempEntity)) {
 
-				//TODO: Shield EMP
-
-			}
-
-			//Retreat
-			if(trigger.Actions.Retreat) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Retreat", DebugTypeEnum.Action);
-				_despawn.Retreat();
-
-			}
-
-			//ForceDespawn
-			if (trigger.Actions.ForceDespawn) {
-
-				_despawn.DespawnGrid();
-
-			}
-
-			//TerminateBehavior
-			if (trigger.Actions.TerminateBehavior) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
-				_autopilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
-				_behavior.BehaviorTerminated = true;
-
-			}
-
-			//BroadcastGenericCommand
-			if (trigger.Actions.BroadcastGenericCommand == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Broadcast of Generic Command", DebugTypeEnum.Action);
-				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
-
-				if (antenna != null)
-					CommandHelper.CommandTrigger?.Invoke(trigger.Actions.BroadcastSendCode, this.RemoteControl, (double)antenna.Radius, 0);
-
-			}
-
-			//BroadcastCurrentTarget
-			if (trigger.Actions.BroadcastCurrentTarget == true && detectedEntity != 0) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Broadcast of Current Target", DebugTypeEnum.Action);
-				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
-				
-				if(antenna != null)
-					CommandHelper.CommandTrigger?.Invoke(trigger.Actions.BroadcastSendCode, this.RemoteControl, (double)antenna.Radius, detectedEntity);
-
-			}
-
-			//SwitchToReceivedTarget
-			if (trigger.Actions.SwitchToReceivedTarget == true && detectedEntity != 0) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Switch to Received Target Data", DebugTypeEnum.Action);
-				_autopilot.Targeting.ForceTargetEntity = detectedEntity;
-				_autopilot.Targeting.ForceRefresh = true;
-
-			}
-
-			//SwitchToBehavior
-			if(trigger.Actions.SwitchToBehavior == true) {
-
-				_behavior.ChangeBehavior(trigger.Actions.NewBehavior, trigger.Actions.PreserveSettingsOnBehaviorSwitch, trigger.Actions.PreserveTriggersOnBehaviorSwitch, trigger.Actions.PreserveTargetDataOnBehaviorSwitch);
-
-			}
-
-			//RefreshTarget
-			if(trigger.Actions.RefreshTarget == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Target Refresh", DebugTypeEnum.Action);
-				_autopilot.Targeting.ForceRefresh = true;
-
-			}
-
-			//ChangeTargetProfile
-			if (trigger.Actions.ChangeTargetProfile == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Target Change", DebugTypeEnum.Action);
-				_autopilot.Targeting.UseNewTargetProfile = true;
-				_autopilot.Targeting.NewTargetProfileName = trigger.Actions.NewTargetProfileId;
-
-			}
-
-			//ChangeReputationWithPlayers
-			if (trigger.Actions.ChangeReputationWithPlayers == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Reputation Change With Players In Radius", DebugTypeEnum.Action);
-				OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, trigger.Actions.ReputationChangeRadius, trigger.Actions.ReputationChangeAmount, trigger.Actions.ReputationChangeFactions, trigger.Actions.ReputationChangesForAllRadiusPlayerFactionMembers);
-
-			}
-
-			//ChangeAttackerReputation
-			if (trigger.Actions.ChangeAttackerReputation == true && detectedEntity != 0) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Reputation Change for Attacker", DebugTypeEnum.Action);
-				OwnershipHelper.ChangeDamageOwnerReputation(trigger.Actions.ChangeAttackerReputationFaction, detectedEntity, trigger.Actions.ChangeAttackerReputationAmount, trigger.Actions.ReputationChangesForAllAttackPlayerFactionMembers);
-
-			}
-
-
-			//TriggerTimerBlock
-			if (trigger.Actions.TriggerTimerBlocks == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Trigger of Timer Blocks", DebugTypeEnum.Action);
-				var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, trigger.Actions.TimerBlockNames);
-
-				foreach(var block in blockList) {
-
-					var tBlock = block as IMyTimerBlock;
-
-					if(tBlock != null) {
-
-						tBlock.Trigger();
+						_autopilot.Targeting.ForceTargetEntityId = switchToId;
+						_autopilot.Targeting.ForceTargetEntity = tempEntity;
+						_autopilot.Targeting.ForceRefresh = true;
 
 					}
 
 				}
 
-			}
+				//SwitchToDamagerTarget
+				if (actions.SwitchToDamagerTarget == true && detectedEntity != 0) {
 
-			//ChangeBlockNames
-			if (trigger.Actions.ChangeBlockNames) {
-
-				BlockHelper.RenameBlocks(RemoteControl.CubeGrid, trigger.Actions.ChangeBlockNamesFrom, trigger.Actions.ChangeBlockNamesTo, trigger.Actions.ProfileSubtypeId);
-
-			}
-
-			//ChangeAntennaRanges
-			if (trigger.Actions.ChangeAntennaRanges) {
-
-				BlockHelper.SetGridAntennaRanges(AntennaList, trigger.Actions.AntennaNamesForRangeChange, trigger.Actions.AntennaRangeChangeType, trigger.Actions.AntennaRangeChangeAmount);
-
-			}
-
-			//ChangeAntennaOwnership
-			if (trigger.Actions.ChangeAntennaOwnership == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Antenna Ownership Change", DebugTypeEnum.Action);
-				OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, trigger.Actions.AntennaFactionOwner);
-
-			}
-
-			//CreateKnownPlayerArea
-			if (trigger.Actions.CreateKnownPlayerArea == true) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Creation of Known Player Area in MES", DebugTypeEnum.Action);
-				MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, trigger.Actions.KnownPlayerAreaRadius, trigger.Actions.KnownPlayerAreaTimer, trigger.Actions.KnownPlayerAreaMaxSpawns);
-
-			}
-
-			//DamageAttacker
-			if (trigger.Actions.DamageToolAttacker == true && detectedEntity != 0) {
-
-				Logger.MsgDebug(trigger.Actions.ProfileSubtypeId + ": Attempting Damage to Tool User", DebugTypeEnum.Action);
-				DamageHelper.ApplyDamageToTarget(attackerEntityId, trigger.Actions.DamageToolAttackerAmount, trigger.Actions.DamageToolAttackerParticle, trigger.Actions.DamageToolAttackerSound);
-
-			}
-
-			//PlayParticleEffectAtRemote
-			if (trigger.Actions.PlayParticleEffectAtRemote == true) {
-
-				EffectManager.SendParticleEffectRequest(trigger.Actions.ParticleEffectId, this.RemoteControl.WorldMatrix, trigger.Actions.ParticleEffectOffset, trigger.Actions.ParticleEffectScale, trigger.Actions.ParticleEffectMaxTime, trigger.Actions.ParticleEffectColor);
-					
-			}
-
-			//ResetCooldownTimeOfTriggers
-			if (trigger.Actions.ResetCooldownTimeOfTriggers) {
-
-				foreach (var resetTrigger in Triggers) {
-
-					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Switch to Damager Target Data", DebugTypeEnum.Action);
+					_autopilot.Targeting.ForceTargetEntityId = detectedEntity;
+					_autopilot.Targeting.ForceRefresh = true;
 
 				}
 
-				foreach (var resetTrigger in DamageTriggers) {
+				//SwitchToBehavior
+				if (actions.SwitchToBehavior == true) {
 
-					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+					_behavior.ChangeBehavior(actions.NewBehavior, actions.PreserveSettingsOnBehaviorSwitch, actions.PreserveTriggersOnBehaviorSwitch, actions.PreserveTargetDataOnBehaviorSwitch);
+
+				}
+
+				//RefreshTarget
+				if (actions.RefreshTarget == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Target Refresh", DebugTypeEnum.Action);
+					_autopilot.Targeting.ForceRefresh = true;
 
 				}
 
-				foreach (var resetTrigger in CommandTriggers) {
+				//ChangeTargetProfile
+				if (actions.ChangeTargetProfile == true) {
 
-					if (trigger.Actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Target Profile Change", DebugTypeEnum.Action);
+					_autopilot.Targeting.UseNewTargetProfile = true;
+					_autopilot.Targeting.NewTargetProfileName = actions.NewTargetProfileId;
 
 				}
+
+				//ChangeReputationWithPlayers
+				if (actions.ChangeReputationWithPlayers == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Reputation Change With Players In Radius", DebugTypeEnum.Action);
+					OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, actions.ReputationChangeRadius, actions.ReputationChangeAmount, actions.ReputationChangeFactions, actions.ReputationChangesForAllRadiusPlayerFactionMembers);
+
+				}
+
+				//ChangeAttackerReputation
+				if (actions.ChangeAttackerReputation == true && detectedEntity != 0) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Reputation Change for Attacker", DebugTypeEnum.Action);
+					OwnershipHelper.ChangeDamageOwnerReputation(actions.ChangeAttackerReputationFaction, detectedEntity, actions.ChangeAttackerReputationAmount, actions.ReputationChangesForAllAttackPlayerFactionMembers);
+
+				}
+
+
+				//TriggerTimerBlock
+				if (actions.TriggerTimerBlocks == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Trigger of Timer Blocks", DebugTypeEnum.Action);
+					var blockList = BlockHelper.GetBlocksWithNames(RemoteControl.SlimBlock.CubeGrid, actions.TimerBlockNames);
+
+					foreach (var block in blockList) {
+
+						var tBlock = block as IMyTimerBlock;
+
+						if (tBlock != null) {
+
+							tBlock.Trigger();
+
+						}
+
+					}
+
+				}
+
+				//ChangeBlockNames
+				if (actions.ChangeBlockNames) {
+
+					BlockHelper.RenameBlocks(RemoteControl.CubeGrid, actions.ChangeBlockNamesFrom, actions.ChangeBlockNamesTo, actions.ProfileSubtypeId);
+
+				}
+
+				//ChangeAntennaRanges
+				if (actions.ChangeAntennaRanges) {
+
+					BlockHelper.SetGridAntennaRanges(AntennaList, actions.AntennaNamesForRangeChange, actions.AntennaRangeChangeType, actions.AntennaRangeChangeAmount);
+
+				}
+
+				//ChangeAntennaOwnership
+				if (actions.ChangeAntennaOwnership == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Antenna Ownership Change", DebugTypeEnum.Action);
+					OwnershipHelper.ChangeAntennaBlockOwnership(AntennaList, actions.AntennaFactionOwner);
+
+				}
+
+				//CreateKnownPlayerArea
+				if (actions.CreateKnownPlayerArea == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Creation of Known Player Area in MES", DebugTypeEnum.Action);
+					MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.KnownPlayerAreaRadius, actions.KnownPlayerAreaTimer, actions.KnownPlayerAreaMaxSpawns, actions.KnownPlayerAreaMinThreatForAvoidingAbandonment);
+
+				}
+
+				//RemoveKnownPlayerLocation
+				if (actions.RemoveKnownPlayerArea == true) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Removal of Known Player Area in MES", DebugTypeEnum.Action);
+					MESApi.RemoveKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.RemoveAllKnownPlayerAreas);
+
+				}
+
+				//DamageAttacker
+				if (actions.DamageToolAttacker == true && detectedEntity != 0) {
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Damage to Tool User", DebugTypeEnum.Action);
+					DamageHelper.ApplyDamageToTarget(attackerEntityId, actions.DamageToolAttackerAmount, actions.DamageToolAttackerParticle, actions.DamageToolAttackerSound);
+
+				}
+
+				//PlayParticleEffectAtRemote
+				if (actions.PlayParticleEffectAtRemote == true) {
+
+					EffectManager.SendParticleEffectRequest(actions.ParticleEffectId, this.RemoteControl.WorldMatrix, actions.ParticleEffectOffset, actions.ParticleEffectScale, actions.ParticleEffectMaxTime, actions.ParticleEffectColor);
+
+				}
+
+				//ResetCooldownTimeOfTriggers
+				if (actions.ResetCooldownTimeOfTriggers) {
+
+					foreach (var resetTrigger in Triggers) {
+
+						if (actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+					}
+
+					foreach (var resetTrigger in DamageTriggers) {
+
+						if (actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+					}
+
+					foreach (var resetTrigger in CommandTriggers) {
+
+						if (actions.ResetTriggerCooldownNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+					}
+
+				}
+
+				if (actions.EnableTriggers) {
+
+					foreach (var resetTrigger in Triggers) {
+
+						if (actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = true;
+
+					}
+
+					foreach (var resetTrigger in DamageTriggers) {
+
+						if (actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = true;
+
+					}
+
+					foreach (var resetTrigger in CommandTriggers) {
+
+						if (actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = true;
+
+					}
+
+				}
+
+				if (actions.DisableTriggers) {
+
+					foreach (var resetTrigger in Triggers) {
+
+						if (actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = false;
+
+					}
+
+					foreach (var resetTrigger in DamageTriggers) {
+
+						if (actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = false;
+
+					}
+
+					foreach (var resetTrigger in CommandTriggers) {
+
+						if (actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
+							resetTrigger.UseTrigger = false;
+
+					}
+
+				}
+
+				if (actions.ManuallyActivateTrigger) {
+
+					foreach (var manualTrigger in Triggers) {
+
+						if (actions.ManuallyActivatedTriggerNames.Contains(manualTrigger.ProfileSubtypeId))
+							ProcessManualTrigger(manualTrigger);
+
+					}
+
+				}
+
+				//ChangeInertiaDampeners
+				if (actions.ChangeInertiaDampeners) {
+
+					RemoteControl.DampenersOverride = actions.InertiaDampenersEnable;
+
+				}
+
+				//ChangeRotationDirection
+				if (actions.ChangeRotationDirection) {
+
+					_behavior.Settings.SetRotation(actions.RotationDirection);
+
+				}
+
+				//GenerateExplosion
+				if (actions.GenerateExplosion) {
+
+					var coords = Vector3D.Transform(actions.ExplosionOffsetFromRemote, RemoteControl.WorldMatrix);
+					DamageHelper.CreateExplosion(coords, actions.ExplosionRange, actions.ExplosionDamage, this.RemoteControl, actions.ExplosionIgnoresVoxels);
+
+				}
+
+				//GridEditable
+				if (actions.GridEditable != CheckEnum.Ignore) {
+
+					BlockHelper.SetGridEditable(this.RemoteControl.SlimBlock.CubeGrid, actions.GridEditable == CheckEnum.Yes);
+
+					if (actions.SubGridsEditable != CheckEnum.Ignore) {
+
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+
+							BlockHelper.SetGridEditable(cubeGrid, actions.SubGridsEditable == CheckEnum.Yes);
+
+						}
+
+					}
+
+				}
+
+				//GridDestructible
+				if (actions.GridDestructible != CheckEnum.Ignore) {
+
+					BlockHelper.SetGridDestructible(this.RemoteControl.SlimBlock.CubeGrid, actions.GridDestructible == CheckEnum.Yes);
+
+					if (actions.SubGridsDestructible != CheckEnum.Ignore) {
+
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+
+							BlockHelper.SetGridDestructible(cubeGrid, actions.SubGridsDestructible == CheckEnum.Yes);
+
+						}
+
+					}
+
+				}
+
+				//RecolorGrid
+				if (actions.RecolorGrid) {
+
+					BlockHelper.RecolorBlocks(this.RemoteControl.SlimBlock.CubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
+
+					if (actions.RecolorSubGrids) {
+
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+
+							BlockHelper.RecolorBlocks(cubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
+
+						}
+
+					}
+
+				}
+
+				//ChangeBlockOwnership
+				if (actions.ChangeBlockOwnership) {
+
+					BlockHelper.ChangeBlockOwnership(this.RemoteControl.SlimBlock.CubeGrid, actions.OwnershipBlockNames, actions.OwnershipBlockFactions);
+
+				}
+
+				//RazeBlocks
+				if (actions.RazeBlocksWithNames) {
+
+					BlockHelper.RazeBlocksWithNames(this.RemoteControl.SlimBlock.CubeGrid, actions.RazeBlocksNames);
+
+				}
+
+				//SetBooleansTrue
+				foreach (var variable in actions.SetBooleansTrue)
+					_settings.SetCustomBool(variable, true);
+
+				//SetBooleansFalse
+				foreach (var variable in actions.SetBooleansFalse)
+					_settings.SetCustomBool(variable, false);
+
+				//IncreaseCounters
+				foreach (var variable in actions.IncreaseCounters)
+					_settings.SetCustomCounter(variable, 1);
+
+				//DecreaseCounters
+				foreach (var variable in actions.DecreaseCounters)
+					_settings.SetCustomCounter(variable, -1);
+
+				//ResetCounters
+				foreach (var variable in actions.ResetCounters)
+					_settings.SetCustomCounter(variable, 0, true);
+
+				//SetSandboxBooleansTrue
+				foreach (var variable in actions.SetSandboxBooleansTrue)
+					SetSandboxBool(variable, true);
+
+				//SetSandboxBooleansFalse
+				foreach (var variable in actions.SetSandboxBooleansFalse)
+					SetSandboxBool(variable, false);
+
+				//IncreaseSandboxCounters
+				foreach (var variable in actions.IncreaseSandboxCounters)
+					SetSandboxCounter(variable, 1);
+
+				//DecreaseSandboxCounters
+				foreach (var variable in actions.DecreaseSandboxCounters)
+					SetSandboxCounter(variable, -1);
+
+				//ResetSandboxCounters
+				foreach (var variable in actions.ResetSandboxCounters)
+					SetSandboxCounter(variable, 0);
+
+				//BehaviorSpecificEventA
+				if (actions.BehaviorSpecificEventA)
+					BehaviorEventA?.Invoke();
+
+				//BehaviorSpecificEventB
+				if (actions.BehaviorSpecificEventB)
+					BehaviorEventB?.Invoke();
+
+				//BehaviorSpecificEventC
+				if (actions.BehaviorSpecificEventC)
+					BehaviorEventC?.Invoke();
+
+				//BehaviorSpecificEventD
+				if (actions.BehaviorSpecificEventD)
+					BehaviorEventD?.Invoke();
+
+				//BehaviorSpecificEventE
+				if (actions.BehaviorSpecificEventE)
+					BehaviorEventE?.Invoke();
+
+				//BehaviorSpecificEventF
+				if (actions.BehaviorSpecificEventF)
+					BehaviorEventF?.Invoke();
+
+				//BehaviorSpecificEventG
+				if (actions.BehaviorSpecificEventG)
+					BehaviorEventG?.Invoke();
+
+				//BehaviorSpecificEventH
+				if (actions.BehaviorSpecificEventH)
+					BehaviorEventH?.Invoke();
 
 			}
-
-			if (trigger.Actions.EnableTriggers) {
-
-				foreach (var resetTrigger in Triggers) {
-
-					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = true;
-
-				}
-
-				foreach (var resetTrigger in DamageTriggers) {
-
-					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = true;
-
-				}
-
-				foreach (var resetTrigger in CommandTriggers) {
-
-					if (trigger.Actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = true;
-
-				}
-
-			}
-
-			if (trigger.Actions.DisableTriggers) {
-
-				foreach (var resetTrigger in Triggers) {
-
-					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = false;
-
-				}
-
-				foreach (var resetTrigger in DamageTriggers) {
-
-					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = false;
-
-				}
-
-				foreach (var resetTrigger in CommandTriggers) {
-
-					if (trigger.Actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
-						resetTrigger.UseTrigger = false;
-
-				}
-
-			}
-
-			//ChangeInertiaDampeners
-			if (trigger.Actions.ChangeInertiaDampeners) {
-
-				RemoteControl.DampenersOverride = trigger.Actions.InertiaDampenersEnable;
-
-			}
-
-			//ChangeRotationDirection
-			if (trigger.Actions.ChangeRotationDirection) {
-
-				_behavior.Settings.SetRotation(trigger.Actions.RotationDirection);
-
-			}
-
-			//GenerateExplosion
-			if (trigger.Actions.GenerateExplosion) {
-
-				var coords = Vector3D.Transform(trigger.Actions.ExplosionOffsetFromRemote, RemoteControl.WorldMatrix);
-				MyVisualScriptLogicProvider.CreateExplosion(coords, trigger.Actions.ExplosionRange, trigger.Actions.ExplosionDamage);
-
-			}
-
-			//SetBooleansTrue
-			foreach (var variable in trigger.Actions.SetBooleansTrue)
-				_settings.SetCustomBool(variable, true);
-
-			//SetBooleansFalse
-			foreach (var variable in trigger.Actions.SetBooleansFalse)
-				_settings.SetCustomBool(variable, false);
-
-			//IncreaseCounters
-			foreach (var variable in trigger.Actions.IncreaseCounters)
-				_settings.SetCustomCounter(variable, 1);
-
-			//DecreaseCounters
-			foreach (var variable in trigger.Actions.DecreaseCounters)
-				_settings.SetCustomCounter(variable, -1);
-
-			//ResetCounters
-			foreach (var variable in trigger.Actions.ResetCounters)
-				_settings.SetCustomCounter(variable, 0, true);
-
-			//SetSandboxBooleansTrue
-			foreach (var variable in trigger.Actions.SetSandboxBooleansTrue)
-				SetSandboxBool(variable, true);
-
-			//SetSandboxBooleansFalse
-			foreach (var variable in trigger.Actions.SetSandboxBooleansFalse)
-				SetSandboxBool(variable, false);
-
-			//IncreaseSandboxCounters
-			foreach (var variable in trigger.Actions.IncreaseSandboxCounters)
-				SetSandboxCounter(variable, 1);
-
-			//DecreaseSandboxCounters
-			foreach (var variable in trigger.Actions.DecreaseSandboxCounters)
-				SetSandboxCounter(variable, -1);
-
-			//ResetSandboxCounters
-			foreach (var variable in trigger.Actions.ResetSandboxCounters)
-				SetSandboxCounter(variable, 0);
-
-			//BehaviorSpecificEventA
-			if (trigger.Actions.BehaviorSpecificEventA)
-				BehaviorEventA?.Invoke();
-
-			//BehaviorSpecificEventB
-			if (trigger.Actions.BehaviorSpecificEventB)
-				BehaviorEventB?.Invoke();
-
-			//BehaviorSpecificEventC
-			if (trigger.Actions.BehaviorSpecificEventC)
-				BehaviorEventC?.Invoke();
-
-			//BehaviorSpecificEventD
-			if (trigger.Actions.BehaviorSpecificEventD)
-				BehaviorEventD?.Invoke();
-
-			//BehaviorSpecificEventE
-			if (trigger.Actions.BehaviorSpecificEventE)
-				BehaviorEventE?.Invoke();
-
-			//BehaviorSpecificEventF
-			if (trigger.Actions.BehaviorSpecificEventF)
-				BehaviorEventF?.Invoke();
-
-			//BehaviorSpecificEventG
-			if (trigger.Actions.BehaviorSpecificEventG)
-				BehaviorEventG?.Invoke();
-
-			//BehaviorSpecificEventH
-			if (trigger.Actions.BehaviorSpecificEventH)
-				BehaviorEventH?.Invoke();
 
 		}
 
@@ -1022,7 +1221,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences(NewAutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, IBehavior behavior) {
+		public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, IBehavior behavior) {
 
 			this._autopilot = autopilot;
 			this._broadcast = broadcast;

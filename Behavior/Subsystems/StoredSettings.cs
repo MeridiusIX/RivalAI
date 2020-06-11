@@ -76,6 +76,14 @@ namespace RivalAI.Behavior.Subsystems{
 		[ProtoMember(13)]
 		public SerializableBlockOrientation BlockOrientation;
 
+		[ProtoMember(14)]
+		public Vector3D DespawnCoords;
+
+		[ProtoMember(15)]
+		public Vector3D StoredCoords;
+
+		[ProtoMember(16)]
+		public Vector3D StartCoords;
 
 
 		public StoredSettings(){
@@ -97,6 +105,10 @@ namespace RivalAI.Behavior.Subsystems{
 
 			RotationDirection = Direction.Forward;
 			BlockOrientation = new SerializableBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
+
+			DespawnCoords = Vector3D.Zero;
+			StoredCoords = Vector3D.Zero;
+			StartCoords = Vector3D.Zero;
 
 		}
 
@@ -149,7 +161,7 @@ namespace RivalAI.Behavior.Subsystems{
 
 			if (string.IsNullOrWhiteSpace(varName)) {
 
-				Logger.MsgDebug("Counter String Name Null", DebugTypeEnum.Dev);
+				//Logger.MsgDebug("Counter String Name Null", DebugTypeEnum.Dev);
 				return false;
 
 			}

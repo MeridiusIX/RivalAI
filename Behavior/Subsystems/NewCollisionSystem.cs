@@ -32,9 +32,9 @@ namespace RivalAI.Behavior {
 		public Vector3D Velocity;
 		public long Owner;
 
-		public NewAutoPilotSystem AutoPilot;
+		public AutoPilotSystem AutoPilot;
 
-		public NewCollisionSystem(IMyRemoteControl remoteControl, NewAutoPilotSystem autoPilot) {
+		public NewCollisionSystem(IMyRemoteControl remoteControl, AutoPilotSystem autoPilot) {
 
 			if (remoteControl == null || !MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid))
 				return;

@@ -33,7 +33,7 @@ namespace RivalAI.Behavior.Subsystems {
 		//Non-Configurable
 		private IMyRemoteControl _remoteControl;
 
-		private NewAutoPilotSystem _autoPilot;
+		private AutoPilotSystem _autoPilot;
 
 		private List<IWeaponProfile> Weapons;
 
@@ -203,7 +203,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences(NewAutoPilotSystem autopilot) {
+		public void SetupReferences(AutoPilotSystem autopilot) {
 
 			_autoPilot = autopilot;
 		

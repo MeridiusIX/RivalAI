@@ -15,8 +15,40 @@ namespace RivalAI.Behavior.Subsystems {
 		public IMyRemoteControl RemoteControl;
 		private StoredSettings _settings;
 
-		public ITarget Target; //The Actual Target
-		public TargetProfile Data; //The Condition Data For Acquiring Target
+		public ITarget Target { get { 
+
+				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
+
+					//Logger.MsgDebug("Target - Use Override", DebugTypeEnum.Target);
+					return OverrideTarget;
+				
+				}
+
+				//Logger.MsgDebug("Target - Use Normal", DebugTypeEnum.Target);
+				return NormalTarget;
+			} 
+		}
+
+		public TargetProfile Data { get { 
+
+				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
+
+					//Logger.MsgDebug("Data - Use Override", DebugTypeEnum.Target);
+					return OverrideData;
+				
+				}
+
+				//Logger.MsgDebug("Data - Use Normal", DebugTypeEnum.Target);
+				return NormalData;
+			} 
+
+		}
+
+		public ITarget NormalTarget;
+		public TargetProfile NormalData;
+
+		public ITarget OverrideTarget;
+		public TargetProfile OverrideData;
 
 		public bool PreviousTargetCheckResult;
 		public long PreviousTargetEntityId;
@@ -34,7 +66,8 @@ namespace RivalAI.Behavior.Subsystems {
 		public Vector3D TargetLastKnownCoords;
 
 		public bool ForceRefresh;
-		public long ForceTargetEntity;
+		public long ForceTargetEntityId;
+		public IMyEntity ForceTargetEntity;
 		public bool TargetAlreadyEvaluated;
 		public bool UseNewTargetProfile;
 		public bool ResetTimerOnProfileChange;
@@ -44,8 +77,11 @@ namespace RivalAI.Behavior.Subsystems {
 
 			RemoteControl = remoteControl;
 
-			Target = new PlayerEntity(null);
-			Data = new TargetProfile();
+			NormalTarget = null;
+			NormalData = new TargetProfile();
+
+			OverrideTarget = null;
+			OverrideData = new TargetProfile();
 
 			LastAcquisitionTime = MyAPIGateway.Session.GameDateTime;
 			LastRefreshTime = MyAPIGateway.Session.GameDateTime;
@@ -54,7 +90,7 @@ namespace RivalAI.Behavior.Subsystems {
 			TargetLastKnownCoords = Vector3D.Zero;
 
 			ForceRefresh = false;
-			ForceTargetEntity = 0;
+			ForceTargetEntityId = 0;
 			TargetAlreadyEvaluated = false;
 			UseNewTargetProfile = false;
 			ResetTimerOnProfileChange = false;
@@ -92,14 +128,18 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			Logger.MsgDebug(string.Format("Acquiring New Target From Profile: {0}", Data.ProfileSubtypeId), DebugTypeEnum.TargetAcquisition);
+			OverrideTarget = null;
 			LastAcquisitionTime = MyAPIGateway.Session.GameDateTime;
 			ForceRefresh = false;
+
+			var data = ForceTargetEntityId == 0 ? NormalData : OverrideData;
+
+			Logger.MsgDebug(string.Format("Acquiring New Target From Profile: {0}", data.ProfileSubtypeId), DebugTypeEnum.TargetAcquisition);
 
 			//Get Target Below
 			var targetList = new List<ITarget>();
 
-			if (ForceTargetEntity == 0) {
+			if (ForceTargetEntityId == 0) {
 
 				if (Data.Target == TargetTypeEnum.Player) {
 
@@ -124,21 +164,31 @@ namespace RivalAI.Behavior.Subsystems {
 
 			} else {
 
-				Logger.MsgDebug(" - Acquiring Custom Target From EntityId", DebugTypeEnum.TargetAcquisition);
-				IMyEntity entity = null;
+				Logger.MsgDebug(" - Acquiring Custom Target From EntityId: " + ForceTargetEntityId, DebugTypeEnum.TargetAcquisition);
 
-				if (MyAPIGateway.Entities.TryGetEntityById(ForceTargetEntity, out entity)) {
+				if (ForceTargetEntity != null) {
 
-					var target = EntityEvaluator.GetTargetFromEntity(entity);
+					var target = EntityEvaluator.GetTargetFromEntity(ForceTargetEntity);
 
 					if (target != null) {
 
 						targetList.Add(target);
 
+					} else {
+
+						Logger.MsgDebug(" - Failed To Get Valid Target Entity From: " + ForceTargetEntityId, DebugTypeEnum.TargetAcquisition);
+
 					}
 
+				} else {
+
+					Logger.MsgDebug(" - Failed To Parse Entity From EntityId: " + ForceTargetEntityId, DebugTypeEnum.TargetAcquisition);
+
 				}
-			
+
+				ForceTargetEntityId = 0;
+				ForceTargetEntity = null;
+
 			}
 
 			//Run Filters On Target List
@@ -147,20 +197,20 @@ namespace RivalAI.Behavior.Subsystems {
 
 				targetList[i].RefreshSubGrids();
 
-				if (!EvaluateTarget(targetList[i]))
+				if (!EvaluateTarget(targetList[i], data))
 					targetList.RemoveAt(i);
 			
 			}
 
 			//Filter Out Factions, if Applicable
-			if (Data.PrioritizeSpecifiedFactions && (Data.MatchAllFilters.Contains(TargetFilterEnum.Faction) || Data.MatchAnyFilters.Contains(TargetFilterEnum.Faction))) {
+			if (data.PrioritizeSpecifiedFactions && (data.MatchAllFilters.Contains(TargetFilterEnum.Faction) || data.MatchAnyFilters.Contains(TargetFilterEnum.Faction))) {
 
 				Logger.MsgDebug(" - Filtering Potential Preferred Faction Targets", DebugTypeEnum.TargetAcquisition);
 				var factionPreferred = new List<ITarget>();
 
 				for (int i = targetList.Count - 1; i >= 0; i--) {
 
-					if (Data.FactionTargets.Contains(targetList[i].FactionOwner()))
+					if (data.FactionTargets.Contains(targetList[i].FactionOwner()))
 						factionPreferred.Add(targetList[i]);
 
 				}
@@ -173,15 +223,36 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			Logger.MsgDebug(string.Format(" - Getting Target From List Of {0} Based On {1} Sorting Rules", targetList.Count, Data.GetTargetBy), DebugTypeEnum.TargetAcquisition);
+			//Filter Out PlayerControlled Grids, if Applicable
+			if (data.PrioritizePlayerControlled && (data.MatchAllFilters.Contains(TargetFilterEnum.PlayerControlled) || data.MatchAnyFilters.Contains(TargetFilterEnum.PlayerControlled))) {
+
+				Logger.MsgDebug(" - Filtering Potential Player Controlled Targets", DebugTypeEnum.TargetAcquisition);
+				var playerControlled = new List<ITarget>();
+
+				for (int i = targetList.Count - 1; i >= 0; i--) {
+
+					if (targetList[i].PlayerControlled())
+						playerControlled.Add(targetList[i]);
+
+				}
+
+				if (playerControlled.Count > 0) {
+
+					targetList = playerControlled;
+
+				}
+
+			}
+
+			Logger.MsgDebug(string.Format(" - Getting Target From List Of {0} Based On {1} Sorting Rules", targetList.Count, data.GetTargetBy), DebugTypeEnum.TargetAcquisition);
 			if (targetList.Count > 0) {
 
-				var tempTarget = GetTargetFromSorting(targetList);
+				var tempTarget = GetTargetFromSorting(targetList, data);
 
 				if (tempTarget != null) {
 
 					Logger.MsgDebug(string.Format(" - Target Acquired: {0}", tempTarget.Name()), DebugTypeEnum.TargetAcquisition);
-					this.Target = tempTarget;
+					this.NormalTarget = tempTarget;
 					this.LastRefreshTime = MyAPIGateway.Session.GameDateTime;
 					this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
 
@@ -279,6 +350,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void CheckForTarget() {
 
+			//Logger.MsgDebug("CheckForTarget - Start", DebugTypeEnum.Target);
+
 			PreviousTargetCheckResult = CurrentTargetCheckResult;
 			PreviousTargetEntityId = CurrentTargetEntityId;
 
@@ -297,6 +370,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 			bool evaluationDone = false;
 
+			//Logger.MsgDebug("CheckForTarget - Check For New Acquire", DebugTypeEnum.Target);
+
 			if (!HasTarget() || ForceRefresh) {
 
 				AcquireNewTarget();
@@ -304,13 +379,15 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			//Logger.MsgDebug("CheckForTarget - Check For Evaluation", DebugTypeEnum.Target);
+
 			if (!evaluationDone) {
 			
 				var evaluationDuration = MyAPIGateway.Session.GameDateTime - this.LastEvaluationTime;
 
 				if (evaluationDuration.TotalSeconds > Data.TimeUntilNextEvaluation) {
 
-					EvaluateTarget(this.Target);
+					EvaluateTarget(this.Target, this.Data);
 					this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
 
 				}
@@ -318,7 +395,7 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			CurrentTargetCheckResult = HasTarget();
-			CurrentTargetEntityId = Target.GetEntityId();
+			CurrentTargetEntityId = Target != null ? Target.GetEntityId() : 0;
 
 			if (CurrentTargetEntityId != PreviousTargetEntityId)
 				TargetAcquired = true;
@@ -326,9 +403,11 @@ namespace RivalAI.Behavior.Subsystems {
 			if (PreviousTargetCheckResult && !CurrentTargetCheckResult)
 				TargetLost = true;
 
+			//Logger.MsgDebug("CheckForTarget - Complete: " + RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Target);
+
 		}
 
-		public bool EvaluateTarget(ITarget target) {
+		public bool EvaluateTarget(ITarget target, TargetProfile data) {
 
 			if (target == null) {
 
@@ -347,41 +426,41 @@ namespace RivalAI.Behavior.Subsystems {
 
 			Logger.MsgDebug(string.Format(" - Evaluating Target: {0}", target.Name()), DebugTypeEnum.TargetEvaluation);
 
-			if (!Data.BuiltUniqueFilterList) {
+			if (!data.BuiltUniqueFilterList) {
 
-				foreach (var filter in Data.MatchAllFilters) {
+				foreach (var filter in data.MatchAllFilters) {
 
-					if (!Data.AllUniqueFilters.Contains(filter))
-						Data.AllUniqueFilters.Add(filter);
-
-				}
-
-				foreach (var filter in Data.MatchAnyFilters) {
-
-					if (!Data.AllUniqueFilters.Contains(filter))
-						Data.AllUniqueFilters.Add(filter);
+					if (!data.AllUniqueFilters.Contains(filter))
+						data.AllUniqueFilters.Add(filter);
 
 				}
 
-				foreach (var filter in Data.MatchNoneFilters) {
+				foreach (var filter in data.MatchAnyFilters) {
 
-					if (!Data.AllUniqueFilters.Contains(filter))
-						Data.AllUniqueFilters.Add(filter);
+					if (!data.AllUniqueFilters.Contains(filter))
+						data.AllUniqueFilters.Add(filter);
 
 				}
 
-				Data.BuiltUniqueFilterList = true;
+				foreach (var filter in data.MatchNoneFilters) {
+
+					if (!data.AllUniqueFilters.Contains(filter))
+						data.AllUniqueFilters.Add(filter);
+
+				}
+
+				data.BuiltUniqueFilterList = true;
 
 			}
 
 			List<TargetFilterEnum> FilterHits = new List<TargetFilterEnum>();
 
 			//Altitude
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Altitude)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Altitude)) {
 
 				var altitude = target.CurrentAltitude();
 
-				if (altitude == -1000000 || (altitude >= Data.MinAltitude && altitude <= Data.MaxAltitude))
+				if (altitude == -1000000 || (altitude >= data.MinAltitude && altitude <= data.MaxAltitude))
 					FilterHits.Add(TargetFilterEnum.Altitude);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Altitude: {0}", altitude), DebugTypeEnum.TargetEvaluation);
@@ -389,12 +468,12 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Broadcasting
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Broadcasting)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Broadcasting)) {
 
 				var range = target.BroadcastRange();
 				var distance = target.Distance(RemoteControl.GetPosition());
 
-				if (range > distance || distance < Data.NonBroadcastVisualRange)
+				if (range > distance || distance < data.NonBroadcastVisualRange)
 					FilterHits.Add(TargetFilterEnum.Broadcasting);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Broadcast Range vs Distance: {0} / {1}", range, distance), DebugTypeEnum.TargetEvaluation);
@@ -402,11 +481,11 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Faction
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Faction)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Faction)) {
 
 				var faction = target.FactionOwner() ?? "";
 
-				if (Data.PrioritizeSpecifiedFactions || Data.FactionTargets.Contains(faction))
+				if (data.PrioritizeSpecifiedFactions || data.FactionTargets.Contains(faction))
 					FilterHits.Add(TargetFilterEnum.Faction);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Faction: {0}", faction), DebugTypeEnum.TargetEvaluation);
@@ -414,33 +493,73 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Gravity
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Gravity)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Gravity)) {
 
 				var gravity = target.CurrentGravity();
 
-				if (gravity >= Data.MinGravity && gravity <= Data.MaxGravity)
+				if (gravity >= data.MinGravity && gravity <= data.MaxGravity)
 					FilterHits.Add(TargetFilterEnum.Gravity);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Gravity: {0}", gravity), DebugTypeEnum.TargetEvaluation);
 
 			}
 
+			//Name
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Name)) {
+
+				var name = target.Name();
+				string successName = "N/A";
+
+				foreach (var allowedName in data.Names) {
+
+					if (string.IsNullOrWhiteSpace(allowedName))
+						continue;
+
+					if (data.UsePartialNameMatching) {
+
+						if (name.Contains(allowedName)) {
+
+							successName = allowedName;
+							break;
+
+						}
+
+					} else {
+
+						if (name == allowedName) {
+
+							successName = allowedName;
+							break;
+
+						}
+					
+					}
+				
+				}
+
+				if(successName != "N/A")
+					FilterHits.Add(TargetFilterEnum.Name);
+
+				Logger.MsgDebug(string.Format(" - Evaluated Name: {0} // {1}", name, successName), DebugTypeEnum.TargetEvaluation);
+
+			}
+
 			//OutsideOfSafezone
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.OutsideOfSafezone)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.OutsideOfSafezone)) {
 
 				bool inZone = target.InSafeZone();
 
 				if (!inZone)
 					FilterHits.Add(TargetFilterEnum.OutsideOfSafezone);
 
-				Logger.MsgDebug(string.Format(" - Evaluated Outside Safezone: {0}", inZone), DebugTypeEnum.TargetEvaluation);
+				Logger.MsgDebug(string.Format(" - Evaluated Outside Safezone: {0}", !inZone), DebugTypeEnum.TargetEvaluation);
 
 			}
 
 			//Owner
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Owner)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Owner)) {
 
-				var owners = target.OwnerTypes(Data.OnlyGetFromEntityOwner, Data.GetFromMinorityGridOwners);
+				var owners = target.OwnerTypes(data.OnlyGetFromEntityOwner, data.GetFromMinorityGridOwners);
 				bool gotRelation = false;
 
 				var values = Enum.GetValues(typeof(OwnerTypeEnum)).Cast<OwnerTypeEnum>();
@@ -450,7 +569,7 @@ namespace RivalAI.Behavior.Subsystems {
 					if (ownerType == OwnerTypeEnum.None)
 						continue;
 
-					if (owners.HasFlag(ownerType) && Data.Owners.HasFlag(ownerType)) {
+					if (owners.HasFlag(ownerType) && data.Owners.HasFlag(ownerType)) {
 
 						gotRelation = true;
 						break;
@@ -462,14 +581,26 @@ namespace RivalAI.Behavior.Subsystems {
 				if (gotRelation)
 					FilterHits.Add(TargetFilterEnum.Owner);
 
-				Logger.MsgDebug(string.Format(" - Evaluated Owners: Required: {0}", Data.Owners.ToString()), DebugTypeEnum.TargetEvaluation);
+				Logger.MsgDebug(string.Format(" - Evaluated Owners: Required: {0}", data.Owners.ToString()), DebugTypeEnum.TargetEvaluation);
 				Logger.MsgDebug(string.Format(" - Evaluated Owners: Found: {0}", owners.ToString()), DebugTypeEnum.TargetEvaluation);
 				Logger.MsgDebug(string.Format(" - Evaluated Target Owners: {0} / Passed: {1}", owners.ToString(), gotRelation), DebugTypeEnum.TargetEvaluation);
 				
 			}
 
+			//PlayerControlled
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.PlayerControlled)) {
+
+				var controlled = target.PlayerControlled();
+
+				if (data.PrioritizePlayerControlled || controlled)
+					FilterHits.Add(TargetFilterEnum.PlayerControlled);
+
+				Logger.MsgDebug(string.Format(" - Evaluated Player Controlled: {0}", controlled), DebugTypeEnum.TargetEvaluation);
+
+			}
+
 			//Powered
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Powered)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Powered)) {
 
 				bool powered = target.IsPowered();
 
@@ -481,9 +612,9 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Relation
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Relation)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Relation)) {
 
-				var relations = target.RelationTypes(RemoteControl.OwnerId, Data.OnlyGetFromEntityOwner, Data.GetFromMinorityGridOwners);
+				var relations = target.RelationTypes(RemoteControl.OwnerId, data.OnlyGetFromEntityOwner, data.GetFromMinorityGridOwners);
 				bool gotRelation = false;
 
 				var values = Enum.GetValues(typeof(RelationTypeEnum)).Cast<RelationTypeEnum>();
@@ -493,7 +624,7 @@ namespace RivalAI.Behavior.Subsystems {
 					if (relationType == RelationTypeEnum.None)
 						continue;
 
-					if (relations.HasFlag(relationType) && Data.Relations.HasFlag(relationType)) {
+					if (relations.HasFlag(relationType) && data.Relations.HasFlag(relationType)) {
 
 						gotRelation = true;
 						break;
@@ -505,14 +636,14 @@ namespace RivalAI.Behavior.Subsystems {
 				if (gotRelation)
 					FilterHits.Add(TargetFilterEnum.Relation);
 
-				Logger.MsgDebug(string.Format(" - Evaluated Relations: Required: {0}", Data.Relations.ToString()), DebugTypeEnum.TargetEvaluation);
+				Logger.MsgDebug(string.Format(" - Evaluated Relations: Required: {0}", data.Relations.ToString()), DebugTypeEnum.TargetEvaluation);
 				Logger.MsgDebug(string.Format(" - Evaluated Relations: Found: {0}", relations.ToString()), DebugTypeEnum.TargetEvaluation);
 				Logger.MsgDebug(string.Format(" - Evaluated Relations: {0} / Passed: {1}", relations.ToString(), gotRelation), DebugTypeEnum.TargetEvaluation);
 
 			}
 
 			//Shielded
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Shielded)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Shielded)) {
 
 				bool shielded = target.ProtectedByShields();
 
@@ -524,11 +655,11 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Speed
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.Speed)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Speed)) {
 
 				var speed = target.CurrentSpeed();
 
-				if ((Data.MinSpeed < 0 || speed >= Data.MinSpeed) && (Data.MaxSpeed < 0 || speed <= Data.MaxSpeed))
+				if ((data.MinSpeed < 0 || speed >= data.MinSpeed) && (data.MaxSpeed < 0 || speed <= data.MaxSpeed))
 					FilterHits.Add(TargetFilterEnum.Speed);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Speed: {0}", speed), DebugTypeEnum.TargetEvaluation);
@@ -536,11 +667,11 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//Static
-			if (Data.IsStatic != CheckEnum.Ignore && Data.AllUniqueFilters.Contains(TargetFilterEnum.Static)) {
+			if (data.IsStatic != CheckEnum.Ignore && data.AllUniqueFilters.Contains(TargetFilterEnum.Static)) {
 
 				var staticGrid = target.IsStatic();
 
-				if ((staticGrid && Data.IsStatic == CheckEnum.Yes) || (!staticGrid && Data.IsStatic == CheckEnum.No))
+				if ((staticGrid && data.IsStatic == CheckEnum.Yes) || (!staticGrid && data.IsStatic == CheckEnum.No))
 					FilterHits.Add(TargetFilterEnum.Static);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Static Grid: {0}", staticGrid), DebugTypeEnum.TargetEvaluation);
@@ -548,11 +679,11 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//TargetValue
-			if (Data.AllUniqueFilters.Contains(TargetFilterEnum.TargetValue)) {
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.TargetValue)) {
 
 				var targetValue = target.TargetValue();
 
-				if (targetValue >= Data.MinTargetValue && targetValue <= Data.MaxTargetValue)
+				if (targetValue >= data.MinTargetValue && targetValue <= data.MaxTargetValue)
 					FilterHits.Add(TargetFilterEnum.TargetValue);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Target Value: {0}", targetValue), DebugTypeEnum.TargetEvaluation);
@@ -562,9 +693,9 @@ namespace RivalAI.Behavior.Subsystems {
 			//Any Conditions Check
 			bool anyConditionPassed = false;
 
-			if (Data.MatchAnyFilters.Count > 0) {
+			if (data.MatchAnyFilters.Count > 0) {
 
-				foreach (var filter in Data.MatchAnyFilters) {
+				foreach (var filter in data.MatchAnyFilters) {
 
 					if (FilterHits.Contains(filter)) {
 
@@ -590,7 +721,7 @@ namespace RivalAI.Behavior.Subsystems {
 				
 
 			//All Condition Checks
-			foreach (var filter in Data.MatchAllFilters) {
+			foreach (var filter in data.MatchAllFilters) {
 
 				if (!FilterHits.Contains(filter)) {
 
@@ -602,7 +733,7 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//None Condition Checks
-			foreach (var filter in Data.MatchNoneFilters) {
+			foreach (var filter in data.MatchNoneFilters) {
 
 				if (FilterHits.Contains(filter)) {
 
@@ -637,7 +768,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public ITarget GetTargetFromSorting(List<ITarget> targets) {
+		public ITarget GetTargetFromSorting(List<ITarget> targets, TargetProfile data) {
 
 			//List Empty, you get null soup!
 			if (targets.Count == 0)
@@ -648,14 +779,14 @@ namespace RivalAI.Behavior.Subsystems {
 				return targets[0];
 
 			//Random - may RNGesus be generous
-			if (Data.GetTargetBy == TargetSortEnum.Random) {
+			if (data.GetTargetBy == TargetSortEnum.Random) {
 
 				return targets[Utilities.Rnd.Next(0, targets.Count)];
 			
 			}
 
 
-			if (Data.GetTargetBy == TargetSortEnum.ClosestDistance) {
+			if (data.GetTargetBy == TargetSortEnum.ClosestDistance) {
 
 				int index = -1;
 				double dist = -1;
@@ -677,7 +808,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if (Data.GetTargetBy == TargetSortEnum.FurthestDistance) {
+			if (data.GetTargetBy == TargetSortEnum.FurthestDistance) {
 
 				int index = -1;
 				double dist = -1;
@@ -699,7 +830,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if (Data.GetTargetBy == TargetSortEnum.HighestTargetValue) {
+			if (data.GetTargetBy == TargetSortEnum.HighestTargetValue) {
 
 				int index = -1;
 				float targetValue = -1;
@@ -721,7 +852,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if (Data.GetTargetBy == TargetSortEnum.LowestTargetValue) {
+			if (data.GetTargetBy == TargetSortEnum.LowestTargetValue) {
 
 				int index = -1;
 				float targetValue = -1;
@@ -748,6 +879,9 @@ namespace RivalAI.Behavior.Subsystems {
 		}
 
 		public bool HasTarget() {
+
+			if (Target == null)
+				return false;
 
 			return Data.UseCustomTargeting && Target.ActiveEntity();
 
@@ -778,7 +912,42 @@ namespace RivalAI.Behavior.Subsystems {
 
 									if (profile != null) {
 
-										this.Data = profile;
+										this.NormalData = profile;
+										Logger.MsgDebug(profile.ProfileSubtypeId + " Target Profile Loaded", DebugTypeEnum.BehaviorSetup);
+
+									}
+
+								} catch (Exception) {
+
+
+
+								}
+
+							}
+
+						}
+
+					}
+
+					//OverrideTargetData
+					if (tag.Contains("[OverrideTargetData:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							byte[] byteData = { };
+
+							if (TagHelper.TargetObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+
+								try {
+
+									var profile = MyAPIGateway.Utilities.SerializeFromBinary<TargetProfile>(byteData);
+
+									if (profile != null) {
+
+										this.OverrideData = profile;
+										Logger.MsgDebug(profile.ProfileSubtypeId + " Override Target Profile Loaded", DebugTypeEnum.BehaviorSetup);
 
 									}
 
@@ -800,13 +969,17 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetTargetProfile() {
+		public void SetTargetProfile(bool setOverride = false) {
 
 			UseNewTargetProfile = false;
 			byte[] targetProfileBytes;
 
-			if (!TagHelper.TargetObjectTemplates.TryGetValue(NewTargetProfileName, out targetProfileBytes))
+			if (!TagHelper.TargetObjectTemplates.TryGetValue(NewTargetProfileName, out targetProfileBytes)) {
+
+				Logger.MsgDebug("No Target Profile For: " + NewTargetProfileName, DebugTypeEnum.Target);
 				return;
+
+			}
 
 			TargetProfile targetProfile;
 
@@ -816,15 +989,27 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (targetProfile != null && !string.IsNullOrWhiteSpace(targetProfile.ProfileSubtypeId)) {
 
-					Data = targetProfile;
-					_settings.CustomTargetProfile = NewTargetProfileName;
+					if (!setOverride) {
 
+						NormalData = targetProfile;
+						_settings.CustomTargetProfile = NewTargetProfileName;
+						Logger.MsgDebug("Target Profile Switched To: " + NewTargetProfileName, DebugTypeEnum.Target);
+
+
+					} else {
+
+						OverrideData = targetProfile;
+						_settings.CustomTargetProfile = NewTargetProfileName;
+						Logger.MsgDebug("Target Profile Switched To: " + NewTargetProfileName, DebugTypeEnum.Target);
+
+					}
 
 				}
 
 			} catch (Exception e) {
 
-
+				Logger.MsgDebug("Target Profile Exception: " + NewTargetProfileName, DebugTypeEnum.Target);
+				Logger.MsgDebug(e.ToString(), DebugTypeEnum.Target);
 
 			}
 

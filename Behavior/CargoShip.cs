@@ -34,27 +34,28 @@ using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Behavior{
+
+	public enum CargoShipMode {
 	
-	public class Fighter : CoreBehavior, IBehavior{
+		SpawnerEndCoords,
+		RandomEndCoords,
+		UseCustomPath,
+	
+	}
+
+	public class CargoShip : CoreBehavior, IBehavior{
 
 		//Configurable
-		public double FighterEngageDistanceSpace;
-		public double FighterEngageDistancePlanet;
-
-		public double FighterDisengageDistanceSpace;
-		public double FighterDisengageDistancePlanet;
 		
-		public byte Counter;
+		public bool CargoShipUseCustomPath;
+		public bool CargoShipUseLastWaypointAsDespawn;
+		public Vector3D CargoShipCustomWaypoints;
 
-		public Fighter() {
+		public bool CargoShipCalculateRandomDespawn;
 
-			FighterEngageDistanceSpace = 400;
-			FighterEngageDistancePlanet = 600;
+		public CargoShip() {
 
-			FighterDisengageDistanceSpace = 600;
-			FighterDisengageDistancePlanet = 600;
 			
-			Counter = 0;
 
 		}
 
@@ -66,7 +67,7 @@ namespace RivalAI.Behavior{
 
 			}
 
-			//Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
+			Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
 			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
@@ -122,42 +123,14 @@ namespace RivalAI.Behavior{
 			//Approach
 			if (Mode == BehaviorMode.ApproachTarget) {
 
-				bool inRange = false;
 
-				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistanceSpace)
-					inRange = true;
-
-				if(NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistancePlanet)
-					inRange = true;
-
-				if (inRange) {
-
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe, Vector3D.Zero, true, false, false);
-					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
-					BehaviorTriggerA = true;
-
-				}
 
 			}
 
-			//Engage
-			if (Mode == BehaviorMode.EngageTarget) {
+			//WaitWaitAtWaypoint
+			if (Mode == BehaviorMode.WaitAtWaypoint) {
 
-				bool outRange = false;
 
-				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistanceSpace)
-					outRange = true;
-
-				if (NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistancePlanet)
-					outRange = true;
-
-				if (outRange) {
-
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
-					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					BehaviorTriggerB = true;
-
-				}
 
 			}
 
@@ -173,27 +146,24 @@ namespace RivalAI.Behavior{
 
 			}
 
-
 		}
 
 		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
-			Logger.MsgDebug("Beginning Behavior Init For Fighter", DebugTypeEnum.General);
+			Logger.MsgDebug("Beginning Behavior Init For CargoShip", DebugTypeEnum.General);
 
 			//Core Setup
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
-			Despawn.UseNoTargetTimer = true;
-			NewAutoPilot.Thrust.StrafeMinDurationMs = 1500;
-			NewAutoPilot.Thrust.StrafeMaxDurationMs = 2000;
-			NewAutoPilot.Thrust.AllowStrafing = true;
-			NewAutoPilot.Weapons.UseStaticGuns = true;
+			Despawn.UseNoTargetTimer = false;
+			NewAutoPilot.Thrust.AllowStrafing = false;
+			NewAutoPilot.Weapons.UseStaticGuns = false;
 
 			//Get Settings From Custom Data
 			InitCoreTags();
 			InitTags();
-			SetDefaultTargeting();
+			//SetDefaultTargeting();
 
 			SetupCompleted = true;
 
@@ -210,30 +180,9 @@ namespace RivalAI.Behavior{
 					//FighterEngageDistanceSpace
 					if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
 
-						this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
+						//this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
 
 					}	
-			
-					//FighterEngageDistancePlanet
-					if(tag.Contains("[FighterEngageDistancePlanet:") == true) {
-
-						this.FighterEngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistancePlanet);
-
-					}
-
-					//FighterDisengageDistanceSpace
-					if (tag.Contains("[FighterDisengageDistanceSpace:") == true) {
-
-						this.FighterDisengageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterDisengageDistanceSpace);
-
-					}
-
-					//FighterDisengageDistancePlanet
-					if (tag.Contains("[FighterDisengageDistancePlanet:") == true) {
-
-						this.FighterDisengageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.FighterDisengageDistancePlanet);
-
-					}
 
 				}
 				

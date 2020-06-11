@@ -35,6 +35,81 @@ namespace RivalAI.Helpers {
 
     public static class BlockHelper {
 
+        private static Dictionary<string, long> _factionData = new Dictionary<string, long>();
+
+        public static void ChangeBlockOwnership(IMyCubeGrid cubeGrid, List<string> blockNames, List<string> factionNames) {
+
+            if (blockNames.Count != factionNames.Count)
+                return;
+
+            Dictionary<string, long> nameToOwner = new Dictionary<string, long>();
+
+            for (int i = 0; i < blockNames.Count; i++) {
+
+                if (factionNames[i] == "Nobody") {
+
+                    if (!nameToOwner.ContainsKey(blockNames[i])) {
+
+                        nameToOwner.Add(blockNames[i], 0);
+
+                    }
+
+                    continue;
+                
+                }
+
+                long owner = -1;
+
+                if (_factionData.TryGetValue(factionNames[i], out owner)) {
+
+                    if (!nameToOwner.ContainsKey(blockNames[i])) {
+
+                        nameToOwner.Add(blockNames[i], owner);
+
+                    }
+
+                    continue;
+
+                } else {
+
+                    IMyFaction faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(factionNames[i]);
+
+                    if (faction != null) {
+
+                        _factionData.Add(factionNames[i], faction.FounderId);
+
+                        if (!nameToOwner.ContainsKey(blockNames[i])) {
+
+                            nameToOwner.Add(blockNames[i], faction.FounderId);
+
+                        }
+
+                    }
+                
+                }
+            
+            }
+
+            var blockList = GetBlocksOfType<IMyTerminalBlock>(cubeGrid);
+
+            foreach (var block in blockList) {
+
+                if (block.CustomName == null)
+                    continue;
+
+                long owner = -1;
+
+                if (nameToOwner.TryGetValue(block.CustomName, out owner)) {
+
+                    var cubeBlock = block as MyCubeBlock;
+                    cubeBlock.ChangeBlockOwnerRequest(owner, cubeBlock.IDModule.ShareMode);
+                
+                }
+            
+            }
+
+        }
+
         public static IMyTerminalBlock GetBlockWithName(IMyCubeGrid cubeGrid, string name) {
 
             if(string.IsNullOrWhiteSpace(name) == true) {
@@ -218,6 +293,60 @@ namespace RivalAI.Helpers {
         
         }
 
+        public static void RecolorBlocks(IMyCubeGrid grid, List<Vector3D> oldColors, List<Vector3D> newColors, List<string> newSkins) {
+
+            var blocks = new List<IMySlimBlock>();
+            grid.GetBlocks(blocks);
+
+            foreach (var block in blocks) {
+
+                for (int i = 0; i < oldColors.Count; i++) {
+
+                    if (i >= newColors.Count && i >= newSkins.Count)
+                        break;
+
+                    if (Math.Round(oldColors[i].X, 3) != Math.Round(block.ColorMaskHSV.X, 3))
+                        continue;
+
+                    if (Math.Round(oldColors[i].Y, 3) != Math.Round(block.ColorMaskHSV.Y, 3))
+                        continue;
+
+                    if (Math.Round(oldColors[i].Z, 3) != Math.Round(block.ColorMaskHSV.Z, 3))
+                        continue;
+
+                    if (i < newColors.Count) {
+
+                        if(newColors[i] != new Vector3D(-10, -10, -10))
+                            grid.ColorBlocks(block.Min, block.Min, newColors[i]);
+
+                    }
+
+                    if (i < newSkins.Count) {
+
+                        if (!string.IsNullOrWhiteSpace(newSkins[i]))
+                            grid.SkinBlocks(block.Min, block.Min, null, newSkins[i]);
+
+                    }
+
+                }
+            
+            }
+        
+        }
+
+        public static void RazeBlocksWithNames(IMyCubeGrid cubeGrid, List<string> names) {
+
+            var blocks = GetBlocksOfType<IMyTerminalBlock>(cubeGrid);
+
+            foreach (var block in blocks) {
+
+                if (names.Contains(block.CustomName))
+                    block.SlimBlock.CubeGrid.RazeBlock(block.SlimBlock.Min);
+
+            }
+
+        }
+
         public static void RenameBlocks(IMyCubeGrid cubeGrid, List<string> oldNames, List<string> newNames, string actionId) {
 
             if (oldNames.Count != newNames.Count) {
@@ -281,6 +410,28 @@ namespace RivalAI.Helpers {
                 }
 
             }
+        
+        }
+
+        public static void SetGridDestructible(IMyCubeGrid cubeGrid, bool enabled) {
+
+            var grid = cubeGrid as MyCubeGrid;
+
+            if (grid == null)
+                return;
+
+            grid.DestructibleBlocks = enabled;
+
+        }
+
+        public static void SetGridEditable(IMyCubeGrid cubeGrid, bool enabled) {
+
+            var grid = cubeGrid as MyCubeGrid;
+
+            if (grid == null)
+                return;
+
+            grid.Editable = enabled;
         
         }
 

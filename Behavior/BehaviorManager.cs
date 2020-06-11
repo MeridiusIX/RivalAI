@@ -10,6 +10,7 @@ namespace RivalAI.Behavior {
 	
 		None,
 		Parallel,
+		ParallelWorking,
 		MainThread
 	
 	}
@@ -34,7 +35,7 @@ namespace RivalAI.Behavior {
 		public static BehaviorManageSubmode Submode = BehaviorManageSubmode.None;
 		public static int CurrentBehaviorIndex = 0;
 
-		private static bool _debugDraw = true;
+		private static bool _debugDraw = false;
 
 		private static byte _barrageCounter = 0;
 		private static byte _behaviorCounter = 0;
@@ -133,6 +134,20 @@ namespace RivalAI.Behavior {
 
 				}
 
+				//HorseFighter
+				if (remoteControl.CustomData.Contains("[BehaviorName:HorseFighter]")) {
+
+					Logger.MsgDebug("Behavior: HorseFighter", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new HorseFighter();
+					MainBehavior.BehaviorInit(remoteControl);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
+					return;
+
+				}
+
 				//Horsefly
 				if (remoteControl.CustomData.Contains("[BehaviorName:Horsefly]")) {
 
@@ -193,15 +208,19 @@ namespace RivalAI.Behavior {
 
 				try {
 
+					Mode = BehaviorManagerMode.ParallelWorking;
+					//Logger.MsgDebug("Start Parallel Methods", DebugTypeEnum.General);
 					ProcessCollisionChecksParallel();
 					ProcessTargetingParallel();
 					ProcessAutoPilotParallel();
 					ProcessWeaponsParallel();
 					ProcessTriggersParallel();
 					Mode = BehaviorManagerMode.MainThread;
+					//Logger.MsgDebug("End Parallel Methods", DebugTypeEnum.General);
 
 				} catch (Exception e) {
 
+					Mode = BehaviorManagerMode.Parallel;
 					Logger.MsgDebug("Exception in Parallel Calculations", DebugTypeEnum.General);
 					Logger.MsgDebug(e.ToString(), DebugTypeEnum.General);
 
@@ -217,12 +236,14 @@ namespace RivalAI.Behavior {
 			if (Mode != BehaviorManagerMode.MainThread)
 				return;
 
+			//Logger.MsgDebug("Start Main Methods", DebugTypeEnum.General);
 			ProcessAutoPilotMain();
 			ProcessWeaponsMain();
 			ProcessTriggersMain();
 			ProcessDespawnConditions();
 			ProcessMainBehavior();
 			Mode = BehaviorManagerMode.None;
+			//Logger.MsgDebug("End Main Methods", DebugTypeEnum.General);
 
 		}
 

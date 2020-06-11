@@ -225,6 +225,22 @@ namespace RivalAI.Entities {
 
 		}
 
+		public bool PlayerControlled() {
+
+			foreach (var grid in LinkedGrids) {
+
+				if (!grid.ActiveEntity())
+					continue;
+
+				if (EntityEvaluator.IsPlayerControlled(grid))
+					return true;
+
+			}
+
+			return false;
+
+		}
+
 		public Vector2 PowerOutput() {
 
 			return EntityEvaluator.GridPowerOutput(LinkedGrids);

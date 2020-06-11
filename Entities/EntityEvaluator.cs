@@ -1,4 +1,5 @@
-﻿using Sandbox.Definitions;
+﻿using RivalAI.Helpers;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
@@ -27,6 +28,7 @@ namespace RivalAI.Entities {
 		NanoBots,
 		Power,
 		Production,
+		RivalAi,
 		Shields,
 		Thrusters,
 		Tools,
@@ -243,8 +245,13 @@ namespace RivalAI.Entities {
 
 		public static ITarget GetTargetFromBlockEntity(IMyCubeBlock entity) {
 
-			if (entity == null)
+			if (entity == null) {
+
+				Logger.MsgDebug(" - IMyCubeBlock Entity Null", DebugTypeEnum.TargetAcquisition);
 				return null;
+
+			}
+				
 
 			var grid = entity.SlimBlock.CubeGrid;
 
@@ -265,6 +272,7 @@ namespace RivalAI.Entities {
 			
 			}
 
+			Logger.MsgDebug(" - IMyCubeBlock Entity Not Found In Existing Grids", DebugTypeEnum.TargetAcquisition);
 			return null;
 
 		}
@@ -273,12 +281,13 @@ namespace RivalAI.Entities {
 
 			//Try Player
 			var character = entity as IMyCharacter;
+			var block = entity as IMyCubeBlock;
 
 			if (character != null) {
 
 				return GetTargetFromPlayerEntity(character);
 
-			} else {
+			} else if(block == null) {
 
 				var toolBase = entity as IMyEngineerToolBase;
 				var gunBase = entity as IMyGunBaseUser;
@@ -302,7 +311,6 @@ namespace RivalAI.Entities {
 
 			//Try Block/Grid
 			var grid = entity as IMyCubeGrid;
-			var block = entity as IMyCubeBlock;
 
 			if (grid != null)
 				return GetTargetFromGridEntity(grid);
@@ -606,6 +614,27 @@ namespace RivalAI.Entities {
 
 		}
 
+		public static bool IsPlayerControlled(GridEntity cubeGrid) {
+
+			foreach (var controller in cubeGrid.Controllers) {
+
+				if (!controller.ActiveEntity())
+					continue;
+
+				IMyShipController shipController = controller.Block as IMyShipController;
+
+				if (shipController == null)
+					continue;
+
+				if (shipController.CanControlShip && shipController.IsUnderControl)
+					return true;
+			
+			}
+
+			return false;
+			
+		}
+
 		public static bool IsIdentityNPC(long identityId) {
 
 			if (MyAPIGateway.Players.TryGetSteamId(identityId) > 0)
@@ -619,7 +648,10 @@ namespace RivalAI.Entities {
 
 			foreach (var zone in EntityWatcher.SafeZones) {
 
-				if (zone.IsClosed() || !zone.SafeZone.Enabled)
+				if (zone == null)
+					continue;
+
+				if (zone.GetEntity() == null || !zone.SafeZone.Enabled)
 					continue;
 
 				if (zone.InZone(coords))

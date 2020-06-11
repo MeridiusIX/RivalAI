@@ -146,6 +146,15 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		private List<IMyCubeBlock> _watchedNoneBlocks;
 
 		[ProtoIgnore]
+		private bool _watchingAllBlocks;
+
+		[ProtoIgnore]
+		private bool _watchingAnyBlocks;
+
+		[ProtoIgnore]
+		private bool _watchingNoneBlocks;
+
+		[ProtoIgnore]
 		private bool _watchedAllBlocksResult;
 
 		[ProtoIgnore]
@@ -190,6 +199,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			UseRequiredFunctionalBlocks = false;
 			RequiredAllFunctionalBlockNames = new List<string>();
 			RequiredAnyFunctionalBlockNames = new List<string>();
+			RequiredNoneFunctionalBlockNames = new List<string>();
 
 			ProfileSubtypeId = "";
 
@@ -484,6 +494,37 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					satisfiedConditions++;
 
 			}
+
+			if (UseRequiredFunctionalBlocks) {
+
+				if (_watchingAllBlocks) {
+
+					usedConditions++;
+
+					if(_watchedAllBlocksResult)
+						satisfiedConditions++;
+
+				}
+
+				if (_watchingAnyBlocks) {
+
+					usedConditions++;
+
+					if (_watchedAnyBlocksResult)
+						satisfiedConditions++;
+
+				}
+
+				if (_watchingNoneBlocks) {
+
+					usedConditions++;
+
+					if (_watchedNoneBlocksResult)
+						satisfiedConditions++;
+
+				}
+
+			}
 			
 			if(this.MatchAnyCondition == false){
 
@@ -505,9 +546,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 		private void SetupWatchedBlocks() {
 
+			Logger.MsgDebug("Setting Up Required Block Watcher", DebugTypeEnum.Condition);
 			_gotWatchedBlocks = true;
 			_watchedAnyBlocks.Clear();
 			_watchedAllBlocks.Clear();
+			_watchedNoneBlocks.Clear();
 
 			if (!UseRequiredFunctionalBlocks)
 				return;
@@ -522,24 +565,32 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				if (terminalBlock == null)
 					continue;
 
-				if (this.RequiredAllFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+				Logger.MsgDebug(" - " + terminalBlock.CustomName.Trim(), DebugTypeEnum.Condition);
 
+				if (this.RequiredAllFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
+
+					Logger.MsgDebug("Monitoring Required-All Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedAllBlocks.Add(block.FatBlock);
 					block.FatBlock.IsWorkingChanged += CheckAllBlocks;
+					_watchingAllBlocks = true;
 
 				}
 
-				if (this.RequiredAnyFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+				if (this.RequiredAnyFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
 
+					Logger.MsgDebug("Monitoring Required-Any Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedAnyBlocks.Add(block.FatBlock);
 					block.FatBlock.IsWorkingChanged += CheckAnyBlocks;
+					_watchingAnyBlocks = true;
 
 				}
 
-				if (this.RequiredNoneFunctionalBlockNames.Contains(terminalBlock.CustomName)) {
+				if (this.RequiredNoneFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
 
+					Logger.MsgDebug("Monitoring Required-None Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedNoneBlocks.Add(block.FatBlock);
 					block.FatBlock.IsWorkingChanged += CheckNoneBlocks;
+					_watchingNoneBlocks = true;
 
 				}
 
@@ -922,6 +973,52 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							this.SpawnGroupBlacklistContainsAny.Add(tempValue);
+
+						}
+
+					}
+
+					//UseRequiredFunctionalBlocks
+					if (tag.Contains("[UseRequiredFunctionalBlocks:") == true) {
+
+						this.UseRequiredFunctionalBlocks = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RequiredAllFunctionalBlockNames
+					if (tag.Contains("[RequiredAllFunctionalBlockNames:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							this.RequiredAllFunctionalBlockNames.Add(tempValue);
+
+						}
+
+					}
+
+					//RequiredAnyFunctionalBlockNames
+					if (tag.Contains("[RequiredAnyFunctionalBlockNames:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							this.RequiredAnyFunctionalBlockNames.Add(tempValue);
+
+						}
+
+					}
+
+					//RequiredNoneFunctionalBlockNames
+					if (tag.Contains("[RequiredNoneFunctionalBlockNames:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
+
+							this.RequiredNoneFunctionalBlockNames.Add(tempValue);
 
 						}
 

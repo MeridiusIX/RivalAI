@@ -1,35 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
+﻿using System.Collections.Generic;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
-using RivalAI;
 using RivalAI.Behavior.Subsystems.Profiles;
 
 namespace RivalAI.Helpers {
@@ -62,7 +34,14 @@ namespace RivalAI.Helpers {
 		}
 
 		private static void SpawningParallelChecks() {
-			
+
+			if (_currentSpawn.SpawningType != SpawnTypeEnum.CustomSpawn) {
+
+				_spawnMatrix = _currentSpawn.CurrentPositionMatrix;
+				return;
+
+			}
+
 			if(_currentSpawn.UseRelativeSpawnPosition){
 				
 				var spawnCoords = Vector3D.Transform(_currentSpawn.RelativeSpawnOffset, _currentSpawn.CurrentPositionMatrix);
@@ -131,20 +110,129 @@ namespace RivalAI.Helpers {
 
 			}
 
-			Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpawnData to MES", DebugTypeEnum.Spawn);
-			var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
-			var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks, _currentSpawn.CurrentFactionTag, _currentSpawn.ProfileSubtypeId);
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.CustomSpawn) {
 
-			if (result == true) {
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending CustomSpawn Data to MES", DebugTypeEnum.Spawn);
+				var velocity = Vector3D.Transform(_currentSpawn.RelativeSpawnVelocity, _spawnMatrix) - _spawnMatrix.Translation;
+				var result = MESApi.CustomSpawnRequest(_currentSpawn.SpawnGroups, _spawnMatrix, velocity, _currentSpawn.IgnoreSafetyChecks, _currentSpawn.CurrentFactionTag, _currentSpawn.ProfileSubtypeId);
 
-				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
-				_currentSpawn.SpawnCount++;
-				_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
 
 
-			} else {
+				} else {
 
-				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
+
+			}
+
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.SpaceCargoShip) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending SpaceCargoShip Data to MES", DebugTypeEnum.Spawn);
+				var spawns = _currentSpawn.SpawnGroups.Count > 0 ? _currentSpawn.SpawnGroups : null;
+				var result = MESApi.SpawnSpaceCargoShip(_spawnMatrix.Translation, spawns);
+
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+
+
+				} else {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
+
+			}
+
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.RandomEncounter) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending RandomEncounter Data to MES", DebugTypeEnum.Spawn);
+				var spawns = _currentSpawn.SpawnGroups.Count > 0 ? _currentSpawn.SpawnGroups : null;
+				var result = MESApi.SpawnRandomEncounter(_spawnMatrix.Translation, spawns);
+
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+
+
+				} else {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
+
+			}
+
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.PlanetaryCargoShip) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending PlanetaryCargoShip Data to MES", DebugTypeEnum.Spawn);
+				var spawns = _currentSpawn.SpawnGroups.Count > 0 ? _currentSpawn.SpawnGroups : null;
+				var result = MESApi.SpawnPlanetaryCargoShip(_spawnMatrix.Translation, spawns);
+
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+
+
+				} else {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
+
+			}
+
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.PlanetaryInstallation) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending PlanetaryInstallation Data to MES", DebugTypeEnum.Spawn);
+				var spawns = _currentSpawn.SpawnGroups.Count > 0 ? _currentSpawn.SpawnGroups : null;
+				var result = MESApi.SpawnPlanetaryInstallation(_spawnMatrix.Translation, spawns);
+
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+
+
+				} else {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
+
+			}
+
+			if (_currentSpawn.SpawningType == SpawnTypeEnum.BossEncounter) {
+
+				Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Sending BossEncounter Data to MES", DebugTypeEnum.Spawn);
+				var spawns = _currentSpawn.SpawnGroups.Count > 0 ? _currentSpawn.SpawnGroups : null;
+				var result = MESApi.SpawnBossEncounter(_spawnMatrix.Translation, spawns);
+
+				if (result == true) {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Successful", DebugTypeEnum.Spawn);
+					_currentSpawn.SpawnCount++;
+					_currentSpawn.LastSpawnTime = MyAPIGateway.Session.GameDateTime;
+
+
+				} else {
+
+					Logger.MsgDebug(_currentSpawn.ProfileSubtypeId + ": Spawn Failed", DebugTypeEnum.Spawn);
+
+				}
 
 			}
 

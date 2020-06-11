@@ -3,11 +3,12 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VRage.Game.ModAPI;
 
 namespace RivalAI.Behavior {
 	public interface IBehavior {
 
-		NewAutoPilotSystem NewAutoPilot { get; }
+		AutoPilotSystem NewAutoPilot { get; }
 		BroadcastSystem Broadcast { get; }
 		DamageSystem Damage { get; }
 		DespawnSystem Despawn { get; }
@@ -26,6 +27,7 @@ namespace RivalAI.Behavior {
 		bool BehaviorTriggerG { get; set; }
 		bool BehaviorTriggerH { get; set; }
 		void BehaviorInit(IMyRemoteControl remoteControl);
+		List<IMyCubeGrid> CurrentGrids { get; }
 		bool IsAIReady();
 		void ProcessCollisionChecks();
 		void ProcessTargetingChecks();
