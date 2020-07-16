@@ -10,6 +10,7 @@ using VRage.ModAPI;
 using VRage.Game;
 using VRageMath;
 using Sandbox.Game.Gui;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior.Subsystems.Weapons {
 	public class RegularWeapon : BaseWeapon, IWeapon{
@@ -166,7 +167,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 		private void StaticWeaponReadiness() {
 
 			//Collision
-			var collision = _behavior.NewAutoPilot.Collision.GetResult(_direction);
+			var collision = _behavior.AutoPilot.Collision.GetResult(_direction);
 			bool badCollisionResult = false;
 			bool hostileCollisionResult = false;
 			var trajectory = _weaponSystem.MaxStaticWeaponRange > -1 ? MathHelper.Clamp(_ammoMaxTrajectory, 0, _weaponSystem.MaxStaticWeaponRange) : _ammoMaxTrajectory;
@@ -185,7 +186,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 						if (_weaponSystem.WaypointIsTarget) {
 
-							if (_behavior.NewAutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
+							if (_behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
 
 								//Logger.MsgDebug(" - Target On Other Side Of Collision", DebugTypeEnum.Weapon);
 								badCollisionResult = true;
@@ -207,7 +208,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 						bool hostileEntity = collision.GridRelation == TargetRelationEnum.Enemy || collision.ShieldRelation == TargetRelationEnum.Enemy;
 
-						if (!hostileEntity && _behavior.NewAutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
+						if (!hostileEntity && _behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
 
 							//Logger.MsgDebug(" - Target On Other Side Of Friendly Grid", DebugTypeEnum.Weapon);
 							badCollisionResult = true;
@@ -240,7 +241,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			}
 
 			//Angle
-			var directionToTarget = Vector3D.Normalize(_behavior.NewAutoPilot.GetCurrentWaypoint() - _block.GetPosition());
+			var directionToTarget = Vector3D.Normalize(_behavior.AutoPilot.GetCurrentWaypoint() - _block.GetPosition());
 			var allowedAngle = VectorHelper.GetAngleBetweenDirections(directionToTarget, _block.WorldMatrix.Forward) <= _weaponSystem.WeaponMaxAngleFromTarget;
 
 			if (!allowedAngle && !hostileCollisionResult) {
@@ -252,9 +253,9 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			}
 
 			//Distance
-			var dist = Vector3D.Distance(_block.GetPosition(), _behavior.NewAutoPilot.GetCurrentWaypoint());
+			var dist = Vector3D.Distance(_block.GetPosition(), _behavior.AutoPilot.GetCurrentWaypoint());
 			var reqTrajectory = dist > trajectory ? trajectory : trajectory - (trajectory - dist);
-			var distFromMaxTrajectory = Vector3D.Distance(_behavior.NewAutoPilot.GetCurrentWaypoint(), _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
+			var distFromMaxTrajectory = Vector3D.Distance(_behavior.AutoPilot.GetCurrentWaypoint(), _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
 
 			//Logger.MsgDebug(string.Format("BlockToTarget: {0} /// Trajectory {3} /// ReqTrajectory: {1} /// DistFromMaxTraj: {2}", dist, reqTrajectory, distFromMaxTrajectory, trajectory), DebugTypeEnum.Weapon);
 

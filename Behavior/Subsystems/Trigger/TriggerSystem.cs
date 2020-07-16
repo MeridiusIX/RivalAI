@@ -25,16 +25,14 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
-using RivalAI.Behavior.Subsystems.Profiles;
 using RivalAI.Sync;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
-namespace RivalAI.Behavior.Subsystems {
+namespace RivalAI.Behavior.Subsystems.Trigger {
 
-	public class TriggerSystem{
+	public class TriggerSystem {
 
 		public IMyRemoteControl RemoteControl;
 		public List<IMyRadioAntenna> AntennaList = new List<IMyRadioAntenna>();
@@ -45,7 +43,7 @@ namespace RivalAI.Behavior.Subsystems {
 		private AutoPilotSystem _autopilot;
 		private BroadcastSystem _broadcast;
 		private DespawnSystem _despawn;
-		private ExtrasSystem _extras;
+		private GridSystem _extras;
 		private OwnerSystem _owner;
 		private StoredSettings _settings;
 
@@ -78,7 +76,7 @@ namespace RivalAI.Behavior.Subsystems {
 		public Action OnComplete;
 
 
-		public TriggerSystem(IMyRemoteControl remoteControl){
+		public TriggerSystem(IMyRemoteControl remoteControl) {
 
 			RemoteControl = null;
 			AntennaList = new List<IMyRadioAntenna>();
@@ -104,22 +102,22 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void ProcessTriggerWatchers() {
 
-			var timeDifference = MyAPIGateway.Session.GameDateTime - this.LastTriggerRun;
+			var timeDifference = MyAPIGateway.Session.GameDateTime - LastTriggerRun;
 
 			if (timeDifference.TotalMilliseconds < 500) {
 
 				//Logger.MsgDebug("Triggers Not Ready (total ms elapsed: "+ timeDifference.TotalMilliseconds.ToString() + "), Handing Off to Next Action", DebugTypeEnum.Dev);
 				//OnComplete?.Invoke();
 				return;
-			
+
 			}
 
 			//Logger.MsgDebug("Checking Triggers", DebugTypeEnum.Dev);
-			this.LastTriggerRun = MyAPIGateway.Session.GameDateTime;
+			LastTriggerRun = MyAPIGateway.Session.GameDateTime;
 
-			for (int i = 0; i < this.Triggers.Count; i++) {
+			for (int i = 0; i < Triggers.Count; i++) {
 
-				var trigger = this.Triggers[i];
+				var trigger = Triggers[i];
 
 				//Timer
 				if (trigger.Type == "Timer") {
@@ -340,9 +338,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 			TimedTriggersProcessed = false;
 
-			for (int i = 0; i < this.Triggers.Count; i++) {
+			for (int i = 0; i < Triggers.Count; i++) {
 
-				ProcessTrigger(this.Triggers[i]);
+				ProcessTrigger(Triggers[i]);
 
 			}
 
@@ -362,20 +360,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 			_settings.LastDamageTakenTime = MyAPIGateway.Session.GameDateTime;
 			_settings.TotalDamageAccumulated += info.Amount;
+			_settings.LastDamagerEntity += info.AttackerId;
 
-			for (int i = 0;i < this.DamageTriggers.Count;i++) {
+			for (int i = 0; i < DamageTriggers.Count; i++) {
 
 				//Logger.AddMsg("Got Trigger Profile", true);
 
-				var trigger = this.DamageTriggers[i];
+				var trigger = DamageTriggers[i];
 
-				if(trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
+				if (trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
 
-					if(trigger.UseTrigger == true) {
+					if (trigger.UseTrigger == true) {
 
 						trigger.ActivateTrigger();
 
-						if(trigger.Triggered == true) {
+						if (trigger.Triggered == true) {
 
 							Logger.MsgDebug("Process Damage Actions", DebugTypeEnum.Trigger);
 							ProcessTrigger(trigger, info.AttackerId);
@@ -392,47 +391,81 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void ProcessCommandReceiveTriggerWatcher(Command command) {
 
-			if (!_behavior.IsAIReady())
+			if (!_behavior.IsAIReady()) {
+
+				Logger.MsgDebug("Behavior AI Not Ready", DebugTypeEnum.Command);
 				return;
-
-			if (command.RemoteControl?.SlimBlock?.CubeGrid == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
-				return;
-
-			var dist = Vector3D.Distance(this.RemoteControl.GetPosition(), command.RemoteControl.GetPosition());
-
-			if (!command.IgnoreAntennaRequirement) {
-
-				var antenna = BlockHelper.GetActiveAntenna(this.AntennaList);
-
-				if (antenna == null)
-					return;
-
-				if (dist > command.Radius)
-					return;
-
-			} else {
-
-				if (dist > command.Radius)
-					return;
 
 			}
 
-			for (int i = 0;i < this.CommandTriggers.Count;i++) {
+			if (command == null) {
 
-				var trigger = this.CommandTriggers[i];
+				Logger.MsgDebug("Command Null", DebugTypeEnum.Command);
+				return;
 
-				if(trigger.UseTrigger == true && command.CommandCode == trigger.CommandReceiveCode) {
+			}
+
+			if (string.IsNullOrWhiteSpace(command.CommandCode)) {
+
+				Logger.MsgDebug("Command Code Null or Blank", DebugTypeEnum.Command);
+				return;
+
+			}
+
+			if (CommandTriggers == null) {
+
+				Logger.MsgDebug("No Eligible Command Triggers", DebugTypeEnum.Command);
+				return;
+
+			}
+
+
+			if (command.SenderEntity?.PositionComp != null || RemoteControl?.SlimBlock?.CubeGrid == null) {
+
+				Logger.MsgDebug("Sender Remote CubeGrid Null or Receiver Remote CubeGrid Null", DebugTypeEnum.Command);
+				return;
+
+			}
+
+			var dist = Vector3D.Distance(RemoteControl.GetPosition(), command.RemoteControl.GetPosition());
+
+			if (!command.IgnoreAntennaRequirement) {
+
+				var antenna = _behavior.Grid.GetActiveAntenna();
+
+				if (antenna == null) {
+
+					Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
+					return;
+
+				}
+
+			}
+
+			if (dist > command.Radius) {
+
+				Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
+				return;
+
+			}
+
+
+			for (int i = 0; i < CommandTriggers.Count; i++) {
+
+				var trigger = CommandTriggers[i];
+
+				if (trigger.UseTrigger == true && command.CommandCode == trigger.CommandReceiveCode) {
 
 					trigger.ActivateTrigger();
 
-					if(trigger.Triggered == true) {
+					if (trigger.Triggered == true) {
 
 						ProcessTrigger(trigger, 0, command);
 
 					}
 
 				}
- 
+
 			}
 
 		}
@@ -442,11 +475,11 @@ namespace RivalAI.Behavior.Subsystems {
 			if (!validToProcess || RemoteControlCompromised)
 				return;
 
-			this.RemoteControlCompromised = true;
+			RemoteControlCompromised = true;
 
-			for (int i = 0; i < this.CompromisedTriggers.Count; i++) {
+			for (int i = 0; i < CompromisedTriggers.Count; i++) {
 
-				var trigger = this.CompromisedTriggers[i];
+				var trigger = CompromisedTriggers[i];
 
 				if (trigger.UseTrigger == true) {
 
@@ -482,10 +515,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void ProcessTrigger(TriggerProfile trigger, long attackerEntityId = 0, Command command = null) {
 
-			if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
+			if (RemoteControl?.SlimBlock?.CubeGrid == null)
 				return;
 
-			if(trigger.Triggered == false || trigger.Actions == null) {
+			if (trigger.Triggered == false || trigger.Actions == null) {
 
 				return;
 
@@ -507,6 +540,20 @@ namespace RivalAI.Behavior.Subsystems {
 
 			foreach (var actions in trigger.Actions) {
 
+				if (actions.Chance < 100) {
+
+					var roll = Utilities.Rnd.Next(0, 101);
+
+					if (roll > actions.Chance) {
+
+						Logger.MsgDebug(actions.ProfileSubtypeId + ": Did Not Pass Chance Check", DebugTypeEnum.Action);
+						return;
+
+					}
+
+
+				}
+
 				Logger.MsgDebug(actions.ProfileSubtypeId + ": Performing Eligible Actions", DebugTypeEnum.Action);
 
 				//ChatBroadcast
@@ -518,7 +565,7 @@ namespace RivalAI.Behavior.Subsystems {
 						_broadcast.BroadcastRequest(chatData);
 
 					}
-	
+
 				}
 
 				//BarrellRoll - Implement Post Release
@@ -539,7 +586,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.ChangeAutopilotSpeed == true) {
 
 					Logger.MsgDebug(actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
-					_autopilot.IdealMaxSpeed = actions.NewAutopilotSpeed;
+					_autopilot.Data.IdealMaxSpeed = actions.NewAutopilotSpeed;
 					var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
 					foreach (var block in blockList.Where(x => x.FatBlock != null)) {
@@ -567,8 +614,8 @@ namespace RivalAI.Behavior.Subsystems {
 							if (spawner.IsReadyToSpawn()) {
 
 								//Logger.AddMsg("Do Spawn", true);
-								spawner.CurrentPositionMatrix = this.RemoteControl.WorldMatrix;
-								spawner.CurrentFactionTag = (spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag)) ? _owner.Faction.Tag : "";
+								spawner.CurrentPositionMatrix = RemoteControl.WorldMatrix;
+								spawner.CurrentFactionTag = spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag) ? _owner.Faction.Tag : "";
 								SpawnHelper.SpawnRequest(spawner);
 
 							}
@@ -641,7 +688,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.TerminateBehavior) {
 
 					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Termination Of Behavior", DebugTypeEnum.Action);
-					_autopilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					_autopilot.ActivateAutoPilot(Vector3D.Zero, NewAutoPilotMode.None);
 					_behavior.BehaviorTerminated = true;
 
 				}
@@ -659,10 +706,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 					} else {
 
-						var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+						var antenna = _behavior.Grid.GetAntennaWithHighestRange();
 
 						if (antenna != null)
-							sendRadius = (double)antenna.Radius;
+							sendRadius = antenna.Radius;
 
 					}
 
@@ -670,9 +717,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 						var newCommand = new Command();
 						newCommand.CommandCode = actions.BroadcastSendCode;
-						newCommand.RemoteControl = this.RemoteControl;
+						newCommand.RemoteControl = RemoteControl;
 						newCommand.Radius = sendRadius;
-						CommandHelper.CommandTrigger?.Invoke(command);
+						CommandHelper.CommandTrigger?.Invoke(newCommand);
 
 					}
 
@@ -691,10 +738,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 					} else {
 
-						var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList);
+						var antenna = _behavior.Grid.GetAntennaWithHighestRange();
 
 						if (antenna != null)
-							sendRadius = (double)antenna.Radius;
+							sendRadius = antenna.Radius;
 
 					}
 
@@ -702,10 +749,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 						var newCommand = new Command();
 						newCommand.CommandCode = actions.BroadcastSendCode;
-						newCommand.RemoteControl = this.RemoteControl;
+						newCommand.RemoteControl = RemoteControl;
 						newCommand.Radius = sendRadius;
 						newCommand.TargetEntityId = detectedEntity;
-						CommandHelper.CommandTrigger?.Invoke(command);
+						CommandHelper.CommandTrigger?.Invoke(newCommand);
 
 					}
 
@@ -720,7 +767,7 @@ namespace RivalAI.Behavior.Subsystems {
 					if (command != null && command.TargetEntityId != 0) {
 
 						switchToId = command.TargetEntityId;
-						
+
 
 					} else if (detectedEntity != 0) {
 
@@ -777,7 +824,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.ChangeReputationWithPlayers == true) {
 
 					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Reputation Change With Players In Radius", DebugTypeEnum.Action);
-					OwnershipHelper.ChangeReputationWithPlayersInRadius(this.RemoteControl, actions.ReputationChangeRadius, actions.ReputationChangeAmount, actions.ReputationChangeFactions, actions.ReputationChangesForAllRadiusPlayerFactionMembers);
+					OwnershipHelper.ChangeReputationWithPlayersInRadius(RemoteControl, actions.ReputationChangeRadius, actions.ReputationChangeAmount, actions.ReputationChangeFactions, actions.ReputationChangesForAllRadiusPlayerFactionMembers);
 
 				}
 
@@ -813,14 +860,14 @@ namespace RivalAI.Behavior.Subsystems {
 				//ChangeBlockNames
 				if (actions.ChangeBlockNames) {
 
-					BlockHelper.RenameBlocks(RemoteControl.CubeGrid, actions.ChangeBlockNamesFrom, actions.ChangeBlockNamesTo, actions.ProfileSubtypeId);
+					_behavior.Grid.RenameBlocks(actions.ChangeBlockNamesFrom, actions.ChangeBlockNamesTo, actions.ProfileSubtypeId);
 
 				}
 
 				//ChangeAntennaRanges
 				if (actions.ChangeAntennaRanges) {
 
-					BlockHelper.SetGridAntennaRanges(AntennaList, actions.AntennaNamesForRangeChange, actions.AntennaRangeChangeType, actions.AntennaRangeChangeAmount);
+					_behavior.Grid.SetGridAntennaRanges(actions.AntennaNamesForRangeChange, actions.AntennaRangeChangeType, actions.AntennaRangeChangeAmount);
 
 				}
 
@@ -836,7 +883,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.CreateKnownPlayerArea == true) {
 
 					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Creation of Known Player Area in MES", DebugTypeEnum.Action);
-					MESApi.AddKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.KnownPlayerAreaRadius, actions.KnownPlayerAreaTimer, actions.KnownPlayerAreaMaxSpawns, actions.KnownPlayerAreaMinThreatForAvoidingAbandonment);
+					MESApi.AddKnownPlayerLocation(RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.KnownPlayerAreaRadius, actions.KnownPlayerAreaTimer, actions.KnownPlayerAreaMaxSpawns, actions.KnownPlayerAreaMinThreatForAvoidingAbandonment);
 
 				}
 
@@ -844,7 +891,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.RemoveKnownPlayerArea == true) {
 
 					Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Removal of Known Player Area in MES", DebugTypeEnum.Action);
-					MESApi.RemoveKnownPlayerLocation(this.RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.RemoveAllKnownPlayerAreas);
+					MESApi.RemoveKnownPlayerLocation(RemoteControl.GetPosition(), _owner.Faction?.Tag, actions.RemoveAllKnownPlayerAreas);
 
 				}
 
@@ -859,7 +906,7 @@ namespace RivalAI.Behavior.Subsystems {
 				//PlayParticleEffectAtRemote
 				if (actions.PlayParticleEffectAtRemote == true) {
 
-					EffectManager.SendParticleEffectRequest(actions.ParticleEffectId, this.RemoteControl.WorldMatrix, actions.ParticleEffectOffset, actions.ParticleEffectScale, actions.ParticleEffectMaxTime, actions.ParticleEffectColor);
+					EffectManager.SendParticleEffectRequest(actions.ParticleEffectId, RemoteControl.WorldMatrix, actions.ParticleEffectOffset, actions.ParticleEffectScale, actions.ParticleEffectMaxTime, actions.ParticleEffectColor);
 
 				}
 
@@ -968,20 +1015,20 @@ namespace RivalAI.Behavior.Subsystems {
 				if (actions.GenerateExplosion) {
 
 					var coords = Vector3D.Transform(actions.ExplosionOffsetFromRemote, RemoteControl.WorldMatrix);
-					DamageHelper.CreateExplosion(coords, actions.ExplosionRange, actions.ExplosionDamage, this.RemoteControl, actions.ExplosionIgnoresVoxels);
+					DamageHelper.CreateExplosion(coords, actions.ExplosionRange, actions.ExplosionDamage, RemoteControl, actions.ExplosionIgnoresVoxels);
 
 				}
 
 				//GridEditable
 				if (actions.GridEditable != CheckEnum.Ignore) {
 
-					BlockHelper.SetGridEditable(this.RemoteControl.SlimBlock.CubeGrid, actions.GridEditable == CheckEnum.Yes);
+					_behavior.Grid.SetGridEditable(RemoteControl.SlimBlock.CubeGrid, actions.GridEditable == CheckEnum.Yes);
 
 					if (actions.SubGridsEditable != CheckEnum.Ignore) {
 
-						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
 
-							BlockHelper.SetGridEditable(cubeGrid, actions.SubGridsEditable == CheckEnum.Yes);
+							_behavior.Grid.SetGridEditable(cubeGrid, actions.SubGridsEditable == CheckEnum.Yes);
 
 						}
 
@@ -992,13 +1039,13 @@ namespace RivalAI.Behavior.Subsystems {
 				//GridDestructible
 				if (actions.GridDestructible != CheckEnum.Ignore) {
 
-					BlockHelper.SetGridDestructible(this.RemoteControl.SlimBlock.CubeGrid, actions.GridDestructible == CheckEnum.Yes);
+					_behavior.Grid.SetGridDestructible(RemoteControl.SlimBlock.CubeGrid, actions.GridDestructible == CheckEnum.Yes);
 
 					if (actions.SubGridsDestructible != CheckEnum.Ignore) {
 
-						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
 
-							BlockHelper.SetGridDestructible(cubeGrid, actions.SubGridsDestructible == CheckEnum.Yes);
+							_behavior.Grid.SetGridDestructible(cubeGrid, actions.SubGridsDestructible == CheckEnum.Yes);
 
 						}
 
@@ -1009,13 +1056,13 @@ namespace RivalAI.Behavior.Subsystems {
 				//RecolorGrid
 				if (actions.RecolorGrid) {
 
-					BlockHelper.RecolorBlocks(this.RemoteControl.SlimBlock.CubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
+					_behavior.Grid.RecolorBlocks(RemoteControl.SlimBlock.CubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
 
 					if (actions.RecolorSubGrids) {
 
-						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
+						foreach (var cubeGrid in MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical)) {
 
-							BlockHelper.RecolorBlocks(cubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
+							_behavior.Grid.RecolorBlocks(cubeGrid, actions.OldBlockColors, actions.NewBlockColors, actions.NewBlockSkins);
 
 						}
 
@@ -1026,14 +1073,14 @@ namespace RivalAI.Behavior.Subsystems {
 				//ChangeBlockOwnership
 				if (actions.ChangeBlockOwnership) {
 
-					BlockHelper.ChangeBlockOwnership(this.RemoteControl.SlimBlock.CubeGrid, actions.OwnershipBlockNames, actions.OwnershipBlockFactions);
+					BlockHelper.ChangeBlockOwnership(RemoteControl.SlimBlock.CubeGrid, actions.OwnershipBlockNames, actions.OwnershipBlockFactions);
 
 				}
 
 				//RazeBlocks
 				if (actions.RazeBlocksWithNames) {
 
-					BlockHelper.RazeBlocksWithNames(this.RemoteControl.SlimBlock.CubeGrid, actions.RazeBlocksNames);
+					_behavior.Grid.RazeBlocksWithNames(actions.RazeBlocksNames);
 
 				}
 
@@ -1115,26 +1162,26 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void SetSandboxBool(string boolName, bool mode) {
 
-			MyAPIGateway.Utilities.SetVariable<bool>(boolName, mode);
-		
+			MyAPIGateway.Utilities.SetVariable(boolName, mode);
+
 		}
 
 		public void SetSandboxCounter(string counterName, int amount) {
 
 			int existingCounter = 0;
 
-			MyAPIGateway.Utilities.GetVariable<int>(counterName, out existingCounter);
+			MyAPIGateway.Utilities.GetVariable(counterName, out existingCounter);
 
 			if (amount == 0) {
 
-				MyAPIGateway.Utilities.SetVariable<int>(counterName, 0);
+				MyAPIGateway.Utilities.SetVariable(counterName, 0);
 				return;
 
 			}
 
 			if (amount == 1) {
 
-				MyAPIGateway.Utilities.SetVariable<int>(counterName, existingCounter++);
+				MyAPIGateway.Utilities.SetVariable(counterName, existingCounter++);
 				return;
 
 			}
@@ -1142,7 +1189,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (amount == -1) {
 
 				existingCounter--;
-				MyAPIGateway.Utilities.SetVariable<int>(counterName, existingCounter < 0 ? 0 : existingCounter);
+				MyAPIGateway.Utilities.SetVariable(counterName, existingCounter < 0 ? 0 : existingCounter);
 				return;
 
 			}
@@ -1154,9 +1201,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 			IMyPlayer player = null;
 
-			var remotePosition = Vector3D.Transform(control.PlayerNearPositionOffset, this.RemoteControl.WorldMatrix);
+			var remotePosition = Vector3D.Transform(control.PlayerNearPositionOffset, RemoteControl.WorldMatrix);
 
-			if(control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
+			if (control.MinPlayerReputation != -1501 || control.MaxPlayerReputation != 1501) {
 
 				player = TargetHelper.GetClosestPlayerWithReputation(remotePosition, _owner.FactionId, control);
 
@@ -1166,7 +1213,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if(player == null) {
+			if (player == null) {
 
 				//Logger.MsgDebug(control.ProfileSubtypeId + ": No Eligible Player for PlayerNear Check", DebugTypeEnum.Trigger);
 				return false;
@@ -1175,21 +1222,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 			var playerDist = Vector3D.Distance(player.GetPosition(), remotePosition);
 
-			if(playerDist > control.TargetDistance) {
+			if (playerDist > control.TargetDistance) {
 
 				//Logger.MsgDebug(control.ProfileSubtypeId + ": Nearest Player Too Far: " + playerDist.ToString(), DebugTypeEnum.Trigger);
 				return false;
 
 			}
 
-			if(control.InsideAntenna == true) {
+			if (control.InsideAntenna == true) {
 
-				var antenna = BlockHelper.GetAntennaWithHighestRange(this.AntennaList, control.InsideAntennaName);
+				var antenna = _behavior.Grid.GetAntennaWithHighestRange(control.InsideAntennaName);
 
-				if(antenna != null) {
+				if (antenna != null) {
 
 					playerDist = Vector3D.Distance(player.GetPosition(), antenna.GetPosition());
-					if(playerDist > antenna.Radius) {
+					if (playerDist > antenna.Radius) {
 
 						return false;
 
@@ -1209,36 +1256,36 @@ namespace RivalAI.Behavior.Subsystems {
 
 		public void Setup(IMyRemoteControl remoteControl) {
 
-			if(remoteControl?.SlimBlock == null) {
+			if (remoteControl?.SlimBlock == null) {
 
 				return;
 
 			}
 
-			this.RemoteControl = remoteControl;
+			RemoteControl = remoteControl;
 
-			this.AntennaList = BlockHelper.GetGridAntennas(this.RemoteControl.SlimBlock.CubeGrid);
+			AntennaList = BlockHelper.GetGridAntennas(RemoteControl.SlimBlock.CubeGrid);
+
+		}
+
+		public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, GridSystem extras, OwnerSystem owners, StoredSettings settings, IBehavior behavior) {
+
+			_autopilot = autopilot;
+			_broadcast = broadcast;
+			_despawn = despawn;
+			_extras = extras;
+			_owner = owners;
+			_settings = settings;
+			_behavior = behavior;
 
 		}
 
-		public void SetupReferences(AutoPilotSystem autopilot, BroadcastSystem broadcast, DespawnSystem despawn, ExtrasSystem extras, OwnerSystem owners, StoredSettings settings, IBehavior behavior) {
+		public void RegisterCommandListener() {
 
-			this._autopilot = autopilot;
-			this._broadcast = broadcast;
-			this._despawn = despawn;
-			this._extras = extras;
-			this._owner = owners;
-			this._settings = settings;
-			this._behavior = behavior;
-
-		}
-		
-		public void RegisterCommandListener(){
-		
-			if(this.CommandListenerRegistered)
+			if (CommandListenerRegistered)
 				return;
-			
-			this.CommandListenerRegistered = true;
+
+			CommandListenerRegistered = true;
 			CommandHelper.CommandTrigger += ProcessCommandReceiveTriggerWatcher;
 
 		}
@@ -1251,20 +1298,20 @@ namespace RivalAI.Behavior.Subsystems {
 				return false;
 
 			}
-				
+
 
 			ExistingTriggers.Add(trigger.ProfileSubtypeId);
 
 			if (trigger.Type == "Damage") {
 
-				this.DamageTriggers.Add(trigger);
+				DamageTriggers.Add(trigger);
 				return true;
 
 			}
 
 			if (trigger.Type == "CommandReceived") {
 
-				this.CommandTriggers.Add(trigger);
+				CommandTriggers.Add(trigger);
 				RegisterCommandListener();
 				return true;
 
@@ -1272,12 +1319,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (trigger.Type == "Compromised") {
 
-				this.CompromisedTriggers.Add(trigger);
+				CompromisedTriggers.Add(trigger);
 				return true;
 
 			}
 
-			this.Triggers.Add(trigger);
+			Triggers.Add(trigger);
 			return true;
 
 		}
@@ -1287,39 +1334,39 @@ namespace RivalAI.Behavior.Subsystems {
 			//TODO: Try To Get Triggers From Block Storage At Start
 
 			//Start With This Class
-			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == true) {
+			if (string.IsNullOrWhiteSpace(RemoteControl.CustomData) == true) {
 
 				return;
 
 			}
 
-			var descSplit = this.RemoteControl.CustomData.Split('\n');
+			var descSplit = RemoteControl.CustomData.Split('\n');
 
-			foreach(var tag in descSplit) {
+			foreach (var tag in descSplit) {
 
 				//Triggers
-				if(tag.Contains("[Triggers:") == true) {
+				if (tag.Contains("[Triggers:") == true) {
 
 					bool gotTrigger = false;
 					var tempValue = TagHelper.TagStringCheck(tag);
 
-					if(string.IsNullOrWhiteSpace(tempValue) == false) {
+					if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 						byte[] byteData = { };
 
-						if(TagHelper.TriggerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+						if (TagHelper.TriggerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
 							try {
 
 								var profile = MyAPIGateway.Utilities.SerializeFromBinary<TriggerProfile>(byteData);
 
-								if(profile != null) {
+								if (profile != null) {
 
 									gotTrigger = AddTrigger(profile);
 
 								}
 
-							} catch(Exception e) {
+							} catch (Exception e) {
 
 								Logger.MsgDebug("Exception In Trigger Setup for Tag: " + tag, DebugTypeEnum.BehaviorSetup);
 								Logger.MsgDebug(e.ToString(), DebugTypeEnum.BehaviorSetup);

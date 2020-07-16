@@ -30,6 +30,7 @@ namespace RivalAI.Behavior {
 	public static class BehaviorManager {
 
 		public static List<IBehavior> Behaviors = new List<IBehavior>();
+		public static List<IMyRemoteControl> DormantAiBlocks = new List<IMyRemoteControl>();
 
 		public static BehaviorManagerMode Mode = BehaviorManagerMode.None;
 		public static BehaviorManageSubmode Submode = BehaviorManageSubmode.None;
@@ -406,6 +407,19 @@ namespace RivalAI.Behavior {
 				Behaviors[i].RunMainBehavior();
 
 			}
+
+		}
+
+		public static IBehavior GetBehavior(IMyRemoteControl remoteControl) {
+
+			for (int i = Behaviors.Count - 1; i >= 0; i--) {
+
+				if (Behaviors[i].IsAIReady() && Behaviors[i].RemoteControl == remoteControl)
+					return Behaviors[i];
+
+			}
+
+			return null;
 
 		}
 

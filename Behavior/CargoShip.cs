@@ -32,6 +32,7 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior{
 
@@ -53,9 +54,9 @@ namespace RivalAI.Behavior{
 
 		public bool CargoShipCalculateRandomDespawn;
 
-		public CargoShip() {
+		public CargoShip() : base() {
 
-			
+			_behaviorType = "CargoShip";
 
 		}
 
@@ -72,20 +73,20 @@ namespace RivalAI.Behavior{
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), false, false, true);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
 			
 			if(Mode == BehaviorMode.Init) {
 
-				if(!NewAutoPilot.Targeting.HasTarget()) {
+				if(!AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
 				} else {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
 				}
 
@@ -93,16 +94,16 @@ namespace RivalAI.Behavior{
 
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(NewAutoPilot.CurrentMode != NewAutoPilotMode.None) {
+				if(AutoPilot.CurrentMode != AutoPilot.UserCustomModeIdle) {
 
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 
 				}
 
-				if(NewAutoPilot.Targeting.HasTarget()) {
+				if(AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
 				} else if(Despawn.NoTargetExpire == true){
 					
@@ -112,11 +113,11 @@ namespace RivalAI.Behavior{
 
 			}
 
-			if(!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+			if(!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 
 			}
 
@@ -140,7 +141,7 @@ namespace RivalAI.Behavior{
 				if (Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
 
 					//Logger.AddMsg("DespawnCoordsCreated", true);
-					NewAutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
+					AutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
 
 				}
 
@@ -157,9 +158,9 @@ namespace RivalAI.Behavior{
 
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = false;
-			NewAutoPilot.Thrust.AllowStrafing = false;
-			NewAutoPilot.Weapons.UseStaticGuns = false;
-
+			AutoPilot.Data.AllowStrafing = false;
+			AutoPilot.Weapons.UseStaticGuns = false;
+			AutoPilot.Data.DisableInertiaDampeners = false;
 			//Get Settings From Custom Data
 			InitCoreTags();
 			InitTags();

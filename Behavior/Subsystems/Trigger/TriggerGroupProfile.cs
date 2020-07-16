@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
+namespace RivalAI.Behavior.Subsystems.Trigger {
 
 	[ProtoContract]
 	public class TriggerGroupProfile {
@@ -58,7 +58,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 										ExistingTriggers.Add(profile.ProfileSubtypeId);
 
-										this.Triggers.Add(profile);
+										Triggers.Add(profile);
 										gotTrigger = true;
 
 

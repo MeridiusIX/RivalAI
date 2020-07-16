@@ -32,6 +32,7 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior {
 
@@ -45,7 +46,9 @@ namespace RivalAI.Behavior {
 		public DateTime HorseflyWaypointWaitTime;
 		public DateTime HorseflyWaypointAbandonTime;
 
-		public Horsefly() {
+		public Horsefly() : base() {
+
+			_behaviorType = "Horsefly";
 
 			HorseflyWaypointWaitTimeTrigger = 5;
 			HorseflyWaypointAbandonTimeTrigger = 30;
@@ -61,22 +64,22 @@ namespace RivalAI.Behavior {
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
 				Mode = BehaviorMode.Retreat;
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), false, true, true);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
 
 			//Init
 			if(Mode == BehaviorMode.Init) {
 
-				if(!NewAutoPilot.Targeting.HasTarget()) {
+				if(!AutoPilot.Targeting.HasTarget()) {
 
 					Mode = BehaviorMode.WaitingForTarget;
 
 				} else {
 
-					Mode = BehaviorMode.WaitAtWaypoint;
+					Mode = BehaviorMode.ApproachTarget;
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode | NewAutoPilotMode.WaypointFromTarget | NewAutoPilotMode.OffsetWaypoint);
 
 				}
 
@@ -85,12 +88,12 @@ namespace RivalAI.Behavior {
 			//Waiting For Target
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(NewAutoPilot.Targeting.HasTarget()) {
+				if(AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.OffsetWaypointGenerator(true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode | NewAutoPilotMode.WaypointFromTarget | NewAutoPilotMode.OffsetWaypoint);
 
 				} else if(Despawn.NoTargetExpire == true) {
 
@@ -100,7 +103,7 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if(!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
+			if(!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -116,20 +119,20 @@ namespace RivalAI.Behavior {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 					BehaviorTriggerA = true;
 
 				} else if (timeSpan.TotalSeconds >= this.HorseflyWaypointAbandonTimeTrigger) {
 
 					Logger.MsgDebug("Horsefly Timeout, Getting New Offset", DebugTypeEnum.General);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
+					AutoPilot.OffsetWaypointGenerator(true);
 
-				} else if (NewAutoPilot.IsWaypointThroughVelocityCollision()) {
+				} else if (AutoPilot.IsWaypointThroughVelocityCollision()) {
 
 					Logger.MsgDebug("Horsefly Velocity Through Collision, Getting New Offset", DebugTypeEnum.General);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
+					AutoPilot.OffsetWaypointGenerator(true);
 
 				}
 
@@ -144,8 +147,8 @@ namespace RivalAI.Behavior {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					this.HorseflyWaypointAbandonTime = MyAPIGateway.Session.GameDateTime;
-					NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity(), false);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.OffsetWaypointGenerator(true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode | NewAutoPilotMode.WaypointFromTarget | NewAutoPilotMode.OffsetWaypoint);
 					BehaviorTriggerB = true;
 
 				}
@@ -158,7 +161,7 @@ namespace RivalAI.Behavior {
 				if (Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
 
 					//Logger.AddMsg("DespawnCoordsCreated", true);
-					NewAutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
+					AutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
 
 				}
 
@@ -168,12 +171,12 @@ namespace RivalAI.Behavior {
 
 		public bool ArrivedAtWaypoint() {
 
-			if (NewAutoPilot.InGravity() && NewAutoPilot.MyAltitude < NewAutoPilot.IdealPlanetAltitude) {
+			if (AutoPilot.InGravity() && AutoPilot.MyAltitude < AutoPilot.Data.IdealPlanetAltitude) {
 
-				if (NewAutoPilot.DistanceToWaypointAtMyAltitude == -1 || NewAutoPilot.DistanceToOffsetAtMyAltitude == -1)
+				if (AutoPilot.DistanceToWaypointAtMyAltitude == -1 || AutoPilot.DistanceToOffsetAtMyAltitude == -1)
 					return false;
 
-				if (NewAutoPilot.DistanceToWaypointAtMyAltitude < NewAutoPilot.WaypointTolerance && NewAutoPilot.DistanceToOffsetAtMyAltitude < NewAutoPilot.WaypointTolerance) {
+				if (AutoPilot.DistanceToWaypointAtMyAltitude < AutoPilot.Data.WaypointTolerance && AutoPilot.DistanceToOffsetAtMyAltitude < AutoPilot.Data.WaypointTolerance) {
 
 					Logger.MsgDebug("Offset Compensation", DebugTypeEnum.General);
 					return true;
@@ -184,7 +187,7 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if (NewAutoPilot.DistanceToCurrentWaypoint < NewAutoPilot.WaypointTolerance)
+			if (AutoPilot.DistanceToCurrentWaypoint < AutoPilot.Data.WaypointTolerance)
 				return true;
 
 			/*
@@ -214,16 +217,8 @@ namespace RivalAI.Behavior {
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
+			AutoPilot.Data = TagHelper.GetAutopilotProfile("RAI-Generic-Autopilot-Horsefly");
 			Despawn.UseNoTargetTimer = true;
-			NewAutoPilot.MinimumPlanetAltitude = 200;
-			NewAutoPilot.IdealPlanetAltitude = 300;
-			NewAutoPilot.WaypointTolerance = 30;
-			NewAutoPilot.OffsetSpaceMinDistFromTarget = 150;
-			NewAutoPilot.OffsetSpaceMaxDistFromTarget = 300;
-			NewAutoPilot.OffsetPlanetMinDistFromTarget = 150;
-			NewAutoPilot.OffsetPlanetMaxDistFromTarget = 300;
-			NewAutoPilot.OffsetPlanetMinTargetAltitude = -200;
-			NewAutoPilot.OffsetPlanetMaxTargetAltitude = 200;
 
 			//Get Settings From Custom Data
 			InitCoreTags();

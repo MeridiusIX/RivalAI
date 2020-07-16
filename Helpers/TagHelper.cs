@@ -29,8 +29,9 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
-using RivalAI.Behavior.Subsystems.Profiles;
 using RivalAI.Entities;
+using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Helpers {
 
@@ -39,12 +40,15 @@ namespace RivalAI.Helpers {
 		public static Dictionary<string, string> BehaviorTemplates = new Dictionary<string, string>();
 
 		public static Dictionary<string, byte[]> ActionObjectTemplates = new Dictionary<string, byte[]>();
+		public static Dictionary<string, byte[]> AutopilotObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> ChatObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> ConditionObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> SpawnerObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TriggerGroupObjectTemplates = new Dictionary<string, byte[]>();
+
+		public static AutoPilotProfile DefaultAutoPilotSettings = new AutoPilotProfile();
 
 		public static void Setup() {
 
@@ -170,11 +174,23 @@ namespace RivalAI.Helpers {
 
 			}
 
-			//Get All TriggerGroups
+			//Get All TriggerGroups, Autopilot
 			foreach (var def in definitionList) {
 
 				if (string.IsNullOrWhiteSpace(def.DescriptionText) == true) {
 
+					continue;
+
+				}
+
+				if (def.DescriptionText.Contains("[RivalAI Autopilot]") == true && AutopilotObjectTemplates.ContainsKey(def.Id.SubtypeName) == false) {
+
+					var autopilotObject = new AutoPilotProfile();
+					autopilotObject.InitTags(def.DescriptionText);
+					autopilotObject.ProfileSubtypeId = def.Id.SubtypeName;
+					var autopilotBytes = MyAPIGateway.Utilities.SerializeToBinary<AutoPilotProfile>(autopilotObject);
+					//Logger.WriteLog("Trigger Profile Added: " + def.Id.SubtypeName);
+					AutopilotObjectTemplates.Add(def.Id.SubtypeName, autopilotBytes);
 					continue;
 
 				}
@@ -238,6 +254,25 @@ namespace RivalAI.Helpers {
 			Logger.WriteLog(sb.ToString());
 
 		}
+
+		public static AutoPilotProfile GetAutopilotProfile(string profileSubtypeId) {
+
+			byte[] apBytes = null;
+			
+
+			if (AutopilotObjectTemplates.TryGetValue(profileSubtypeId, out apBytes)) {
+
+				var ap = MyAPIGateway.Utilities.SerializeFromBinary<AutoPilotProfile>(apBytes);
+
+				if (ap != null || !string.IsNullOrWhiteSpace(ap.ProfileSubtypeId))
+					return ap;
+
+			}
+
+			return new AutoPilotProfile();
+
+		}
+
 
 		private static string [] ProcessTag(string tag){
 			
@@ -333,7 +368,7 @@ namespace RivalAI.Helpers {
 
 			if(tagSplit.Length == 2) {
 
-				if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
+				if(BroadcastType.TryParse(tagSplit[1], out result) == false) {
 
 					return BroadcastType.None;
 
@@ -467,25 +502,6 @@ namespace RivalAI.Helpers {
 			if(tagSplit.Length == 2) {
 
 				result = tagSplit[1];
-
-			}
-
-			return result;
-
-		}
-
-		public static SpawnPositioningEnum TagSpawnPositioningEnumCheck(string tag) {
-
-			SpawnPositioningEnum result = SpawnPositioningEnum.RandomDirection;
-			var tagSplit = ProcessTag(tag);
-
-			if(tagSplit.Length == 2) {
-
-				if(SpawnPositioningEnum.TryParse(tagSplit[1], out result) == false) {
-
-					return SpawnPositioningEnum.RandomDirection;
-
-				}
 
 			}
 

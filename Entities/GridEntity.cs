@@ -113,6 +113,9 @@ namespace RivalAI.Entities {
 
 		private void NewBlockAdded(IMySlimBlock block) {
 
+			if (!GridManager.ProcessBlock(block))
+				return;
+
 			if (block.FatBlock == null || block.FatBlock as IMyTerminalBlock == null)
 				return;
 
@@ -518,6 +521,15 @@ namespace RivalAI.Entities {
 
 			return CubeGrid.IsStatic;
 		
+		}
+
+		public int MovementScore() {
+
+			if (!ActiveEntity())
+				return 0;
+
+			return EntityEvaluator.GridMovementScore(LinkedGrids);
+
 		}
 
 		public string Name() {

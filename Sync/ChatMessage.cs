@@ -73,6 +73,53 @@ namespace RivalAI.Sync {
 
 		}
 
+		public bool ProcessCommand() {
+
+			//RAI.Command.Antenna.Dist.Code
+			//RAI.Command.NoAntenna.Dist.Code
+
+			var msg = this.Message.Split('.');
+
+			if (msg.Length != 5 || string.IsNullOrWhiteSpace(msg[4])) {
+
+				this.ReturnMessage = "Command Received Could Not Be Read Properly.";
+				return false;
+
+			}
+
+			double distance = 0;
+
+			if (!double.TryParse(msg[3], out distance)) {
+
+				this.ReturnMessage = "Command Distance Unreadable.";
+				return false;
+
+			}
+
+			var players = new List<IMyPlayer>();
+			MyAPIGateway.Players.GetPlayers(players);
+
+			foreach (var player in players) {
+
+				if (player.IdentityId != PlayerId || player?.Controller?.ControlledEntity?.Entity == null)
+					continue;
+
+				var command = new Command();
+				command.CommandCode = msg[4];
+				command.Character = player.Controller.ControlledEntity.Entity;
+				command.Radius = distance;
+				command.IgnoreAntennaRequirement = msg[2] == "Antenna" ? false : true;
+				CommandHelper.CommandTrigger?.Invoke(command);
+				this.ReturnMessage = "Command Message Broadcast.";
+				return true;
+
+			}
+
+			this.ReturnMessage = "Not Sent From Valid Player or Player Has No Entity.";
+			return false;
+		
+		}
+
 		public bool ProcessDebugMode() {
 
 			// /RAI.Debug.Mode.true

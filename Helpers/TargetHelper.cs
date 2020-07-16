@@ -30,7 +30,7 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
-using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Helpers {
 

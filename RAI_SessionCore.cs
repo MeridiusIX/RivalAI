@@ -38,10 +38,17 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.14.0";
+		public static string ReleaseVersion = "0.22.0";
 
+		//Server
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
+
+		//Unstable Build
+		//public static bool IsUnstable = false;
+		//public static bool UnstableDetected = false;
+		//public ulong StableBuildId = 0;
+		//public ulong UnstableBuildId = 0;
 
 		//ShieldApi Support
 		internal static RAI_SessionCore Instance { get; private set; } // allow access from gamelogic
@@ -65,6 +72,8 @@ namespace RivalAI {
 
 			if(MyAPIGateway.Multiplayer.IsServer == false)
 				return;
+
+			//if(MyAPIGateway.Utilities.GamePaths.ModScopeName.StartsWith("RivalAI (Unstable)"))
 
 			Instance = this;
 
@@ -95,6 +104,8 @@ namespace RivalAI {
 
 			if (!MyAPIGateway.Multiplayer.IsServer)
 				return;
+
+			DebugTerminalControls.RegisterControls();
 
 			//TODO: Register Shield and WeaponCore APIs
 			try {
@@ -239,6 +250,8 @@ namespace RivalAI {
 
 			if (MESApi.MESApiReady)
 				MESApi.UnregisterListener();
+
+			DebugTerminalControls.RegisterControls(false);
 
 			Instance = null;
 

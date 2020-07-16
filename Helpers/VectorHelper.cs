@@ -114,6 +114,9 @@ namespace RivalAI.Helpers {
 		//GetAngleBetweenDirections
 		public static double GetAngleBetweenDirections(Vector3D dirA, Vector3D dirB) {
 
+			if (dirA == Vector3D.Zero || dirB == Vector3D.Zero)
+				return 0;
+
 			var radians = MyUtils.GetAngleBetweenVectors(dirA, dirB);
 			return (180 / Math.PI) * radians;
 

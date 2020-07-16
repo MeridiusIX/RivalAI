@@ -29,7 +29,7 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
+namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 	[ProtoContract]
 	public class TargetProfile {
@@ -133,6 +133,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(33)]
 		public bool UsePartialNameMatching;
 
+		[ProtoMember(34)]
+		public float MinMovementScore;
+
+		[ProtoMember(35)]
+		public float MaxMovementScore;
+
 		[ProtoIgnore]
 		public bool BuiltUniqueFilterList;
 
@@ -181,6 +187,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			MinTargetValue = 0;
 			MaxTargetValue = 1;
 
+			MinMovementScore = -1;
+			MaxMovementScore = -1;
+
 			PrioritizePlayerControlled = false;
 
 			Names = new List<string>();
@@ -191,61 +200,61 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			AllUniqueFilters = new List<TargetFilterEnum>();
 
 		}
-		
+
 		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//UseCustomTargeting
-					if(tag.Contains("[UseCustomTargeting:") == true) {
+					if (tag.Contains("[UseCustomTargeting:") == true) {
 
-						this.UseCustomTargeting = TagHelper.TagBoolCheck(tag);
+						UseCustomTargeting = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//TimeUntilTargetAcquisition
 					if (tag.Contains("[TimeUntilTargetAcquisition:") == true) {
 
-						this.TimeUntilTargetAcquisition = TagHelper.TagIntCheck(tag, this.TimeUntilTargetAcquisition);
+						TimeUntilTargetAcquisition = TagHelper.TagIntCheck(tag, TimeUntilTargetAcquisition);
 
 					}
 
 					//UseTargetRefresh
 					if (tag.Contains("[UseTargetRefresh:") == true) {
 
-						this.UseTargetRefresh = TagHelper.TagBoolCheck(tag);
+						UseTargetRefresh = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//TimeUntilNextRefresh
 					if (tag.Contains("[TimeUntilNextRefresh:") == true) {
 
-						this.TimeUntilNextRefresh = TagHelper.TagIntCheck(tag, this.TimeUntilNextRefresh);
+						TimeUntilNextRefresh = TagHelper.TagIntCheck(tag, TimeUntilNextRefresh);
 
 					}
 
 					//UseTargetLastKnownPosition
 					if (tag.Contains("[UseTargetLastKnownPosition:") == true) {
 
-						this.UseTargetLastKnownPosition = TagHelper.TagBoolCheck(tag);
+						UseTargetLastKnownPosition = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//TimeUntilNextEvaluation
 					if (tag.Contains("[TimeUntilNextEvaluation:") == true) {
 
-						this.TimeUntilNextEvaluation = TagHelper.TagIntCheck(tag, this.TimeUntilNextEvaluation);
+						TimeUntilNextEvaluation = TagHelper.TagIntCheck(tag, TimeUntilNextEvaluation);
 
 					}
 
 					//Target
 					if (tag.Contains("[Target:") == true) {
 
-						this.Target = TagHelper.TagTargetTypeEnumCheck(tag);
+						Target = TagHelper.TagTargetTypeEnumCheck(tag);
 
 					}
 
@@ -254,9 +263,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagBlockTargetTypesCheck(tag);
 
-						if(tempValue != BlockTypeEnum.None && this.BlockTargets.Contains(tempValue) == false) {
+						if (tempValue != BlockTypeEnum.None && BlockTargets.Contains(tempValue) == false) {
 
-							this.BlockTargets.Add(tempValue);
+							BlockTargets.Add(tempValue);
 
 						}
 
@@ -265,14 +274,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//GetTargetBy
 					if (tag.Contains("[GetTargetBy:") == true) {
 
-						this.GetTargetBy = TagHelper.TagTargetSortEnumCheck(tag);
+						GetTargetBy = TagHelper.TagTargetSortEnumCheck(tag);
 
 					}
 
 					//MaxDistance
 					if (tag.Contains("[MaxDistance:") == true) {
 
-						this.MaxDistance = TagHelper.TagDoubleCheck(tag, this.MaxDistance);
+						MaxDistance = TagHelper.TagDoubleCheck(tag, MaxDistance);
 
 					}
 
@@ -281,9 +290,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
 
-						if (tempValue != TargetFilterEnum.None && !this.MatchAllFilters.Contains(tempValue)) {
+						if (tempValue != TargetFilterEnum.None && !MatchAllFilters.Contains(tempValue)) {
 
-							this.MatchAllFilters.Add(tempValue);
+							MatchAllFilters.Add(tempValue);
 
 						}
 
@@ -294,9 +303,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
 
-						if (tempValue != TargetFilterEnum.None && !this.MatchAnyFilters.Contains(tempValue)) {
+						if (tempValue != TargetFilterEnum.None && !MatchAnyFilters.Contains(tempValue)) {
 
-							this.MatchAnyFilters.Add(tempValue);
+							MatchAnyFilters.Add(tempValue);
 
 						}
 
@@ -307,9 +316,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagTargetFilterEnumCheck(tag);
 
-						if (tempValue != TargetFilterEnum.None && !this.MatchNoneFilters.Contains(tempValue)) {
+						if (tempValue != TargetFilterEnum.None && !MatchNoneFilters.Contains(tempValue)) {
 
-							this.MatchNoneFilters.Add(tempValue);
+							MatchNoneFilters.Add(tempValue);
 
 						}
 
@@ -320,22 +329,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagTargetOwnerEnumCheck(tag);
 
-						if(!this.Owners.HasFlag(tempValue)) {
+						if (!Owners.HasFlag(tempValue)) {
 
-							this.Owners |= tempValue;
+							Owners |= tempValue;
 
 						}
 
 					}
-					
+
 					//Relations
-					if(tag.Contains("[Relations:") == true) {
+					if (tag.Contains("[Relations:") == true) {
 
 						var tempValue = TagHelper.TagTargetRelationEnumCheck(tag);
 
-						if(this.Relations.HasFlag(tempValue) == false) {
+						if (Relations.HasFlag(tempValue) == false) {
 
-							this.Relations |= tempValue;
+							Relations |= tempValue;
 
 						}
 
@@ -346,9 +355,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 
-						if (!string.IsNullOrWhiteSpace(tempValue) && !this.FactionTargets.Contains(tempValue)) {
+						if (!string.IsNullOrWhiteSpace(tempValue) && !FactionTargets.Contains(tempValue)) {
 
-							this.FactionTargets.Add(tempValue);
+							FactionTargets.Add(tempValue);
 
 						}
 
@@ -357,98 +366,112 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//OnlyGetFromEntityOwner
 					if (tag.Contains("[OnlyGetFromEntityOwner:") == true) {
 
-						this.OnlyGetFromEntityOwner = TagHelper.TagBoolCheck(tag);
+						OnlyGetFromEntityOwner = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//GetFromMinorityGridOwners
 					if (tag.Contains("[GetFromMinorityGridOwners:") == true) {
 
-						this.GetFromMinorityGridOwners = TagHelper.TagBoolCheck(tag);
+						GetFromMinorityGridOwners = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//PrioritizeSpecifiedFactions
 					if (tag.Contains("[PrioritizeSpecifiedFactions:") == true) {
 
-						this.PrioritizeSpecifiedFactions = TagHelper.TagBoolCheck(tag);
+						PrioritizeSpecifiedFactions = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//IsStatic
 					if (tag.Contains("[IsStatic:") == true) {
 
-						this.IsStatic = TagHelper.TagCheckEnumCheck(tag);
+						IsStatic = TagHelper.TagCheckEnumCheck(tag);
 
 					}
 
 					//MinAltitude
 					if (tag.Contains("[MinAltitude:") == true) {
 
-						this.MinAltitude = TagHelper.TagDoubleCheck(tag, this.MinAltitude);
+						MinAltitude = TagHelper.TagDoubleCheck(tag, MinAltitude);
 
 					}
 
 					//MaxAltitude
 					if (tag.Contains("[MaxAltitude:") == true) {
 
-						this.MaxAltitude = TagHelper.TagDoubleCheck(tag, this.MaxAltitude);
+						MaxAltitude = TagHelper.TagDoubleCheck(tag, MaxAltitude);
 
 					}
 
 					//NonBroadcastVisualRange
 					if (tag.Contains("[NonBroadcastVisualRange:") == true) {
 
-						this.NonBroadcastVisualRange = TagHelper.TagDoubleCheck(tag, this.NonBroadcastVisualRange);
+						NonBroadcastVisualRange = TagHelper.TagDoubleCheck(tag, NonBroadcastVisualRange);
 
 					}
 
 					//MinGravity
 					if (tag.Contains("[MinGravity:") == true) {
 
-						this.MinGravity = TagHelper.TagDoubleCheck(tag, this.MinGravity);
+						MinGravity = TagHelper.TagDoubleCheck(tag, MinGravity);
 
 					}
 
 					//MaxGravity
 					if (tag.Contains("[MaxGravity:") == true) {
 
-						this.MaxGravity = TagHelper.TagDoubleCheck(tag, this.MaxGravity);
+						MaxGravity = TagHelper.TagDoubleCheck(tag, MaxGravity);
 
 					}
 
 					//MinSpeed
 					if (tag.Contains("[MinSpeed:") == true) {
 
-						this.MinSpeed = TagHelper.TagDoubleCheck(tag, this.MinSpeed);
+						MinSpeed = TagHelper.TagDoubleCheck(tag, MinSpeed);
 
 					}
 
 					//MaxSpeed
 					if (tag.Contains("[MaxSpeed:") == true) {
 
-						this.MaxSpeed = TagHelper.TagDoubleCheck(tag, this.MaxSpeed);
+						MaxSpeed = TagHelper.TagDoubleCheck(tag, MaxSpeed);
 
 					}
 
 					//MinTargetValue
 					if (tag.Contains("[MinTargetValue:") == true) {
 
-						this.MinTargetValue = TagHelper.TagFloatCheck(tag, this.MinTargetValue);
+						MinTargetValue = TagHelper.TagFloatCheck(tag, MinTargetValue);
 
 					}
 
 					//MaxTargetValue
 					if (tag.Contains("[MaxTargetValue:") == true) {
 
-						this.MaxTargetValue = TagHelper.TagFloatCheck(tag, this.MaxTargetValue);
+						MaxTargetValue = TagHelper.TagFloatCheck(tag, MaxTargetValue);
+
+					}
+
+					//MinMovementScore
+					if (tag.Contains("[MinMovementScore:") == true) {
+
+						MinMovementScore = TagHelper.TagFloatCheck(tag, MinMovementScore);
+
+					}
+
+					//MaxMovementScore
+					if (tag.Contains("[MaxMovementScore:") == true) {
+
+						MaxMovementScore = TagHelper.TagFloatCheck(tag, MaxMovementScore);
 
 					}
 
 					//PrioritizePlayerControlled
 					if (tag.Contains("[PrioritizePlayerControlled:") == true) {
 
-						this.PrioritizePlayerControlled = TagHelper.TagBoolCheck(tag);
+						PrioritizePlayerControlled = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -457,9 +480,9 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 
-						if (!string.IsNullOrWhiteSpace(tempValue) && !this.Names.Contains(tempValue)) {
+						if (!string.IsNullOrWhiteSpace(tempValue) && !Names.Contains(tempValue)) {
 
-							this.Names.Add(tempValue);
+							Names.Add(tempValue);
 
 						}
 
@@ -468,7 +491,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//UsePartialNameMatching
 					if (tag.Contains("[UsePartialNameMatching:") == true) {
 
-						this.UsePartialNameMatching = TagHelper.TagBoolCheck(tag);
+						UsePartialNameMatching = TagHelper.TagBoolCheck(tag);
 
 					}
 

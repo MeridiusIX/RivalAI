@@ -30,10 +30,11 @@ using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
-using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.Trigger;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
-namespace RivalAI.Behavior.Subsystems{
-	
+namespace RivalAI.Behavior.Subsystems {
+
 	[ProtoContract]
 	public class StoredSettings{
 		
@@ -85,6 +86,12 @@ namespace RivalAI.Behavior.Subsystems{
 		[ProtoMember(16)]
 		public Vector3D StartCoords;
 
+		[ProtoMember(17)]
+		public long LastDamagerEntity;
+
+		[ProtoMember(18)]
+		public NewAutoPilotMode AutoPilotFlags;
+
 
 		public StoredSettings(){
 			
@@ -109,6 +116,10 @@ namespace RivalAI.Behavior.Subsystems{
 			DespawnCoords = Vector3D.Zero;
 			StoredCoords = Vector3D.Zero;
 			StartCoords = Vector3D.Zero;
+
+			LastDamagerEntity = 0;
+
+			AutoPilotFlags = NewAutoPilotMode.None;
 
 		}
 
@@ -237,7 +248,7 @@ namespace RivalAI.Behavior.Subsystems{
 			if (RotationDirection == Direction.Up)
 				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Up, Base6Directions.Direction.Backward);
 
-			if (RotationDirection == Direction.Forward)
+			if (RotationDirection == Direction.Down)
 				BlockOrientation = new MyBlockOrientation(Base6Directions.Direction.Down, Base6Directions.Direction.Forward);
 
 		}

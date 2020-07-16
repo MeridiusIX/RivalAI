@@ -39,12 +39,14 @@ namespace RivalAI.Helpers{
 		Action,
 		ActionChat,
 		AutoPilot,
+		AutoPilotStats,
 		AutoPilotStuck,
 		AutoPilotOffset,
 		AutoPilotPlanetPath,
 		BehaviorMode,
 		BehaviorSetup,
 		Chat,
+		Command,
 		Condition,
 		Despawn,
 		//Dev,
@@ -57,6 +59,7 @@ namespace RivalAI.Helpers{
 		TargetAcquisition,
 		TargetEvaluation,
 		TempDebug,
+		Terminal,
 		Thrust,
 		Trigger,
 		TriggerPlayerNear,
@@ -83,6 +86,39 @@ namespace RivalAI.Helpers{
 
 		public static DateTime StartTimer = DateTime.Now;
 		public static DateTime StepTimer = DateTime.Now;
+
+		public static bool StatsDisplayed = false;
+		public static int StatsId = 0;
+
+		public static void DisplayStats(string stats) {
+
+			MyVisualScriptLogicProvider.SetQuestlog(false);
+			return;
+
+			if (!CurrentDebugTypeList.Contains(DebugTypeEnum.AutoPilotStats)) {
+
+				if (StatsDisplayed) {
+
+					StatsDisplayed = false;
+					MyVisualScriptLogicProvider.SetQuestlog(false);
+					return;
+
+				}
+
+			}
+
+			if (!StatsDisplayed) {
+
+				StatsDisplayed = true;
+				MyVisualScriptLogicProvider.SetQuestlog();
+				StatsId = MyVisualScriptLogicProvider.AddQuestlogDetail(stats, false, false);
+				return;
+
+			}
+
+			MyVisualScriptLogicProvider.ReplaceQuestlogDetail(StatsId, stats, false);
+
+		}
 
 		public static void MsgDebug(string message, DebugTypeEnum type = DebugTypeEnum.None){
 

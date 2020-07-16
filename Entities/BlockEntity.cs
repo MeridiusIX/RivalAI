@@ -207,6 +207,15 @@ namespace RivalAI.Entities {
 
 		}
 
+		public int MovementScore() {
+
+			if (!ActiveEntity())
+				return 0;
+
+			return EntityEvaluator.GridMovementScore(LinkedGrids);
+
+		}
+
 		public string Name() {
 
 			if (!ActiveEntity())

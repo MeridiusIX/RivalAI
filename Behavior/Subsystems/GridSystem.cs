@@ -1,0 +1,503 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Sandbox.Common;
+using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common.ObjectBuilders.Definitions;
+using Sandbox.Definitions;
+using Sandbox.Game;
+using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
+using Sandbox.Game.GameSystems;
+using Sandbox.Game.Weapons;
+using Sandbox.ModAPI;
+using Sandbox.ModAPI.Interfaces;
+using Sandbox.ModAPI.Weapons;
+using SpaceEngineers.Game.ModAPI;
+using ProtoBuf;
+using VRage.Game;
+using VRage.Game.Components;
+using VRage.Game.Entity;
+using VRage.Game.ModAPI;
+using VRage.ModAPI;
+using VRage.ObjectBuilders;
+using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Utils;
+using VRageMath;
+using RivalAI;
+using RivalAI.Behavior;
+using RivalAI.Behavior.Subsystems;
+using RivalAI.Helpers;
+
+namespace RivalAI.Behavior.Subsystems {
+
+    public class GridSystem {
+
+        public IMyRemoteControl RemoteControl;
+        public Random Rnd;
+
+        public bool ListsBuilt;
+
+        public List<IMyCubeGrid> ConnectedGrids;
+        public DateTime LastConnectedGridCheck;
+        public bool OverrideConnectedGridCheck;
+
+        public List<IMySlimBlock> AllBlocks;
+        public List<IMyTerminalBlock> AllTerminalBlocks;
+        public List<IMyFunctionalBlock> AllFunctionalBlocks;
+
+        public List<IMyRadioAntenna> Antennas;
+        public List<IMyTimerBlock> Timers;
+        public List<IMyWarhead> Warheads;
+
+        public GridSystem(IMyRemoteControl remoteControl = null) {
+
+            RemoteControl = null;
+            Rnd = new Random();
+
+            ListsBuilt = false;
+
+            ConnectedGrids = new List<IMyCubeGrid>();
+            LastConnectedGridCheck = MyAPIGateway.Session.GameDateTime;
+            OverrideConnectedGridCheck = false;
+
+            AllBlocks = new List<IMySlimBlock>();
+            AllTerminalBlocks = new List<IMyTerminalBlock>();
+            AllFunctionalBlocks = new List<IMyFunctionalBlock>();
+
+            Antennas = new List<IMyRadioAntenna>();
+            Timers = new List<IMyTimerBlock>();
+            Warheads = new List<IMyWarhead>();
+
+            this.RemoteControl = remoteControl;
+            BuildLists();
+
+        }
+
+        public void BuildLists() {
+
+            if (ListsBuilt)
+                return;
+
+            ListsBuilt = true;
+
+            if (this.RemoteControl?.SlimBlock?.CubeGrid == null)
+                return;
+
+            this.RemoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplit;
+            
+            OverrideConnectedGridCheck = true;
+            CheckConnectedGrids();
+
+            var tempAllBlocks = TargetHelper.GetAllBlocks(this.RemoteControl.SlimBlock.CubeGrid);
+
+            foreach (var block in tempAllBlocks) {
+
+                AddBlock(block, true);
+
+            }
+
+            this.RemoteControl.SlimBlock.CubeGrid.OnBlockAdded += AddBlock;
+
+        }
+
+        public void AddBlock(IMySlimBlock block) {
+
+            AddBlock(block, false);
+
+        }
+ 
+        public void AddBlock(IMySlimBlock block, bool skipTimer = false) {
+
+            if (block == null)
+                return;
+
+            if (!skipTimer && !OverrideConnectedGridCheck)
+                CheckConnectedGrids();
+
+            if (!ConnectedGrids.Contains(block.CubeGrid))
+                return;
+
+            AllBlocks.Add(block);
+
+            if (block.FatBlock == null)
+                return;
+
+            if ((block.FatBlock as IMyTerminalBlock) != null)
+                AllTerminalBlocks.Add(block.FatBlock as IMyTerminalBlock);
+
+            if ((block.FatBlock as IMyFunctionalBlock) != null)
+                AllFunctionalBlocks.Add(block.FatBlock as IMyFunctionalBlock);
+
+            if ((block.FatBlock as IMyRadioAntenna) != null)
+                Antennas.Add(block.FatBlock as IMyRadioAntenna);
+
+            if ((block.FatBlock as IMyTimerBlock) != null)
+                Timers.Add(block.FatBlock as IMyTimerBlock);
+
+            if ((block.FatBlock as IMyWarhead) != null)
+                Warheads.Add(block.FatBlock as IMyWarhead);
+
+        }
+
+        public bool CheckBlockValid(IMyTerminalBlock block) {
+
+            CheckConnectedGrids();
+
+            if (block == null || block.MarkedForClose) {
+
+                return false;
+
+            }
+
+            if (!ConnectedGrids.Contains(block.SlimBlock.CubeGrid)) {
+
+                return false;
+
+            }
+
+            return true;
+
+        }
+
+        public bool CheckBlockValid(IMySlimBlock block) {
+
+            CheckConnectedGrids();
+
+            if (block == null) {
+
+                return false;
+
+            }
+
+            if (!ConnectedGrids.Contains(block.CubeGrid)) {
+
+                return false;
+
+            }
+
+            return true;
+
+        }
+
+        public void CheckConnectedGrids() {
+
+            if (!OverrideConnectedGridCheck) {
+
+                var time = MyAPIGateway.Session.GameDateTime - LastConnectedGridCheck;
+
+                if (time.TotalMilliseconds < 1000)
+                    return;
+
+            } else {
+
+                OverrideConnectedGridCheck = false;
+
+            }
+
+            ConnectedGrids.Clear();
+            ConnectedGrids = MyAPIGateway.GridGroups.GetGroup(this.RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+            LastConnectedGridCheck = MyAPIGateway.Session.GameDateTime;
+
+        }
+
+        public void EnableBlocks(List<string> names, List<bool> states) {
+
+            if (names.Count != states.Count)
+                return;
+
+            for (int i = AllFunctionalBlocks.Count - 1; i >= 0; i--) {
+
+                var block = AllFunctionalBlocks[i];
+
+                if (!CheckBlockValid(block)) {
+
+                    AllFunctionalBlocks.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (string.IsNullOrWhiteSpace(block.CustomName))
+                    continue;
+
+                for (int j = 0; j < names.Count; j++) {
+
+                    if (block.CustomName == names[j]) {
+
+                        block.Enabled = states[j];
+                        break;
+
+                    }
+  
+                }
+
+            }
+        
+        }
+
+        public IMyRadioAntenna GetActiveAntenna() {
+
+            IMyRadioAntenna resultAntenna = null;
+            float range = 0;
+
+            for (int i = Antennas.Count - 1; i >= 0; i--) {
+
+                var antenna = Antennas[i];
+
+                if (!CheckBlockValid(antenna)) {
+
+                    Antennas.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (antenna.IsWorking == false || antenna.IsFunctional == false) {
+
+                    continue;
+
+                }
+
+                return antenna;
+
+            }
+
+            return resultAntenna;
+
+        }
+
+        public IMyRadioAntenna GetAntennaWithHighestRange(string antennaName = "") {
+
+            IMyRadioAntenna resultAntenna = null;
+            float range = 0;
+
+            for (int i = Antennas.Count - 1; i >= 0; i--) {
+
+                var antenna = Antennas[i];
+
+                if (!CheckBlockValid(antenna)) {
+
+                    Antennas.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (antenna.IsWorking == false || antenna.IsFunctional == false || antenna.IsBroadcasting == false) {
+
+                    continue;
+
+                }
+
+                if (!string.IsNullOrWhiteSpace(antennaName) && antennaName != antenna.CustomName)
+                    continue;
+
+                if (antenna.Radius > range) {
+
+                    resultAntenna = antenna;
+                    range = antenna.Radius;
+
+                }
+
+            }
+
+            return resultAntenna;
+
+        }
+
+        public void GridSplit(IMyCubeGrid gridA, IMyCubeGrid gridB) {
+
+            gridA.OnGridSplit -= GridSplit;
+            gridB.OnGridSplit -= GridSplit;
+
+            if (RemoteControl == null || RemoteControl.MarkedForClose || RemoteControl?.SlimBlock?.CubeGrid == null)
+                return;
+
+            if(gridA == RemoteControl.SlimBlock.CubeGrid)
+                gridA.OnGridSplit -= GridSplit;
+
+            if (gridB == RemoteControl.SlimBlock.CubeGrid)
+                gridB.OnGridSplit -= GridSplit;
+
+            OverrideConnectedGridCheck = true;
+            CheckConnectedGrids();
+
+        }
+
+        public void RazeBlocksWithNames(List<string> names) {
+
+            for (int i = AllTerminalBlocks.Count - 1; i >= 0; i--) {
+
+                var block = AllTerminalBlocks[i];
+
+                if (!CheckBlockValid(block)) {
+
+                    AllTerminalBlocks.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (names.Contains(block.CustomName))
+                    block.SlimBlock.CubeGrid.RazeBlock(block.SlimBlock.Min);
+
+            }
+
+        }
+
+        public void RecolorBlocks(IMyCubeGrid grid, List<Vector3D> oldColors, List<Vector3D> newColors, List<string> newSkins) {
+
+            for (int j = AllBlocks.Count - 1; j >= 0; j--) {
+
+                var block = AllBlocks[j];
+
+                if (!CheckBlockValid(block)) {
+
+                    AllTerminalBlocks.RemoveAt(j);
+                    continue;
+
+                }
+
+                if (block.CubeGrid != grid)
+                    continue;
+
+                for (int i = 0; i < oldColors.Count; i++) {
+
+                    if (i >= newColors.Count && i >= newSkins.Count)
+                        break;
+
+                    if (Math.Round(oldColors[i].X, 3) != Math.Round(block.ColorMaskHSV.X, 3))
+                        continue;
+
+                    if (Math.Round(oldColors[i].Y, 3) != Math.Round(block.ColorMaskHSV.Y, 3))
+                        continue;
+
+                    if (Math.Round(oldColors[i].Z, 3) != Math.Round(block.ColorMaskHSV.Z, 3))
+                        continue;
+
+                    if (i < newColors.Count) {
+
+                        if (newColors[i] != new Vector3D(-10, -10, -10))
+                            grid.ColorBlocks(block.Min, block.Min, newColors[i]);
+
+                    }
+
+                    if (i < newSkins.Count) {
+
+                        if (!string.IsNullOrWhiteSpace(newSkins[i]))
+                            grid.SkinBlocks(block.Min, block.Min, null, newSkins[i]);
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        public void RenameBlocks(List<string> oldNames, List<string> newNames, string actionId) {
+
+            if (oldNames.Count != newNames.Count) {
+
+                Logger.MsgDebug(actionId + ": ChangeBlockNames From and To lists not the same count. Aborting operation", DebugTypeEnum.Action);
+                return;
+
+            }
+
+            var dictionary = new Dictionary<string, string>();
+
+            for (int i = 0; i < oldNames.Count; i++) {
+
+                if (!dictionary.ContainsKey(oldNames[i]))
+                    dictionary.Add(oldNames[i], newNames[i]);
+
+            }
+
+            for (int i = AllTerminalBlocks.Count - 1; i >= 0; i--) {
+
+                var block = AllTerminalBlocks[i];
+
+                if (!CheckBlockValid(block)) {
+
+                    AllTerminalBlocks.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (oldNames.Contains(block.CustomName))
+                    block.CustomName = dictionary[block.CustomName];
+
+            }
+
+        }
+
+        public void SetGridAntennaRanges(List<string> names, string operation, float amount) {
+
+            bool checkNames = names.Count > 0 ? true : false;
+
+            for (int i = Antennas.Count - 1; i >= 0; i--) {
+
+                var antenna = Antennas[i];
+
+                if (!CheckBlockValid(antenna)) {
+
+                    Antennas.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (operation == "Set") {
+
+                    antenna.Radius = amount;
+                    continue;
+
+                }
+
+                if (operation == "Increase") {
+
+                    antenna.Radius += amount;
+                    continue;
+
+                }
+
+                if (operation == "Decrease") {
+
+                    antenna.Radius -= amount;
+                    continue;
+
+                }
+
+            }
+
+        }
+
+        public void SetGridDestructible(IMyCubeGrid cubeGrid, bool enabled) {
+
+            var grid = cubeGrid as MyCubeGrid;
+
+            if (grid == null)
+                return;
+
+            grid.DestructibleBlocks = enabled;
+
+        }
+
+        public void SetGridEditable(IMyCubeGrid cubeGrid, bool enabled) {
+
+            var grid = cubeGrid as MyCubeGrid;
+
+            if (grid == null)
+                return;
+
+            grid.Editable = enabled;
+
+        }
+
+        public void Unload() {
+        
+            
+        
+        }
+
+    }
+
+}

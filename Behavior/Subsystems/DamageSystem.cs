@@ -28,206 +28,206 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Behavior.Subsystems {
 
-    [Flags]
-    public enum DamageReaction {
+	[Flags]
+	public enum DamageReaction {
 
-        None = 0,
-        Evasion = 1,
-        ChangeTarget = 2,
-        BarrelRoll = 4,
-        Alert = 8,
-        CallReinforcements = 16
+		None = 0,
+		Evasion = 1,
+		ChangeTarget = 2,
+		BarrelRoll = 4,
+		Alert = 8,
+		CallReinforcements = 16
 
-    }
+	}
 
-    public class DamageSystem {
+	public class DamageSystem {
 
-        //Configurable
-        public bool UseDamageDetection;
+		//Configurable
+		public bool UseDamageDetection;
 
 
-        //Non-Configurable
-        public IMyRemoteControl RemoteControl;
-        public IMyCubeGrid CurrentCubeGrid;
-        public List<IMyCubeGrid> CurrentGrids;
-        public bool SetupHandler;
+		//Non-Configurable
+		public IMyRemoteControl RemoteControl;
+		public IMyCubeGrid CurrentCubeGrid;
+		public List<IMyCubeGrid> CurrentGrids;
+		public bool SetupHandler;
 
-        public Func<bool> IsRemoteWorking;
-        private TriggerSystem _trigger;
+		public Func<bool> IsRemoteWorking;
+		private TriggerSystem _trigger;
 
-        public DamageSystem(IMyRemoteControl remoteControl = null) {
+		public DamageSystem(IMyRemoteControl remoteControl = null) {
 
-            UseDamageDetection = false;
+			UseDamageDetection = false;
 
-            RemoteControl = null;
-            CurrentGrids = new List<IMyCubeGrid>();
-            SetupHandler = false;
+			RemoteControl = null;
+			CurrentGrids = new List<IMyCubeGrid>();
+			SetupHandler = false;
 
-            Setup(remoteControl);
+			Setup(remoteControl);
 
-        }
+		}
 
-        private void Setup(IMyRemoteControl remoteControl) {
+		private void Setup(IMyRemoteControl remoteControl) {
 
-            if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
+			if(remoteControl == null || MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.RemoteControl = remoteControl;
+			this.RemoteControl = remoteControl;
 
-        }
+		}
 
-        public void SetupReferences(TriggerSystem trigger) {
+		public void SetupReferences(TriggerSystem trigger) {
 
-            _trigger = trigger;
+			_trigger = trigger;
 
-        }
+		}
 
-        public void SetupDamageHandler() {
+		public void SetupDamageHandler() {
 
-            if(this.UseDamageDetection == false || this.SetupHandler == true) {
+			if(this.UseDamageDetection == false || this.SetupHandler == true) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.SetupHandler = true;
-            RegisterGridOnWatcher(this.RemoteControl?.SlimBlock?.CubeGrid);
+			this.SetupHandler = true;
+			RegisterGridOnWatcher(this.RemoteControl?.SlimBlock?.CubeGrid);
 
-        }
+		}
 
-        public void DamageHandler(object target, MyDamageInformation info) {
+		public void DamageHandler(object target, MyDamageInformation info) {
 
-            if(IsRemoteWorking != null && IsRemoteWorking.Invoke() == false)
-                return;
+			if(IsRemoteWorking != null && IsRemoteWorking.Invoke() == false)
+				return;
 
-            var block = target as IMySlimBlock;
+			var block = target as IMySlimBlock;
 
-            if(target == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
-                return;
+			if(target == null || this.RemoteControl?.SlimBlock?.CubeGrid == null)
+				return;
 
-            if (this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false)
-                return;
+			if (this.RemoteControl.SlimBlock.CubeGrid.IsSameConstructAs(block.CubeGrid) == false)
+				return;
 
-            _trigger.ProcessDamageTriggerWatchers(target, info);
+			_trigger.ProcessDamageTriggerWatchers(target, info);
 
-        }
+		}
 
-        public void UnregisterDamageHandler() {
+		public void UnregisterDamageHandler() {
 
-            DamageHelper.MonitoredGrids.Remove(this.CurrentCubeGrid);
+			DamageHelper.MonitoredGrids.Remove(this.CurrentCubeGrid);
 
-            if(this.CurrentCubeGrid != null && MyAPIGateway.Entities.Exist(this.CurrentCubeGrid) == true) {
+			if(this.CurrentCubeGrid != null && MyAPIGateway.Entities.Exist(this.CurrentCubeGrid) == true) {
 
-                this.CurrentCubeGrid.OnGridSplit -= GridSplit;
+				this.CurrentCubeGrid.OnGridSplit -= GridSplit;
 
-            }
+			}
 
-        }
+		}
 
-        public void GridSplit(IMyCubeGrid gridA, IMyCubeGrid gridB) {
+		public void GridSplit(IMyCubeGrid gridA, IMyCubeGrid gridB) {
 
-            if (!this.CurrentGrids.Contains(gridA))
-                this.CurrentGrids.Add(gridA);
+			if (!this.CurrentGrids.Contains(gridA))
+				this.CurrentGrids.Add(gridA);
 
-            if (!this.CurrentGrids.Contains(gridB))
-                this.CurrentGrids.Add(gridB);
+			if (!this.CurrentGrids.Contains(gridB))
+				this.CurrentGrids.Add(gridB);
 
-            UnregisterGridOnWatcher();
+			UnregisterGridOnWatcher();
 
-            if(this.RemoteControl?.SlimBlock?.CubeGrid == null) {
+			if(this.RemoteControl?.SlimBlock?.CubeGrid == null) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.CurrentCubeGrid = this.RemoteControl.SlimBlock.CubeGrid;
-            RegisterGridOnWatcher(this.CurrentCubeGrid);
+			this.CurrentCubeGrid = this.RemoteControl.SlimBlock.CubeGrid;
+			RegisterGridOnWatcher(this.CurrentCubeGrid);
 
-        }
+		}
 
-        public void RegisterGridOnWatcher(IMyCubeGrid cubeGrid) {
+		public void RegisterGridOnWatcher(IMyCubeGrid cubeGrid) {
 
-            if(cubeGrid == null || MyAPIGateway.Entities.Exist(cubeGrid) == false) {
+			if(cubeGrid == null || MyAPIGateway.Entities.Exist(cubeGrid) == false) {
 
-                return;
+				return;
 
-            }
+			}
 
-            this.CurrentGrids.Clear();
-            this.CurrentGrids = MyAPIGateway.GridGroups.GetGroup(cubeGrid, GridLinkTypeEnum.Mechanical);
+			this.CurrentGrids.Clear();
+			this.CurrentGrids = MyAPIGateway.GridGroups.GetGroup(cubeGrid, GridLinkTypeEnum.Mechanical);
 
-            foreach(var grid in this.CurrentGrids) {
+			foreach(var grid in this.CurrentGrids) {
 
-                grid.OnGridSplit += GridSplit;
+				grid.OnGridSplit += GridSplit;
 
-                lock (DamageHelper.MonitoredGrids) {
+				lock (DamageHelper.MonitoredGrids) {
 
-                    DamageHelper.MonitoredGrids.Add(grid);
+					DamageHelper.MonitoredGrids.Add(grid);
 
-                }
+				}
 
-                if(!DamageHelper.RegisteredDamageHandlers.ContainsKey(grid)) {
+				if(!DamageHelper.RegisteredDamageHandlers.ContainsKey(grid)) {
 
-                    lock (DamageHelper.RegisteredDamageHandlers) {
+					lock (DamageHelper.RegisteredDamageHandlers) {
 
-                        DamageHelper.RegisteredDamageHandlers.Add(grid, new Action<object, MyDamageInformation>(DamageHandler));
+						DamageHelper.RegisteredDamageHandlers.Add(grid, new Action<object, MyDamageInformation>(DamageHandler));
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-        public void UnregisterGridOnWatcher() {
+		public void UnregisterGridOnWatcher() {
 
-            foreach(var grid in this.CurrentGrids) {
+			foreach(var grid in this.CurrentGrids) {
 
-                if(grid == null || MyAPIGateway.Entities.Exist(grid) == false) {
+				if(grid == null || MyAPIGateway.Entities.Exist(grid) == false) {
 
-                    return;
+					return;
 
-                }
+				}
 
-                grid.OnGridSplit -= GridSplit;
-                DamageHelper.MonitoredGrids.RemoveAll(g => g == grid);
-                DamageHelper.RegisteredDamageHandlers.Remove(grid);
+				grid.OnGridSplit -= GridSplit;
+				DamageHelper.MonitoredGrids.RemoveAll(g => g == grid);
+				DamageHelper.RegisteredDamageHandlers.Remove(grid);
 
-            }
+			}
 
-        }
+		}
 
-        public void InitTags() {
+		public void InitTags() {
 
-            if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+			if(string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
 
-                var descSplit = this.RemoteControl.CustomData.Split('\n');
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
-                foreach(var tag in descSplit) {
+				foreach(var tag in descSplit) {
 
-                    //UseStaticGuns
-                    if(tag.Contains("[UseDamageDetection:") == true) {
+					//UseStaticGuns
+					if(tag.Contains("[UseDamageDetection:") == true) {
 
-                        this.UseDamageDetection = TagHelper.TagBoolCheck(tag);
+						this.UseDamageDetection = TagHelper.TagBoolCheck(tag);
 
-                    }
+					}
 
-                }
+				}
 
-            }
+			}
 
-        }
+		}
 
-    }
+	}
 
 
 }

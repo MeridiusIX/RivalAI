@@ -28,6 +28,7 @@ namespace RivalAI.Entities {
 		bool IsPowered();
 		bool IsSameGrid(IMyEntity entity);
 		bool IsStatic();
+		int MovementScore();
 		OwnerTypeEnum OwnerTypes(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false);
 		bool PlayerControlled();
 		Vector2 PowerOutput(); // Current/Max

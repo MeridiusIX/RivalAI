@@ -32,6 +32,7 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior {
 
@@ -47,14 +48,21 @@ namespace RivalAI.Behavior {
         public bool StrikeEngageUseCollisionEvasionSpace;
         public bool StrikeEngageUseCollisionEvasionPlanet;
 
+        public bool EngageOverrideWithDistanceAndTimer;
+        public int EngageOverrideTimerTrigger;
+        public double EngageOverrideDistance;
+
         private bool _defaultCollisionSettings = false;
 
         public DateTime LastOffsetCalculation;
+        public DateTime EngageOverrideTimer;
         public bool TargetIsHigh;
 
         public byte Counter;
 
-        public Strike() {
+        public Strike() : base() {
+
+            _behaviorType = "Strike";
 
             StrikeBeginSpaceAttackRunDistance = 75;
             StrikeBeginPlanetAttackRunDistance = 100;
@@ -64,6 +72,13 @@ namespace RivalAI.Behavior {
             StrikeEngageUseCollisionEvasionSpace = true;
             StrikeEngageUseCollisionEvasionPlanet = false;
 
+            EngageOverrideWithDistanceAndTimer = true;
+            EngageOverrideTimerTrigger = 20;
+            EngageOverrideDistance = 1200;
+
+            LastOffsetCalculation = MyAPIGateway.Session.GameDateTime;
+            EngageOverrideTimer = MyAPIGateway.Session.GameDateTime;
+
             Counter = 0;
 
         }
@@ -72,16 +87,23 @@ namespace RivalAI.Behavior {
 
             bool skipEngageCheck = false;
 
+            if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
+
+                Mode = BehaviorMode.Retreat;
+                AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+
+            }
 
             //Init
             if (Mode == BehaviorMode.Init) {
 
-                if (!NewAutoPilot.Targeting.HasTarget()) {
+                if (!AutoPilot.Targeting.HasTarget()) {
 
                     ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
                 } else {
 
+                    EngageOverrideTimer = MyAPIGateway.Session.GameDateTime;
                     ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     CreateAndMoveToOffset();
                     skipEngageCheck = true;
@@ -93,8 +115,15 @@ namespace RivalAI.Behavior {
             //Waiting For Target
             if (Mode == BehaviorMode.WaitingForTarget) {
 
-                if (NewAutoPilot.Targeting.HasTarget()) {
+                if (AutoPilot.CurrentMode != AutoPilot.UserCustomMode) {
 
+                    AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
+
+                }
+
+                if (AutoPilot.Targeting.HasTarget()) {
+
+                    EngageOverrideTimer = MyAPIGateway.Session.GameDateTime;
                     ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     CreateAndMoveToOffset();
                     skipEngageCheck = true;
@@ -108,7 +137,7 @@ namespace RivalAI.Behavior {
 
             }
 
-            if (!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
+            if (!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat) {
 
                 ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
@@ -117,12 +146,29 @@ namespace RivalAI.Behavior {
             //Approach Target
             if (Mode == BehaviorMode.ApproachTarget && !skipEngageCheck) {
 
-                double distance = NewAutoPilot.InGravity() ? this.StrikeBeginPlanetAttackRunDistance : this.StrikeBeginSpaceAttackRunDistance;
+                double distance = AutoPilot.InGravity() ? this.StrikeBeginPlanetAttackRunDistance : this.StrikeBeginSpaceAttackRunDistance;
+                bool engageOverride = false;
 
-                if (NewAutoPilot.DistanceToCurrentWaypoint <= distance && !NewAutoPilot.IsAvoidingCollision()) {
+                if (EngageOverrideWithDistanceAndTimer) {
+
+                    if (AutoPilot.DistanceToCurrentWaypoint < EngageOverrideDistance) {
+                    
+                        var time = MyAPIGateway.Session.GameDateTime - EngageOverrideTimer;
+
+                        if (time.TotalSeconds > EngageOverrideTimerTrigger) {
+
+                            engageOverride = true;
+
+                        }
+
+                    }
+                
+                }
+
+                if ((engageOverride || AutoPilot.DistanceToCurrentWaypoint <= distance) && AutoPilot.Targeting.Target.Distance(RemoteControl.GetPosition()) > this.StrikeBreakawayDistance && !AutoPilot.IsAvoidingCollision()) {
 
                     ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
-                    NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward, RemoteControl.GetPosition(), true, false, StrikeEngageUseSafePlanetPathing);
+                    AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | (StrikeEngageUseSafePlanetPathing ? NewAutoPilotMode.PlanetaryPathing : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget);
                     skipEngageCheck = true;
                     BehaviorTriggerB = true;
 
@@ -135,21 +181,30 @@ namespace RivalAI.Behavior {
                     if (timeSpan.TotalSeconds >= StrikeOffsetRecalculationTime) {
 
                         skipEngageCheck = true;
+                        AutoPilot.DebugDataA = "Offset Expire, Recalc";
                         CreateAndMoveToOffset();
 
                     }
 
-                    if (TargetIsHigh && NewAutoPilot.Targeting.Target.CurrentAltitude() < NewAutoPilot.OffsetPlanetMinTargetAltitude) {
 
-                        TargetIsHigh = false;
-                        CreateAndMoveToOffset();
+                    if (AutoPilot.Data.ReverseOffsetDistAltAboveHeight) {
 
-                    } else if (!TargetIsHigh && NewAutoPilot.Targeting.Target.CurrentAltitude() > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
+                        if (TargetIsHigh && AutoPilot.Targeting.Target.CurrentAltitude() < AutoPilot.Data.ReverseOffsetHeight) {
 
-                        TargetIsHigh = true;
-                        CreateAndMoveToOffset();
+                            TargetIsHigh = false;
+                            AutoPilot.DebugDataA = "Target is Low";
+                            CreateAndMoveToOffset();
+
+                        } else if (!TargetIsHigh && AutoPilot.Targeting.Target.CurrentAltitude() > AutoPilot.Data.ReverseOffsetHeight) {
+
+                            TargetIsHigh = true;
+                            AutoPilot.DebugDataA = "Target is High";
+                            CreateAndMoveToOffset();
+
+                        }
 
                     }
+                    
 
                 }
 
@@ -158,9 +213,10 @@ namespace RivalAI.Behavior {
             //Engage Target
             if (Mode == BehaviorMode.EngageTarget && !skipEngageCheck) {
 
-                Logger.MsgDebug("Strike: " + StrikeBreakawayDistance.ToString() + " - " + NewAutoPilot.DistanceToInitialWaypoint, DebugTypeEnum.General);
-                if (NewAutoPilot.DistanceToInitialWaypoint <= StrikeBreakawayDistance || (NewAutoPilot.UseVelocityCollisionEvasion && NewAutoPilot.Collision.VelocityResult.CollisionImminent())) {
+                Logger.MsgDebug("Strike: " + StrikeBreakawayDistance.ToString() + " - " + AutoPilot.DistanceToInitialWaypoint, DebugTypeEnum.General);
+                if (AutoPilot.DistanceToInitialWaypoint <= StrikeBreakawayDistance || (AutoPilot.Data.UseVelocityCollisionEvasion && AutoPilot.Collision.VelocityResult.CollisionImminent())) {
 
+                    EngageOverrideTimer = MyAPIGateway.Session.GameDateTime;
                     ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
                     CreateAndMoveToOffset();
                     BehaviorTriggerA = true;
@@ -168,8 +224,6 @@ namespace RivalAI.Behavior {
                 }
             
             }
-
-
 
         }
 
@@ -181,11 +235,11 @@ namespace RivalAI.Behavior {
 
                 if (this.Mode == BehaviorMode.EngageTarget) {
 
-                    this.NewAutoPilot.UseVelocityCollisionEvasion = UseEngageCollisionEvasion();
+                    this.AutoPilot.Data.UseVelocityCollisionEvasion = UseEngageCollisionEvasion();
 
                 } else {
 
-                    this.NewAutoPilot.UseVelocityCollisionEvasion = true;
+                    this.AutoPilot.Data.UseVelocityCollisionEvasion = true;
 
                 }
 
@@ -195,7 +249,7 @@ namespace RivalAI.Behavior {
 
         private bool UseEngageCollisionEvasion() {
 
-            return NewAutoPilot.InGravity() ? this.StrikeEngageUseCollisionEvasionPlanet : this.StrikeEngageUseCollisionEvasionSpace;
+            return AutoPilot.InGravity() ? this.StrikeEngageUseCollisionEvasionPlanet : this.StrikeEngageUseCollisionEvasionSpace;
         
         }
 
@@ -204,35 +258,15 @@ namespace RivalAI.Behavior {
 
             return;
             if(Mode == BehaviorMode.ApproachTarget)
-                NewAutoPilot.ReverseOffsetDirection(70);
+                AutoPilot.ReverseOffsetDirection(70);
 
         }
 
         private void CreateAndMoveToOffset() {
 
-            if (NewAutoPilot.InGravity()) {
-
-                if (NewAutoPilot.Targeting.Target.CurrentAltitude() > NewAutoPilot.OffsetPlanetMinTargetAltitude) {
-
-                    //Logger.MsgDebug("Target Is High", DebugTypeEnum.General);
-                    NewAutoPilot.SetRandomOffset(VectorHelper.RandomDistance(NewAutoPilot.OffsetPlanetMinTargetAltitude, NewAutoPilot.OffsetPlanetMaxTargetAltitude), 0, NewAutoPilot.Targeting.Target.GetEntity());
-
-                } else {
-
-                    //Logger.MsgDebug("Target Is Low", DebugTypeEnum.General);
-                    NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity());
-
-                }
-            
-            } else {
-
-                //Logger.MsgDebug("Target Is Space", DebugTypeEnum.General);
-                NewAutoPilot.SetRandomOffset(NewAutoPilot.Targeting.Target.GetEntity());
-            
-            }
-
+            AutoPilot.OffsetWaypointGenerator(true);
             LastOffsetCalculation = MyAPIGateway.Session.GameDateTime;
-            NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward, RemoteControl.GetPosition(), true, true, true);
+            AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode | NewAutoPilotMode.OffsetWaypoint);
 
         }
 
@@ -242,17 +276,10 @@ namespace RivalAI.Behavior {
             CoreSetup(remoteControl);
 
             //Behavior Specific Defaults
+            AutoPilot.Data = TagHelper.GetAutopilotProfile("RAI-Generic-Autopilot-Strike");
             Despawn.UseNoTargetTimer = true;
-            NewAutoPilot.Weapons.UseStaticGuns = true;
-            NewAutoPilot.Collision.CollisionTimeTrigger = 5;
-            NewAutoPilot.CollisionEvasionWaypointCalculatedAwayFromEntity = true;
-            NewAutoPilot.OffsetSpaceMinDistFromTarget = 900;
-            NewAutoPilot.OffsetSpaceMaxDistFromTarget = 1000;
-            NewAutoPilot.OffsetPlanetMinDistFromTarget = 100;
-            NewAutoPilot.OffsetPlanetMaxDistFromTarget = 150;
-            NewAutoPilot.OffsetPlanetMinTargetAltitude = 900;
-            NewAutoPilot.OffsetPlanetMaxTargetAltitude = 1100;
-            NewAutoPilot.WaypointTolerance = 50;
+            AutoPilot.Weapons.UseStaticGuns = true;
+            AutoPilot.Collision.CollisionTimeTrigger = 5;
 
             //Get Settings From Custom Data
             InitCoreTags();
@@ -261,7 +288,7 @@ namespace RivalAI.Behavior {
 
             Trigger.BehaviorEventA += ChangeOffsetAction;
 
-            _defaultCollisionSettings = NewAutoPilot.UseVelocityCollisionEvasion;
+            _defaultCollisionSettings = AutoPilot.Data.UseVelocityCollisionEvasion;
 
             SetupCompleted = true;
 

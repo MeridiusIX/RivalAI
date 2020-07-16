@@ -32,6 +32,7 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior{
 	
@@ -46,7 +47,9 @@ namespace RivalAI.Behavior{
 		
 		public byte Counter;
 
-		public Fighter() {
+		public Fighter() : base() {
+
+			_behaviorType = "Fighter";
 
 			FighterEngageDistanceSpace = 400;
 			FighterEngageDistancePlanet = 600;
@@ -71,20 +74,20 @@ namespace RivalAI.Behavior{
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), false, false, true);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
 			
 			if(Mode == BehaviorMode.Init) {
 
-				if(!NewAutoPilot.Targeting.HasTarget()) {
+				if(!AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
 				} else {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
 				}
 
@@ -92,16 +95,16 @@ namespace RivalAI.Behavior{
 
 			if(Mode == BehaviorMode.WaitingForTarget) {
 
-				if(NewAutoPilot.CurrentMode != NewAutoPilotMode.None) {
+				if(AutoPilot.CurrentMode != AutoPilot.UserCustomModeIdle) {
 
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 
 				}
 
-				if(NewAutoPilot.Targeting.HasTarget()) {
+				if(AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
 				} else if(Despawn.NoTargetExpire == true){
 					
@@ -111,11 +114,11 @@ namespace RivalAI.Behavior{
 
 			}
 
-			if(!NewAutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
+			if(!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				NewAutoPilot.ActivateAutoPilot(AutoPilotType.None, NewAutoPilotMode.None, Vector3D.Zero);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 
 			}
 
@@ -124,15 +127,15 @@ namespace RivalAI.Behavior{
 
 				bool inRange = false;
 
-				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistanceSpace)
+				if (!AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistanceSpace)
 					inRange = true;
 
-				if(NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistancePlanet)
+				if(AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistancePlanet)
 					inRange = true;
 
 				if (inRange) {
 
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.RivalAI, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe, Vector3D.Zero, true, false, false);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget);
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 					BehaviorTriggerA = true;
 
@@ -145,15 +148,15 @@ namespace RivalAI.Behavior{
 
 				bool outRange = false;
 
-				if (!NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistanceSpace)
+				if (!AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistanceSpace)
 					outRange = true;
 
-				if (NewAutoPilot.InGravity() && NewAutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistancePlanet)
+				if (AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistancePlanet)
 					outRange = true;
 
 				if (outRange) {
 
-					NewAutoPilot.ActivateAutoPilot(AutoPilotType.Legacy, NewAutoPilotMode.None, this.RemoteControl.GetPosition(), true, true, true);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					BehaviorTriggerB = true;
 
@@ -167,7 +170,7 @@ namespace RivalAI.Behavior{
 				if (Despawn.NearestPlayer?.Controller?.ControlledEntity?.Entity != null) {
 
 					//Logger.AddMsg("DespawnCoordsCreated", true);
-					NewAutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
+					AutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
 
 				}
 
@@ -184,11 +187,9 @@ namespace RivalAI.Behavior{
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
+			AutoPilot.Data = TagHelper.GetAutopilotProfile("RAI-Generic-Autopilot-Fighter");
 			Despawn.UseNoTargetTimer = true;
-			NewAutoPilot.Thrust.StrafeMinDurationMs = 1500;
-			NewAutoPilot.Thrust.StrafeMaxDurationMs = 2000;
-			NewAutoPilot.Thrust.AllowStrafing = true;
-			NewAutoPilot.Weapons.UseStaticGuns = true;
+			AutoPilot.Weapons.UseStaticGuns = true;
 
 			//Get Settings From Custom Data
 			InitCoreTags();

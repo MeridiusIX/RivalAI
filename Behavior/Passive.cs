@@ -45,7 +45,9 @@ namespace RivalAI.Behavior{
 		
 		public byte Counter;
 
-		public Passive() {
+		public Passive() : base() {
+
+			_behaviorType = "Passive";
 
 			FighterEngageDistanceSpace = 300;
 			FighterEngageDistancePlanet = 600;
@@ -64,9 +66,9 @@ namespace RivalAI.Behavior{
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
-			NewAutoPilot.Collision.UseCollisionDetection = false;
+			AutoPilot.Collision.UseCollisionDetection = false;
 			Despawn.UsePlayerDistanceTimer = false;
-			NewAutoPilot.Targeting.Data.UseCustomTargeting = false;
+			AutoPilot.Targeting.Data.UseCustomTargeting = false;
 
 			//Get Settings From Custom Data
 			InitCoreTags();

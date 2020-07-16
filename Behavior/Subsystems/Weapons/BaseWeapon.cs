@@ -63,7 +63,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			_remoteControl = remoteControl;
 			_behavior = behavior;
-			_weaponSystem = behavior.NewAutoPilot.Weapons;
+			_weaponSystem = behavior.AutoPilot.Weapons;
 
 			_isStatic = false;
 			_isTurret = false;
@@ -237,6 +237,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			_pendingAmmoRefill = false;
 
 			InventoryHelper.AddItemsToInventory(_inventory, _currentAmmoMagazine, _weaponSystem.AmmoReplenishClipAmount);
+			_ammoRefills++;
 
 		}
 

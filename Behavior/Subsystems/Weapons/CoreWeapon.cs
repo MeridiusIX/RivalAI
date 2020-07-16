@@ -1,4 +1,5 @@
-﻿using RivalAI.Helpers;
+﻿using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Helpers;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
@@ -82,7 +83,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 				
 				} else {
 
-					if (!_behavior.NewAutoPilot.Targeting.HasTarget()) {
+					if (!_behavior.AutoPilot.Targeting.HasTarget()) {
 
 						//Logger.MsgDebug(" - No Autopilot Target To assign For Homing Ammo", DebugTypeEnum.Weapon);
 						_readyToFire = false;
@@ -90,7 +91,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 					}
 
-					if (trajectory < _behavior.NewAutoPilot.Targeting.Target.Distance(_block.GetPosition())) {
+					if (trajectory < _behavior.AutoPilot.Targeting.Target.Distance(_block.GetPosition())) {
 
 						//Logger.MsgDebug(" - Target Out Of Range For Homing Ammo", DebugTypeEnum.Weapon);
 						_readyToFire = false;
@@ -124,7 +125,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			//---------------------
 
 			//Collision
-			var collision = _behavior.NewAutoPilot.Collision.GetResult(_direction);
+			var collision = _behavior.AutoPilot.Collision.GetResult(_direction);
 			bool badCollisionResult = false;
 			bool hostileCollisionResult = false;
 			
@@ -142,7 +143,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 						if (_weaponSystem.WaypointIsTarget) {
 
-							if (_behavior.NewAutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance())
+							if (_behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance())
 								badCollisionResult = true;
 
 						} else {
@@ -158,7 +159,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 						bool hostileEntity = collision.GridRelation == TargetRelationEnum.Enemy || collision.ShieldRelation == TargetRelationEnum.Enemy;
 
-						if (!hostileEntity && _behavior.NewAutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance())
+						if (!hostileEntity && _behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance())
 							badCollisionResult = true;
 
 						if (hostileEntity)
@@ -187,7 +188,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			}
 
 			//Angle
-			var directionToTarget = Vector3D.Normalize(_behavior.NewAutoPilot.GetCurrentWaypoint() - _block.GetPosition());
+			var directionToTarget = Vector3D.Normalize(_behavior.AutoPilot.GetCurrentWaypoint() - _block.GetPosition());
 			var allowedAngle = VectorHelper.GetAngleBetweenDirections(directionToTarget, _block.WorldMatrix.Forward) <= _weaponSystem.WeaponMaxAngleFromTarget;
 			var badAngleAndNoHostileCollision = !allowedAngle && !hostileCollisionResult;
 			var beamAmmoAndNoHostileCollision = _beamAmmo && !hostileCollisionResult;
@@ -202,9 +203,9 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			}
 
 			//Distance
-			var dist = Vector3D.Distance(_block.GetPosition(), _behavior.NewAutoPilot.GetCurrentWaypoint());
+			var dist = Vector3D.Distance(_block.GetPosition(), _behavior.AutoPilot.GetCurrentWaypoint());
 			var reqTrajectory = dist > trajectory ? trajectory : trajectory - (trajectory - dist);
-			var distFromMaxTrajectory = Vector3D.Distance(_behavior.NewAutoPilot.GetCurrentWaypoint(), _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
+			var distFromMaxTrajectory = Vector3D.Distance(_behavior.AutoPilot.GetCurrentWaypoint(), _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
 
 			if (!hostileCollisionResult) {
 

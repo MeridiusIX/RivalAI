@@ -28,11 +28,11 @@ using VRageMath;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
-	
+namespace RivalAI.Behavior.Subsystems.Trigger {
+
 	[ProtoContract]
 	public class ActionProfile {
-		
+
 		[ProtoMember(1)]
 		public bool UseChatBroadcast;
 
@@ -47,22 +47,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(5)]
 		public bool ChangeAutopilotSpeed;
-		
+
 		[ProtoMember(6)]
 		public float NewAutopilotSpeed;
-		
+
 		[ProtoMember(7)]
 		public bool SpawnEncounter;
-		
+
 		[ProtoMember(8)]
 		public SpawnProfile SpawnerDefunct;
-		
+
 		[ProtoMember(9)]
 		public bool SelfDestruct;
-		
+
 		[ProtoMember(10)]
 		public bool Retreat;
-		
+
 		[ProtoMember(11)]
 		public bool BroadcastCurrentTarget;
 
@@ -74,16 +74,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(14)]
 		public bool SwitchToReceivedTarget;
-		
+
 		[ProtoMember(15)]
 		public bool SwitchToBehavior;
-		
+
 		[ProtoMember(16)]
 		public string NewBehavior;
-		
+
 		[ProtoMember(17)]
 		public bool PreserveSettingsOnBehaviorSwitch;
-		
+
 		[ProtoMember(18)]
 		public bool RefreshTarget;
 
@@ -95,25 +95,25 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(21)]
 		public bool TriggerTimerBlocks;
-		
+
 		[ProtoMember(22)]
 		public List<string> TimerBlockNames;
-		
+
 		[ProtoMember(23)]
 		public bool ChangeReputationWithPlayers;
-		
+
 		[ProtoMember(24)]
 		public double ReputationChangeRadius;
-		
+
 		[ProtoMember(25)]
 		public List<int> ReputationChangeAmount;
-		
+
 		[ProtoMember(26)]
 		public bool ActivateAssertiveAntennas;
-		
+
 		[ProtoMember(27)]
 		public bool ChangeAntennaOwnership;
-		
+
 		[ProtoMember(28)]
 		public string AntennaFactionOwner;
 
@@ -140,61 +140,61 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(36)]
 		public string DamageToolAttackerSound;
-		
+
 		[ProtoMember(37)]
 		public bool PlayParticleEffectAtRemote;
-		
+
 		[ProtoMember(38)]
 		public string ParticleEffectId;
-		
+
 		[ProtoMember(39)]
 		public Vector3D ParticleEffectOffset;
-		
+
 		[ProtoMember(40)]
 		public float ParticleEffectScale;
-		
+
 		[ProtoMember(41)]
 		public float ParticleEffectMaxTime;
-		
+
 		[ProtoMember(42)]
 		public Vector3D ParticleEffectColor;
 
 		[ProtoMember(43)]
 		public List<string> SetBooleansTrue;
-		
+
 		[ProtoMember(44)]
 		public List<string> SetBooleansFalse;
-		
+
 		[ProtoMember(45)]
 		public List<string> IncreaseCounters;
-		
+
 		[ProtoMember(46)]
 		public List<string> DecreaseCounters;
-		
+
 		[ProtoMember(47)]
 		public List<string> ResetCounters;
-		
+
 		[ProtoMember(48)]
 		public List<string> SetSandboxBooleansTrue;
-		
+
 		[ProtoMember(49)]
 		public List<string> SetSandboxBooleansFalse;
-		
+
 		[ProtoMember(50)]
 		public List<string> IncreaseSandboxCounters;
-		
+
 		[ProtoMember(51)]
 		public List<string> DecreaseSandboxCounters;
-		
+
 		[ProtoMember(52)]
 		public List<string> ResetSandboxCounters;
-		
+
 		[ProtoMember(53)]
 		public bool ChangeAttackerReputation;
-		
+
 		[ProtoMember(54)]
 		public List<string> ChangeAttackerReputationFaction;
-		
+
 		[ProtoMember(55)]
 		public List<int> ChangeAttackerReputationAmount;
 
@@ -417,7 +417,19 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 		[ProtoMember(128)]
 		public bool RemoveAllKnownPlayerAreas;
 
-		public ActionProfile(){
+		[ProtoMember(129)]
+		public int Chance;
+
+		[ProtoMember(130)]
+		public bool EnableBlocks;
+
+		[ProtoMember(131)]
+		public List<string> EnableBlockNames;
+
+		[ProtoMember(132)]
+		public List<bool> EnableBlockStates;
+
+		public ActionProfile() {
 
 			UseChatBroadcast = false;
 			ChatData = new List<ChatProfile>();
@@ -425,10 +437,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			BarrelRoll = false;
 			Strafe = false;
-			
+
 			ChangeAutopilotSpeed = false;
 			NewAutopilotSpeed = 0;
-			
+
 			SpawnEncounter = false;
 			Spawner = new List<SpawnProfile>();
 			SpawnerDefunct = new SpawnProfile();
@@ -450,10 +462,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			PreserveTargetDataOnBehaviorSwitch = false;
 
 			RefreshTarget = false;
-			
+
 			TriggerTimerBlocks = false;
 			TimerBlockNames = new List<string>();
-			
+
 			ChangeReputationWithPlayers = false;
 			ReputationChangeRadius = 0;
 			ReputationChangeFactions = new List<string>();
@@ -466,7 +478,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			ReputationChangesForAllAttackPlayerFactionMembers = false;
 
 			ActivateAssertiveAntennas = false;
-			
+
 			ChangeAntennaOwnership = false;
 			AntennaFactionOwner = "Nobody";
 
@@ -474,12 +486,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			KnownPlayerAreaRadius = 10000;
 			KnownPlayerAreaTimer = 30;
 			KnownPlayerAreaMaxSpawns = -1;
-			
+
 			DamageToolAttacker = false;
 			DamageToolAttackerAmount = 90;
 			DamageToolAttackerParticle = "";
 			DamageToolAttackerSound = "";
-			
+
 			PlayParticleEffectAtRemote = false;
 			ParticleEffectId = "";
 			ParticleEffectOffset = Vector3D.Zero;
@@ -492,7 +504,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			IncreaseCounters = new List<string>();
 			DecreaseCounters = new List<string>();
 			ResetCounters = new List<string>();
-			
+
 			SetSandboxBooleansTrue = new List<string>();
 			SetSandboxBooleansFalse = new List<string>();
 			IncreaseSandboxCounters = new List<string>();
@@ -582,22 +594,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			RemoveKnownPlayerArea = false;
 			RemoveAllKnownPlayerAreas = false;
 
+			Chance = 100;
+
+			EnableBlocks = false;
+			EnableBlockNames = new List<string>();
+			EnableBlockStates = new List<bool>();
+
 			ProfileSubtypeId = "";
 
 		}
 
 		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//UseChatBroadcast
-					if(tag.Contains("[UseChatBroadcast:") == true) {
+					if (tag.Contains("[UseChatBroadcast:") == true) {
 
-						this.UseChatBroadcast = TagHelper.TagBoolCheck(tag);
+						UseChatBroadcast = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -649,64 +667,64 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					}
 
 					//BarrelRoll
-					if(tag.Contains("[BarrelRoll:") == true) {
+					if (tag.Contains("[BarrelRoll:") == true) {
 
-						this.BarrelRoll = TagHelper.TagBoolCheck(tag);
+						BarrelRoll = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//Strafe
-					if(tag.Contains("[Strafe:") == true) {
+					if (tag.Contains("[Strafe:") == true) {
 
-						this.Strafe = TagHelper.TagBoolCheck(tag);
+						Strafe = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//ChangeAutopilotSpeed
-					if(tag.Contains("[ChangeAutopilotSpeed:") == true) {
+					if (tag.Contains("[ChangeAutopilotSpeed:") == true) {
 
-						this.ChangeAutopilotSpeed = TagHelper.TagBoolCheck(tag);
+						ChangeAutopilotSpeed = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//NewAutopilotSpeed
-					if(tag.Contains("[NewAutopilotSpeed:") == true) {
+					if (tag.Contains("[NewAutopilotSpeed:") == true) {
 
-						this.NewAutopilotSpeed = TagHelper.TagFloatCheck(tag, this.NewAutopilotSpeed);
+						NewAutopilotSpeed = TagHelper.TagFloatCheck(tag, NewAutopilotSpeed);
 
 					}
-					
-					//SpawnEncounter
-					if(tag.Contains("[SpawnEncounter:") == true) {
 
-						this.SpawnEncounter = TagHelper.TagBoolCheck(tag);
+					//SpawnEncounter
+					if (tag.Contains("[SpawnEncounter:") == true) {
+
+						SpawnEncounter = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//Spawner
-					if(tag.Contains("[Spawner:") == true) {
+					if (tag.Contains("[Spawner:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 						bool gotSpawn = false;
 
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							byte[] byteData = { };
 
-							if(TagHelper.SpawnerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if (TagHelper.SpawnerObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
 								try {
 
 									var profile = MyAPIGateway.Utilities.SerializeFromBinary<SpawnProfile>(byteData);
 
-									if(profile != null) {
+									if (profile != null) {
 
 										Spawner.Add(profile);
 										gotSpawn = true;
 
 									}
 
-								} catch(Exception) {
+								} catch (Exception) {
 
 
 
@@ -725,139 +743,139 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//SelfDestruct
 					if (tag.Contains("[SelfDestruct:") == true) {
 
-						this.SelfDestruct = TagHelper.TagBoolCheck(tag);
+						SelfDestruct = TagHelper.TagBoolCheck(tag);
 
 					}
-					
-					//Retreat
-					if(tag.Contains("[Retreat:") == true) {
 
-						this.Retreat = TagHelper.TagBoolCheck(tag);
+					//Retreat
+					if (tag.Contains("[Retreat:") == true) {
+
+						Retreat = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//TerminateBehavior
 					if (tag.Contains("[TerminateBehavior:") == true) {
 
-						this.TerminateBehavior = TagHelper.TagBoolCheck(tag);
+						TerminateBehavior = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//BroadcastCurrentTarget
 					if (tag.Contains("[BroadcastCurrentTarget:") == true) {
 
-						this.BroadcastCurrentTarget = TagHelper.TagBoolCheck(tag);
+						BroadcastCurrentTarget = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//SwitchToReceivedTarget
-					if(tag.Contains("[SwitchToReceivedTarget:") == true) {
+					if (tag.Contains("[SwitchToReceivedTarget:") == true) {
 
-						this.SwitchToReceivedTarget = TagHelper.TagBoolCheck(tag);
+						SwitchToReceivedTarget = TagHelper.TagBoolCheck(tag);
 
 					}
-					
-					//BroadcastDamagerTarget
-					if(tag.Contains("[BroadcastDamagerTarget:") == true) {
 
-						this.BroadcastDamagerTarget = TagHelper.TagBoolCheck(tag);
+					//BroadcastDamagerTarget
+					if (tag.Contains("[BroadcastDamagerTarget:") == true) {
+
+						BroadcastDamagerTarget = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//BroadcastSendCode
 					if (tag.Contains("[BroadcastSendCode:") == true) {
 
-						this.BroadcastSendCode = TagHelper.TagStringCheck(tag);
+						BroadcastSendCode = TagHelper.TagStringCheck(tag);
 
 					}
 
 					//SwitchToBehavior
 					if (tag.Contains("[SwitchToBehavior:") == true) {
 
-						this.SwitchToBehavior = TagHelper.TagBoolCheck(tag);
+						SwitchToBehavior = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//NewBehavior
-					if(tag.Contains("[NewBehavior:") == true) {
+					if (tag.Contains("[NewBehavior:") == true) {
 
-						this.NewBehavior = TagHelper.TagStringCheck(tag);
+						NewBehavior = TagHelper.TagStringCheck(tag);
 
 					}
-					
-					//PreserveSettingsOnBehaviorSwitch
-					if(tag.Contains("[PreserveSettingsOnBehaviorSwitch:") == true) {
 
-						this.PreserveSettingsOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+					//PreserveSettingsOnBehaviorSwitch
+					if (tag.Contains("[PreserveSettingsOnBehaviorSwitch:") == true) {
+
+						PreserveSettingsOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//PreserveTriggersOnBehaviorSwitch
 					if (tag.Contains("[PreserveTriggersOnBehaviorSwitch:") == true) {
 
-						this.PreserveTriggersOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+						PreserveTriggersOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//PreserveTargetDataOnBehaviorSwitch
 					if (tag.Contains("[PreserveTargetDataOnBehaviorSwitch:") == true) {
 
-						this.PreserveTargetDataOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
+						PreserveTargetDataOnBehaviorSwitch = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//RefreshTarget
 					if (tag.Contains("[RefreshTarget:") == true) {
 
-						this.RefreshTarget = TagHelper.TagBoolCheck(tag);
+						RefreshTarget = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//SwitchTargetProfile
-					if(tag.Contains("[SwitchTargetProfile:") == true) {
+					if (tag.Contains("[SwitchTargetProfile:") == true) {
 
-						this.SwitchTargetProfile = TagHelper.TagBoolCheck(tag);
+						SwitchTargetProfile = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//NewTargetProfile
-					if(tag.Contains("[NewTargetProfile:") == true) {
+					if (tag.Contains("[NewTargetProfile:") == true) {
 
-						this.NewTargetProfile = TagHelper.TagStringCheck(tag);
+						NewTargetProfile = TagHelper.TagStringCheck(tag);
 
 					}
-					
+
 					//TriggerTimerBlocks
-					if(tag.Contains("[TriggerTimerBlocks:") == true) {
+					if (tag.Contains("[TriggerTimerBlocks:") == true) {
 
-						this.TriggerTimerBlocks = TagHelper.TagBoolCheck(tag);
+						TriggerTimerBlocks = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//TimerBlockNames
-					if(tag.Contains("[TimerBlockNames:") == true) {
+					if (tag.Contains("[TimerBlockNames:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.TimerBlockNames.Add(tempvalue);
+							TimerBlockNames.Add(tempvalue);
 
 						}
 
 					}
-					
-					//ChangeReputationWithPlayers
-					if(tag.Contains("[ChangeReputationWithPlayers:") == true) {
 
-						this.ChangeReputationWithPlayers = TagHelper.TagBoolCheck(tag);
+					//ChangeReputationWithPlayers
+					if (tag.Contains("[ChangeReputationWithPlayers:") == true) {
+
+						ChangeReputationWithPlayers = TagHelper.TagBoolCheck(tag);
 
 					}
-					
-					//ReputationChangeRadius
-					if(tag.Contains("[ReputationChangeRadius:") == true) {
 
-						this.ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
+					//ReputationChangeRadius
+					if (tag.Contains("[ReputationChangeRadius:") == true) {
+
+						ReputationChangeRadius = TagHelper.TagDoubleCheck(tag, ReputationChangeRadius);
 
 					}
 
@@ -868,7 +886,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ReputationChangeFactions.Add(tempvalue);
+							ReputationChangeFactions.Add(tempvalue);
 
 						}
 
@@ -878,261 +896,261 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ReputationChangeAmount:") == true) {
 
 						int tempValue = TagHelper.TagIntCheck(tag, 0);
-						this.ReputationChangeAmount.Add(tempValue);
+						ReputationChangeAmount.Add(tempValue);
 
 					}
-					
+
 					//ActivateAssertiveAntennas
-					if(tag.Contains("[ActivateAssertiveAntennas:") == true) {
+					if (tag.Contains("[ActivateAssertiveAntennas:") == true) {
 
-						this.ActivateAssertiveAntennas = TagHelper.TagBoolCheck(tag);
+						ActivateAssertiveAntennas = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//ChangeAntennaOwnership
-					if(tag.Contains("[ChangeAntennaOwnership:") == true) {
+					if (tag.Contains("[ChangeAntennaOwnership:") == true) {
 
-						this.ChangeAntennaOwnership = TagHelper.TagBoolCheck(tag);
+						ChangeAntennaOwnership = TagHelper.TagBoolCheck(tag);
 
 					}
-					
-					//AntennaFactionOwner
-					if(tag.Contains("[AntennaFactionOwner:") == true) {
 
-						this.AntennaFactionOwner = TagHelper.TagStringCheck(tag);
+					//AntennaFactionOwner
+					if (tag.Contains("[AntennaFactionOwner:") == true) {
+
+						AntennaFactionOwner = TagHelper.TagStringCheck(tag);
 
 					}
 
 					//CreateKnownPlayerArea
-					if(tag.Contains("[CreateKnownPlayerArea:") == true) {
+					if (tag.Contains("[CreateKnownPlayerArea:") == true) {
 
-						this.CreateKnownPlayerArea = TagHelper.TagBoolCheck(tag);
+						CreateKnownPlayerArea = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//KnownPlayerAreaRadius
-					if(tag.Contains("[KnownPlayerAreaRadius:") == true) {
+					if (tag.Contains("[KnownPlayerAreaRadius:") == true) {
 
-						this.KnownPlayerAreaRadius = TagHelper.TagDoubleCheck(tag, KnownPlayerAreaRadius);
+						KnownPlayerAreaRadius = TagHelper.TagDoubleCheck(tag, KnownPlayerAreaRadius);
 
 					}
 
 					//KnownPlayerAreaTimer
-					if(tag.Contains("[KnownPlayerAreaTimer:") == true) {
+					if (tag.Contains("[KnownPlayerAreaTimer:") == true) {
 
-						this.KnownPlayerAreaTimer = TagHelper.TagIntCheck(tag, KnownPlayerAreaTimer);
+						KnownPlayerAreaTimer = TagHelper.TagIntCheck(tag, KnownPlayerAreaTimer);
 
 					}
 
 					//KnownPlayerAreaMaxSpawns
-					if(tag.Contains("[KnownPlayerAreaMaxSpawns:") == true) {
+					if (tag.Contains("[KnownPlayerAreaMaxSpawns:") == true) {
 
-						this.KnownPlayerAreaMaxSpawns = TagHelper.TagIntCheck(tag, KnownPlayerAreaMaxSpawns);
+						KnownPlayerAreaMaxSpawns = TagHelper.TagIntCheck(tag, KnownPlayerAreaMaxSpawns);
 
 					}
 
 					//KnownPlayerAreaMinThreatForAvoidingAbandonment
 					if (tag.Contains("[KnownPlayerAreaMinThreatForAvoidingAbandonment:") == true) {
 
-						this.KnownPlayerAreaMinThreatForAvoidingAbandonment = TagHelper.TagIntCheck(tag, KnownPlayerAreaMinThreatForAvoidingAbandonment);
+						KnownPlayerAreaMinThreatForAvoidingAbandonment = TagHelper.TagIntCheck(tag, KnownPlayerAreaMinThreatForAvoidingAbandonment);
 
 					}
 
 					//DamageToolAttacker
 					if (tag.Contains("[DamageToolAttacker:") == true) {
 
-						this.DamageToolAttacker = TagHelper.TagBoolCheck(tag);
+						DamageToolAttacker = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//DamageToolAttackerAmount
-					if(tag.Contains("[DamageToolAttackerAmount:") == true) {
+					if (tag.Contains("[DamageToolAttackerAmount:") == true) {
 
-						this.DamageToolAttackerAmount = TagHelper.TagFloatCheck(tag, this.DamageToolAttackerAmount);
+						DamageToolAttackerAmount = TagHelper.TagFloatCheck(tag, DamageToolAttackerAmount);
 
 					}
-					
+
 					//DamageToolAttackerParticle
-					if(tag.Contains("[DamageToolAttackerParticle:") == true) {
+					if (tag.Contains("[DamageToolAttackerParticle:") == true) {
 
-						this.DamageToolAttackerParticle = TagHelper.TagStringCheck(tag);
+						DamageToolAttackerParticle = TagHelper.TagStringCheck(tag);
 
 					}
-					
+
 					//DamageToolAttackerSound
-					if(tag.Contains("[DamageToolAttackerSound:") == true) {
+					if (tag.Contains("[DamageToolAttackerSound:") == true) {
 
-						this.DamageToolAttackerSound = TagHelper.TagStringCheck(tag);
+						DamageToolAttackerSound = TagHelper.TagStringCheck(tag);
 
 					}
-					
+
 					//PlayParticleEffectAtRemote
-					if(tag.Contains("[PlayParticleEffectAtRemote:") == true) {
+					if (tag.Contains("[PlayParticleEffectAtRemote:") == true) {
 
-						this.PlayParticleEffectAtRemote = TagHelper.TagBoolCheck(tag);
+						PlayParticleEffectAtRemote = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//ParticleEffectId
-					if(tag.Contains("[ParticleEffectId:") == true) {
+					if (tag.Contains("[ParticleEffectId:") == true) {
 
-						this.ParticleEffectId = TagHelper.TagStringCheck(tag);
+						ParticleEffectId = TagHelper.TagStringCheck(tag);
 
 					}
-					
+
 					//ParticleEffectOffset
-					if(tag.Contains("[ParticleEffectOffset:") == true) {
+					if (tag.Contains("[ParticleEffectOffset:") == true) {
 
-						this.ParticleEffectOffset = TagHelper.TagVector3DCheck(tag);
+						ParticleEffectOffset = TagHelper.TagVector3DCheck(tag);
 
 					}
-					
+
 					//ParticleEffectScale
-					if(tag.Contains("[ParticleEffectScale:") == true) {
+					if (tag.Contains("[ParticleEffectScale:") == true) {
 
-						this.ParticleEffectScale = TagHelper.TagFloatCheck(tag, this.ParticleEffectScale);
+						ParticleEffectScale = TagHelper.TagFloatCheck(tag, ParticleEffectScale);
 
 					}
-					
+
 					//ParticleEffectMaxTime
-					if(tag.Contains("[ParticleEffectMaxTime:") == true) {
+					if (tag.Contains("[ParticleEffectMaxTime:") == true) {
 
-						this.ParticleEffectMaxTime = TagHelper.TagFloatCheck(tag, this.ParticleEffectMaxTime);
+						ParticleEffectMaxTime = TagHelper.TagFloatCheck(tag, ParticleEffectMaxTime);
 
 					}
-					
+
 					//ParticleEffectColor
-					if(tag.Contains("[ParticleEffectColor:") == true) {
+					if (tag.Contains("[ParticleEffectColor:") == true) {
 
-						this.ParticleEffectColor = TagHelper.TagVector3DCheck(tag);
+						ParticleEffectColor = TagHelper.TagVector3DCheck(tag);
 
 					}
-					
+
 					//SetBooleansTrue
-					if(tag.Contains("[SetBooleansTrue:") == true) {
+					if (tag.Contains("[SetBooleansTrue:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.SetBooleansTrue.Add(tempvalue);
+							SetBooleansTrue.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//SetBooleansFalse
-					if(tag.Contains("[SetBooleansFalse:") == true) {
+					if (tag.Contains("[SetBooleansFalse:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.SetBooleansFalse.Add(tempvalue);
+							SetBooleansFalse.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//IncreaseCounters
-					if(tag.Contains("[IncreaseCounters:") == true) {
+					if (tag.Contains("[IncreaseCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.IncreaseCounters.Add(tempvalue);
+							IncreaseCounters.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//DecreaseCounters
-					if(tag.Contains("[DecreaseCounters:") == true) {
+					if (tag.Contains("[DecreaseCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.DecreaseCounters.Add(tempvalue);
+							DecreaseCounters.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//ResetCounters
-					if(tag.Contains("[ResetCounters:") == true) {
+					if (tag.Contains("[ResetCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ResetCounters.Add(tempvalue);
+							ResetCounters.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//SetSandboxBooleansTrue
-					if(tag.Contains("[SetSandboxBooleansTrue:") == true) {
+					if (tag.Contains("[SetSandboxBooleansTrue:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.SetSandboxBooleansTrue.Add(tempvalue);
+							SetSandboxBooleansTrue.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//SetSandboxBooleansFalse
-					if(tag.Contains("[SetSandboxBooleansFalse:") == true) {
+					if (tag.Contains("[SetSandboxBooleansFalse:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.SetSandboxBooleansFalse.Add(tempvalue);
+							SetSandboxBooleansFalse.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//IncreaseSandboxCounters
-					if(tag.Contains("[IncreaseSandboxCounters:") == true) {
+					if (tag.Contains("[IncreaseSandboxCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.IncreaseSandboxCounters.Add(tempvalue);
+							IncreaseSandboxCounters.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//DecreaseSandboxCounters
-					if(tag.Contains("[DecreaseSandboxCounters:") == true) {
+					if (tag.Contains("[DecreaseSandboxCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.DecreaseSandboxCounters.Add(tempvalue);
+							DecreaseSandboxCounters.Add(tempvalue);
 
 						}
 
 					}
-					
+
 					//ResetSandboxCounters
-					if(tag.Contains("[ResetSandboxCounters:") == true) {
+					if (tag.Contains("[ResetSandboxCounters:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ResetSandboxCounters.Add(tempvalue);
+							ResetSandboxCounters.Add(tempvalue);
 
 						}
 
@@ -1141,7 +1159,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//ChangeAttackerReputation
 					if (tag.Contains("[ChangeAttackerReputation:") == true) {
 
-						this.ChangeAttackerReputation = TagHelper.TagBoolCheck(tag);
+						ChangeAttackerReputation = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1152,7 +1170,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ChangeAttackerReputationFaction.Add(tempvalue);
+							ChangeAttackerReputationFaction.Add(tempvalue);
 
 						}
 
@@ -1162,35 +1180,35 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[ChangeAttackerReputationAmount:") == true) {
 
 						var tempvalue = TagHelper.TagIntCheck(tag, 0);
-						this.ChangeAttackerReputationAmount.Add(tempvalue);
+						ChangeAttackerReputationAmount.Add(tempvalue);
 
 					}
 
 					//ReputationChangesForAllAttackPlayerFactionMembers
 					if (tag.Contains("[ReputationChangesForAllAttackPlayerFactionMembers:") == true) {
 
-						this.ReputationChangesForAllAttackPlayerFactionMembers = TagHelper.TagBoolCheck(tag);
+						ReputationChangesForAllAttackPlayerFactionMembers = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChangeTargetProfile
 					if (tag.Contains("[ChangeTargetProfile:") == true) {
 
-						this.ChangeTargetProfile = TagHelper.TagBoolCheck(tag);
+						ChangeTargetProfile = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//NewTargetProfileId
 					if (tag.Contains("[NewTargetProfileId:") == true) {
 
-						this.NewTargetProfileId = TagHelper.TagStringCheck(tag);
+						NewTargetProfileId = TagHelper.TagStringCheck(tag);
 
 					}
 
 					//ChangeBlockNames
 					if (tag.Contains("[ChangeBlockNames:") == true) {
 
-						this.ChangeBlockNames = TagHelper.TagBoolCheck(tag);
+						ChangeBlockNames = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1201,7 +1219,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ChangeBlockNamesFrom.Add(tempvalue);
+							ChangeBlockNamesFrom.Add(tempvalue);
 
 						}
 
@@ -1214,7 +1232,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ChangeBlockNamesTo.Add(tempvalue);
+							ChangeBlockNamesTo.Add(tempvalue);
 
 						}
 
@@ -1223,7 +1241,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//ChangeAntennaRanges
 					if (tag.Contains("[ChangeAntennaRanges:") == true) {
 
-						this.ChangeAntennaRanges = TagHelper.TagBoolCheck(tag);
+						ChangeAntennaRanges = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1234,7 +1252,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.AntennaNamesForRangeChange.Add(tempvalue);
+							AntennaNamesForRangeChange.Add(tempvalue);
 
 						}
 
@@ -1243,28 +1261,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//AntennaRangeChangeType
 					if (tag.Contains("[AntennaRangeChangeType:") == true) {
 
-						this.AntennaRangeChangeType = TagHelper.TagStringCheck(tag);
+						AntennaRangeChangeType = TagHelper.TagStringCheck(tag);
 
 					}
 
 					//AntennaRangeChangeAmount
 					if (tag.Contains("[AntennaRangeChangeAmount:") == true) {
 
-						this.AntennaRangeChangeAmount = TagHelper.TagFloatCheck(tag, this.AntennaRangeChangeAmount);
+						AntennaRangeChangeAmount = TagHelper.TagFloatCheck(tag, AntennaRangeChangeAmount);
 
 					}
 
 					//ForceDespawn
 					if (tag.Contains("[ForceDespawn:") == true) {
 
-						this.ForceDespawn = TagHelper.TagBoolCheck(tag);
+						ForceDespawn = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ResetCooldownTimeOfTriggers
 					if (tag.Contains("[ResetCooldownTimeOfTriggers:") == true) {
 
-						this.ResetCooldownTimeOfTriggers = TagHelper.TagBoolCheck(tag);
+						ResetCooldownTimeOfTriggers = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1275,7 +1293,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ResetTriggerCooldownNames.Add(tempvalue);
+							ResetTriggerCooldownNames.Add(tempvalue);
 
 						}
 
@@ -1284,35 +1302,35 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//BroadcastGenericCommand
 					if (tag.Contains("[BroadcastGenericCommand:") == true) {
 
-						this.BroadcastGenericCommand = TagHelper.TagBoolCheck(tag);
+						BroadcastGenericCommand = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//BehaviorSpecificEventA
 					if (tag.Contains("[BehaviorSpecificEventA:") == true) {
 
-						this.BehaviorSpecificEventA = TagHelper.TagBoolCheck(tag);
+						BehaviorSpecificEventA = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChangeInertiaDampeners
 					if (tag.Contains("[ChangeInertiaDampeners:") == true) {
 
-						this.ChangeInertiaDampeners = TagHelper.TagBoolCheck(tag);
+						ChangeInertiaDampeners = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//InertiaDampenersEnable
 					if (tag.Contains("[InertiaDampenersEnable:") == true) {
 
-						this.InertiaDampenersEnable = TagHelper.TagBoolCheck(tag);
+						InertiaDampenersEnable = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//EnableTriggers
 					if (tag.Contains("[EnableTriggers:") == true) {
 
-						this.EnableTriggers = TagHelper.TagBoolCheck(tag);
+						EnableTriggers = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1323,7 +1341,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.EnableTriggerNames.Add(tempvalue);
+							EnableTriggerNames.Add(tempvalue);
 
 						}
 
@@ -1332,7 +1350,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//DisableTriggers
 					if (tag.Contains("[DisableTriggers:") == true) {
 
-						this.DisableTriggers = TagHelper.TagBoolCheck(tag);
+						DisableTriggers = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1343,7 +1361,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.DisableTriggerNames.Add(tempvalue);
+							DisableTriggerNames.Add(tempvalue);
 
 						}
 
@@ -1352,98 +1370,98 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//StaggerWarheadDetonation
 					if (tag.Contains("[StaggerWarheadDetonation:") == true) {
 
-						this.StaggerWarheadDetonation = TagHelper.TagBoolCheck(tag);
+						StaggerWarheadDetonation = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChangeRotationDirection
 					if (tag.Contains("[ChangeRotationDirection:") == true) {
 
-						this.ChangeRotationDirection = TagHelper.TagBoolCheck(tag);
+						ChangeRotationDirection = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//RotationDirection
 					if (tag.Contains("[RotationDirection:") == true) {
 
-						this.RotationDirection = TagHelper.TagDirectionEnumCheck(tag);
+						RotationDirection = TagHelper.TagDirectionEnumCheck(tag);
 
 					}
 
 					//GenerateExplosion
 					if (tag.Contains("[GenerateExplosion:") == true) {
 
-						this.GenerateExplosion = TagHelper.TagBoolCheck(tag);
+						GenerateExplosion = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ExplosionOffsetFromRemote
 					if (tag.Contains("[ExplosionOffsetFromRemote:") == true) {
 
-						this.ExplosionOffsetFromRemote = TagHelper.TagVector3DCheck(tag);
+						ExplosionOffsetFromRemote = TagHelper.TagVector3DCheck(tag);
 
 					}
 
 					//ExplosionRange
 					if (tag.Contains("[ExplosionRange:") == true) {
 
-						this.ExplosionRange = TagHelper.TagIntCheck(tag, ExplosionRange);
+						ExplosionRange = TagHelper.TagIntCheck(tag, ExplosionRange);
 
 					}
 
 					//ExplosionDamage
 					if (tag.Contains("[ExplosionDamage:") == true) {
 
-						this.ExplosionDamage = TagHelper.TagIntCheck(tag, ExplosionDamage);
+						ExplosionDamage = TagHelper.TagIntCheck(tag, ExplosionDamage);
 
 					}
 
 					//ExplosionIgnoresVoxels
 					if (tag.Contains("[ExplosionIgnoresVoxels:") == true) {
 
-						this.ExplosionIgnoresVoxels = TagHelper.TagBoolCheck(tag);
+						ExplosionIgnoresVoxels = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//GridEditable
 					if (tag.Contains("[GridEditable:") == true) {
 
-						this.GridEditable = TagHelper.TagCheckEnumCheck(tag);
+						GridEditable = TagHelper.TagCheckEnumCheck(tag);
 
 					}
 
 					//SubGridsEditable
 					if (tag.Contains("[SubGridsEditable:") == true) {
 
-						this.SubGridsEditable = TagHelper.TagCheckEnumCheck(tag);
+						SubGridsEditable = TagHelper.TagCheckEnumCheck(tag);
 
 					}
 
 					//GridDestructible
 					if (tag.Contains("[GridDestructible:") == true) {
 
-						this.GridDestructible = TagHelper.TagCheckEnumCheck(tag);
+						GridDestructible = TagHelper.TagCheckEnumCheck(tag);
 
 					}
 
 					//SubGridsDestructible
 					if (tag.Contains("[SubGridsDestructible:") == true) {
 
-						this.SubGridsDestructible = TagHelper.TagCheckEnumCheck(tag);
+						SubGridsDestructible = TagHelper.TagCheckEnumCheck(tag);
 
 					}
 
 					//RecolorGrid
 					if (tag.Contains("[RecolorGrid:") == true) {
 
-						this.RecolorGrid = TagHelper.TagBoolCheck(tag);
+						RecolorGrid = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//RecolorSubGrids
 					if (tag.Contains("[RecolorSubGrids:") == true) {
 
-						this.RecolorSubGrids = TagHelper.TagBoolCheck(tag);
+						RecolorSubGrids = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1452,7 +1470,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempvalue = TagHelper.TagVector3DCheck(tag);
 						tempvalue = tempvalue == Vector3D.Zero ? new Vector3D(-10, -10, -10) : tempvalue;
-						this.OldBlockColors.Add(tempvalue);
+						OldBlockColors.Add(tempvalue);
 
 					}
 
@@ -1460,8 +1478,8 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[NewBlockColors:") == true) {
 
 						var tempvalue = TagHelper.TagVector3DCheck(tag);
-						tempvalue = tempvalue == Vector3D.Zero ? new Vector3D(-10,-10,-10) : tempvalue;
-						this.NewBlockColors.Add(tempvalue);
+						tempvalue = tempvalue == Vector3D.Zero ? new Vector3D(-10, -10, -10) : tempvalue;
+						NewBlockColors.Add(tempvalue);
 
 					}
 
@@ -1470,14 +1488,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 						tempvalue = string.IsNullOrWhiteSpace(tempvalue) ? "" : tempvalue;
-						this.NewBlockSkins.Add(tempvalue);
+						NewBlockSkins.Add(tempvalue);
 
 					}
 
 					//ChangeBlockOwnership
 					if (tag.Contains("[ChangeBlockOwnership:") == true) {
 
-						this.ChangeBlockOwnership = TagHelper.TagBoolCheck(tag);
+						ChangeBlockOwnership = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1488,7 +1506,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.OwnershipBlockNames.Add(tempvalue);
+							OwnershipBlockNames.Add(tempvalue);
 
 						}
 
@@ -1501,7 +1519,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.OwnershipBlockFactions.Add(tempvalue);
+							OwnershipBlockFactions.Add(tempvalue);
 
 						}
 
@@ -1510,7 +1528,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//ChangeBlockDamageMultipliers
 					if (tag.Contains("[ChangeBlockDamageMultipliers:") == true) {
 
-						this.ChangeBlockDamageMultipliers = TagHelper.TagBoolCheck(tag);
+						ChangeBlockDamageMultipliers = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1521,7 +1539,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.DamageMultiplierBlockNames.Add(tempvalue);
+							DamageMultiplierBlockNames.Add(tempvalue);
 
 						}
 
@@ -1531,14 +1549,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					if (tag.Contains("[DamageMultiplierValues:") == true) {
 
 						var tempvalue = TagHelper.TagIntCheck(tag, 1);
-						this.DamageMultiplierValues.Add(tempvalue);
+						DamageMultiplierValues.Add(tempvalue);
 
 					}
 
 					//RazeBlocksWithNames
 					if (tag.Contains("[RazeBlocksWithNames:") == true) {
 
-						this.RazeBlocksWithNames = TagHelper.TagBoolCheck(tag);
+						RazeBlocksWithNames = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1549,7 +1567,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.DamageMultiplierBlockNames.Add(tempvalue);
+							DamageMultiplierBlockNames.Add(tempvalue);
 
 						}
 
@@ -1558,7 +1576,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//ManuallyActivateTrigger
 					if (tag.Contains("[ManuallyActivateTrigger:") == true) {
 
-						this.ManuallyActivateTrigger = TagHelper.TagBoolCheck(tag);
+						ManuallyActivateTrigger = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1569,7 +1587,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							this.ManuallyActivatedTriggerNames.Add(tempvalue);
+							ManuallyActivatedTriggerNames.Add(tempvalue);
 
 						}
 
@@ -1578,28 +1596,63 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					//SendCommandWithoutAntenna
 					if (tag.Contains("[SendCommandWithoutAntenna:") == true) {
 
-						this.SendCommandWithoutAntenna = TagHelper.TagBoolCheck(tag);
+						SendCommandWithoutAntenna = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//SendCommandWithoutAntennaRadius
 					if (tag.Contains("[SendCommandWithoutAntennaRadius:") == true) {
 
-						this.SendCommandWithoutAntennaRadius = TagHelper.TagDoubleCheck(tag, this.SendCommandWithoutAntennaRadius);
+						SendCommandWithoutAntennaRadius = TagHelper.TagDoubleCheck(tag, SendCommandWithoutAntennaRadius);
 
 					}
 
 					//RemoveKnownPlayerArea
 					if (tag.Contains("[RemoveKnownPlayerArea:") == true) {
 
-						this.RemoveKnownPlayerArea = TagHelper.TagBoolCheck(tag);
+						RemoveKnownPlayerArea = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//RemoveAllKnownPlayerAreas
 					if (tag.Contains("[RemoveAllKnownPlayerAreas:") == true) {
 
-						this.RemoveAllKnownPlayerAreas = TagHelper.TagBoolCheck(tag);
+						RemoveAllKnownPlayerAreas = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//Chance
+					if (tag.Contains("[Chance:") == true) {
+
+						Chance = TagHelper.TagIntCheck(tag, Chance);
+
+					}
+
+					//EnableBlocks
+					if (tag.Contains("[EnableBlocks:") == true) {
+
+						EnableBlocks = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//EnableBlockNames
+					if (tag.Contains("[EnableBlockNames:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							EnableBlockNames.Add(tempvalue);
+
+						}
+
+					}
+
+					//EnableBlockStates
+					if (tag.Contains("[EnableBlockStates:") == true) {
+
+						var tempvalue = TagHelper.TagBoolCheck(tag);
+						EnableBlockStates.Add(tempvalue);
 
 					}
 

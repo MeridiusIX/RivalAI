@@ -334,7 +334,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 				if (timeSpan.TotalMilliseconds >= 1000) {
 
 					_collisionTimer = MyAPIGateway.Session.GameDateTime;
-					_behavior.NewAutoPilot.Collision.RunSecondaryCollisionChecks();
+					_behavior.AutoPilot.Collision.RunSecondaryCollisionChecks();
 
 				}
 
@@ -385,7 +385,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			foreach (var waypointType in _restrictedFlags) {
 
-				if (_behavior.NewAutoPilot.IndirectWaypointType.HasFlag(waypointType)) {
+				if (_behavior.AutoPilot.IndirectWaypointType.HasFlag(waypointType)) {
 
 					WaypointIsTarget = false;
 					return;
@@ -396,7 +396,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			foreach (var waypointType in _allowedFlags) {
 
-				if (_behavior.NewAutoPilot.DirectWaypointType.HasFlag(waypointType)) {
+				if (_behavior.AutoPilot.DirectWaypointType.HasFlag(waypointType)) {
 
 					WaypointIsTarget = true;
 					return;

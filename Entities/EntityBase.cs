@@ -38,6 +38,15 @@ namespace RivalAI.Entities {
 		//-----------Start Interface Methods-----------------
 		//---------------------------------------------------
 
+		public double BoundingBoxSize() {
+
+			if (Entity?.PositionComp == null)
+				return 0;
+
+			return Vector3D.Distance(Entity.PositionComp.WorldAABB.Min, Entity.PositionComp.WorldAABB.Max);
+
+		}
+
 		public Vector3D CurrentAcceleration() {
 
 			return EntityEvaluator.EntityAcceleration(ParentEntity);

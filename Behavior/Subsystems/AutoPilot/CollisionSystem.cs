@@ -4,8 +4,8 @@ using Sandbox.ModAPI;
 using System.Text;
 using VRageMath;
 
-namespace RivalAI.Behavior {
-	public class NewCollisionSystem {
+namespace RivalAI.Behavior.Subsystems.AutoPilot {
+	public class CollisionSystem {
 
 		public bool UseCollisionDetection;
 
@@ -19,13 +19,13 @@ namespace RivalAI.Behavior {
 		public double DistanceForVelocityDirection = 1000;
 		public double DistanceForOtherDirections = 500;
 
-		public NewCollisionResult VelocityResult;
-		public NewCollisionResult ForwardResult;
-		public NewCollisionResult BackwardResult;
-		public NewCollisionResult UpResult;
-		public NewCollisionResult DownResult;
-		public NewCollisionResult LeftResult;
-		public NewCollisionResult RightResult;
+		public CollisionResult VelocityResult;
+		public CollisionResult ForwardResult;
+		public CollisionResult BackwardResult;
+		public CollisionResult UpResult;
+		public CollisionResult DownResult;
+		public CollisionResult LeftResult;
+		public CollisionResult RightResult;
 
 		public IMyRemoteControl RemoteControl;
 		public MatrixD Matrix;
@@ -34,7 +34,7 @@ namespace RivalAI.Behavior {
 
 		public AutoPilotSystem AutoPilot;
 
-		public NewCollisionSystem(IMyRemoteControl remoteControl, AutoPilotSystem autoPilot) {
+		public CollisionSystem(IMyRemoteControl remoteControl, AutoPilotSystem autoPilot) {
 
 			if (remoteControl == null || !MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid))
 				return;
@@ -48,19 +48,19 @@ namespace RivalAI.Behavior {
 
 			AutoPilot = autoPilot;
 
-			VelocityResult = new NewCollisionResult(this, Direction.None);
-			ForwardResult = new NewCollisionResult(this, Direction.Forward);
-			BackwardResult = new NewCollisionResult(this, Direction.Backward);
-			UpResult = new NewCollisionResult(this, Direction.Up);
-			DownResult = new NewCollisionResult(this, Direction.Down);
-			LeftResult = new NewCollisionResult(this, Direction.Left);
-			RightResult = new NewCollisionResult(this, Direction.Right);
+			VelocityResult = new CollisionResult(this, Direction.None);
+			ForwardResult = new CollisionResult(this, Direction.Forward);
+			BackwardResult = new CollisionResult(this, Direction.Backward);
+			UpResult = new CollisionResult(this, Direction.Up);
+			DownResult = new CollisionResult(this, Direction.Down);
+			LeftResult = new CollisionResult(this, Direction.Left);
+			RightResult = new CollisionResult(this, Direction.Right);
 
 		}
 
 		public void PrepareCollisionChecks() {
 
-			if (!this.UseCollisionDetection)
+			if (!UseCollisionDetection)
 				return;
 
 			//Logger.MsgDebug("Start Collision Prechecks: ", DebugTypeEnum.Collision);
@@ -70,7 +70,7 @@ namespace RivalAI.Behavior {
 
 			if (Velocity.Length() > 0.2) {
 
-				VelocityResult.CalculateCollisions(Vector3D.Normalize(Velocity), DistanceForVelocityDirection, true, this.CollisionAsteroidUsesBoundingBoxForVelocity);
+				VelocityResult.CalculateCollisions(Vector3D.Normalize(Velocity), DistanceForVelocityDirection, true, CollisionAsteroidUsesBoundingBoxForVelocity);
 
 			} else {
 
@@ -86,7 +86,7 @@ namespace RivalAI.Behavior {
 
 		public void RunSecondaryCollisionChecks(bool onlyUseWithinTargetDirection = false, Vector3D targetDirection = new Vector3D()) {
 
-			if (!this.UseCollisionDetection)
+			if (!UseCollisionDetection)
 				return;
 
 			BackwardResult.CalculateCollisions(Matrix.Backward, DistanceForOtherDirections);
@@ -114,9 +114,9 @@ namespace RivalAI.Behavior {
 			*/
 		}
 
-		
 
-		public NewCollisionResult GetResult(Direction direction) {
+
+		public CollisionResult GetResult(Direction direction) {
 
 			if (direction == Direction.Forward)
 				return ForwardResult;
@@ -143,13 +143,13 @@ namespace RivalAI.Behavior {
 	}
 
 	public enum CollisionType {
-	
+
 		None,
 		Grid,
 		Voxel,
 		Safezone,
 		Shield
-	
+
 	}
 
 }

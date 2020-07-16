@@ -28,8 +28,8 @@ using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Helpers;
-using RivalAI.Behavior.Subsystems.Profiles;
 using RivalAI.Sync;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Behavior.Subsystems {
 
@@ -113,6 +113,15 @@ namespace RivalAI.Behavior.Subsystems {
 			string sound = "";
 			string avatar = "";
 			var broadcastType = BroadcastType.None;
+
+			if (chat.Chance < 100) {
+
+				var roll = Rnd.Next(0, 101);
+
+				if (roll > chat.Chance)
+					return;
+			
+			}
 
 			if(chat.ProcessChat(ref message, ref sound, ref broadcastType, ref avatar) == false) {
 

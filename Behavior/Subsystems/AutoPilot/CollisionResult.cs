@@ -9,10 +9,10 @@ using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
 
-namespace RivalAI.Behavior {
-	public class NewCollisionResult {
+namespace RivalAI.Behavior.Subsystems.AutoPilot {
+	public class CollisionResult {
 
-		private NewCollisionSystem _collisionSystem;
+		private CollisionSystem _collisionSystem;
 
 		private DateTime _lastCollisionCheckTime;
 
@@ -54,7 +54,7 @@ namespace RivalAI.Behavior {
 		private List<MyLineSegmentOverlapResult<MyEntity>> _entityScanList;
 		private List<MyVoxelBase> _voxelScanList;
 
-		public NewCollisionResult(NewCollisionSystem collisionSystem, Direction direction) {
+		public CollisionResult(CollisionSystem collisionSystem, Direction direction) {
 
 			CollisionDirection = direction;
 
@@ -172,11 +172,11 @@ namespace RivalAI.Behavior {
 
 			}
 
-			
+
 			if (CalculateTime) {
 
 				Time = GetCollisionDistance() / _collisionSystem.Velocity.Length();
-			
+
 			}
 
 		}
@@ -190,7 +190,7 @@ namespace RivalAI.Behavior {
 				return false;
 
 			return true;
-		
+
 		}
 
 		public bool CollisionImminent(int customTime = -1) {
@@ -273,7 +273,7 @@ namespace RivalAI.Behavior {
 			}
 
 			return false;
-		
+
 		}
 
 
@@ -322,7 +322,7 @@ namespace RivalAI.Behavior {
 					var dist = (double)result.Item1.Value;
 					shieldEntity = result.Item2;
 
-					ShieldCoords = StartPosition + (Line.Direction * dist);
+					ShieldCoords = StartPosition + Line.Direction * dist;
 					ShieldDistance = dist;
 					ShieldBlockEntity = shieldEntity;
 					ShieldOwner = OwnershipHelper.GetOwnershipTypes((IMyTerminalBlock)shieldEntity);
@@ -361,7 +361,7 @@ namespace RivalAI.Behavior {
 
 					}
 
-					if (closestGrid == null || (closestGrid != null && item.Distance < closestGridDistance)) {
+					if (closestGrid == null || closestGrid != null && item.Distance < closestGridDistance) {
 
 						closestGrid = targetGrid;
 						closestGridDistance = item.Distance;
@@ -372,7 +372,7 @@ namespace RivalAI.Behavior {
 
 				if (targetZone != null) {
 
-					if (closestZone == null || (closestZone != null && item.Distance < closestZoneDistance)) {
+					if (closestZone == null || closestZone != null && item.Distance < closestZoneDistance) {
 
 						closestZone = targetZone;
 						closestZoneDistance = item.Distance;
@@ -384,7 +384,7 @@ namespace RivalAI.Behavior {
 				if (targetVoxel != null) {
 
 					_voxelScanList.Add(targetVoxel);
-				
+
 				}
 
 			}
@@ -454,7 +454,7 @@ namespace RivalAI.Behavior {
 					if (stepToCore < stepSurfaceToCore) {
 
 						//Logger.MsgDebug("Planet Voxel Found: ", DebugTypeEnum.Collision);
-						index = (i == 0) ? 0 : i - 1;
+						index = i == 0 ? 0 : i - 1;
 						break;
 
 					}
@@ -463,7 +463,7 @@ namespace RivalAI.Behavior {
 
 				if (index >= 0) {
 
-					
+
 					VoxelEntity = planet;
 					VoxelCoords = stepList[index];
 					VoxelDistance = Vector3D.Distance(StartPosition, stepList[index]);
@@ -523,7 +523,7 @@ namespace RivalAI.Behavior {
 
 							var hitDist = Vector3D.Distance((Vector3D)hitPosition, StartPosition);
 
-							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+							if (closestVoxel == null || closestVoxel != null && hitDist < closestDistance) {
 
 								closestVoxel = voxel;
 								closestDistance = hitDist;
@@ -538,7 +538,7 @@ namespace RivalAI.Behavior {
 
 							var hitDist = Vector3D.Distance(StartPosition, StartPosition + DirectionVector);
 
-							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+							if (closestVoxel == null || closestVoxel != null && hitDist < closestDistance) {
 
 								closestVoxel = voxel;
 								closestDistance = hitDist;
@@ -550,7 +550,7 @@ namespace RivalAI.Behavior {
 							double hitDist = 0;
 							voxel.PositionComp.WorldAABB.Intersects(ref Line, out hitDist);
 
-							if (closestVoxel == null || (closestVoxel != null && hitDist < closestDistance)) {
+							if (closestVoxel == null || closestVoxel != null && hitDist < closestDistance) {
 
 								closestVoxel = voxel;
 								closestDistance = hitDist;
@@ -558,7 +558,7 @@ namespace RivalAI.Behavior {
 							}
 
 						}
-					
+
 					}
 
 				}

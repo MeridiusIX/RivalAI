@@ -30,13 +30,14 @@ using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
-using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Behavior {
 
 	public class CoreBehavior : IBehavior {
 
-		public IMyRemoteControl RemoteControl;
+		public IMyRemoteControl RemoteControl { get { return _remoteControl; } set { _remoteControl = value; } }
 		public IMyCubeGrid CubeGrid;
 
 		//public BaseSystems Systems;
@@ -47,9 +48,8 @@ namespace RivalAI.Behavior {
 		private BroadcastSystem _broadcast;
 		private DamageSystem _damage;
 		private DespawnSystem _despawn;
-		private ExtrasSystem _extras;
+		private GridSystem _extras;
 		private OwnerSystem _owner;
-		private SpawningSystem _spawning;
 		private StoredSettings _settings;
 		private TriggerSystem _trigger;
 
@@ -62,17 +62,50 @@ namespace RivalAI.Behavior {
 		private bool _behaviorTriggerG;
 		private bool _behaviorTriggerH;
 
-		private List<IMyCubeGrid> _currentGrids;
+		private bool _behaviorActionA;
+		private bool _behaviorActionB;
+		private bool _behaviorActionC;
+		private bool _behaviorActionD;
+		private bool _behaviorActionE;
+		private bool _behaviorActionF;
+		private bool _behaviorActionG;
+		private bool _behaviorActionH;
 
-		public AutoPilotSystem NewAutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
+		internal string _behaviorType;
+
+		private List<IMyCubeGrid> _currentGrids;
+		private List<IMyCockpit> _debugCockpits;
+
+		private IMyRemoteControl _remoteControl;
+
+		public AutoPilotSystem AutoPilot { get { return _newAutoPilot; } set { _newAutoPilot = value; } }
 		public BroadcastSystem Broadcast { get { return _broadcast; } set { _broadcast = value; } }
 		public DamageSystem Damage { get { return _damage; } set { _damage = value; } }
 		public DespawnSystem Despawn { get { return _despawn; } set { _despawn = value; } }
-		public ExtrasSystem Extras { get { return _extras; } set { _extras = value; } }
+		public GridSystem Grid { get { return _extras; } set { _extras = value; } }
 		public OwnerSystem Owner { get { return _owner; } set { _owner = value; } }
-		public SpawningSystem Spawning { get { return _spawning; } set { _spawning = value; } }
 		public StoredSettings Settings { get { return _settings; } set { _settings = value; } }
 		public TriggerSystem Trigger { get { return _trigger; } set { _trigger = value; } }
+
+		public BehaviorMode Mode { 
+			
+			get {
+				
+				if(this.Settings != null)
+					return this.Settings.Mode;
+
+				return BehaviorMode.Init;
+			
+			}
+			
+			set {
+
+				if (this.Settings != null)
+					this.Settings.Mode = value;
+
+			}
+		
+		}
 
 		public bool BehaviorTerminated { get { return _behaviorTerminated; } set { _behaviorTerminated = value; } }
 		public bool BehaviorTriggerA { get { return _behaviorTriggerA; } set { _behaviorTriggerA = value; } }
@@ -84,9 +117,23 @@ namespace RivalAI.Behavior {
 		public bool BehaviorTriggerG { get { return _behaviorTriggerG; } set { _behaviorTriggerG = value; } }
 		public bool BehaviorTriggerH { get { return _behaviorTriggerH; } set { _behaviorTriggerH = value; } }
 
+		public bool BehaviorActionA { get { return _behaviorActionA; } set { _behaviorActionA = value; } }
+		public bool BehaviorActionB { get { return _behaviorActionB; } set { _behaviorActionB = value; } }
+		public bool BehaviorActionC { get { return _behaviorActionC; } set { _behaviorActionC = value; } }
+		public bool BehaviorActionD { get { return _behaviorActionD; } set { _behaviorActionD = value; } }
+		public bool BehaviorActionE { get { return _behaviorActionE; } set { _behaviorActionE = value; } }
+		public bool BehaviorActionF { get { return _behaviorActionF; } set { _behaviorActionF = value; } }
+		public bool BehaviorActionG { get { return _behaviorActionG; } set { _behaviorActionG = value; } }
+		public bool BehaviorActionH { get { return _behaviorActionH; } set { _behaviorActionH = value; } }
+
+		public string BehaviorType { get { return _behaviorType; } }
+		public long GridId { get { return RemoteControl?.SlimBlock?.CubeGrid == null ? 0 : RemoteControl.SlimBlock.CubeGrid.EntityId; } }
+		public string GridName { get { return RemoteControl?.SlimBlock?.CubeGrid?.CustomName == null ? "N/A" : RemoteControl.SlimBlock.CubeGrid.CustomName; } }
+
 		public List<IMyCubeGrid> CurrentGrids { get { return _currentGrids; } }
 
-		public BehaviorMode Mode;
+		public List<IMyCockpit> DebugCockpits { get { return _debugCockpits; } }
+
 		public BehaviorMode PreviousMode;
 
 		public bool SetupCompleted;
@@ -121,13 +168,12 @@ namespace RivalAI.Behavior {
 			RemoteControl = null;
 			CubeGrid = null;
 
-			Mode = BehaviorMode.Init;
-			PreviousMode = BehaviorMode.Init;
-
 			SetupCompleted = false;
 			SetupFailed = false;
 			ConfigCheck = false;
 			BehaviorTerminated = false;
+
+			_behaviorType = "";
 
 			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
 			_behaviorRunTimer = MyAPIGateway.Session.GameDateTime;
@@ -136,6 +182,7 @@ namespace RivalAI.Behavior {
 			_settingSaveCounterTrigger = 5;
 
 			_currentGrids = new List<IMyCubeGrid>();
+			_debugCockpits = new List<IMyCockpit>();
 
 			_triggerStorageKey = new Guid("8470FBC9-1B64-4603-AB75-ABB2CD28AA02");
 			_settingsStorageKey = new Guid("FF814A67-AEC3-4DF0-ADC4-A9B239FA954F");
@@ -168,25 +215,26 @@ namespace RivalAI.Behavior {
 
 		public void ProcessCollisionChecks() {
 
-			NewAutoPilot.Collision.PrepareCollisionChecks();
+			AutoPilot.Collision.PrepareCollisionChecks();
 
 		}
 
 		public void ProcessTargetingChecks() {
 
-			NewAutoPilot.Targeting.CheckForTarget();
+			AutoPilot.Targeting.CheckForTarget();
 
 		}
 
 		public void ProcessAutoPilotChecks() {
 
-			NewAutoPilot.ThreadedAutoPilotCalculations();
+			AutoPilot.ThreadedAutoPilotCalculations();
+			AutoPilot.PrepareAutopilot();
 
 		}
 
 		public void ProcessWeaponChecks() {
 
-			NewAutoPilot.Weapons.PrepareWeapons();
+			AutoPilot.Weapons.PrepareWeapons();
 
 		}
 
@@ -198,26 +246,35 @@ namespace RivalAI.Behavior {
 
 		public void EngageAutoPilot() {
 		
-			NewAutoPilot.EngageAutoPilot();
+			AutoPilot.EngageAutoPilot();
+
+		}
+
+		public void SetDebugCockpit(IMyCockpit block, bool addMode = false) {
+
+			if(addMode)
+				_debugCockpits.Add(block);	
+			else
+				_debugCockpits.Remove(block);
 
 		}
 
 		public void SetInitialWeaponReadiness() {
 			
 			//Attempt Weapon Reloads
-			NewAutoPilot.Weapons.ProcessWeaponReloads();
+			AutoPilot.Weapons.ProcessWeaponReloads();
 
 		}
 
 		public void FireWeapons() {
 
-			NewAutoPilot.Weapons.FireWeapons();
+			AutoPilot.Weapons.FireWeapons();
 
 		}
 
 		public void FireBarrageWeapons() {
 
-			NewAutoPilot.Weapons.FireBarrageWeapons();
+			AutoPilot.Weapons.FireBarrageWeapons();
 
 		}
 
@@ -237,7 +294,7 @@ namespace RivalAI.Behavior {
 			_settingSaveCounter++;
 			//Logger.MsgDebug("Checking Despawn Conditions", DebugTypeEnum.Dev);
 			_despawnCheckTimer = MyAPIGateway.Session.GameDateTime;
-			Despawn.ProcessTimers(Mode, NewAutoPilot.InvalidTarget());
+			Despawn.ProcessTimers(Mode, AutoPilot.InvalidTarget());
 			//MainBehavior();
 
 			if (_settingSaveCounter >= _settingSaveCounterTrigger) {
@@ -268,7 +325,7 @@ namespace RivalAI.Behavior {
 
 		public void DebugDrawWaypoints() {
 
-			NewAutoPilot.DebugDrawingToWaypoints();
+			AutoPilot.DebugDrawingToWaypoints();
 		
 		}
 
@@ -315,8 +372,8 @@ namespace RivalAI.Behavior {
 
 		public void ChangeTargetProfile(string newTargetProfile) {
 
-			NewAutoPilot.Targeting.UseNewTargetProfile = true;
-			NewAutoPilot.Targeting.NewTargetProfileName = newTargetProfile;
+			AutoPilot.Targeting.UseNewTargetProfile = true;
+			AutoPilot.Targeting.NewTargetProfileName = newTargetProfile;
 
 
 		}
@@ -385,21 +442,21 @@ namespace RivalAI.Behavior {
 			Logger.MsgDebug("Remote Control Has Physics: " + PhysicsValid.ToString(), DebugTypeEnum.BehaviorSetup);
 			Logger.MsgDebug("Setting Up Subsystems", DebugTypeEnum.BehaviorSetup);
 
-			NewAutoPilot = new AutoPilotSystem(remoteControl, this);
+			AutoPilot = new AutoPilotSystem(remoteControl, this);
 			Broadcast = new BroadcastSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
 			Despawn = new DespawnSystem(remoteControl);
-			Extras = new ExtrasSystem(remoteControl);
+			Grid = new GridSystem(remoteControl);
 			Owner = new OwnerSystem(remoteControl);
-			Spawning = new SpawningSystem(remoteControl);
+			//Spawning = new SpawningSystem(remoteControl);
 			Settings = new StoredSettings();
 			Trigger = new TriggerSystem(remoteControl);
 
 			Logger.MsgDebug("Setting Up Subsystem References", DebugTypeEnum.BehaviorSetup);
-			NewAutoPilot.SetupReferences(this, Settings, Trigger);
+			AutoPilot.SetupReferences(this, Settings, Trigger);
 			Damage.SetupReferences(this.Trigger);
 			Damage.IsRemoteWorking += () => { return IsWorking && PhysicsValid;};
-			Trigger.SetupReferences(this.NewAutoPilot, this.Broadcast, this.Despawn, this.Extras, this.Owner, this.Settings, this);
+			Trigger.SetupReferences(this.AutoPilot, this.Broadcast, this.Despawn, this.Grid, this.Owner, this.Settings, this);
 
 		}
 
@@ -407,11 +464,10 @@ namespace RivalAI.Behavior {
 
 			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.BehaviorSetup);
 
-			NewAutoPilot.InitTags();
-			NewAutoPilot.Weapons.InitTags();
+			AutoPilot.InitTags();
+			AutoPilot.Weapons.InitTags();
 			Damage.InitTags();
 			Despawn.InitTags();
-			Extras.InitTags();
 			Owner.InitTags();
 			Trigger.InitTags();
 
@@ -423,6 +479,14 @@ namespace RivalAI.Behavior {
 		
 		public void PostTagsSetup() {
 
+
+			if (BehaviorType != "Passive") {
+
+				Logger.MsgDebug("Setting Inertia Dampeners: " + (AutoPilot.Data.DisableInertiaDampeners ? "False" : "True"), DebugTypeEnum.BehaviorSetup);
+				RemoteControl.DampenersOverride = !AutoPilot.Data.DisableInertiaDampeners;
+
+			}
+	
 			Logger.MsgDebug("Post Tag Setup for " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
 
 			if (Logger.IsMessageValid(DebugTypeEnum.BehaviorSetup)) {
@@ -437,7 +501,7 @@ namespace RivalAI.Behavior {
 				Damage.UseDamageDetection = true;
 
 			Logger.MsgDebug("Beginning Weapon Setup", DebugTypeEnum.BehaviorSetup);
-			NewAutoPilot.Weapons.Setup();
+			AutoPilot.Weapons.Setup();
 
 			Logger.MsgDebug("Beginning Damage Handler Setup", DebugTypeEnum.BehaviorSetup);
 			Damage.SetupDamageHandler();
@@ -539,9 +603,6 @@ namespace RivalAI.Behavior {
 
 			}
 
-			NewAutoPilot.Rotation.Behavior = this;
-			NewAutoPilot.Thrust.Behavior = this;
-
 			Logger.MsgDebug("Setting Callbacks", DebugTypeEnum.BehaviorSetup);
 			SetupCallbacks();
 
@@ -558,7 +619,7 @@ namespace RivalAI.Behavior {
 			var savedTarget = !string.IsNullOrWhiteSpace(Settings.CustomTargetProfile);
 			var targetProfileName = !savedTarget ? "RivalAI-GenericTargetProfile-EnemyPlayer" : Settings.CustomTargetProfile;
 
-			if (savedTarget || string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.NormalData.ProfileSubtypeId)) {
+			if (savedTarget || string.IsNullOrWhiteSpace(AutoPilot.Targeting.NormalData.ProfileSubtypeId)) {
 
 				byte[] byteData = { };
 
@@ -570,7 +631,7 @@ namespace RivalAI.Behavior {
 
 						if (profile != null) {
 
-							NewAutoPilot.Targeting.NormalData = profile;
+							AutoPilot.Targeting.NormalData = profile;
 
 						}
 
@@ -584,7 +645,7 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if (string.IsNullOrWhiteSpace(NewAutoPilot.Targeting.OverrideData.ProfileSubtypeId)) {
+			if (string.IsNullOrWhiteSpace(AutoPilot.Targeting.OverrideData.ProfileSubtypeId)) {
 
 				byte[] byteData = { };
 
@@ -596,7 +657,7 @@ namespace RivalAI.Behavior {
 
 						if (profile != null) {
 
-							NewAutoPilot.Targeting.OverrideData = profile;
+							AutoPilot.Targeting.OverrideData = profile;
 
 						}
 

@@ -2,7 +2,7 @@
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
 using VRageMath;
-using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Behavior.Subsystems.Trigger;
 
 namespace RivalAI.Helpers {
 

@@ -93,6 +93,14 @@ namespace RivalAI.Helpers {
 
     }
 
+    public enum Axis {
+
+        X,
+        Y,
+        Z
+
+    }
+
     public enum Direction {
         
         None,
@@ -153,6 +161,7 @@ namespace RivalAI.Helpers {
         Broadcasting,
         Faction,
         Gravity,
+        MovementScore,
         Name,
         OutsideOfSafezone,
         Owner,
@@ -245,8 +254,9 @@ namespace RivalAI.Helpers {
         CollisionLeading = 1 << 3,
         WeaponLeading = 1 << 4,
         TargetIsInitialWaypoint = 1 << 5,
+        PlanetPathingAscend = 1 << 6,
 
-    
+
     }
 
     public enum WaypointOffsetType {

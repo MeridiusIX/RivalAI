@@ -28,7 +28,7 @@ using VRageMath;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
+namespace RivalAI.Behavior.Subsystems.Trigger {
 
 	[ProtoContract]
 	public class TriggerProfile {
@@ -176,43 +176,43 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public void ActivateTrigger(Func<bool> mainTriggerCheck = null) {
 
-			if(MaxActions >= 0 && TriggerCount >= MaxActions) {
+			if (MaxActions >= 0 && TriggerCount >= MaxActions) {
 
-				Logger.MsgDebug(this.ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
+				Logger.MsgDebug(ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
 				UseTrigger = false;
 				return;
 
 			}
 
-			if(CooldownTime > 0) {
+			if (CooldownTime > 0) {
 
-				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastTriggerTime;
+				TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastTriggerTime;
 
-				if(duration.TotalMilliseconds >= CooldownTime) {
+				if (duration.TotalMilliseconds >= CooldownTime) {
 
 					if (mainTriggerCheck != null) {
-					
-						
-					
+
+
+
 					}
 
 					if (Conditions.UseConditions == true) {
 
 						if (Conditions.AreConditionsMets()) {
 
-							Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+							Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
 							Triggered = true;
 
-						} else if(this.ConditionCheckResetsTimer) {
+						} else if (ConditionCheckResetsTimer) {
 
-							this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+							LastTriggerTime = MyAPIGateway.Session.GameDateTime;
 							CooldownTime = Rnd.Next((int)MinCooldownMs, (int)MaxCooldownMs);
 
 						}
 
 					} else {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
@@ -231,27 +231,27 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 					if (Conditions.AreConditionsMets()) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Trigger Conditions Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Conditions Satisfied", DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
 
 				} else {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
+					Logger.MsgDebug(ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
 					Triggered = true;
 
 				}
-				
+
 			}
 
 		}
-		
-		public void ResetTime(){
-		
-			this.LastTriggerTime = MyAPIGateway.Session.GameDateTime;
 
-			foreach (var actions in this.Actions) {
+		public void ResetTime() {
+
+			LastTriggerTime = MyAPIGateway.Session.GameDateTime;
+
+			foreach (var actions in Actions) {
 
 				if (actions?.SpawnerDefunct != null) {
 
@@ -272,28 +272,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//Type
-					if(tag.Contains("[Type:") == true) {
+					if (tag.Contains("[Type:") == true) {
 
 						Type = TagHelper.TagStringCheck(tag);
 
 					}
 
 					//UseTrigger
-					if(tag.Contains("[UseTrigger:") == true) {
+					if (tag.Contains("[UseTrigger:") == true) {
 
 						UseTrigger = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//InsideAntenna
-					if(tag.Contains("[InsideAntenna:") == true) {
+					if (tag.Contains("[InsideAntenna:") == true) {
 
 						InsideAntenna = TagHelper.TagBoolCheck(tag);
 
@@ -314,21 +314,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					}
 
 					//MinCooldown
-					if(tag.Contains("[MinCooldownMs:") == true) {
+					if (tag.Contains("[MinCooldownMs:") == true) {
 
 						MinCooldownMs = TagHelper.TagFloatCheck(tag, MinCooldownMs);
 
 					}
 
 					//MaxCooldown
-					if(tag.Contains("[MaxCooldownMs:") == true) {
+					if (tag.Contains("[MaxCooldownMs:") == true) {
 
 						MaxCooldownMs = TagHelper.TagFloatCheck(tag, MaxCooldownMs);
 
 					}
 
 					//StartsReady
-					if(tag.Contains("[StartsReady:") == true) {
+					if (tag.Contains("[StartsReady:") == true) {
 
 						StartsReady = TagHelper.TagBoolCheck(tag);
 
@@ -351,20 +351,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 							byte[] byteData = { };
 
-							if(TagHelper.ActionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if (TagHelper.ActionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
 								try {
 
 									var profile = MyAPIGateway.Utilities.SerializeFromBinary<ActionProfile>(byteData);
 
-									if(profile != null) {
+									if (profile != null) {
 
 										Actions.Add(profile);
 										gotAction = true;
 
 									}
 
-								} catch(Exception) {
+								} catch (Exception) {
 
 
 
@@ -385,7 +385,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 
-						if(!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
+						if (!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
 
 							DamageTypes.Add(tempValue);
 
@@ -431,20 +431,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 							byte[] byteData = { };
 
-							if(TagHelper.ConditionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
+							if (TagHelper.ConditionObjectTemplates.TryGetValue(tempValue, out byteData) == true) {
 
 								try {
 
 									var profile = MyAPIGateway.Utilities.SerializeFromBinary<ConditionProfile>(byteData);
 
-									if(profile != null) {
+									if (profile != null) {
 
-										this.Conditions = profile;
+										Conditions = profile;
 										gotCondition = true;
 
 									}
 
-								} catch(Exception) {
+								} catch (Exception) {
 
 
 
@@ -485,13 +485,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			}
 
-			if(MinCooldownMs > MaxCooldownMs) {
+			if (MinCooldownMs > MaxCooldownMs) {
 
 				MinCooldownMs = MaxCooldownMs;
 
 			}
 
-			if(StartsReady == true) {
+			if (StartsReady == true) {
 
 				CooldownTime = 0;
 

@@ -1,4 +1,4 @@
-﻿using RivalAI.Behavior.Subsystems.Profiles;
+﻿using RivalAI.Behavior.Subsystems.AutoPilot;
 using RivalAI.Entities;
 using RivalAI.Helpers;
 using Sandbox.ModAPI;
@@ -10,7 +10,7 @@ using VRage.ModAPI;
 using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems {
-	public class NewTargetingSystem {
+	public class TargetingSystem {
 
 		public IMyRemoteControl RemoteControl;
 		private StoredSettings _settings;
@@ -73,7 +73,7 @@ namespace RivalAI.Behavior.Subsystems {
 		public bool ResetTimerOnProfileChange;
 		public string NewTargetProfileName;
 
-		public NewTargetingSystem(IMyRemoteControl remoteControl = null) {
+		public TargetingSystem(IMyRemoteControl remoteControl = null) {
 
 			RemoteControl = remoteControl;
 
@@ -455,6 +455,15 @@ namespace RivalAI.Behavior.Subsystems {
 
 			List<TargetFilterEnum> FilterHits = new List<TargetFilterEnum>();
 
+			//Distance
+			var distance = target.Distance(RemoteControl.GetPosition());
+
+			if (distance > data.MaxDistance) {
+
+				return false;
+			
+			}
+
 			//Altitude
 			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Altitude)) {
 
@@ -471,8 +480,7 @@ namespace RivalAI.Behavior.Subsystems {
 			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Broadcasting)) {
 
 				var range = target.BroadcastRange();
-				var distance = target.Distance(RemoteControl.GetPosition());
-
+				
 				if (range > distance || distance < data.NonBroadcastVisualRange)
 					FilterHits.Add(TargetFilterEnum.Broadcasting);
 
@@ -501,6 +509,16 @@ namespace RivalAI.Behavior.Subsystems {
 					FilterHits.Add(TargetFilterEnum.Gravity);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Gravity: {0}", gravity), DebugTypeEnum.TargetEvaluation);
+
+			}
+
+			//MovementScore
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.MovementScore)) {
+
+				var score = target.MovementScore();
+
+				if((data.MinMovementScore == -1 || data.MinMovementScore >= score) && (data.MaxMovementScore == -1 || data.MaxMovementScore <= score))
+					FilterHits.Add(TargetFilterEnum.MovementScore);
 
 			}
 

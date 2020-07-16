@@ -243,6 +243,8 @@ namespace RivalAI.Entities {
 
 		}
 
+		//150m Box of Red Ship
+
 		public static ITarget GetTargetFromBlockEntity(IMyCubeBlock entity) {
 
 			if (entity == null) {
@@ -573,6 +575,35 @@ namespace RivalAI.Entities {
 			return result;
 
 		}
+
+		public static int GridMovementScore(List<GridEntity> grids) {
+
+			int result = 0;
+
+			foreach (var grid in grids) {
+
+				var score = GridVisibleMovementScore(grid);
+
+				if (score > result)
+					result = score;
+
+			}
+
+			return result;
+
+		}
+
+		public static int GridVisibleMovementScore(GridEntity grid) {
+
+			var speed = grid.CurrentSpeed();
+
+			if (speed < 1)
+				return 0;
+
+			return (int)(grid.BoundingBoxSize() * speed);
+
+		}
+
 
 		public static int GridWeaponCount(List<GridEntity> grids) {
 

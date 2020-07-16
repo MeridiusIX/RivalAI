@@ -25,27 +25,24 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
 using RivalAI.Behavior.Settings;
-using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 
 
-namespace RivalAI.Behavior.Subsystems.Profiles{
-	
+namespace RivalAI.Behavior.Subsystems.Trigger {
+
 	[ProtoContract]
-	public class ConditionProfile{
-		
+	public class ConditionProfile {
+
 		[ProtoMember(1)]
 		public bool UseConditions;
-		
+
 		[ProtoMember(2)]
 		public bool MatchAnyCondition;
-		
+
 		[ProtoMember(3)]
 		public bool CheckAllLoadedModIDs;
-		
+
 		[ProtoMember(4)]
 		public List<long> AllModIDsToCheck;
 
@@ -57,25 +54,25 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 		[ProtoMember(7)]
 		public bool CheckTrueBooleans;
-		
+
 		[ProtoMember(8)]
 		public List<string> TrueBooleans;
-		
+
 		[ProtoMember(9)]
 		public bool CheckCustomCounters;
-		
+
 		[ProtoMember(10)]
 		public List<string> CustomCounters;
-		
+
 		[ProtoMember(11)]
 		public List<int> CustomCountersTargets;
-		
+
 		[ProtoMember(12)]
 		public bool CheckGridSpeed;
-		
+
 		[ProtoMember(13)]
 		public float MinGridSpeed;
-		
+
 		[ProtoMember(14)]
 		public float MaxGridSpeed;
 
@@ -127,8 +124,47 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoMember(30)]
 		public List<int> CustomSandboxCountersTargets;
 
+		[ProtoMember(31)]
+		public bool CheckTargetAltitudeDifference;
+
+		[ProtoMember(32)]
+		public double MinTargetAltitudeDifference;
+
+		[ProtoMember(33)]
+		public double MaxTargetAltitudeDifference;
+
+		[ProtoMember(34)]
+		public bool CheckTargetDistance;
+
+		[ProtoMember(35)]
+		public double MinTargetDistance;
+
+		[ProtoMember(36)]
+		public double MaxTargetDistance;
+
+		[ProtoMember(37)]
+		public bool CheckTargetAngleFromForward;
+
+		[ProtoMember(38)]
+		public double MinTargetAngle;
+
+		[ProtoMember(39)]
+		public double MaxTargetAngle;
+
+		[ProtoMember(40)]
+		public bool CheckIfTargetIsChasing;
+
+		[ProtoMember(41)]
+		public double MinTargetChaseAngle;
+
+		[ProtoMember(42)]
+		public double MaxTargetChaseAngle;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
+
+		[ProtoIgnore]
+		private IBehavior _behavior;
 
 		[ProtoIgnore]
 		private StoredSettings _settings;
@@ -163,11 +199,11 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 		[ProtoIgnore]
 		private bool _watchedNoneBlocksResult;
 
-		public ConditionProfile(){
-			
+		public ConditionProfile() {
+
 			UseConditions = false;
 			MatchAnyCondition = false;
-			
+
 			CheckAllLoadedModIDs = false;
 			AllModIDsToCheck = new List<long>();
 
@@ -176,7 +212,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 			CheckTrueBooleans = false;
 			TrueBooleans = new List<string>();
-			
+
 			CheckCustomCounters = false;
 			CustomCounters = new List<string>();
 			CustomCountersTargets = new List<int>();
@@ -201,6 +237,22 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			RequiredAnyFunctionalBlockNames = new List<string>();
 			RequiredNoneFunctionalBlockNames = new List<string>();
 
+			CheckTargetAltitudeDifference = false;
+			MinTargetAltitudeDifference = 0;
+			MaxTargetAltitudeDifference = 0;
+
+			CheckTargetDistance = false;
+			MinTargetDistance = -1;
+			MaxTargetDistance = -1;
+
+			CheckTargetAngleFromForward = false;
+			MinTargetAngle = -1;
+			MaxTargetAngle = -1;
+
+			CheckIfTargetIsChasing = false;
+			MinTargetChaseAngle = -1;
+			MaxTargetChaseAngle = -1;
+
 			ProfileSubtypeId = "";
 
 			_remoteControl = null;
@@ -215,38 +267,47 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 			_watchedNoneBlocksResult = false;
 
 		}
-		
-		public void SetReferences(IMyRemoteControl remoteControl, StoredSettings settings){
-			
+
+		public void SetReferences(IMyRemoteControl remoteControl, StoredSettings settings) {
+
 			_remoteControl = remoteControl;
 			_settings = settings;
 
 		}
-		
-		public bool AreConditionsMets(){
+
+		public bool AreConditionsMets() {
 
 			if (!_gotWatchedBlocks)
 				SetupWatchedBlocks();
 
-			if(this.UseConditions == false){
-				
+			if (UseConditions == false) {
+
 				return true;
-				
+
 			}
 
 			int usedConditions = 0;
 			int satisfiedConditions = 0;
-			
-			if(this.CheckAllLoadedModIDs == true){
-				
+
+			if (_behavior == null) {
+
+				_behavior = BehaviorManager.GetBehavior(_remoteControl);
+
+				if (_behavior == null)
+					return false;
+
+			}
+
+			if (CheckAllLoadedModIDs == true) {
+
 				usedConditions++;
 				bool missingMod = false;
 
-				foreach (var mod in this.AllModIDsToCheck) {
+				foreach (var mod in AllModIDsToCheck) {
 
 					if (Utilities.ModIDs.Contains(mod) == false) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Mod ID Not Present", DebugTypeEnum.Condition);
+						Logger.MsgDebug(ProfileSubtypeId + ": Mod ID Not Present", DebugTypeEnum.Condition);
 						missingMod = true;
 						break;
 
@@ -256,18 +317,18 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				if (!missingMod)
 					satisfiedConditions++;
-				
+
 			}
 
-			if (this.CheckAnyLoadedModIDs == true) {
+			if (CheckAnyLoadedModIDs == true) {
 
 				usedConditions++;
 
-				foreach (var mod in this.AllModIDsToCheck) {
+				foreach (var mod in AllModIDsToCheck) {
 
 					if (Utilities.ModIDs.Contains(mod)) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": A Mod ID was Found: " + mod.ToString(), DebugTypeEnum.Condition);
+						Logger.MsgDebug(ProfileSubtypeId + ": A Mod ID was Found: " + mod.ToString(), DebugTypeEnum.Condition);
 						satisfiedConditions++;
 						break;
 
@@ -277,16 +338,16 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 			}
 
-			if (this.CheckTrueBooleans == true){
-				
+			if (CheckTrueBooleans == true) {
+
 				usedConditions++;
 				bool failedCheck = false;
 
-				foreach (var boolName in this.TrueBooleans) {
+				foreach (var boolName in TrueBooleans) {
 
 					if (!_settings.GetCustomBoolResult(boolName)) {
 
-						Logger.MsgDebug(this.ProfileSubtypeId + ": Boolean Not True: " + boolName, DebugTypeEnum.Condition);
+						Logger.MsgDebug(ProfileSubtypeId + ": Boolean Not True: " + boolName, DebugTypeEnum.Condition);
 						failedCheck = true;
 						break;
 
@@ -294,25 +355,25 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				}
 
-				if(!failedCheck)
+				if (!failedCheck)
 					satisfiedConditions++;
 
 			}
-			
-			if(this.CheckCustomCounters == true){
+
+			if (CheckCustomCounters == true) {
 
 				usedConditions++;
 				bool failedCheck = false;
 
-				if (this.CustomCounters.Count == this.CustomCountersTargets.Count) {
+				if (CustomCounters.Count == CustomCountersTargets.Count) {
 
-					for (int i = 0; i < this.CustomCounters.Count; i++) {
+					for (int i = 0; i < CustomCounters.Count; i++) {
 
 						try {
 
-							if (_settings.GetCustomCounterResult(this.CustomCounters[i], this.CustomCountersTargets[i]) == false) {
+							if (_settings.GetCustomCounterResult(CustomCounters[i], CustomCountersTargets[i]) == false) {
 
-								Logger.MsgDebug(this.ProfileSubtypeId + ": Counter Amount Not High Enough: " + this.CustomCounters[i], DebugTypeEnum.Condition);
+								Logger.MsgDebug(ProfileSubtypeId + ": Counter Amount Not High Enough: " + CustomCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -329,7 +390,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				} else {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
+					Logger.MsgDebug(ProfileSubtypeId + ": Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
 					failedCheck = true;
 
 				}
@@ -339,21 +400,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 			}
 
-			if (this.CheckTrueSandboxBooleans == true) {
+			if (CheckTrueSandboxBooleans == true) {
 
 				usedConditions++;
 				bool failedCheck = false;
 
-				for (int i = 0; i < this.TrueSandboxBooleans.Count; i++) {
+				for (int i = 0; i < TrueSandboxBooleans.Count; i++) {
 
 					try {
 
 						bool output = false;
-						var result = MyAPIGateway.Utilities.GetVariable<bool>(this.TrueSandboxBooleans[i], out output);
+						var result = MyAPIGateway.Utilities.GetVariable(TrueSandboxBooleans[i], out output);
 
 						if (!result || !output) {
 
-							Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Boolean False: " + this.TrueSandboxBooleans[i], DebugTypeEnum.Condition);
+							Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Boolean False: " + TrueSandboxBooleans[i], DebugTypeEnum.Condition);
 							failedCheck = true;
 							break;
 
@@ -373,23 +434,23 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 			}
 
-			if (this.CheckCustomSandboxCounters == true) {
+			if (CheckCustomSandboxCounters == true) {
 
 				usedConditions++;
 				bool failedCheck = false;
 
-				if (this.CustomCounters.Count == this.CustomCountersTargets.Count) {
+				if (CustomCounters.Count == CustomCountersTargets.Count) {
 
-					for (int i = 0; i < this.CustomCounters.Count; i++) {
+					for (int i = 0; i < CustomCounters.Count; i++) {
 
 						try {
 
 							int counter = 0;
-							var result = MyAPIGateway.Utilities.GetVariable<int>(this.CustomCounters[i], out counter);
+							var result = MyAPIGateway.Utilities.GetVariable(CustomCounters[i], out counter);
 
-							if (!result || counter < this.CustomCountersTargets[i]) {
+							if (!result || counter < CustomCountersTargets[i]) {
 
-								Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Counter Amount Not High Enough: " + this.CustomSandboxCounters[i], DebugTypeEnum.Condition);
+								Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Counter Amount Not High Enough: " + CustomSandboxCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -406,7 +467,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				} else {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Sandbox Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
+					Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Counter Names and Targets List Counts Don't Match. Check Your Condition Profile", DebugTypeEnum.Condition);
 					failedCheck = true;
 
 				}
@@ -416,38 +477,38 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 			}
 
-			if (this.CheckGridSpeed == true){
-				
+			if (CheckGridSpeed == true) {
+
 				usedConditions++;
 				float speed = (float)_remoteControl.GetShipSpeed();
 
-				if ((this.MinGridSpeed == -1 || speed >= this.MinGridSpeed) && (this.MaxGridSpeed == -1 || speed <= this.MaxGridSpeed)) {
+				if ((MinGridSpeed == -1 || speed >= MinGridSpeed) && (MaxGridSpeed == -1 || speed <= MaxGridSpeed)) {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Grid Speed High Enough", DebugTypeEnum.Condition);
+					Logger.MsgDebug(ProfileSubtypeId + ": Grid Speed High Enough", DebugTypeEnum.Condition);
 					satisfiedConditions++;
 
 				} else {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Grid Speed Not High Enough", DebugTypeEnum.Condition);
+					Logger.MsgDebug(ProfileSubtypeId + ": Grid Speed Not High Enough", DebugTypeEnum.Condition);
 
 				}
-				
+
 			}
 
-			if (MESApi.MESApiReady && this.CheckMESBlacklistedSpawnGroups) {
+			if (MESApi.MESApiReady && CheckMESBlacklistedSpawnGroups) {
 
 				var blackList = MESApi.GetSpawnGroupBlackList();
 
-				if (this.SpawnGroupBlacklistContainsAll.Count > 0) {
+				if (SpawnGroupBlacklistContainsAll.Count > 0) {
 
 					usedConditions++;
 					bool failedCheck = false;
 
-					foreach (var group in this.SpawnGroupBlacklistContainsAll) {
+					foreach (var group in SpawnGroupBlacklistContainsAll) {
 
 						if (blackList.Contains(group) == false) {
 
-							Logger.MsgDebug(this.ProfileSubtypeId + ": A Spawngroup was not on MES BlackList: " + group, DebugTypeEnum.Condition);
+							Logger.MsgDebug(ProfileSubtypeId + ": A Spawngroup was not on MES BlackList: " + group, DebugTypeEnum.Condition);
 							failedCheck = true;
 							break;
 
@@ -460,14 +521,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				}
 
-				if (this.SpawnGroupBlacklistContainsAny.Count > 0) {
+				if (SpawnGroupBlacklistContainsAny.Count > 0) {
 
 					usedConditions++;
-					foreach (var group in this.SpawnGroupBlacklistContainsAll) {
+					foreach (var group in SpawnGroupBlacklistContainsAll) {
 
 						if (blackList.Contains(group)) {
 
-							Logger.MsgDebug(this.ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
+							Logger.MsgDebug(ProfileSubtypeId + ": A Spawngroup was on MES BlackList: " + group, DebugTypeEnum.Condition);
 							satisfiedConditions++;
 							break;
 
@@ -484,13 +545,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				usedConditions++;
 				bool failedCheck = false;
 
-				if (this.MinAccumulatedDamage >= 0 && this.MinAccumulatedDamage < _settings.TotalDamageAccumulated)
+				if (MinAccumulatedDamage >= 0 && MinAccumulatedDamage < _settings.TotalDamageAccumulated)
 					failedCheck = true;
 
-				if (this.MaxAccumulatedDamage >= 0 && this.MaxAccumulatedDamage > _settings.TotalDamageAccumulated)
+				if (MaxAccumulatedDamage >= 0 && MaxAccumulatedDamage > _settings.TotalDamageAccumulated)
 					failedCheck = true;
 
-				if(!failedCheck)
+				if (!failedCheck)
 					satisfiedConditions++;
 
 			}
@@ -501,7 +562,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					usedConditions++;
 
-					if(_watchedAllBlocksResult)
+					if (_watchedAllBlocksResult)
 						satisfiedConditions++;
 
 				}
@@ -525,23 +586,95 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 				}
 
 			}
+
+			if (CheckTargetAltitudeDifference) {
+
+				usedConditions++;
+
+				if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.InGravity()) {
+
+					var planetPos = _behavior.AutoPilot.CurrentPlanet.PositionComp.WorldAABB.Center;
+					var targetCoreDist = _behavior.AutoPilot.Targeting.Target.Distance(planetPos);
+					var myCoreDist = Vector3D.Distance(planetPos, _remoteControl.GetPosition());
+					var difference = targetCoreDist - myCoreDist;
+
+					if (this.MinTargetAltitudeDifference >= difference && this.MinTargetAltitudeDifference <= this.MaxTargetAltitudeDifference)
+						satisfiedConditions++;
+
+				}
 			
-			if(this.MatchAnyCondition == false){
-
-				bool result = (satisfiedConditions >= usedConditions);
-				Logger.MsgDebug(this.ProfileSubtypeId + ": All Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
-				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
-				return result;
-				
-			}else{
-
-				bool result = (satisfiedConditions > 0);
-				Logger.MsgDebug(this.ProfileSubtypeId + ": Any Condition(s) Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
-				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
-				return result;
-				
 			}
-			
+
+			if (CheckTargetDistance) {
+
+				usedConditions++;
+
+				if (_behavior.AutoPilot.Targeting.HasTarget()) {
+
+					var dist = _behavior.AutoPilot.Targeting.Target.Distance(_remoteControl.GetPosition());
+
+					if ((this.MinTargetDistance == -1 || this.MinTargetDistance >= dist) && (this.MaxTargetDistance == -1 || this.MaxTargetDistance <= dist))
+						satisfiedConditions++;
+
+				}
+
+			}
+
+			if (CheckTargetAngleFromForward) {
+
+				usedConditions++;
+
+				if (_behavior.AutoPilot.Targeting.HasTarget()) {
+
+					var dirToTarget = Vector3D.Normalize(_behavior.AutoPilot.Targeting.GetTargetCoords() - _remoteControl.GetPosition());
+					var myForward = _behavior.AutoPilot.RefBlockMatrixRotation.Forward;
+					var angle = VectorHelper.GetAngleBetweenDirections(dirToTarget, myForward);
+
+					if ((this.MinTargetAngle == -1 || this.MinTargetAngle >= angle) && (this.MaxTargetAngle == -1 || this.MaxTargetAngle <= angle))
+						satisfiedConditions++;
+
+				}
+
+			}
+
+			if (CheckIfTargetIsChasing) {
+
+				usedConditions++;
+
+				if (_behavior.AutoPilot.Targeting.HasTarget()) {
+
+					var dirFromTarget = Vector3D.Normalize(_remoteControl.GetPosition() - _behavior.AutoPilot.Targeting.GetTargetCoords());
+					var targetVelocity = Vector3D.Normalize(_behavior.AutoPilot.Targeting.Target.CurrentVelocity());
+
+					if (targetVelocity.IsValid() && targetVelocity.Length() > 0) {
+
+						var angle = VectorHelper.GetAngleBetweenDirections(dirFromTarget, targetVelocity);
+
+						if ((this.MinTargetChaseAngle == -1 || this.MinTargetChaseAngle >= angle) && (this.MaxTargetChaseAngle == -1 || this.MaxTargetChaseAngle <= angle))
+							satisfiedConditions++;
+					
+					}
+
+				}
+
+			}
+
+			if (MatchAnyCondition == false) {
+
+				bool result = satisfiedConditions >= usedConditions;
+				Logger.MsgDebug(ProfileSubtypeId + ": All Condition Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
+				return result;
+
+			} else {
+
+				bool result = satisfiedConditions > 0;
+				Logger.MsgDebug(ProfileSubtypeId + ": Any Condition(s) Satisfied: " + result.ToString(), DebugTypeEnum.Condition);
+				Logger.MsgDebug(string.Format("Used Conditions: {0} // Satisfied Conditions: {1}", usedConditions, satisfiedConditions), DebugTypeEnum.Condition);
+				return result;
+
+			}
+
 		}
 
 		private void SetupWatchedBlocks() {
@@ -567,7 +700,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				Logger.MsgDebug(" - " + terminalBlock.CustomName.Trim(), DebugTypeEnum.Condition);
 
-				if (this.RequiredAllFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
+				if (RequiredAllFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
 
 					Logger.MsgDebug("Monitoring Required-All Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedAllBlocks.Add(block.FatBlock);
@@ -576,7 +709,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				}
 
-				if (this.RequiredAnyFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
+				if (RequiredAnyFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
 
 					Logger.MsgDebug("Monitoring Required-Any Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedAnyBlocks.Add(block.FatBlock);
@@ -585,7 +718,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 				}
 
-				if (this.RequiredNoneFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
+				if (RequiredNoneFunctionalBlockNames.Contains(terminalBlock.CustomName.Trim())) {
 
 					Logger.MsgDebug("Monitoring Required-None Block: " + terminalBlock.CustomName, DebugTypeEnum.Condition);
 					_watchedNoneBlocks.Add(block.FatBlock);
@@ -619,7 +752,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 					_watchedAllBlocksResult = false;
 					return;
-					
+
 				}
 
 			}
@@ -756,32 +889,32 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 		}
 
-		public void InitTags(string customData){
+		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//UseConditions
-					if(tag.Contains("[UseConditions:") == true) {
+					if (tag.Contains("[UseConditions:") == true) {
 
-						this.UseConditions = TagHelper.TagBoolCheck(tag);
+						UseConditions = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//MatchAnyCondition
-					if(tag.Contains("[MatchAnyCondition:") == true) {
+					if (tag.Contains("[MatchAnyCondition:") == true) {
 
-						this.MatchAnyCondition = TagHelper.TagBoolCheck(tag);
+						MatchAnyCondition = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//CheckAllLoadedModIDs
-					if(tag.Contains("[CheckAllLoadedModIDs:") == true) {
+					if (tag.Contains("[CheckAllLoadedModIDs:") == true) {
 
-						this.CheckAllLoadedModIDs = TagHelper.TagBoolCheck(tag);
+						CheckAllLoadedModIDs = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -792,7 +925,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (tempValue != 0) {
 
-							this.AllModIDsToCheck.Add(tempValue);
+							AllModIDsToCheck.Add(tempValue);
 
 						}
 
@@ -801,7 +934,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckAnyLoadedModIDs
 					if (tag.Contains("[CheckAnyLoadedModIDs:") == true) {
 
-						this.CheckAnyLoadedModIDs = TagHelper.TagBoolCheck(tag);
+						CheckAnyLoadedModIDs = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -812,7 +945,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (tempValue != 0) {
 
-							this.AnyModIDsToCheck.Add(tempValue);
+							AnyModIDsToCheck.Add(tempValue);
 
 						}
 
@@ -821,7 +954,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckTrueBooleans
 					if (tag.Contains("[CheckTrueBooleans:") == true) {
 
-						this.CheckTrueBooleans = TagHelper.TagBoolCheck(tag);
+						CheckTrueBooleans = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -832,7 +965,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.TrueBooleans.Add(tempValue);
+							TrueBooleans.Add(tempValue);
 
 						}
 
@@ -841,7 +974,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckCustomCounters
 					if (tag.Contains("[CheckCustomCounters:") == true) {
 
-						this.CheckCustomCounters = TagHelper.TagBoolCheck(tag);
+						CheckCustomCounters = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -852,7 +985,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.CustomCounters.Add(tempValue);
+							CustomCounters.Add(tempValue);
 
 						}
 
@@ -865,7 +998,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (tempValue != 0) {
 
-							this.CustomCountersTargets.Add(tempValue);
+							CustomCountersTargets.Add(tempValue);
 
 						}
 
@@ -874,7 +1007,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckTrueSandboxBooleans
 					if (tag.Contains("[CheckTrueSandboxBooleans:") == true) {
 
-						this.CheckTrueSandboxBooleans = TagHelper.TagBoolCheck(tag);
+						CheckTrueSandboxBooleans = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -885,7 +1018,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.TrueSandboxBooleans.Add(tempValue);
+							TrueSandboxBooleans.Add(tempValue);
 
 						}
 
@@ -894,7 +1027,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckCustomSandboxCounters
 					if (tag.Contains("[CheckCustomSandboxCounters:") == true) {
 
-						this.CheckCustomSandboxCounters = TagHelper.TagBoolCheck(tag);
+						CheckCustomSandboxCounters = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -905,7 +1038,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.CustomSandboxCounters.Add(tempValue);
+							CustomSandboxCounters.Add(tempValue);
 
 						}
 
@@ -918,7 +1051,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (tempValue != 0) {
 
-							this.CustomSandboxCountersTargets.Add(tempValue);
+							CustomSandboxCountersTargets.Add(tempValue);
 
 						}
 
@@ -927,28 +1060,28 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//CheckGridSpeed
 					if (tag.Contains("[CheckGridSpeed:") == true) {
 
-						this.CheckGridSpeed = TagHelper.TagBoolCheck(tag);
+						CheckGridSpeed = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//MinGridSpeed
-					if(tag.Contains("[MinGridSpeed:") == true) {
+					if (tag.Contains("[MinGridSpeed:") == true) {
 
-						this.MinGridSpeed = TagHelper.TagFloatCheck(tag, this.MinGridSpeed);
+						MinGridSpeed = TagHelper.TagFloatCheck(tag, MinGridSpeed);
 
 					}
 
 					//MaxGridSpeed
-					if(tag.Contains("[MaxGridSpeed:") == true) {
+					if (tag.Contains("[MaxGridSpeed:") == true) {
 
-						this.MaxGridSpeed = TagHelper.TagFloatCheck(tag, this.MaxGridSpeed);
+						MaxGridSpeed = TagHelper.TagFloatCheck(tag, MaxGridSpeed);
 
 					}
 
 					//CheckMESBlacklistedSpawnGroups
 					if (tag.Contains("[CheckMESBlacklistedSpawnGroups:") == true) {
 
-						this.CheckMESBlacklistedSpawnGroups = TagHelper.TagBoolCheck(tag);
+						CheckMESBlacklistedSpawnGroups = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -959,7 +1092,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.SpawnGroupBlacklistContainsAll.Add(tempValue);
+							SpawnGroupBlacklistContainsAll.Add(tempValue);
 
 						}
 
@@ -972,7 +1105,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.SpawnGroupBlacklistContainsAny.Add(tempValue);
+							SpawnGroupBlacklistContainsAny.Add(tempValue);
 
 						}
 
@@ -981,7 +1114,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 					//UseRequiredFunctionalBlocks
 					if (tag.Contains("[UseRequiredFunctionalBlocks:") == true) {
 
-						this.UseRequiredFunctionalBlocks = TagHelper.TagBoolCheck(tag);
+						UseRequiredFunctionalBlocks = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -992,7 +1125,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.RequiredAllFunctionalBlockNames.Add(tempValue);
+							RequiredAllFunctionalBlockNames.Add(tempValue);
 
 						}
 
@@ -1005,7 +1138,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.RequiredAnyFunctionalBlockNames.Add(tempValue);
+							RequiredAnyFunctionalBlockNames.Add(tempValue);
 
 						}
 
@@ -1018,20 +1151,105 @@ namespace RivalAI.Behavior.Subsystems.Profiles{
 
 						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
-							this.RequiredNoneFunctionalBlockNames.Add(tempValue);
+							RequiredNoneFunctionalBlockNames.Add(tempValue);
 
 						}
 
 					}
 
+					//CheckTargetAltitudeDifference
+					if (tag.Contains("[CheckTargetAltitudeDifference:") == true) {
+
+						CheckTargetAltitudeDifference = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinTargetAltitudeDifference
+					if (tag.Contains("[MinTargetAltitudeDifference:") == true) {
+
+						MinTargetAltitudeDifference = TagHelper.TagDoubleCheck(tag, MinTargetAltitudeDifference);
+
+					}
+
+					//MaxTargetAltitudeDifference
+					if (tag.Contains("[MaxTargetAltitudeDifference:") == true) {
+
+						MaxTargetAltitudeDifference = TagHelper.TagDoubleCheck(tag, MaxTargetAltitudeDifference);
+
+					}
+
+					//CheckTargetDistance
+					if (tag.Contains("[CheckTargetDistance:") == true) {
+
+						CheckTargetDistance = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinTargetDistance
+					if (tag.Contains("[MinTargetDistance:") == true) {
+
+						MinTargetDistance = TagHelper.TagDoubleCheck(tag, MinTargetDistance);
+
+					}
+
+					//MaxTargetDistance
+					if (tag.Contains("[MaxTargetDistance:") == true) {
+
+						MaxTargetDistance = TagHelper.TagDoubleCheck(tag, MaxTargetDistance);
+
+					}
+
+					//CheckTargetAngleFromForward
+					if (tag.Contains("[CheckTargetAngleFromForward:") == true) {
+
+						CheckTargetAngleFromForward = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinTargetAngle
+					if (tag.Contains("[MinTargetAngle:") == true) {
+
+						MinTargetAngle = TagHelper.TagDoubleCheck(tag, MinTargetAngle);
+
+					}
+
+					//MaxTargetAngle
+					if (tag.Contains("[MaxTargetAngle:") == true) {
+
+						MaxTargetAngle = TagHelper.TagDoubleCheck(tag, MaxTargetAngle);
+
+					}
+
+					//CheckIfTargetIsChasing
+					if (tag.Contains("[CheckIfTargetIsChasing:") == true) {
+
+						CheckIfTargetIsChasing = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinTargetChaseAngle
+					if (tag.Contains("[MinTargetChaseAngle:") == true) {
+
+						MinTargetChaseAngle = TagHelper.TagDoubleCheck(tag, MinTargetChaseAngle);
+
+					}
+
+					//MaxTargetChaseAngle
+					if (tag.Contains("[MaxTargetChaseAngle:") == true) {
+
+						MaxTargetChaseAngle = TagHelper.TagDoubleCheck(tag, MaxTargetChaseAngle);
+
+					}
+
+
 				}
 
 			}
-			
+
 		}
-		
+
 	}
-	
+
 }
-	
-	
+
+

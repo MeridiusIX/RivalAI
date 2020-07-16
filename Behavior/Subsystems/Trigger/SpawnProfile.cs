@@ -28,7 +28,7 @@ using VRageMath;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
+namespace RivalAI.Behavior.Subsystems.Trigger {
 
 	[ProtoContract]
 	public class SpawnProfile {
@@ -71,13 +71,13 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(13)]
 		public double MaxDistance;
-		
+
 		[ProtoMember(14)]
 		public double MinAltitude;
 
 		[ProtoMember(15)]
 		public double MaxAltitude;
-		
+
 		[ProtoMember(16)]
 		public Vector3D RelativeSpawnOffset;
 
@@ -86,7 +86,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(18)]
 		public bool IgnoreSafetyChecks;
-		
+
 		[ProtoMember(19)]
 		public bool InheritNpcAltitude;
 
@@ -121,7 +121,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 			CooldownTime = 0;
 			SpawnCount = 0;
 			LastSpawnTime = MyAPIGateway.Session.GameDateTime;
-			
+
 			UseRelativeSpawnPosition = false;
 			MinDistance = 0;
 			MaxDistance = 1;
@@ -145,12 +145,12 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public bool IsReadyToSpawn() {
 
-			if (this.UseSpawn == false) 
+			if (UseSpawn == false)
 				return false;
 
 			if (MaxSpawns >= 0 && SpawnCount >= MaxSpawns) {
 
-				Logger.MsgDebug(this.ProfileSubtypeId + ": Max Spawns Already Exceeded", DebugTypeEnum.Spawn);
+				Logger.MsgDebug(ProfileSubtypeId + ": Max Spawns Already Exceeded", DebugTypeEnum.Spawn);
 				UseSpawn = false;
 				return false;
 
@@ -162,20 +162,20 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 				if (StartsReady == true) {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					if (SpawnCount > 0)
 						return false;
 
 				} else {
 
-					Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
+					Logger.MsgDebug(ProfileSubtypeId + ": Spawn Cooldown Not Finished", DebugTypeEnum.Spawn);
 					return false;
 
 				}
 
 			}
 
-			Logger.MsgDebug(this.ProfileSubtypeId + ": Spawn Cooldown Finished", DebugTypeEnum.Spawn);
+			Logger.MsgDebug(ProfileSubtypeId + ": Spawn Cooldown Finished", DebugTypeEnum.Spawn);
 			return true;
 
 		}
@@ -192,7 +192,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastSpawnTime;
 
-			if(duration.TotalSeconds < CooldownTime) {
+			if (duration.TotalSeconds < CooldownTime) {
 
 				return;
 
@@ -202,21 +202,21 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//UseSpawn
-					if(tag.Contains("[UseSpawn:") == true) {
+					if (tag.Contains("[UseSpawn:") == true) {
 
 						UseSpawn = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//FirstSpawnTimeMs
-					if(tag.Contains("[FirstSpawnTimeMs:") == true) {
+					if (tag.Contains("[FirstSpawnTimeMs:") == true) {
 
 						FirstSpawnTimeMs = TagHelper.TagFloatCheck(tag, FirstSpawnTimeMs);
 
@@ -237,18 +237,18 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					}
 
 					//MaxSpawns
-					if(tag.Contains("MaxSpawns:") == true) {
+					if (tag.Contains("MaxSpawns:") == true) {
 
 						MaxSpawns = TagHelper.TagIntCheck(tag, MaxSpawns);
 
 					}
 
 					//SpawnGroups
-					if(tag.Contains("SpawnGroups:") == true) {
+					if (tag.Contains("SpawnGroups:") == true) {
 
 						var tempvalue = TagHelper.TagStringCheck(tag);
 
-						if(string.IsNullOrWhiteSpace(tempvalue) == false) {
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
 							SpawnGroups.Add(tempvalue);
 
@@ -311,7 +311,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						IgnoreSafetyChecks = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//InheritNpcAltitude
 					if (tag.Contains("[InheritNpcAltitude:") == true) {
 
@@ -337,7 +337,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			}
 
-			if(SpawnMinCooldown > SpawnMaxCooldown) {
+			if (SpawnMinCooldown > SpawnMaxCooldown) {
 
 				SpawnMinCooldown = SpawnMaxCooldown;
 

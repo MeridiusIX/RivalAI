@@ -37,7 +37,11 @@ namespace RivalAI.Helpers {
 
         public string CommandCode;
 
-        public IMyRemoteControl RemoteControl;
+        public IMyEntity RemoteControl;
+
+        public IMyEntity Character;
+
+        public IMyEntity SenderEntity { get { return (RemoteControl != null ? RemoteControl : Character); } }
 
         public double Radius;
 
@@ -56,6 +60,7 @@ namespace RivalAI.Helpers {
 
             CommandCode = "";
             RemoteControl = null;
+            Character = null;
             Radius = 0;
             IgnoreAntennaRequirement = false;
             TargetEntityId = 0;

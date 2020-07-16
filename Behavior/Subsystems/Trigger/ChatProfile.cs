@@ -28,7 +28,7 @@ using VRageMath;
 using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 
-namespace RivalAI.Behavior.Subsystems.Profiles {
+namespace RivalAI.Behavior.Subsystems.Trigger {
 
 	[ProtoContract]
 	public class ChatProfile {
@@ -89,7 +89,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		[ProtoMember(19)]
 		public double IgnoredAntennaRangeOverride;
-		
+
 		[ProtoMember(20)]
 		public bool UseRandomNameGeneratorFromMES;
 
@@ -134,14 +134,14 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref string avatar) {
 
-			if(UseChat == false) {
+			if (UseChat == false) {
 
 				//Logger.AddMsg("UseChat False", true);
 				return false;
 
 			}
 
-			if(MaxChats >= 0 && ChatSentCount >= MaxChats) {
+			if (MaxChats >= 0 && ChatSentCount >= MaxChats) {
 
 				//Logger.AddMsg("Max Chats Sent", true);
 				UseChat = false;
@@ -151,7 +151,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastChatTime;
 
-			if(duration.TotalSeconds < SecondsUntilChat) {
+			if (duration.TotalSeconds < SecondsUntilChat) {
 
 				//Logger.AddMsg("Chat Timer Not Ready", true);
 				return false;
@@ -165,7 +165,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType, ref thisAvatar);
 
-			if(string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
+			if (string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
 				//Logger.AddMsg("Message Null or Broadcast None", true);
 				return false;
@@ -186,66 +186,66 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		public void InitTags(string customData) {
 
-			if(string.IsNullOrWhiteSpace(customData) == false) {
+			if (string.IsNullOrWhiteSpace(customData) == false) {
 
 				var descSplit = customData.Split('\n');
 
-				foreach(var tag in descSplit) {
+				foreach (var tag in descSplit) {
 
 					//UseChat
-					if(tag.Contains("[UseChat:") == true) {
+					if (tag.Contains("[UseChat:") == true) {
 
 						UseChat = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChatMinTime
-					if(tag.Contains("[MinTime:") == true) {
+					if (tag.Contains("[MinTime:") == true) {
 
 						MinTime = TagHelper.TagIntCheck(tag, MinTime);
 
 					}
 
 					//ChatMaxTime
-					if(tag.Contains("[MaxTime:") == true) {
+					if (tag.Contains("[MaxTime:") == true) {
 
 						MaxTime = TagHelper.TagIntCheck(tag, MaxTime);
 
 					}
 
 					//ChatStartsReady
-					if(tag.Contains("[StartsReady:") == true) {
+					if (tag.Contains("[StartsReady:") == true) {
 
 						StartsReady = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChatChance
-					if(tag.Contains("[Chance:") == true) {
+					if (tag.Contains("[Chance:") == true) {
 
 						Chance = TagHelper.TagIntCheck(tag, Chance);
 
 					}
 
 					//MaxChats
-					if(tag.Contains("[MaxChats:") == true) {
+					if (tag.Contains("[MaxChats:") == true) {
 
 						MaxChats = TagHelper.TagIntCheck(tag, MaxChats);
 
 					}
 
 					//BroadcastRandomly
-					if(tag.Contains("[BroadcastRandomly:") == true) {
+					if (tag.Contains("[BroadcastRandomly:") == true) {
 
 						BroadcastRandomly = TagHelper.TagBoolCheck(tag);
 
 					}
 
 					//ChatMessages
-					if(tag.Contains("[ChatMessages:") == true) {
+					if (tag.Contains("[ChatMessages:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							ChatMessages.Add(tempValue);
 
@@ -254,10 +254,10 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 					}
 
 					//ChatAudio
-					if(tag.Contains("[ChatAudio:") == true) {
+					if (tag.Contains("[ChatAudio:") == true) {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
-						if(string.IsNullOrWhiteSpace(tempValue) == false) {
+						if (string.IsNullOrWhiteSpace(tempValue) == false) {
 
 							ChatAudio.Add(tempValue);
 
@@ -304,39 +304,39 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 						Color = TagHelper.TagStringCheck(tag);
 
 					}
-					
+
 					//IgnoreAntennaRequirement
-					if(tag.Contains("[IgnoreAntennaRequirement:") == true) {
+					if (tag.Contains("[IgnoreAntennaRequirement:") == true) {
 
 						IgnoreAntennaRequirement = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 					//IgnoredAntennaRangeOverride
-					if(tag.Contains("[IgnoredAntennaRangeOverride:") == true) {
+					if (tag.Contains("[IgnoredAntennaRangeOverride:") == true) {
 
 						IgnoredAntennaRangeOverride = TagHelper.TagDoubleCheck(tag, IgnoredAntennaRangeOverride);
 
 					}
-					
+
 					//UseRandomNameGeneratorFromMES
-					if(tag.Contains("[UseRandomNameGeneratorFromMES:") == true) {
+					if (tag.Contains("[UseRandomNameGeneratorFromMES:") == true) {
 
 						UseRandomNameGeneratorFromMES = TagHelper.TagBoolCheck(tag);
 
 					}
-					
+
 				}
 
 			}
 
-			if(MinTime > MaxTime) {
+			if (MinTime > MaxTime) {
 
 				MinTime = MaxTime;
 
 			}
 
-			if(StartsReady == true) {
+			if (StartsReady == true) {
 
 				SecondsUntilChat = 0;
 
@@ -351,30 +351,30 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref string avatar) {
 
-			if(ChatMessages.Count == 0) {
+			if (ChatMessages.Count == 0) {
 
 				return;
 
 			}
 
-			if(BroadcastRandomly == true) {
+			if (BroadcastRandomly == true) {
 
 				var index = Rnd.Next(0, ChatMessages.Count);
 				message = ChatMessages[index];
 
-				if(ChatAudio.Count >= ChatMessages.Count) {
+				if (ChatAudio.Count >= ChatMessages.Count) {
 
 					sound = ChatAudio[index];
 
 				}
 
-				if(BroadcastChatType.Count >= ChatMessages.Count) {
+				if (BroadcastChatType.Count >= ChatMessages.Count) {
 
 					type = BroadcastChatType[index];
 
 				}
-				
-				if(ChatAvatar.Count >= ChatMessages.Count) {
+
+				if (ChatAvatar.Count >= ChatMessages.Count) {
 
 					avatar = ChatAvatar[index];
 
@@ -382,7 +382,7 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 			} else {
 
-				if(MessageIndex >= ChatMessages.Count) {
+				if (MessageIndex >= ChatMessages.Count) {
 
 					MessageIndex = 0;
 
@@ -390,19 +390,19 @@ namespace RivalAI.Behavior.Subsystems.Profiles {
 
 				message = ChatMessages[MessageIndex];
 
-				if(ChatAudio.Count >= ChatMessages.Count) {
+				if (ChatAudio.Count >= ChatMessages.Count) {
 
 					sound = ChatAudio[MessageIndex];
 
 				}
 
-				if(BroadcastChatType.Count >= ChatMessages.Count) {
+				if (BroadcastChatType.Count >= ChatMessages.Count) {
 
 					type = BroadcastChatType[MessageIndex];
 
 				}
-				
-				if(ChatAvatar.Count >= ChatMessages.Count) {
+
+				if (ChatAvatar.Count >= ChatMessages.Count) {
 
 					avatar = ChatAvatar[MessageIndex];
 
