@@ -22,9 +22,11 @@ namespace RivalAI.Entities {
 		Beacons,
 		Containers,
 		Controllers,
+		Gravity,
 		Guns,
 		JumpDrives,
 		Mechanical,
+		Medical,
 		NanoBots,
 		Power,
 		Production,
@@ -541,9 +543,11 @@ namespace RivalAI.Entities {
 			result += GetTargetValueFromBlockList(grid.Beacons, 3, 2);
 			result += GetTargetValueFromBlockList(grid.Containers, 0.5f, 2, true);
 			result += GetTargetValueFromBlockList(grid.Controllers, 0.5f, 2);
+			result += GetTargetValueFromBlockList(grid.Gravity, 2, 4, true);
 			result += GetTargetValueFromBlockList(grid.Guns, 5, 4, true);
 			result += GetTargetValueFromBlockList(grid.JumpDrives, 10, 2);
 			result += GetTargetValueFromBlockList(grid.Mechanical, 1, 2);
+			result += GetTargetValueFromBlockList(grid.Medical, 10, 2);
 			result += GetTargetValueFromBlockList(grid.NanoBots, 15, 2);
 			result += GetTargetValueFromBlockList(grid.Production, 2, 2, true);
 			result += GetTargetValueFromBlockList(grid.Power, 0.5f, 2, true);
@@ -551,6 +555,16 @@ namespace RivalAI.Entities {
 			result += GetTargetValueFromBlockList(grid.Thrusters, 1, 2);
 			result += GetTargetValueFromBlockList(grid.Tools, 2, 2, true);
 			result += GetTargetValueFromBlockList(grid.Turrets, 7.5f, 4, true);
+
+			//Factor Power
+
+			//Factor Total Block Count
+
+			//Factor Static/Dynamic
+
+			//Factor Grid Box Size
+
+			//Factor Cube Size
 
 			return result;
 		

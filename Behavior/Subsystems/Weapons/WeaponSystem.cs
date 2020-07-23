@@ -90,6 +90,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			_restrictedFlags.Add(WaypointModificationEnum.Collision);
 			_restrictedFlags.Add(WaypointModificationEnum.Offset);
 			_restrictedFlags.Add(WaypointModificationEnum.PlanetPathing);
+			_restrictedFlags.Add(WaypointModificationEnum.PlanetPathingAscend);
 
 			StaticWeapons = new List<IWeapon>();
 			Turrets = new List<IWeapon>();
@@ -386,6 +387,21 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			foreach (var waypointType in _restrictedFlags) {
 
 				if (_behavior.AutoPilot.IndirectWaypointType.HasFlag(waypointType)) {
+
+					if (_behavior.AutoPilot.Targeting.HasTarget()) {
+
+						var dirFromTargetToWaypoint = Vector3D.Normalize(_behavior.AutoPilot.RefBlockMatrixRotation.Translation - _behavior.AutoPilot.GetCurrentWaypoint());
+						var dirFromTargetToNpc = Vector3D.Normalize(_behavior.AutoPilot.RefBlockMatrixRotation.Translation - _behavior.AutoPilot.Targeting.TargetLastKnownCoords);
+						var angleToWaypoint = VectorHelper.GetAngleBetweenDirections(dirFromTargetToWaypoint, dirFromTargetToNpc);
+
+						if (angleToWaypoint <= WeaponMaxAngleFromTarget) {
+
+							//Logger.MsgDebug("Invalid Waypoint Lines Up With Target", DebugTypeEnum.Weapon);
+							break;
+
+						}
+		
+					}
 
 					WaypointIsTarget = false;
 					return;

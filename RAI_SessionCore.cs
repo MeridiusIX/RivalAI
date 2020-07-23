@@ -26,7 +26,6 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Sync;
@@ -38,7 +37,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.22.0";
+		public static string ReleaseVersion = "0.22.6";
 
 		//Server
 		public static bool IsServer = false;

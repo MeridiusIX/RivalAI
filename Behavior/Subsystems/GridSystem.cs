@@ -44,17 +44,20 @@ namespace RivalAI.Behavior.Subsystems {
         public DateTime LastConnectedGridCheck;
         public bool OverrideConnectedGridCheck;
 
+        public IMyGridTerminalSystem Terminal;
+
         public List<IMySlimBlock> AllBlocks;
         public List<IMyTerminalBlock> AllTerminalBlocks;
         public List<IMyFunctionalBlock> AllFunctionalBlocks;
 
         public List<IMyRadioAntenna> Antennas;
+        public List<IMyCameraBlock> Cameras;
         public List<IMyTimerBlock> Timers;
         public List<IMyWarhead> Warheads;
 
         public GridSystem(IMyRemoteControl remoteControl = null) {
 
-            RemoteControl = null;
+            this.RemoteControl = remoteControl;
             Rnd = new Random();
 
             ListsBuilt = false;
@@ -68,10 +71,10 @@ namespace RivalAI.Behavior.Subsystems {
             AllFunctionalBlocks = new List<IMyFunctionalBlock>();
 
             Antennas = new List<IMyRadioAntenna>();
+            Cameras = new List<IMyCameraBlock>();
             Timers = new List<IMyTimerBlock>();
             Warheads = new List<IMyWarhead>();
-
-            this.RemoteControl = remoteControl;
+            
             BuildLists();
 
         }
@@ -133,6 +136,9 @@ namespace RivalAI.Behavior.Subsystems {
 
             if ((block.FatBlock as IMyRadioAntenna) != null)
                 Antennas.Add(block.FatBlock as IMyRadioAntenna);
+
+            if ((block.FatBlock as IMyCameraBlock) != null)
+                Cameras.Add(block.FatBlock as IMyCameraBlock);
 
             if ((block.FatBlock as IMyTimerBlock) != null)
                 Timers.Add(block.FatBlock as IMyTimerBlock);
@@ -321,6 +327,45 @@ namespace RivalAI.Behavior.Subsystems {
 
             OverrideConnectedGridCheck = true;
             CheckConnectedGrids();
+
+        }
+
+        public bool RaycastGridCheck(Vector3D coords) {
+
+            bool gotHit = false;
+
+            for (int i = Cameras.Count - 1; i >= 0; i--) {
+
+                var camera = Cameras[i];
+
+                if (!CheckBlockValid(camera)) {
+
+                    Cameras.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (!camera.EnableRaycast)
+                    camera.EnableRaycast = true;
+
+                if (!camera.CanScan(coords))
+                    continue;
+
+                var result = camera.Raycast(coords);
+
+                if (result.IsEmpty())
+                    continue;
+
+                if (result.Type.ToString().EndsWith("Grid") || result.Type == Sandbox.ModAPI.Ingame.MyDetectedEntityType.CharacterHuman) {
+
+                    gotHit = true;
+                    break;
+                
+                }
+
+            }
+
+            return gotHit;
 
         }
 

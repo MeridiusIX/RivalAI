@@ -27,7 +27,7 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
+
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
@@ -162,7 +162,7 @@ namespace RivalAI.Behavior {
 			//Approach
 			if (Mode == BehaviorMode.ApproachTarget) {
 
-				if (FighterMode && AutoPilot.DistanceToInitialWaypoint < (AutoPilot.InGravity() ? HorseFighterEngageDistancePlanet : HorseFighterEngageDistanceSpace)) {
+				if (FighterMode && AutoPilot.DistanceToTargetWaypoint < (AutoPilot.InGravity() ? HorseFighterEngageDistancePlanet : HorseFighterEngageDistanceSpace)) {
 
 					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget);
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
@@ -202,7 +202,7 @@ namespace RivalAI.Behavior {
 
 				if (FighterMode) {
 
-					outRange = AutoPilot.DistanceToInitialWaypoint > (AutoPilot.InGravity() ? HorseFighterDisengageDistancePlanet : HorseFighterDisengageDistanceSpace);
+					outRange = AutoPilot.DistanceToTargetWaypoint > (AutoPilot.InGravity() ? HorseFighterDisengageDistancePlanet : HorseFighterDisengageDistanceSpace);
 
 				} else {
 

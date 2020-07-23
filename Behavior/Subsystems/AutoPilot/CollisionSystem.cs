@@ -20,6 +20,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public double DistanceForOtherDirections = 500;
 
 		public CollisionResult VelocityResult;
+		public CollisionResult TargetResult;
 		public CollisionResult ForwardResult;
 		public CollisionResult BackwardResult;
 		public CollisionResult UpResult;
@@ -49,6 +50,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			AutoPilot = autoPilot;
 
 			VelocityResult = new CollisionResult(this, Direction.None);
+			TargetResult = new CollisionResult(this, Direction.None);
 			ForwardResult = new CollisionResult(this, Direction.Forward);
 			BackwardResult = new CollisionResult(this, Direction.Backward);
 			UpResult = new CollisionResult(this, Direction.Up);
@@ -75,6 +77,14 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			} else {
 
 				VelocityResult.ResetResults();
+
+			}
+
+			if (AutoPilot.Targeting.HasTarget() && AutoPilot.Targeting.Data.MaxLineOfSight > 0) {
+
+				var dirToTarget = Vector3D.Normalize(AutoPilot.Targeting.TargetLastKnownCoords - RemoteControl.GetPosition());
+				TargetResult.CalculateCollisions(dirToTarget, AutoPilot.Targeting.Data.MaxLineOfSight);
+				TargetResult.DetermineClosestCollision();
 
 			}
 

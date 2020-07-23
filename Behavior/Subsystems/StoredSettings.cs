@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Behavior.Subsystems.Trigger;
@@ -92,6 +91,9 @@ namespace RivalAI.Behavior.Subsystems {
 		[ProtoMember(18)]
 		public NewAutoPilotMode AutoPilotFlags;
 
+		[ProtoMember(19)]
+		public AutoPilotDataMode APDataMode;
+
 
 		public StoredSettings(){
 			
@@ -120,6 +122,7 @@ namespace RivalAI.Behavior.Subsystems {
 			LastDamagerEntity = 0;
 
 			AutoPilotFlags = NewAutoPilotMode.None;
+			APDataMode = AutoPilotDataMode.Primary;
 
 		}
 
@@ -129,11 +132,19 @@ namespace RivalAI.Behavior.Subsystems {
 			if (!preserveSettings)
 				return;
 
-			this.Mode = oldSettings.Mode;
+			//this.Mode = oldSettings.Mode;
 			this.StoredCustomBooleans = oldSettings.StoredCustomBooleans;
 			this.StoredCustomCounters = oldSettings.StoredCustomCounters;
 			this.TotalDamageAccumulated = oldSettings.TotalDamageAccumulated;
 			this.LastDamageTakenTime = oldSettings.LastDamageTakenTime;
+			this.RotationDirection = oldSettings.RotationDirection;
+			this.BlockOrientation = oldSettings.BlockOrientation;
+			this.DespawnCoords = oldSettings.DespawnCoords;
+			this.StoredCoords = oldSettings.StoredCoords;
+			this.StartCoords = oldSettings.StartCoords;
+			this.LastDamagerEntity = oldSettings.LastDamagerEntity;
+			this.AutoPilotFlags = oldSettings.AutoPilotFlags;
+			this.APDataMode = oldSettings.APDataMode;
 
 			//Triggers
 			if (preserveTriggers) {

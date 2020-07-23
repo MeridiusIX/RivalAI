@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
@@ -127,15 +126,15 @@ namespace RivalAI.Behavior{
 
 				bool inRange = false;
 
-				if (!AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistanceSpace)
+				if (!AutoPilot.InGravity() && AutoPilot.DistanceToTargetWaypoint < this.FighterEngageDistanceSpace)
 					inRange = true;
 
-				if(AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint < this.FighterEngageDistancePlanet)
+				if(AutoPilot.InGravity() && AutoPilot.DistanceToTargetWaypoint < this.FighterEngageDistancePlanet)
 					inRange = true;
 
 				if (inRange) {
 
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 					BehaviorTriggerA = true;
 
@@ -148,10 +147,10 @@ namespace RivalAI.Behavior{
 
 				bool outRange = false;
 
-				if (!AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistanceSpace)
+				if (!AutoPilot.InGravity() && AutoPilot.DistanceToTargetWaypoint > this.FighterDisengageDistanceSpace)
 					outRange = true;
 
-				if (AutoPilot.InGravity() && AutoPilot.DistanceToInitialWaypoint > this.FighterDisengageDistancePlanet)
+				if (AutoPilot.InGravity() && AutoPilot.DistanceToTargetWaypoint > this.FighterDisengageDistancePlanet)
 					outRange = true;
 
 				if (outRange) {

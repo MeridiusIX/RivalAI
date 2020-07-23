@@ -1,6 +1,8 @@
 ﻿using RivalAI.Helpers;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,9 +26,11 @@ namespace RivalAI.Entities {
 		public List<BlockEntity> Beacons;
 		public List<BlockEntity> Containers;
 		public List<BlockEntity> Controllers;
+		public List<BlockEntity> Gravity;
 		public List<BlockEntity> Guns;
 		public List<BlockEntity> JumpDrives;
 		public List<BlockEntity> Mechanical;
+		public List<BlockEntity> Medical;
 		public List<BlockEntity> NanoBots;
 		public List<BlockEntity> Production;
 		public List<BlockEntity> Power;
@@ -54,9 +58,11 @@ namespace RivalAI.Entities {
 			Beacons = new List<BlockEntity>();
 			Containers = new List<BlockEntity>();
 			Controllers = new List<BlockEntity>();
+			Gravity = new List<BlockEntity>();
 			Guns = new List<BlockEntity>();
 			JumpDrives = new List<BlockEntity>();
 			Mechanical = new List<BlockEntity>();
+			Medical = new List<BlockEntity>();
 			NanoBots = new List<BlockEntity>();
 			Production = new List<BlockEntity>();
 			Power = new List<BlockEntity>();
@@ -72,9 +78,11 @@ namespace RivalAI.Entities {
 			BlockListReference.Add(BlockTypeEnum.Beacons, Beacons);
 			BlockListReference.Add(BlockTypeEnum.Containers, Containers);
 			BlockListReference.Add(BlockTypeEnum.Controllers, Controllers);
+			BlockListReference.Add(BlockTypeEnum.Gravity, Gravity);
 			BlockListReference.Add(BlockTypeEnum.Guns, Guns);
 			BlockListReference.Add(BlockTypeEnum.JumpDrives, JumpDrives);
 			BlockListReference.Add(BlockTypeEnum.Mechanical, Mechanical);
+			BlockListReference.Add(BlockTypeEnum.Medical, Medical);
 			BlockListReference.Add(BlockTypeEnum.NanoBots, NanoBots);
 			BlockListReference.Add(BlockTypeEnum.Production, Production);
 			BlockListReference.Add(BlockTypeEnum.Power, Power);
@@ -158,6 +166,13 @@ namespace RivalAI.Entities {
 
 			}
 
+			//Gravity
+			if (terminalBlock as IMyGravityGeneratorBase != null || terminalBlock as IMyVirtualMass != null) {
+
+				assignedBlock = AddBlock(terminalBlock, Gravity);
+
+			}
+
 			//JumpDrive
 			if (terminalBlock as IMyJumpDrive != null) {
 
@@ -169,6 +184,13 @@ namespace RivalAI.Entities {
 			if (terminalBlock as IMyMechanicalConnectionBlock != null) {
 
 				assignedBlock = AddBlock(terminalBlock, Mechanical);
+
+			}
+
+			//Medical
+			if (terminalBlock as IMyMedicalRoom != null || terminalBlock.SlimBlock.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_SurvivalKit)) {
+
+				assignedBlock = AddBlock(terminalBlock, Medical);
 
 			}
 
@@ -352,9 +374,11 @@ namespace RivalAI.Entities {
 				CleanBlockList(Beacons);
 				CleanBlockList(Containers);
 				CleanBlockList(Controllers);
+				CleanBlockList(Gravity);
 				CleanBlockList(Guns);
 				CleanBlockList(JumpDrives);
 				CleanBlockList(Mechanical);
+				CleanBlockList(Medical);
 				CleanBlockList(NanoBots);
 				CleanBlockList(Production);
 				CleanBlockList(Power);

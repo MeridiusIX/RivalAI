@@ -152,6 +152,21 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(44)]
 		public double ReverseOffsetHeight;
 
+		[ProtoMember(45)]
+		public double PadDistanceFromTarget;
+
+		[ProtoMember(46)]
+		public int BarrelRollMinDurationMs;
+
+		[ProtoMember(47)]
+		public int BarrelRollMaxDurationMs;
+
+		[ProtoMember(48)]
+		public int RamMinDurationMs;
+
+		[ProtoMember(49)]
+		public int RamMaxDurationMs;
+
 		public AutoPilotProfile() {
 
 			ProfileSubtypeId = "";
@@ -182,6 +197,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			ReverseOffsetDistAltAboveHeight = false;
 			ReverseOffsetHeight = 1300;
 
+			PadDistanceFromTarget = 0;
+
 			UseVelocityCollisionEvasion = true;
 			CollisionEvasionWaypointDistance = 300;
 			CollisionFallEvasionWaypointDistance = 75;
@@ -209,6 +226,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			RotationMultiplier = 1;
 
+			BarrelRollMinDurationMs = 3000;
+			BarrelRollMaxDurationMs = 5000;
+
+			RamMinDurationMs = 7000;
+			RamMaxDurationMs = 12000;
+
 		}
 
 		public void MinMaxSanityChecks() {
@@ -219,6 +242,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			MathTools.MinMaxRangeSafety(ref StrafeMinDurationMs, ref StrafeMaxDurationMs);
 			MathTools.MinMaxRangeSafety(ref StrafeMinCooldownMs, ref StrafeMaxCooldownMs);
+
+			MathTools.MinMaxRangeSafety(ref BarrelRollMinDurationMs, ref BarrelRollMaxDurationMs);
+			MathTools.MinMaxRangeSafety(ref RamMinDurationMs, ref RamMaxDurationMs);
 
 		}
 
@@ -538,7 +564,40 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			//PadDistanceFromTarget
+			if (tag.Contains("[PadDistanceFromTarget:") == true) {
 
+				this.PadDistanceFromTarget = TagHelper.TagDoubleCheck(tag, this.PadDistanceFromTarget);
+
+			}
+
+			//BarrelRollMinDurationMs
+			if (tag.Contains("[BarrelRollMinDurationMs:") == true) {
+
+				this.BarrelRollMinDurationMs = TagHelper.TagIntCheck(tag, this.BarrelRollMinDurationMs);
+
+			}
+
+			//BarrelRollMaxDurationMs
+			if (tag.Contains("[BarrelRollMaxDurationMs:") == true) {
+
+				this.BarrelRollMaxDurationMs = TagHelper.TagIntCheck(tag, this.BarrelRollMaxDurationMs);
+
+			}
+
+			//RamMinDurationMs
+			if (tag.Contains("[RamMinDurationMs:") == true) {
+
+				this.RamMinDurationMs = TagHelper.TagIntCheck(tag, this.RamMinDurationMs);
+
+			}
+
+			//RamMaxDurationMs
+			if (tag.Contains("[RamMaxDurationMs:") == true) {
+
+				this.RamMaxDurationMs = TagHelper.TagIntCheck(tag, this.RamMaxDurationMs);
+
+			}
 
 		}
 

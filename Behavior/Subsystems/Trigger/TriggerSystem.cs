@@ -25,7 +25,6 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 using RivalAI.Sync;
 using RivalAI.Behavior.Subsystems.AutoPilot;
@@ -140,6 +139,24 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (trigger.UseTrigger == true) {
 
 						if (IsPlayerNearby(trigger)) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//PlayerFar
+				if (trigger.Type == "PlayerFar") {
+
+					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (IsPlayerNearby(trigger, true)) {
 
 							trigger.ActivateTrigger();
 
@@ -302,7 +319,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerA) {
 
-						_behavior.BehaviorTriggerA = false;
+						
 						trigger.ActivateTrigger();
 
 					}
@@ -316,7 +333,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerB) {
 
-						_behavior.BehaviorTriggerB = false;
+						
 						trigger.ActivateTrigger();
 
 					}
@@ -327,6 +344,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			_behavior.BehaviorTriggerA = false;
+			_behavior.BehaviorTriggerB = false;
+			_behavior.BehaviorTriggerC = false;
+			_behavior.BehaviorTriggerD = false;
+			_behavior.BehaviorTriggerE = false;
+			_behavior.BehaviorTriggerF = false;
+			_behavior.BehaviorTriggerG = false;
 			TimedTriggersProcessed = true;
 
 		}
@@ -568,10 +592,17 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
-				//BarrellRoll - Implement Post Release
+				//BarrellRoll
 				if (actions.BarrelRoll == true) {
 
-					//_autopilot.ChangeAutoPilotMode(AutoPilotMode.BarrelRoll);
+					_behavior.AutoPilot.ActivateBarrelRoll();
+
+				}
+
+				//Ramming
+				if (actions.Ramming == true) {
+
+					_behavior.AutoPilot.ActivateRamming();
 
 				}
 
@@ -1070,6 +1101,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				if (actions.EnableBlocks) {
+
+					_behavior.Grid.EnableBlocks(actions.EnableBlockNames, actions.EnableBlockStates);
+				
+				}
+
 				//ChangeBlockOwnership
 				if (actions.ChangeBlockOwnership) {
 
@@ -1081,6 +1118,55 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				if (actions.RazeBlocksWithNames) {
 
 					_behavior.Grid.RazeBlocksWithNames(actions.RazeBlocksNames);
+
+				}
+
+				//ChangeAutoPilotProfile
+				if (actions.ChangeAutopilotProfile) {
+
+					_behavior.AutoPilot.SetAutoPilotDataMode(actions.AutopilotProfile);
+				
+				}
+
+				//CreateRandomLightning
+				if (actions.CreateRandomLightning) {
+				
+					if(_behavior.AutoPilot.InGravity() && _behavior.AutoPilot.CurrentPlanet.HasAtmosphere){
+
+						var up = Vector3D.Normalize(RemoteControl.GetPosition() - _behavior.AutoPilot.CurrentPlanet.PositionComp.WorldAABB.Center);
+						var randomPerpendicular = MyUtils.GetRandomPerpendicularVector(ref up);
+						var strikeCoords = _behavior.AutoPilot.CurrentPlanet.GetClosestSurfacePointGlobal(randomPerpendicular * MathTools.RandomBetween(actions.LightningMinDistance, actions.LightningMaxDistance) + RemoteControl.GetPosition());
+						DamageHelper.CreateLightning(strikeCoords, actions.LightningDamage, actions.LightningExplosionRadius, actions.LightningColor);
+
+					}
+				
+				}
+
+				//CreateLightningAtAttacker
+				if (actions.CreateLightningAtAttacker && detectedEntity != 0) {
+
+					if (_behavior.AutoPilot.InGravity() && _behavior.AutoPilot.CurrentPlanet.HasAtmosphere) {
+
+						IMyEntity entity = null;
+
+						if (MyAPIGateway.Entities.TryGetEntityById(detectedEntity, out entity)) {
+
+							DamageHelper.CreateLightning(entity.PositionComp.WorldAABB.Center, actions.LightningDamage, actions.LightningExplosionRadius, actions.LightningColor);
+
+						}
+
+					}
+
+				}
+
+				//CreateLightningAtTarget
+				if (actions.CreateLightningAtTarget && _behavior.AutoPilot.Targeting.HasTarget()) {
+
+					if (_behavior.AutoPilot.InGravity() && _behavior.AutoPilot.CurrentPlanet.HasAtmosphere) {
+
+						DamageHelper.CreateLightning(_behavior.AutoPilot.Targeting.TargetLastKnownCoords, actions.LightningDamage, actions.LightningExplosionRadius, actions.LightningColor);
+
+					}
 
 				}
 
@@ -1181,7 +1267,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (amount == 1) {
 
-				MyAPIGateway.Utilities.SetVariable(counterName, existingCounter++);
+				existingCounter++;
+				MyAPIGateway.Utilities.SetVariable(counterName, existingCounter);
 				return;
 
 			}
@@ -1197,7 +1284,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public bool IsPlayerNearby(TriggerProfile control) {
+		public bool IsPlayerNearby(TriggerProfile control, bool playerOutsideDistance = false) {
 
 			IMyPlayer player = null;
 
@@ -1222,12 +1309,25 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			var playerDist = Vector3D.Distance(player.GetPosition(), remotePosition);
 
-			if (playerDist > control.TargetDistance) {
+			if (playerOutsideDistance) {
 
-				//Logger.MsgDebug(control.ProfileSubtypeId + ": Nearest Player Too Far: " + playerDist.ToString(), DebugTypeEnum.Trigger);
-				return false;
+				if (playerDist < control.TargetDistance) {
+
+					return false;
+
+				}
+
+			} else {
+
+				if (playerDist > control.TargetDistance) {
+
+					return false;
+
+				}
 
 			}
+
+			
 
 			if (control.InsideAntenna == true) {
 

@@ -26,7 +26,6 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
@@ -527,6 +526,7 @@ namespace RivalAI.Behavior {
 							Settings = tempSettings;
 							foundStoredSettings = true;
 							Logger.MsgDebug("Loaded Stored Settings For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
+							Logger.MsgDebug("Stored Settings BehaviorMode: " + Settings.Mode.ToString(), DebugTypeEnum.BehaviorSetup); ;
 							Trigger.Triggers = Settings.Triggers;
 							Trigger.DamageTriggers = Settings.DamageTriggers;
 							Trigger.CommandTriggers = Settings.CommandTriggers;
@@ -610,6 +610,7 @@ namespace RivalAI.Behavior {
 			RemoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplit;
 			_currentGrids = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
 
+			Logger.MsgDebug("Behavior Mode Set To: " + Mode.ToString(), DebugTypeEnum.BehaviorSetup); 
 			Logger.MsgDebug("Core Settings Setup Complete", DebugTypeEnum.BehaviorSetup);
 
 		}

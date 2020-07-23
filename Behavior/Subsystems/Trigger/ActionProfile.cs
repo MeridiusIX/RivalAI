@@ -25,8 +25,8 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
+using RivalAI.Behavior.Subsystems.AutoPilot;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
@@ -429,6 +429,39 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(132)]
 		public List<bool> EnableBlockStates;
 
+		[ProtoMember(133)]
+		public bool ChangeAutopilotProfile;
+
+		[ProtoMember(134)]
+		public AutoPilotDataMode AutopilotProfile;
+
+		[ProtoMember(135)]
+		public bool Ramming;
+
+		[ProtoMember(136)]
+		public bool CreateRandomLightning;
+
+		[ProtoMember(137)]
+		public bool CreateLightningAtAttacker;
+
+		[ProtoMember(138)]
+		public int LightningDamage;
+
+		[ProtoMember(139)]
+		public int LightningExplosionRadius;
+
+		[ProtoMember(140)]
+		public Vector3D LightningColor;
+
+		[ProtoMember(141)]
+		public double LightningMinDistance;
+
+		[ProtoMember(142)]
+		public double LightningMaxDistance;
+
+		[ProtoMember(143)]
+		public bool CreateLightningAtTarget;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -599,6 +632,20 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			EnableBlocks = false;
 			EnableBlockNames = new List<string>();
 			EnableBlockStates = new List<bool>();
+
+			ChangeAutopilotProfile = false;
+			AutopilotProfile = AutoPilotDataMode.Primary;
+
+			Ramming = false;
+
+			CreateRandomLightning = false;
+			CreateLightningAtAttacker = false;
+			LightningDamage = 0;
+			LightningExplosionRadius = 1;
+			LightningColor = new Vector3D(100, 100, 100);
+			LightningMinDistance = 100;
+			LightningMaxDistance = 200;
+			CreateLightningAtTarget = false;
 
 			ProfileSubtypeId = "";
 
@@ -1653,6 +1700,83 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						var tempvalue = TagHelper.TagBoolCheck(tag);
 						EnableBlockStates.Add(tempvalue);
+
+					}
+
+					//ChangeAutopilotProfile
+					if (tag.Contains("[ChangeAutopilotProfile:") == true) {
+
+						ChangeAutopilotProfile = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//AutopilotProfile
+					if (tag.Contains("[AutopilotProfile:") == true) {
+
+						AutopilotProfile = TagHelper.TagAutoPilotProfileModeCheck(tag);
+
+					}
+
+					//Ramming
+					if (tag.Contains("[Ramming:") == true) {
+
+						Ramming = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CreateRandomLightning
+					if (tag.Contains("[CreateRandomLightning:") == true) {
+
+						CreateRandomLightning = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CreateLightningAtAttacker
+					if (tag.Contains("[CreateLightningAtAttacker:") == true) {
+
+						CreateLightningAtAttacker = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//LightningDamage
+					if (tag.Contains("[LightningDamage:") == true) {
+
+						LightningDamage = TagHelper.TagIntCheck(tag, LightningDamage);
+
+					}
+
+					//LightningExplosionRadius
+					if (tag.Contains("[LightningExplosionRadius:") == true) {
+
+						LightningExplosionRadius = TagHelper.TagIntCheck(tag, LightningExplosionRadius);
+
+					}
+
+					//LightningColor
+					if (tag.Contains("[LightningColor:") == true) {
+
+						LightningColor = TagHelper.TagVector3DCheck(tag);
+
+					}
+
+					//LightningMinDistance
+					if (tag.Contains("[LightningMinDistance:") == true) {
+
+						LightningMinDistance = TagHelper.TagDoubleCheck(tag, LightningMinDistance);
+
+					}
+
+					//LightningMaxDistance
+					if (tag.Contains("[LightningMaxDistance:") == true) {
+
+						LightningMaxDistance = TagHelper.TagDoubleCheck(tag, LightningMaxDistance);
+
+					}
+
+					//CreateLightningAtTarget
+					if (tag.Contains("[CreateLightningAtTarget:") == true) {
+
+						CreateLightningAtTarget = TagHelper.TagBoolCheck(tag);
 
 					}
 

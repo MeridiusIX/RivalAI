@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 

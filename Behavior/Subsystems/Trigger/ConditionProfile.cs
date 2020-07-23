@@ -25,7 +25,6 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 
 
@@ -439,16 +438,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				usedConditions++;
 				bool failedCheck = false;
 
-				if (CustomCounters.Count == CustomCountersTargets.Count) {
+				if (CustomSandboxCounters.Count == CustomSandboxCountersTargets.Count) {
 
-					for (int i = 0; i < CustomCounters.Count; i++) {
+					for (int i = 0; i < CustomSandboxCounters.Count; i++) {
 
 						try {
 
 							int counter = 0;
-							var result = MyAPIGateway.Utilities.GetVariable(CustomCounters[i], out counter);
+							var result = MyAPIGateway.Utilities.GetVariable(CustomSandboxCounters[i], out counter);
 
-							if (!result || counter < CustomCountersTargets[i]) {
+							if (!result || counter < CustomSandboxCountersTargets[i]) {
 
 								Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Counter Amount Not High Enough: " + CustomSandboxCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;

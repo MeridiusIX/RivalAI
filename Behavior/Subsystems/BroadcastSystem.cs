@@ -118,8 +118,13 @@ namespace RivalAI.Behavior.Subsystems {
 
 				var roll = Rnd.Next(0, 101);
 
-				if (roll > chat.Chance)
+				if (roll > chat.Chance) {
+
+					Logger.MsgDebug(chat.ProfileSubtypeId + ": Chat Chance Roll Failed", DebugTypeEnum.Chat);
 					return;
+
+				}
+					
 			
 			}
 
@@ -130,7 +135,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message) == true) {
+			if(this.LastChatMessageSent == message || string.IsNullOrWhiteSpace(message)) {
 
 				Logger.MsgDebug(chat.ProfileSubtypeId + ": Last Message Same", DebugTypeEnum.Chat);
 				return;

@@ -18,6 +18,14 @@ using Ingame = Sandbox.ModAPI.Ingame;
 
 namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
+	public enum AutoPilotDataMode {
+	
+		Primary,
+		Secondary,
+		Tertiary
+	
+	}
+
 	public enum AutoPilotType {
 
 		None,
@@ -42,6 +50,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		WaypointFromTarget = 1 << 8,
 		Ram = 1 << 9,
 		OffsetWaypoint = 1 << 10,
+		RotateToTarget = 1 << 11,
 
 	}
 
@@ -59,7 +68,32 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		private IMyRemoteControl _remoteControl;
 		private IBehavior _behavior;
 
-		public AutoPilotProfile Data;
+		public AutoPilotProfile Data {
+
+			get {
+
+				if (DataMode == AutoPilotDataMode.Secondary && _secondaryAutoPilot != null)
+					return _secondaryAutoPilot;
+
+				if (DataMode == AutoPilotDataMode.Tertiary && _tertiaryAutopilot != null)
+					return _tertiaryAutopilot;
+
+				return _primaryAutoPilot;
+
+			}
+
+			set {
+
+				_primaryAutoPilot = value;
+
+			}
+		
+		}
+
+		public AutoPilotDataMode DataMode;
+		private AutoPilotProfile _primaryAutoPilot;
+		private AutoPilotProfile _secondaryAutoPilot;
+		private AutoPilotProfile _tertiaryAutopilot;
 
 		private AutoPilotType _currentAutoPilot;
 		private bool _autopilotOverride;
@@ -124,6 +158,15 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		private bool _staticGrid;
 		public Vector3D MyVelocity;
 
+		//Special Modes
+		private bool _applyBarrelRoll;
+		private int _barrelRollDuration;
+		private DateTime _barrelRollStart;
+
+		private bool _applyRamming;
+		private int _ramDuration;
+		private DateTime _ramStart;
+
 		//Offset Stuff
 		private bool _offsetRequiresCalculation;
 		private WaypointOffsetType _offsetType;
@@ -142,6 +185,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public double DistanceToInitialWaypoint;
 		public double DistanceToCurrentWaypoint;
+		public double DistanceToTargetWaypoint;
 		public double DistanceToWaypointAtMyAltitude;
 		public double AngleToInitialWaypoint;
 		public double AngleToCurrentWaypoint;
@@ -175,6 +219,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public AutoPilotSystem(IMyRemoteControl remoteControl, IBehavior behavior) {
 
 			Data = new AutoPilotProfile();
+			_primaryAutoPilot = new AutoPilotProfile();
+			_secondaryAutoPilot = new AutoPilotProfile();
+			_tertiaryAutopilot = new AutoPilotProfile();
 
 			//Internal - AutoPilot
 			_currentAutoPilot = AutoPilotType.None;
@@ -289,7 +336,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void SetupReferences(IBehavior behavior, StoredSettings settings, TriggerSystem trigger) {
 
-			Targeting.SetupReferences(settings);
+			Targeting.SetupReferences(behavior);
 			Trigger = trigger;
 
 		}
@@ -302,14 +349,30 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				foreach (var tag in descSplit) {
 
-					Data.InitTag(tag);
+					_primaryAutoPilot.InitTag(tag);
 
 					//AutopilotData
-					if (tag.Contains("[AutopilotData:") == true) {
+					if (tag.Contains("[AutopilotData:")) {
 
 						var profileId = TagHelper.TagStringCheck(tag);
-						Data = TagHelper.GetAutopilotProfile(profileId);
+						_primaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
 					
+					}
+
+					//SecondaryAutopilotData
+					if (tag.Contains("[SecondaryAutopilotData:")) {
+
+						var profileId = TagHelper.TagStringCheck(tag);
+						_secondaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
+
+					}
+
+					//TertiaryAutopilotData
+					if (tag.Contains("[TertiaryAutopilotData:")) {
+
+						var profileId = TagHelper.TagStringCheck(tag);
+						_tertiaryAutopilot = TagHelper.GetAutopilotProfile(profileId);
+
 					}
 
 					//MinimumSpeedForVelocityChecks
@@ -399,6 +462,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				_currentWaypoint = _pendingWaypoint;
 				this.DistanceToInitialWaypoint = Vector3D.Distance(_myPosition, _initialWaypoint);
 				this.DistanceToCurrentWaypoint = Vector3D.Distance(_myPosition, _currentWaypoint);
+
+				if(Targeting.HasTarget())
+					DistanceToTargetWaypoint = Vector3D.Distance(_myPosition, Targeting.TargetLastKnownCoords);
+
 				this.AngleToInitialWaypoint = VectorHelper.GetAngleBetweenDirections(_forwardDir, Vector3D.Normalize(_initialWaypoint - _myPosition));
 				this.AngleToCurrentWaypoint = VectorHelper.GetAngleBetweenDirections(_forwardDir, Vector3D.Normalize(_currentWaypoint - _myPosition));
 				this.DistanceToWaypointAtMyAltitude = VectorHelper.GetDistanceToTargetAtMyAltitude(_myPosition, _currentWaypoint, CurrentPlanet);
@@ -666,6 +733,42 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			if (_applyBarrelRoll) {
+
+				var rollTime = MyAPIGateway.Session.GameDateTime - _barrelRollStart;
+
+				if (rollTime.TotalMilliseconds >= _barrelRollDuration) {
+
+					_applyBarrelRoll = false;
+					CurrentMode &= ~NewAutoPilotMode.BarrelRoll;
+
+				} else {
+
+					if (!CurrentMode.HasFlag(NewAutoPilotMode.BarrelRoll))
+						CurrentMode |= NewAutoPilotMode.BarrelRoll;
+
+				}
+
+			}
+
+			if (_applyRamming) {
+
+				var rollTime = MyAPIGateway.Session.GameDateTime - _ramStart;
+
+				if (rollTime.TotalMilliseconds >= _ramDuration) {
+
+					_applyRamming = false;
+					CurrentMode &= ~NewAutoPilotMode.Ram;
+
+				} else {
+
+					if (!CurrentMode.HasFlag(NewAutoPilotMode.Ram))
+						CurrentMode |= NewAutoPilotMode.Ram;
+
+				}
+
+			}
+
 			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
 
 				return;
@@ -716,6 +819,32 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				
 				_requiresNavigationAroundCollision = false;
 
+
+			}
+
+			if (Data.PadDistanceFromTarget != 0 && Targeting.HasTarget()) {
+
+				var dirFromTarget = Vector3D.Normalize(_myPosition - Targeting.TargetLastKnownCoords);
+				var roughPaddedCoords = dirFromTarget * Data.PadDistanceFromTarget + Targeting.TargetLastKnownCoords;
+
+				if (InGravity()) {
+
+					var surfaceCoords = CurrentPlanet.GetClosestSurfacePointGlobal(roughPaddedCoords);
+					var distRoughToSurface = Vector3D.Distance(surfaceCoords, roughPaddedCoords);
+					var distsurfaceToCore = Vector3D.Distance(surfaceCoords, CurrentPlanet.PositionComp.WorldAABB.Center);
+					var distroughToCore = Vector3D.Distance(surfaceCoords, CurrentPlanet.PositionComp.WorldAABB.Center);
+
+					if (distRoughToSurface < Data.MinimumPlanetAltitude || distsurfaceToCore > distroughToCore) {
+
+						var upAtSurface = Vector3D.Normalize(surfaceCoords - CurrentPlanet.PositionComp.WorldAABB.Center);
+						roughPaddedCoords = upAtSurface * MathTools.ValueBetween(Data.MinimumPlanetAltitude, Data.IdealPlanetAltitude);
+
+					}
+
+				}
+
+				IndirectWaypointType |= WaypointModificationEnum.TargetPadding;
+				_pendingWaypoint = roughPaddedCoords;
 
 			}
 
@@ -1009,6 +1138,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 
 			_calculatedOffsetWaypoint = _pendingWaypoint;
+			IndirectWaypointType |= WaypointModificationEnum.Offset;
 
 		}
 
@@ -1373,6 +1503,46 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			return false;
 		
+		}
+
+		public void SetAutoPilotDataMode(AutoPilotDataMode mode) {
+
+			_behavior.Settings.APDataMode = mode;
+		
+		}
+
+		public void AssignAutoPilotDataMode(string profileId, AutoPilotDataMode mode) {
+
+			var autoPilotProfile = TagHelper.GetAutopilotProfile(profileId);
+
+			if (autoPilotProfile == null)
+				return;
+
+			if (mode == AutoPilotDataMode.Primary)
+				_primaryAutoPilot = autoPilotProfile;
+
+			if (mode == AutoPilotDataMode.Secondary)
+				_secondaryAutoPilot = autoPilotProfile;
+
+			if (mode == AutoPilotDataMode.Tertiary)
+				_tertiaryAutopilot = autoPilotProfile;
+
+		}
+
+		public void ActivateBarrelRoll() {
+
+			_applyBarrelRoll = true;
+			_barrelRollStart = MyAPIGateway.Session.GameDateTime;
+			_barrelRollDuration = MathTools.RandomBetween(Data.BarrelRollMinDurationMs, Data.BarrelRollMaxDurationMs);
+		
+		}
+
+		public void ActivateRamming() {
+
+			_applyRamming = true;
+			_ramStart = MyAPIGateway.Session.GameDateTime;
+			_ramDuration = MathTools.RandomBetween(Data.RamMinDurationMs, Data.RamMaxDurationMs);
+
 		}
 
 		public void DebugDrawingToWaypoints() {

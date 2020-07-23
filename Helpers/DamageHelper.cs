@@ -250,6 +250,17 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static void CreateLightning(Vector3D coords, int damage, int radius, Vector3D color) {
+
+			var lightning = new MyObjectBuilder_WeatherLightning();
+			lightning.Damage = damage;
+			lightning.ExplosionRadius = radius;
+			lightning.Color = new Vector4((float)color.X, (float)color.Y, (float)color.Z, 1000);
+			lightning.Position = coords;
+			MyAPIGateway.Session.WeatherEffects.CreateLightning(coords, lightning, true);
+
+		}
+
 		public static long GetAttackOwnerId(long attackingEntity) {
 
 			IMyEntity entity = null;

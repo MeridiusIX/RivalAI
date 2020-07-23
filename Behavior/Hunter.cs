@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
@@ -45,13 +44,21 @@ namespace RivalAI.Behavior{
 
 		public bool EngageOnCameraDetection;
 		public bool EngageOnWeaponActivation;
+		public bool EngageOnTargetLineOfSight;
 
-		public AutoPilotProfile NonCombatAutopilot;
-		public AutoPilotProfile CombatAutopilot;
+		public double EngageDistanceSpace;
+		public double EngageDistancePlanet;
+
+		public double DisengageDistanceSpace;
+		public double DisengageDistancePlanet;
+
+		public double CameraDetectionMaxRange;
 
 		//Non-Config
 		private DateTime _checkActiveTargetTimer;
 		private DateTime _lostTargetTimer;
+
+		private bool _inRange;
 		
 		public Hunter() : base() {
 
@@ -63,12 +70,20 @@ namespace RivalAI.Behavior{
 
 			EngageOnCameraDetection = false;
 			EngageOnWeaponActivation = false;
+			EngageOnTargetLineOfSight = false;
+
+			EngageDistanceSpace = 500;
+			EngageDistancePlanet = 500;
+
+			DisengageDistanceSpace = 600;
+			DisengageDistancePlanet = 600;
+
+			CameraDetectionMaxRange = 1800;
 
 			_checkActiveTargetTimer = MyAPIGateway.Session.GameDateTime;
 			_lostTargetTimer = MyAPIGateway.Session.GameDateTime;
 
-			NonCombatAutopilot = null;
-			CombatAutopilot = null;
+			_inRange = false;
 
 		}
 
@@ -76,6 +91,8 @@ namespace RivalAI.Behavior{
 		//B: Lost Target (Still Approach)
 		//C: Lost Target (Go To Despawn)
 		//D: Engage Target
+		//E: Engage In Range
+		//F: Engage Out Range
 
 
 		public override void MainBehavior() {
@@ -146,7 +163,7 @@ namespace RivalAI.Behavior{
 						ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 						_lostTargetTimer = MyAPIGateway.Session.GameDateTime;
 						BehaviorTriggerA = true;
-						AutoPilot.Data = CombatAutopilot;
+						AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
 						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
 					}
@@ -169,21 +186,83 @@ namespace RivalAI.Behavior{
 
 					}
 
+					return;
+
 				}
 
+				_lostTargetTimer = MyAPIGateway.Session.GameDateTime;
+				bool engageTarget = false;
+				var targetDist = Vector3D.Distance(RemoteControl.GetPosition(), AutoPilot.Targeting.TargetLastKnownCoords);
+
 				//Check Turret
+				if (EngageOnWeaponActivation == true) {
+
+					if (AutoPilot.Weapons.GetTurretTarget() != 0)
+						engageTarget = true;
+
+
+				}
 
 				//Check Visual Range
-
+				if (!engageTarget && EngageOnCameraDetection && targetDist < CameraDetectionMaxRange) {
 				
+					if(Grid.RaycastGridCheck(AutoPilot.Targeting.TargetLastKnownCoords))
+						engageTarget = true;
 
+				}
+
+				//Check Collision Data
+				if (AutoPilot.Targeting.Data.MaxLineOfSight > 0) {
+				
+					if(AutoPilot.Targeting.Target.GetParentEntity().EntityId == AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId)
+						engageTarget = true;
+
+				}
+
+				if (engageTarget) {
+
+					BehaviorTriggerD = true;
+					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
+
+				}
 
 			}
 
 			//Engage
 			if (Mode == BehaviorMode.EngageTarget) {
 
+				if (AutoPilot.Targeting.HasTarget()) {
 
+					var targetDist = Vector3D.Distance(RemoteControl.GetPosition(), AutoPilot.Targeting.TargetLastKnownCoords);
+
+					if (!_inRange) {
+
+						if (targetDist < (AutoPilot.InGravity() ? EngageDistancePlanet : EngageDistanceSpace)) {
+
+							_inRange = true;
+							BehaviorTriggerE = true;
+							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+
+						}
+
+					} else {
+
+						if (targetDist < (AutoPilot.InGravity() ? DisengageDistancePlanet : DisengageDistanceSpace)) {
+
+							_inRange = false;
+							BehaviorTriggerF = true;
+							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+
+						}
+
+					}
+
+				} else {
+
+					BehaviorTriggerB = true;
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+
+				}
 
 			}
 
@@ -204,8 +283,11 @@ namespace RivalAI.Behavior{
 
 		public void ReturnToDespawn() {
 
+			if(Mode == BehaviorMode.ApproachTarget)
+				BehaviorTriggerC = true;
+
 			ChangeCoreBehaviorMode(BehaviorMode.ApproachWaypoint);
-			AutoPilot.Data = NonCombatAutopilot;
+			AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Primary);
 			AutoPilot.ActivateAutoPilot(Settings.DespawnCoords, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 			_checkActiveTargetTimer = MyAPIGateway.Session.GameDateTime;
 
@@ -213,7 +295,7 @@ namespace RivalAI.Behavior{
 
 		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
-			Logger.MsgDebug("Beginning Behavior Init For Reaver", DebugTypeEnum.BehaviorSetup);
+			Logger.MsgDebug("Beginning Behavior Init For Hunter", DebugTypeEnum.BehaviorSetup);
 
 			//Core Setup
 			CoreSetup(remoteControl);
@@ -221,6 +303,9 @@ namespace RivalAI.Behavior{
 			//Behavior Specific Defaults
 			Despawn.UseNoTargetTimer = false;
 			AutoPilot.Weapons.UseStaticGuns = true;
+
+			AutoPilot.AssignAutoPilotDataMode("RAI-Generic-Autopilot-Hunter-A", AutoPilotDataMode.Primary);
+			AutoPilot.AssignAutoPilotDataMode("RAI-Generic-Autopilot-Hunter-B", AutoPilotDataMode.Secondary);
 
 			//Get Settings From Custom Data
 			InitCoreTags();
@@ -238,11 +323,90 @@ namespace RivalAI.Behavior{
 				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
 				foreach(var tag in descSplit) {
-					
-					
+
+					//TimeBetweenNewTargetChecks
+					if (tag.Contains("[TimeBetweenNewTargetChecks:")) {
+
+						this.TimeBetweenNewTargetChecks = TagHelper.TagIntCheck(tag, this.TimeBetweenNewTargetChecks);
+
+					}
+
+					//LostTargetTimerTrigger
+					if (tag.Contains("[LostTargetTimerTrigger:")) {
+
+						this.LostTargetTimerTrigger = TagHelper.TagIntCheck(tag, this.LostTargetTimerTrigger);
+
+					}
+
+					//DistanceToCheckEngagableTarget
+					if (tag.Contains("[DistanceToCheckEngagableTarget:")) {
+
+						this.DistanceToCheckEngagableTarget = TagHelper.TagDoubleCheck(tag, this.DistanceToCheckEngagableTarget);
+
+					}
+
+					//EngageOnCameraDetection
+					if (tag.Contains("[EngageOnCameraDetection:")) {
+
+						this.EngageOnCameraDetection = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//EngageOnWeaponActivation
+					if (tag.Contains("[EngageOnWeaponActivation:")) {
+
+						this.EngageOnWeaponActivation = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//EngageOnTargetLineOfSight
+					if (tag.Contains("[EngageOnTargetLineOfSight:")) {
+
+						this.EngageOnTargetLineOfSight = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//EngageDistanceSpace
+					if (tag.Contains("[EngageDistanceSpace:")) {
+
+						this.EngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.EngageDistanceSpace);
+
+					}
+
+					//EngageDistancePlanet
+					if (tag.Contains("[EngageDistancePlanet:")) {
+
+						this.EngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.EngageDistancePlanet);
+
+					}
+
+
+					//DisengageDistanceSpace
+					if (tag.Contains("[DisengageDistanceSpace:")) {
+
+						this.DisengageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.DisengageDistanceSpace);
+
+					}
+
+
+					//DisengageDistancePlanet
+					if (tag.Contains("[DisengageDistancePlanet:")) {
+
+						this.DisengageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.DisengageDistancePlanet);
+
+					}
+
+
+					//CameraDetectionMaxRange
+					if (tag.Contains("[CameraDetectionMaxRange:")) {
+
+						this.CameraDetectionMaxRange = TagHelper.TagDoubleCheck(tag, this.CameraDetectionMaxRange);
+
+					}
+
 
 				}
-				
+
 			}
 
 		}

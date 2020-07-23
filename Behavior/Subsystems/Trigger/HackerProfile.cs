@@ -25,7 +25,6 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 using RivalAI.Behavior.Subsystems.Trigger;
 

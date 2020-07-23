@@ -26,7 +26,6 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI;
@@ -373,44 +372,6 @@ namespace RivalAI.Helpers {
 			
 			return closestPlayer;
 			
-		}
-
-		public static IMyPlayer GetFurthestPlayer(Vector3D coords) {
-
-			var activePlayers = new List<IMyPlayer>();
-			MyAPIGateway.Players.GetPlayers(activePlayers);
-			IMyPlayer furthestPlayer = null;
-			double furthestPlayerDist = 0;
-
-			foreach (var player in activePlayers) {
-
-				if (player.Controller.ControlledEntity.Entity == null || player.IsBot == true) {
-
-					continue;
-
-				}
-
-				var distance = Vector3D.Distance(player.GetPosition(), coords);
-
-				if (furthestPlayer == null) {
-
-					furthestPlayer = player;
-					furthestPlayerDist = distance;
-					continue;
-
-				}
-
-				if (distance > furthestPlayerDist) {
-
-					furthestPlayer = player;
-					furthestPlayerDist = distance;
-
-				}
-
-			}
-
-			return furthestPlayer;
-
 		}
 
 		public static IMyPlayer GetClosestPlayerWithReputation(Vector3D coords, long factionId, TriggerProfile control) {

@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Entities;
 using RivalAI.Behavior.Subsystems.AutoPilot;
@@ -47,6 +46,10 @@ namespace RivalAI.Helpers {
 		public static Dictionary<string, byte[]> TargetObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TriggerObjectTemplates = new Dictionary<string, byte[]>();
 		public static Dictionary<string, byte[]> TriggerGroupObjectTemplates = new Dictionary<string, byte[]>();
+
+		public static Dictionary<string, AutoPilotProfile> AutoPilotProfiles = new Dictionary<string, AutoPilotProfile>();
+		public static Dictionary<string, TargetProfile> TargetProfiles = new Dictionary<string, TargetProfile>();
+
 
 		public static AutoPilotProfile DefaultAutoPilotSettings = new AutoPilotProfile();
 
@@ -145,7 +148,7 @@ namespace RivalAI.Helpers {
 
 				} catch(Exception) {
 
-					Logger.MsgDebug(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.WriteLog(string.Format("Caught Error While Processing Definition {0}", def.Id));
 
 				}
 
@@ -310,6 +313,25 @@ namespace RivalAI.Helpers {
 
 			return tagSplit;
 			
+		}
+
+		public static AutoPilotDataMode TagAutoPilotProfileModeCheck(string tag) {
+
+			AutoPilotDataMode result = AutoPilotDataMode.Primary;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (AutoPilotDataMode.TryParse(tagSplit[1], out result) == false) {
+
+					return AutoPilotDataMode.Primary;
+
+				}
+
+			}
+
+			return result;
+
 		}
 
 		public static BlockTypeEnum TagBlockTargetTypesCheck(string tag) {

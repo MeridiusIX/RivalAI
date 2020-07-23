@@ -21,6 +21,7 @@ namespace RivalAI.Helpers {
 
     public enum BehaviorMode {
 
+        Init,
         ApproachTarget,
         ApproachWaypoint,
         BarrelRoll,
@@ -30,7 +31,6 @@ namespace RivalAI.Helpers {
         EngageTarget,
         EvadeCollision,
         Idle,
-        Init,
         KamikazeCollision,
         Retreat,
         WaitAtWaypoint,
@@ -161,6 +161,7 @@ namespace RivalAI.Helpers {
         Broadcasting,
         Faction,
         Gravity,
+        LineOfSight,
         MovementScore,
         Name,
         OutsideOfSafezone,
@@ -255,6 +256,7 @@ namespace RivalAI.Helpers {
         WeaponLeading = 1 << 4,
         TargetIsInitialWaypoint = 1 << 5,
         PlanetPathingAscend = 1 << 6,
+        TargetPadding = 1 << 7,
 
 
     }

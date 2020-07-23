@@ -25,7 +25,6 @@ using VRage.ObjectBuilders;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Utils;
 using VRageMath;
-using RivalAI.Behavior.Settings;
 using RivalAI.Helpers;
 using RivalAI.Entities;
 
@@ -139,6 +138,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(35)]
 		public float MaxMovementScore;
 
+		[ProtoMember(36)]
+		public double MaxLineOfSight;
+
 		[ProtoIgnore]
 		public bool BuiltUniqueFilterList;
 
@@ -189,6 +191,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			MinMovementScore = -1;
 			MaxMovementScore = -1;
+
+			MaxLineOfSight = -1;
 
 			PrioritizePlayerControlled = false;
 
@@ -492,6 +496,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					if (tag.Contains("[UsePartialNameMatching:") == true) {
 
 						UsePartialNameMatching = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MaxLineOfSight
+					if (tag.Contains("[MaxLineOfSight:") == true) {
+
+						MaxLineOfSight = TagHelper.TagDoubleCheck(tag, MaxLineOfSight);
 
 					}
 

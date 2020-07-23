@@ -13,20 +13,31 @@ namespace RivalAI.Behavior.Subsystems {
 	public class TargetingSystem {
 
 		public IMyRemoteControl RemoteControl;
-		private StoredSettings _settings;
+		private IBehavior _behavior;
 
 		public ITarget Target { get { 
 
 				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
 
-					//Logger.MsgDebug("Target - Use Override", DebugTypeEnum.Target);
 					return OverrideTarget;
 				
 				}
 
-				//Logger.MsgDebug("Target - Use Normal", DebugTypeEnum.Target);
 				return NormalTarget;
-			} 
+			}
+
+			set {
+			
+				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
+
+					OverrideTarget = value;
+					return;
+				
+				}
+
+				NormalTarget = value;
+			
+			}
 		}
 
 		public TargetProfile Data { get { 
@@ -197,7 +208,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				targetList[i].RefreshSubGrids();
 
-				if (!EvaluateTarget(targetList[i], data))
+				if (!EvaluateTarget(targetList[i], data, true))
 					targetList.RemoveAt(i);
 			
 			}
@@ -387,8 +398,25 @@ namespace RivalAI.Behavior.Subsystems {
 
 				if (evaluationDuration.TotalSeconds > Data.TimeUntilNextEvaluation) {
 
-					EvaluateTarget(this.Target, this.Data);
-					this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
+					if (OverrideTarget != null) {
+
+						var evalResult = EvaluateTarget(this.Target, this.Data);
+						this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
+
+						if (!evalResult)
+							this.Target = null;
+
+					}
+
+					if (OverrideTarget == null) {
+					
+						var evalResult = EvaluateTarget(this.Target, this.Data);
+						this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
+
+						if (!evalResult)
+							this.Target = null;
+
+					}
 
 				}
 
@@ -407,7 +435,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public bool EvaluateTarget(ITarget target, TargetProfile data) {
+		public bool EvaluateTarget(ITarget target, TargetProfile data, bool skipExpensiveChecks = false) {
 
 			if (target == null) {
 
@@ -415,7 +443,6 @@ namespace RivalAI.Behavior.Subsystems {
 				return false;
 
 			}
-
 
 			if (!target.ActiveEntity()) {
 
@@ -509,6 +536,16 @@ namespace RivalAI.Behavior.Subsystems {
 					FilterHits.Add(TargetFilterEnum.Gravity);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Gravity: {0}", gravity), DebugTypeEnum.TargetEvaluation);
+
+			}
+
+			//LineOfSight
+			if (!skipExpensiveChecks && data.AllUniqueFilters.Contains(TargetFilterEnum.LineOfSight) && _behavior.AutoPilot.Collision.TargetResult?.GetCollisionEntity() != null) {
+
+				bool targetMatch = (Target.GetParentEntity().EntityId == _behavior.AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId);
+
+				if (targetMatch)
+					FilterHits.Add(TargetFilterEnum.MovementScore);
 
 			}
 
@@ -763,6 +800,7 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			Logger.MsgDebug(" - Evaluation Passed", DebugTypeEnum.TargetEvaluation);
+			TargetLastKnownCoords = target.GetPosition();
 			return true;
 		
 		}
@@ -1010,14 +1048,14 @@ namespace RivalAI.Behavior.Subsystems {
 					if (!setOverride) {
 
 						NormalData = targetProfile;
-						_settings.CustomTargetProfile = NewTargetProfileName;
+						_behavior.Settings.CustomTargetProfile = NewTargetProfileName;
 						Logger.MsgDebug("Target Profile Switched To: " + NewTargetProfileName, DebugTypeEnum.Target);
 
 
 					} else {
 
 						OverrideData = targetProfile;
-						_settings.CustomTargetProfile = NewTargetProfileName;
+						_behavior.Settings.CustomTargetProfile = NewTargetProfileName;
 						Logger.MsgDebug("Target Profile Switched To: " + NewTargetProfileName, DebugTypeEnum.Target);
 
 					}
@@ -1033,9 +1071,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public void SetupReferences(StoredSettings settings) {
+		public void SetupReferences(IBehavior behavior) {
 
-			_settings = settings;
+			_behavior = behavior;
 		
 		}
 

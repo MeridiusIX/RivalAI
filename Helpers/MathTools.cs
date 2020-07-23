@@ -187,6 +187,28 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static int RandomBetween(int a, int b) {
+
+			if (a == b)
+				return a;
+
+			int min = a < b ? a : b;
+			int max = a < b ? b : a;
+			return _rnd.Next(min, max);
+
+		}
+
+		public static float RandomBetween(float a, float b) {
+
+			if (a == b)
+				return a;
+
+			float min = a < b ? a : b;
+			float max = a < b ? b : a;
+			return _rnd.Next((int)min, (int)max);
+
+		}
+
 		public static double RandomBetween(double a, double b) {
 
 			if (a == b)

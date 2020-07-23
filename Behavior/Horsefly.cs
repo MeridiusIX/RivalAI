@@ -27,7 +27,6 @@ using VRage.Utils;
 using VRageMath;
 using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Settings;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 using RivalAI.Entities;
@@ -63,7 +62,7 @@ namespace RivalAI.Behavior {
 
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
-				Mode = BehaviorMode.Retreat;
+				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
@@ -73,11 +72,11 @@ namespace RivalAI.Behavior {
 
 				if(!AutoPilot.Targeting.HasTarget()) {
 
-					Mode = BehaviorMode.WaitingForTarget;
+					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 
 				} else {
 
-					Mode = BehaviorMode.ApproachTarget;
+					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
 					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode | NewAutoPilotMode.WaypointFromTarget | NewAutoPilotMode.OffsetWaypoint);
 

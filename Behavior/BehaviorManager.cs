@@ -163,6 +163,20 @@ namespace RivalAI.Behavior {
 
 				}
 
+				//Hunter
+				if (remoteControl.CustomData.Contains("[BehaviorName:Hunter]")) {
+
+					Logger.MsgDebug("Behavior: Hunter", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Hunter();
+					MainBehavior.BehaviorInit(remoteControl);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
+					return;
+
+				}
+
 				//Passive
 				if (remoteControl.CustomData.Contains("[BehaviorName:Passive]")) {
 
