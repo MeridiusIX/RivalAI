@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# SE-Generated
+modinfo.sbmi
+metadata.mod
+RivalAI.csproj
+RivalAI.sln
+
 # User-specific files
 *.rsuser
 *.suo
