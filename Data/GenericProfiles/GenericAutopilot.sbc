@@ -116,6 +116,7 @@
 
 		</EntityComponent>
 		
+		<!--
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
 		
 			<Id>
@@ -159,6 +160,7 @@
 			</Description>
 
 		</EntityComponent>
+		-->
 
 	</EntityComponents>
 </Definitions>
