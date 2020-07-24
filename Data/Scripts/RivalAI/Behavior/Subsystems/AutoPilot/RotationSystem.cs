@@ -72,8 +72,17 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			this.RotationToApply = Vector3.Zero;
 
+			var rotationTarget = _currentWaypoint;
+
+			if (Targeting.HasTarget()) {
+
+				if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToTarget) || CurrentMode.HasFlag(NewAutoPilotMode.Ram))
+					rotationTarget = Targeting.TargetLastKnownCoords;
+
+			}
+
 			MatrixD referenceMatrix = this.RefBlockMatrixRotation; //This should be either the control block or at least represent what direction the ship should face
-			Vector3D directionToTarget = Vector3D.Normalize(_currentWaypoint - referenceMatrix.Translation);
+			Vector3D directionToTarget = Vector3D.Normalize(rotationTarget - referenceMatrix.Translation);
 			Vector3 gyroRotation = new Vector3(0, 0, 0); // Pitch,Yaw,Roll
 
 			//Get Actual Angle To Target
@@ -104,7 +113,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 
 			//Calculate Pitch
-			if (_upDirection != Vector3D.Zero && CurrentMode.HasFlag(NewAutoPilotMode.LevelWithGravity)) {
+			if (_upDirection != Vector3D.Zero && CurrentMode.HasFlag(NewAutoPilotMode.LevelWithGravity) && !CurrentMode.HasFlag(NewAutoPilotMode.Ram)) {
 
 				double angleForwardToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, _upDirection);
 				double angleBackwardToUp = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Backward, _upDirection);

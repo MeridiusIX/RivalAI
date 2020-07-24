@@ -1,62 +1,62 @@
 <?xml version="1.0"?>
 <Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <EntityComponents>
+	<EntityComponents>
 
-    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-      <Id>
-          <TypeId>Inventory</TypeId>
-          <SubtypeId>RAI-Generic-Behavior-Fighter</SubtypeId>
-      </Id>
-      <Description>
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+			<Id>
+					<TypeId>Inventory</TypeId>
+					<SubtypeId>RAI-Generic-Behavior-Fighter</SubtypeId>
+			</Id>
+			<Description>
 
-      [RivalAI Behavior]
-      [BehaviorName:Fighter]
+			[RivalAI Behavior]
+			[BehaviorName:Fighter]
 
-      </Description>
-      
-    </EntityComponent>
+			</Description>
+			
+		</EntityComponent>
 	
 	<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-      <Id>
-          <TypeId>Inventory</TypeId>
-          <SubtypeId>RAI-Generic-Behavior-Horsefly</SubtypeId>
-      </Id>
-      <Description>
+			<Id>
+					<TypeId>Inventory</TypeId>
+					<SubtypeId>RAI-Generic-Behavior-Horsefly</SubtypeId>
+			</Id>
+			<Description>
 
-      [RivalAI Behavior]
-      [BehaviorName:Horsefly]
+			[RivalAI Behavior]
+			[BehaviorName:Horsefly]
 
-      </Description>
-      
-    </EntityComponent>
+			</Description>
+			
+		</EntityComponent>
 	
 	<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-      <Id>
-          <TypeId>Inventory</TypeId>
-          <SubtypeId>RAI-Generic-Behavior-HorseFighter</SubtypeId>
-      </Id>
-      <Description>
+			<Id>
+					<TypeId>Inventory</TypeId>
+					<SubtypeId>RAI-Generic-Behavior-HorseFighter</SubtypeId>
+			</Id>
+			<Description>
 
-      [RivalAI Behavior]
-      [BehaviorName:HorseFighter]
+			[RivalAI Behavior]
+			[BehaviorName:HorseFighter]
 
-      </Description>
-      
-    </EntityComponent>
+			</Description>
+			
+		</EntityComponent>
 	
 	<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-      <Id>
-          <TypeId>Inventory</TypeId>
-          <SubtypeId>RAI-Generic-Behavior-Strike</SubtypeId>
-      </Id>
-      <Description>
+			<Id>
+					<TypeId>Inventory</TypeId>
+					<SubtypeId>RAI-Generic-Behavior-Strike</SubtypeId>
+			</Id>
+			<Description>
 
-      [RivalAI Behavior]
-      [BehaviorName:Strike]
+			[RivalAI Behavior]
+			[BehaviorName:Strike]
 
-      </Description>
-      
-    </EntityComponent>
+			</Description>
+			
+		</EntityComponent>
 
-  </EntityComponents>
+	</EntityComponents>
 </Definitions>

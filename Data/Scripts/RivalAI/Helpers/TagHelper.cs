@@ -570,6 +570,25 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static SwitchEnum TagSwitchEnumCheck(string tag) {
+
+			SwitchEnum result = SwitchEnum.Off;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (SwitchEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return SwitchEnum.Off;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
 		public static TargetSortEnum TagTargetDistanceEnumCheck(string tag) {
 
 			TargetSortEnum result = TargetSortEnum.Random;

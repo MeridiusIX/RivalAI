@@ -11,10 +11,6 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 	//New Thrust System
 	public partial class AutoPilotSystem {
 
-		
-
-
-
 		public List<ThrusterProfile> ThrustProfiles;
 		public Random Rnd;
 
@@ -77,9 +73,37 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			if (CurrentMode.HasFlag(NewAutoPilotMode.Ram))
+				CalculateRamThrust();
+
 			if (this.Data.AllowStrafing && CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
 
 				CalculateStrafeThrust();
+
+			}
+
+		}
+
+		public void CalculateRamThrust() {
+
+			if (!Targeting.HasTarget())
+				return;
+
+			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe) || _remoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
+
+				_debugThrustForwardMode = "Strafing Still Active";
+				return;
+
+			}
+
+			var angleToTarget = VectorHelper.GetAngleBetweenDirections(RefBlockMatrixRotation.Forward, Vector3D.Normalize(Targeting.TargetLastKnownCoords - RefBlockMatrixRotation.Translation));
+
+			if (this.AngleToCurrentWaypoint <= this.Data.AngleAllowedForForwardThrust) {
+
+				_debugThrustForwardMode = "Thrust Angle Matched";
+				_thrustToApply.SetX(false, false, 0, _orientation);
+				_thrustToApply.SetY(false, false, 0, _orientation);
+				_thrustToApply.SetZ(true, false, 1, _orientation);
 
 			}
 
@@ -368,7 +392,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void CalculateStrafeThrust() {
 
-			if (this.Strafing == false) {
+			if (this.Strafing == false && !CurrentMode.HasFlag(NewAutoPilotMode.Ram)) {
 
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeEndTime;
 

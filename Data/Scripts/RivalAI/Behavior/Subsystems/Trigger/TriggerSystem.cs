@@ -168,6 +168,42 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				//TargetNear
+				if (trigger.Type == "TargetNear") {
+
+					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (_behavior.AutoPilot.Targeting.HasTarget() && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.AutoPilot.Targeting.TargetLastKnownCoords) < trigger.TargetDistance) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//TargetFar
+				if (trigger.Type == "TargetFar") {
+
+					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (_behavior.AutoPilot.Targeting.HasTarget() && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.AutoPilot.Targeting.TargetLastKnownCoords) > trigger.TargetDistance) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
 				//TurretTarget
 				if (trigger.Type == "TurretTarget") {
 

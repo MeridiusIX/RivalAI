@@ -427,7 +427,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		public List<string> EnableBlockNames;
 
 		[ProtoMember(132)]
-		public List<bool> EnableBlockStates;
+		public List<SwitchEnum> EnableBlockStates;
 
 		[ProtoMember(133)]
 		public bool ChangeAutopilotProfile;
@@ -631,7 +631,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			EnableBlocks = false;
 			EnableBlockNames = new List<string>();
-			EnableBlockStates = new List<bool>();
+			EnableBlockStates = new List<SwitchEnum>();
 
 			ChangeAutopilotProfile = false;
 			AutopilotProfile = AutoPilotDataMode.Primary;
@@ -1698,7 +1698,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					//EnableBlockStates
 					if (tag.Contains("[EnableBlockStates:") == true) {
 
-						var tempvalue = TagHelper.TagBoolCheck(tag);
+						var tempvalue = TagHelper.TagSwitchEnumCheck(tag);
 						EnableBlockStates.Add(tempvalue);
 
 					}

@@ -1,0 +1,244 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <SpawnGroups>
+
+    <SpawnGroup>
+      <Id>
+        <TypeId>SpawnGroupDefinition</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-SpawnGroup</SubtypeId>
+      </Id>
+      <Description>
+
+        [Modular Encounters SpawnGroup]
+
+        [AtmosphericCargoShip:true]
+
+        [FactionOwner:SPRT]
+        [ReplenishSystems:true]
+        [AdminSpawnOnly:true]
+
+        [UseRivalAi:true]
+        [RivalAiReplaceRemoteControl:true]
+
+      </Description>
+      <IsPirate>true</IsPirate>
+      <Frequency>5.0</Frequency>
+      <Prefabs>
+        <Prefab SubtypeId="(NPC-RAI) Atmo Test Drone">
+          <Position>
+            <X>0.0</X>
+            <Y>0.0</Y>
+            <Z>0.0</Z>
+          </Position>
+          <Speed>0</Speed>
+          <Behaviour>RAIDevTest-Lightning-Behavior</Behaviour>
+        </Prefab>
+      </Prefabs>
+    </SpawnGroup>
+    
+  </SpawnGroups>
+  
+  <EntityComponents>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Behavior</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Behavior]
+        [BehaviorName:Horsefly]
+
+        [Triggers:RAIDevTest-Lightning-Trigger-A]
+        [Triggers:RAIDevTest-Lightning-Trigger-B]
+        [Triggers:RAIDevTest-Lightning-Trigger-C]
+
+      </Description>
+
+    </EntityComponent>
+    
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Trigger-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:true]
+        [Type:TargetNear]
+        [TargetDistance:500]
+        [StartsReady:true]
+        [MaxActions:1]
+
+        [Actions:RAIDevTest-Lightning-Action-A]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Action-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [UseChatBroadcast:true]
+        [ChatData:RAIDevTest-Lightning-Chat-A]
+
+        [EnableTriggers:true]
+        [EnableTriggerNames:RAIDevTest-Lightning-Trigger-B]
+
+        [ResetCooldownTimeOfTriggers:true]
+        [ResetTriggerCooldownNames:RAIDevTest-Lightning-Trigger-B]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Chat-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Chat]
+
+        [UseChat:true]
+        [StartsReady:true]
+        [MaxChats:1]
+        [BroadcastRandomly:false]
+        [Author:Lightning Test Drone]
+        [Color:Red]
+
+        [IgnoreAntennaRequirement:true]
+        [IgnoredAntennaRangeOverride:5000]
+
+        [ChatMessages:Activate Massive Lightning Strike Sequence]
+        [ChatAudio:ArcHudGPSNotification2]
+        [BroadcastChatType:Chat]
+
+      </Description>
+    </EntityComponent>
+
+    <!-- Lightning Precharge Trigger -->
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Trigger-B</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:false]
+        [Type:Timer]
+        [MinCooldownMs:2000]
+        [MaxCooldownMs:2001]
+        [StartsReady:false]
+        [MaxActions:1]
+
+        [Actions:RAIDevTest-Lightning-Action-B]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Action-B</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [EnableTriggers:true]
+        [EnableTriggerNames:RAIDevTest-Lightning-Trigger-C]
+
+      </Description>
+    </EntityComponent>
+
+    <!-- Lightning Discharge Trigger / Actions -->
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Trigger-C</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:false]
+        [Type:Timer]
+        [MinCooldownMs:100]
+        [MaxCooldownMs:101]
+        [StartsReady:false]
+        [MaxActions:10]
+
+        [Actions:RAIDevTest-Lightning-Action-C1]
+        [Actions:RAIDevTest-Lightning-Action-C2]
+        [Actions:RAIDevTest-Lightning-Action-C3]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Action-C1</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [CreateRandomLightning:true]
+        [LightningDamage:100]
+        [LightningMinDistance:50]
+        [LightningMaxDistance:75]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Action-C2</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [CreateRandomLightning:true]
+        [LightningDamage:100]
+        [LightningMinDistance:100]
+        [LightningMaxDistance:125]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Lightning-Action-C3</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [CreateRandomLightning:true]
+        [LightningDamage:100]
+        [LightningMinDistance:150]
+        [LightningMaxDistance:175]
+
+      </Description>
+    </EntityComponent>
+    
+  </EntityComponents>
+</Definitions> 

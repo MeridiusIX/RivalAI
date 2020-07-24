@@ -44,8 +44,6 @@ namespace RivalAI.Behavior.Subsystems {
         public DateTime LastConnectedGridCheck;
         public bool OverrideConnectedGridCheck;
 
-        public IMyGridTerminalSystem Terminal;
-
         public List<IMySlimBlock> AllBlocks;
         public List<IMyTerminalBlock> AllTerminalBlocks;
         public List<IMyFunctionalBlock> AllFunctionalBlocks;
@@ -209,7 +207,7 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
-        public void EnableBlocks(List<string> names, List<bool> states) {
+        public void EnableBlocks(List<string> names, List<SwitchEnum> states) {
 
             if (names.Count != states.Count)
                 return;
@@ -232,7 +230,18 @@ namespace RivalAI.Behavior.Subsystems {
 
                     if (block.CustomName == names[j]) {
 
-                        block.Enabled = states[j];
+                        bool changeTo = block.Enabled;
+
+                        if (states[j] == SwitchEnum.Off)
+                            changeTo = false;
+
+                        if (states[j] == SwitchEnum.On)
+                            changeTo = true;
+
+                        if (states[j] == SwitchEnum.Toggle)
+                            changeTo = changeTo ? false : true;
+
+                        block.Enabled = changeTo;
                         break;
 
                     }
@@ -241,6 +250,42 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
         
+        }
+
+        public void EnableBlocksInGroup(string groupName, SwitchEnum state) {
+
+            var terminal = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(RemoteControl.SlimBlock.CubeGrid);
+
+            if (terminal == null)
+                return;
+
+            var group = terminal.GetBlockGroupWithName(groupName);
+
+            if (group == null)
+                return;
+
+            var functionalBlocksInGroup = new List<IMyFunctionalBlock>();
+            group.GetBlocksOfType<IMyFunctionalBlock>(functionalBlocksInGroup);
+
+            for (int i = functionalBlocksInGroup.Count - 1; i >= 0; i--) {
+
+                var block = functionalBlocksInGroup[i];
+
+                bool changeTo = block.Enabled;
+
+                if (state == SwitchEnum.Off)
+                    changeTo = false;
+
+                if (state == SwitchEnum.On)
+                    changeTo = true;
+
+                if (state == SwitchEnum.Toggle)
+                    changeTo = changeTo ? false : true;
+
+                block.Enabled = changeTo;
+
+            }
+
         }
 
         public IMyRadioAntenna GetActiveAntenna() {

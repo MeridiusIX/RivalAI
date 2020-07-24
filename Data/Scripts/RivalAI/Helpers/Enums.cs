@@ -133,6 +133,14 @@ namespace RivalAI.Helpers {
 
     }
 
+    public enum SwitchEnum {
+    
+        Off,
+        On,
+        Toggle,
+    
+    }
+
     public enum SpawnTypeEnum {
     
         CustomSpawn,
