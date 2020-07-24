@@ -5,6 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="metadata.mod" />
+    <None Remove="modinfo.sbmi" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="ProtoBuf.Net">
       <HintPath>J:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\ProtoBuf.Net.dll</HintPath>
     </Reference>
