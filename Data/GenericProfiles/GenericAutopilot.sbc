@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<EntityComponents>
+
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Fighter</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[SlowDownOnWaypointApproach:true]
+			[ExtraSlowDownDistance:150]
+			[FlyLevelWithGravity:false]
+			[AllowStrafing:true]
+			[StrafeMinDurationMs:1000]
+			[StrafeMaxDurationMs:1500]
+			[StrafeSpeedCutOff:45]
+			
+			</Description>
+
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-HorseFighter</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[SlowDownOnWaypointApproach:true]
+			[FlyLevelWithGravity:false]
+			[MinimumPlanetAltitude:200]
+			[IdealPlanetAltitude:300]
+			[WaypointTolerance:30]
+			[OffsetSpaceMinDistFromTarget:150]
+			[OffsetSpaceMaxDistFromTarget:300]
+			[OffsetPlanetMinDistFromTarget:150]
+			[OffsetPlanetMaxDistFromTarget:300]
+			[OffsetPlanetMinTargetAltitude:-200]
+			[OffsetPlanetMaxTargetAltitude:200]
+			[AllowStrafing:true]
+			[StrafeMinDurationMs:1000]
+			[StrafeMaxDurationMs:1500]
+			[StrafeSpeedCutOff:45]
+			
+			</Description>
+
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Horsefly</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[SlowDownOnWaypointApproach:true]
+			[FlyLevelWithGravity:true]
+			[MinimumPlanetAltitude:200]
+			[IdealPlanetAltitude:300]
+			[WaypointTolerance:30]
+			[OffsetSpaceMinDistFromTarget:150]
+			[OffsetSpaceMaxDistFromTarget:300]
+			[OffsetPlanetMinDistFromTarget:150]
+			[OffsetPlanetMaxDistFromTarget:300]
+			[OffsetPlanetMinTargetAltitude:-200]
+			[OffsetPlanetMaxTargetAltitude:200]
+			
+			</Description>
+
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Strike</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[FlyLevelWithGravity:false]
+			[CollisionEvasionWaypointCalculatedAwayFromEntity:true]
+			[WaypointTolerance:50]
+			[IdealMinSpeed:50]
+			[IdealMaxSpeed:100]
+			[SlowDownOnWaypointApproach:true]
+			[ExtraSlowDownDistance:50]
+			
+			[OffsetSpaceMinDistFromTarget:900]
+			[OffsetSpaceMaxDistFromTarget:1000]
+			[OffsetPlanetMinDistFromTarget:100]
+			[OffsetPlanetMaxDistFromTarget:150]
+			[OffsetPlanetMinTargetAltitude:900]
+			[OffsetPlanetMaxTargetAltitude:1100]
+			
+			[ReverseOffsetDistAltAboveHeight:true]
+			[ReverseOffsetHeight:1300]
+			
+			</Description>
+
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Hunter-A</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[FlyLevelWithGravity:true]
+			[WaypointTolerance:25]
+			[IdealMinSpeed:10]
+			[IdealMaxSpeed:20]
+			[SlowDownOnWaypointApproach:true]
+			[ExtraSlowDownDistance:50]
+			
+			</Description>
+
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Hunter-B</SubtypeId>
+			</Id>
+			<Description>
+
+			[RivalAI Autopilot]
+			
+			[DisableInertiaDampeners:false]
+			[FlyLevelWithGravity:false]
+			[WaypointTolerance:40]
+			[IdealMinSpeed:20]
+			[IdealMaxSpeed:100]
+			[SlowDownOnWaypointApproach:true]
+			[ExtraSlowDownDistance:50]
+			
+			</Description>
+
+		</EntityComponent>
+
+	</EntityComponents>
+</Definitions>

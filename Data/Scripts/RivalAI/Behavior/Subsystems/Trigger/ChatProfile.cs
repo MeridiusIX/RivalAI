@@ -98,6 +98,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(22)]
 		public bool SendToAllOnlinePlayers;
 
+		[ProtoMember(23)]
+		public string GPSLabel;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -121,6 +124,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			UseRandomNameGeneratorFromMES = false;
 			ChatAvatar = new List<string>();
 			SendToAllOnlinePlayers = false;
+			GPSLabel = "";
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;
@@ -280,6 +284,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[SendToAllOnlinePlayers:") == true) {
 
 						SendToAllOnlinePlayers = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//GPSLabel
+					if (tag.Contains("[GPSLabel:")) {
+
+						GPSLabel = TagHelper.TagStringCheck(tag);
 
 					}
 

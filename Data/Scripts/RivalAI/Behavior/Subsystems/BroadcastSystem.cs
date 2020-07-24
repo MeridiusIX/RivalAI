@@ -227,7 +227,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 				}
 
-				
+				if (modifiedMsg.Contains("{GPS}") == true) {
+
+					modifiedMsg = modifiedMsg.Replace("{GPS}", GetGPSString(chat.GPSLabel));
+
+				}
+
 				var authorColor = chat.Color;
 
 				if(authorColor != "White" && authorColor != "Red" && authorColor != "Green" && authorColor != "Blue") {
@@ -376,6 +381,24 @@ namespace RivalAI.Behavior.Subsystems {
 				}
 
 			}
+
+		}
+
+		internal string GetGPSString(string name) {
+
+			var coords = RemoteControl.SlimBlock.CubeGrid.WorldAABB.Center;
+
+			StringBuilder stringBuilder = new StringBuilder("GPS:", 256);
+			stringBuilder.Append(name);
+			stringBuilder.Append(":");
+			stringBuilder.Append(Math.Round(coords.X).ToString());
+			stringBuilder.Append(":");
+			stringBuilder.Append(Math.Round(coords.Y).ToString());
+			stringBuilder.Append(":");
+			stringBuilder.Append(Math.Round(coords.Z).ToString());
+			stringBuilder.Append(":");
+
+			return stringBuilder.ToString();
 
 		}
 

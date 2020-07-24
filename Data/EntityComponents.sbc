@@ -1,0 +1,26 @@
+﻿<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<EntityComponents>
+	
+		<EntityComponent xsi:type="MyObjectBuilder_ModStorageComponentDefinition">
+			<Id>
+				<TypeId>ModStorageComponent</TypeId>
+				<SubtypeId>RAI-CoreBehaviorSettings</SubtypeId>
+			</Id>
+			<RegisteredStorageGuids>
+				<guid>FF814A67-AEC3-4DF0-ADC4-A9B239FA954F</guid>
+			</RegisteredStorageGuids>
+		</EntityComponent>
+		
+		<EntityComponent xsi:type="MyObjectBuilder_ModStorageComponentDefinition">
+			<Id>
+				<TypeId>ModStorageComponent</TypeId>
+				<SubtypeId>RAI-CoreBehaviorTriggers</SubtypeId>
+			</Id>
+			<RegisteredStorageGuids>
+				<guid>8470FBC9-1B64-4603-AB75-ABB2CD28AA02</guid>
+			</RegisteredStorageGuids>
+		</EntityComponent>
+		
+	</EntityComponents>
+</Definitions>
+

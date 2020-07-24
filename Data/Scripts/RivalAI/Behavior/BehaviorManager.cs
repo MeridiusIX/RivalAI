@@ -36,14 +36,14 @@ namespace RivalAI.Behavior {
 		public static BehaviorManageSubmode Submode = BehaviorManageSubmode.None;
 		public static int CurrentBehaviorIndex = 0;
 
-		private static bool _debugDraw = false;
+		public static bool DebugDraw = false;
 
 		private static byte _barrageCounter = 0;
 		private static byte _behaviorCounter = 0;
 
 		public static void ProcessBehaviors() {
 
-			if (_debugDraw) {
+			if (DebugDraw) {
 
 				for (int i = Behaviors.Count - 1; i >= 0; i--) {
 

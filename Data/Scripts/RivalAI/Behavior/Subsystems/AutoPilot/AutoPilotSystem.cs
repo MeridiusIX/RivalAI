@@ -1550,12 +1550,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (MyAPIGateway.Utilities.IsDedicated)
 				return;
 
-			Vector4 colorRed = new Vector4(1, 0, 0, 1);
-			Vector4 colorOrange = new Vector4(1, 0.5f, 0, 1);
-			Vector4 colorYellow = new Vector4(1, 1, 0, 1);
+			//Vector4 colorRed = new Vector4(1, 0, 0, 1);
+			//Vector4 colorOrange = new Vector4(1, 0.5f, 0, 1);
+			//Vector4 colorYellow = new Vector4(1, 1, 0, 1);
 			Vector4 colorGreen = new Vector4(0, 1, 0, 1);
-			Vector4 colorCyan = new Vector4(0, 1, 1, 1);
-			Vector4 colorMajenta = new Vector4(1, 0, 1, 1);
+			//Vector4 colorCyan = new Vector4(0, 1, 1, 1);
+			//Vector4 colorMajenta = new Vector4(1, 0, 1, 1);
 
 			//MySimpleObjectDraw.DrawLine(_initialWaypoint, _offsetDirection * 5 + _initialWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorRed, 1.1f);
 
@@ -1563,7 +1563,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			if (_currentWaypoint != Vector3D.Zero) {
 
-				//MySimpleObjectDraw.DrawLine(_myPosition, _currentWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorGreen, 1.1f);
+				MySimpleObjectDraw.DrawLine(_myPosition, _currentWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorGreen, 1.1f);
 
 			}
 			
@@ -1575,13 +1575,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 			if (_calculatedOffsetWaypoint != Vector3D.Zero) {
 
-				MySimpleObjectDraw.DrawLine(_myPosition, _calculatedOffsetWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorCyan, 1.1f);
+				//MySimpleObjectDraw.DrawLine(_myPosition, _calculatedOffsetWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorCyan, 1.1f);
 
 			}
 
 			if (_calculatedPlanetPathWaypoint != Vector3D.Zero) {
 
-				MySimpleObjectDraw.DrawLine(_myPosition, _calculatedPlanetPathWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorMajenta, 1.1f);
+				//MySimpleObjectDraw.DrawLine(_myPosition, _calculatedPlanetPathWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorMajenta, 1.1f);
 
 			}
 

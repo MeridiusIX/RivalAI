@@ -258,11 +258,12 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static AutoPilotProfile GetAutopilotProfile(string profileSubtypeId) {
+		public static AutoPilotProfile GetAutopilotProfile(string profileSubtypeId, string defaultBehavior = "") {
+
+			//TODO: Move All Of This To Dictionary Since AutoPilotProfile is ReadOnly
 
 			byte[] apBytes = null;
 			
-
 			if (AutopilotObjectTemplates.TryGetValue(profileSubtypeId, out apBytes)) {
 
 				var ap = MyAPIGateway.Utilities.SerializeFromBinary<AutoPilotProfile>(apBytes);
@@ -271,6 +272,25 @@ namespace RivalAI.Helpers {
 					return ap;
 
 			}
+
+			Logger.MsgDebug("Warning: Autopilot Profile for " + profileSubtypeId + " Not Found!", DebugTypeEnum.BehaviorSetup);
+
+			if (!string.IsNullOrWhiteSpace(defaultBehavior)) {
+
+				apBytes = null;
+
+				if (AutopilotObjectTemplates.TryGetValue("RAI-Generic-Autopilot-" + defaultBehavior, out apBytes)) {
+
+					var ap = MyAPIGateway.Utilities.SerializeFromBinary<AutoPilotProfile>(apBytes);
+
+					if (ap != null || !string.IsNullOrWhiteSpace(ap.ProfileSubtypeId))
+						return ap;
+
+				}
+
+			}
+
+			Logger.MsgDebug("Warning: Backup Autopilot Profile for " + defaultBehavior + " Not Found!", DebugTypeEnum.BehaviorSetup);
 
 			return new AutoPilotProfile();
 

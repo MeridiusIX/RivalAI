@@ -91,11 +91,22 @@ namespace RivalAI.Sync {
             var newChatData = chatData;
             newChatData.Mode = ChatMsgMode.ReturnMessage;
 
+            //Debug Draw
+            if (newChatData.Message.StartsWith("/RAI.DebugDrawToggle")) {
+
+                BehaviorManager.DebugDraw = BehaviorManager.DebugDraw ? false : true;
+                newChatData.ReturnMessage = "Debug Draw Enabled: " + BehaviorManager.DebugDraw.ToString();
+                SendChatDataOverNetwork(newChatData, false);
+                return;
+
+            }
+
             //Debug Mode
-            if(newChatData.Message.StartsWith("/RAI.Debug")) {
+            if (newChatData.Message.StartsWith("/RAI.Debug")) {
 
                 newChatData.ProcessDebugMode();
                 SendChatDataOverNetwork(newChatData, false);
+                return;
 
             }
 
