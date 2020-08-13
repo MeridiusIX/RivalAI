@@ -233,7 +233,9 @@ namespace RivalAI.Helpers {
 
 			//Print Profile Names To Log:
 			BuildKeyListAndWriteToLog("Behavior", BehaviorTemplates.Keys);
+			BuildKeyListAndWriteToLog("Autopilot", AutopilotObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Trigger", TriggerObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("TriggerGroup", TriggerGroupObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Condition", ConditionObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Action", ActionObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Chat", ChatObjectTemplates.Keys);
@@ -432,6 +434,25 @@ namespace RivalAI.Helpers {
 				if (CheckEnum.TryParse(tagSplit[1], out result) == false) {
 
 					return CheckEnum.Ignore;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static CounterCompareEnum TagCounterCompareEnumCheck(string tag) {
+
+			CounterCompareEnum result = CounterCompareEnum.GreaterOrEqual;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (CounterCompareEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return CounterCompareEnum.GreaterOrEqual;
 
 				}
 

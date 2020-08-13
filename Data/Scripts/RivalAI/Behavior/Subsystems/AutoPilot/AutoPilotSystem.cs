@@ -1,5 +1,6 @@
 ﻿using RivalAI.Behavior.Subsystems.Trigger;
 using RivalAI.Behavior.Subsystems.Weapons;
+using RivalAI.Entities;
 using RivalAI.Helpers;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -90,7 +91,25 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		
 		}
 
-		public AutoPilotDataMode DataMode;
+		public AutoPilotDataMode DataMode {
+
+			get {
+
+				if (_behavior?.Settings != null)
+					return _behavior.Settings.APDataMode;
+
+				return AutoPilotDataMode.Primary;
+
+			}
+
+			set {
+
+				if (_behavior?.Settings != null)
+					_behavior.Settings.APDataMode = value;
+
+			}
+
+		}
 		private AutoPilotProfile _primaryAutoPilot;
 		private AutoPilotProfile _secondaryAutoPilot;
 		private AutoPilotProfile _tertiaryAutopilot;
@@ -316,7 +335,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				Weapons = new WeaponSystem(_remoteControl, _behavior);
 
 				var blockList = new List<IMySlimBlock>();
-				_remoteControl.SlimBlock.CubeGrid.GetBlocks(blockList);
+				GridManager.GetBlocksFromGrid<IMyTerminalBlock>(_remoteControl.SlimBlock.CubeGrid, blockList);
 
 				foreach (var block in blockList.Where(item => item.FatBlock as IMyThrust != null)) {
 
@@ -329,6 +348,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					this.GyroProfiles.Add(new GyroscopeProfile(block.FatBlock as IMyGyro, _remoteControl, _behavior));
 
 				}
+
+				Logger.MsgDebug("Total Thrusters: " + this.ThrustProfiles.Count.ToString(), DebugTypeEnum.BehaviorSetup);
+				Logger.MsgDebug("Total Gyros:     " + this.GyroProfiles.Count.ToString(), DebugTypeEnum.BehaviorSetup);
 
 			}
 

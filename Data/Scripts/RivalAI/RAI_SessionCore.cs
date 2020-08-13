@@ -37,11 +37,13 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.23.0";
+		public static string ReleaseVersion = "0.28.0";
 
 		//Server
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
+
+		public static bool RivalAiEnabled = true;
 
 		//Unstable Build
 		//public static bool IsUnstable = false;
@@ -100,6 +102,25 @@ namespace RivalAI {
 		}
 
 		public override void BeforeStart() {
+
+			if (MyAPIGateway.Session.SessionSettings.EnableSelectivePhysicsUpdates && MyAPIGateway.Utilities.IsDedicated) {
+
+				Logger.WriteLog("WARNING: Selective Physics Updates World Option Detected with RivalAI.");
+
+				if (MyAPIGateway.Session.SessionSettings.SyncDistance < 10000) {
+
+					Logger.WriteLog("Mod Disabled.");
+					Logger.WriteLog("Sync Distance Must Be Set to 10000m or Higher for RivalAI to Function.");
+					Logger.WriteLog("Please Adjust World Settings and Restart Server.");
+					RivalAiEnabled = false;
+					return;
+
+				}
+
+				Logger.WriteLog("Encounters Using RivalAI May Not Work Correctly Outside of 10000m Sync Distance.");
+				Logger.WriteLog("Consider Increasing Sync Distnace if you Encounter Issues Outside Your Current Sync Distance Range.");
+
+			}
 
 			if (!MyAPIGateway.Multiplayer.IsServer)
 				return;
@@ -173,7 +194,14 @@ namespace RivalAI {
 
 		public override void UpdateBeforeSimulation() {
 
-			if(SetupComplete == false) {
+			if (!RivalAiEnabled) {
+
+				MyAPIGateway.Utilities.InvokeOnGameThread(() => SetUpdateOrder(MyUpdateOrder.NoUpdate));
+				return;
+
+			}
+
+			if (SetupComplete == false) {
 
 				SetupComplete = true;
 				Setup();

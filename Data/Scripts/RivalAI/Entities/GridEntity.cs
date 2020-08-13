@@ -524,6 +524,9 @@ namespace RivalAI.Entities {
 			if (!ActiveEntity())
 				return false;
 
+			if (LinkedGrids.Count == 0)
+				this.RefreshSubGrids();
+
 			foreach (var grid in LinkedGrids) {
 
 				if (!grid.ActiveEntity())

@@ -152,24 +152,24 @@ namespace RivalAI.Behavior.Subsystems {
 
 			if (ForceTargetEntityId == 0) {
 
-				if (Data.Target == TargetTypeEnum.Player) {
+				if (Data.Target == TargetTypeEnum.Player || Data.Target == TargetTypeEnum.PlayerAndBlock || Data.Target == TargetTypeEnum.PlayerAndGrid) {
 
 					Logger.MsgDebug(" - Acquiring Player Target", DebugTypeEnum.TargetAcquisition);
-					targetList = AcquirePlayerTarget();
+					AcquirePlayerTarget(targetList);
 
 				}
 
-				if (Data.Target == TargetTypeEnum.Block) {
+				if (Data.Target == TargetTypeEnum.Block || Data.Target == TargetTypeEnum.PlayerAndBlock) {
 
 					Logger.MsgDebug(" - Acquiring Block Target", DebugTypeEnum.TargetAcquisition);
-					targetList = AcquireBlockTarget();
+					AcquireBlockTarget(targetList);
 
 				}
 
-				if (Data.Target == TargetTypeEnum.Grid) {
+				if (Data.Target == TargetTypeEnum.Grid || Data.Target == TargetTypeEnum.PlayerAndGrid) {
 
 					Logger.MsgDebug(" - Acquiring Grid Target", DebugTypeEnum.TargetAcquisition);
-					targetList = AcquireGridTarget();
+					AcquireGridTarget(targetList);
 
 				}
 
@@ -280,9 +280,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 		}
 
-		public List<ITarget> AcquireBlockTarget() {
-
-			var result = new List<ITarget>();
+		public void AcquireBlockTarget(List<ITarget> result) {
 
 			foreach (var grid in GridManager.Grids) {
 
@@ -302,13 +300,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			return result;
-
 		}
 
-		public List<ITarget> AcquireGridTarget() {
-
-			var result = new List<ITarget>();
+		public void AcquireGridTarget(List<ITarget> result) {
 
 			foreach (var grid in GridManager.Grids) {
 
@@ -328,15 +322,12 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			return result;
-
 		}
 
-		public List<ITarget> AcquirePlayerTarget() {
+		public void AcquirePlayerTarget(List<ITarget> result) {
 
 			PlayerManager.RefreshAllPlayers(true);
-			var result = new List<ITarget>();
-
+			
 			foreach (var player in PlayerManager.Players) {
 
 				if (!player.ActiveEntity())
@@ -354,8 +345,6 @@ namespace RivalAI.Behavior.Subsystems {
 				result.Add(player);
 
 			}
-
-			return result;
 
 		}
 
@@ -506,7 +495,7 @@ namespace RivalAI.Behavior.Subsystems {
 			//Broadcasting
 			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Broadcasting)) {
 
-				var range = target.BroadcastRange();
+				var range = target.BroadcastRange(data.BroadcastOnlyAntenna);
 				
 				if (range > distance || distance < data.NonBroadcastVisualRange)
 					FilterHits.Add(TargetFilterEnum.Broadcasting);
@@ -540,9 +529,9 @@ namespace RivalAI.Behavior.Subsystems {
 			}
 
 			//LineOfSight
-			if (!skipExpensiveChecks && data.AllUniqueFilters.Contains(TargetFilterEnum.LineOfSight) && _behavior.AutoPilot.Collision.TargetResult?.GetCollisionEntity() != null) {
-
-				bool targetMatch = (Target.GetParentEntity().EntityId == _behavior.AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId);
+			if (!skipExpensiveChecks && data.AllUniqueFilters.Contains(TargetFilterEnum.LineOfSight) && _behavior.AutoPilot.Collision.TargetResult.HasTarget()) {
+				
+				bool targetMatch = (target.GetParentEntity().EntityId == _behavior.AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId);
 
 				if (targetMatch)
 					FilterHits.Add(TargetFilterEnum.MovementScore);
@@ -552,10 +541,14 @@ namespace RivalAI.Behavior.Subsystems {
 			//MovementScore
 			if (data.AllUniqueFilters.Contains(TargetFilterEnum.MovementScore)) {
 
-				var score = target.MovementScore();
+				if (distance < data.MaxMovementDetectableDistance || data.MaxMovementDetectableDistance < 0) {
 
-				if((data.MinMovementScore == -1 || data.MinMovementScore >= score) && (data.MaxMovementScore == -1 || data.MaxMovementScore <= score))
-					FilterHits.Add(TargetFilterEnum.MovementScore);
+					var score = target.MovementScore();
+
+					if ((data.MinMovementScore == -1 || score >= data.MinMovementScore) && (data.MaxMovementScore == -1 || score <= data.MaxMovementScore))
+						FilterHits.Add(TargetFilterEnum.MovementScore);
+
+				}
 
 			}
 

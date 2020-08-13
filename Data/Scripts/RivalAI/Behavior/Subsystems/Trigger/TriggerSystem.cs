@@ -204,6 +204,42 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				//DespawnNear
+				if (trigger.Type == "DespawnNear") {
+
+					//Logger.MsgDebug("Checking DespawnNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (_behavior.Settings.DespawnCoords != Vector3D.Zero && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.Settings.DespawnCoords) < trigger.TargetDistance) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//DespawnFar
+				if (trigger.Type == "DespawnFar") {
+
+					//Logger.MsgDebug("Checking DespawnFar Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+					if (trigger.UseTrigger == true) {
+
+						if (_behavior.Settings.DespawnCoords != Vector3D.Zero && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.Settings.DespawnCoords) > trigger.TargetDistance) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
 				//TurretTarget
 				if (trigger.Type == "TurretTarget") {
 
@@ -378,6 +414,76 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				//BehaviorTriggerC
+				if (trigger.Type == "BehaviorTriggerC") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerC) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerD
+				if (trigger.Type == "BehaviorTriggerD") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerD) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerE
+				if (trigger.Type == "BehaviorTriggerE") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerE) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerF
+				if (trigger.Type == "BehaviorTriggerF") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerF) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//BehaviorTriggerG
+				if (trigger.Type == "BehaviorTriggerG") {
+
+					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerG) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
 			}
 
 			_behavior.BehaviorTriggerA = false;
@@ -428,7 +534,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				var trigger = DamageTriggers[i];
 
-				if (trigger.DamageTypes.Contains(info.Type.ToString()) || trigger.DamageTypes.Contains("Any")) {
+				var damageType = info.Type.ToString();
+
+				if ((trigger.DamageTypes.Contains(damageType) || trigger.DamageTypes.Contains("Any")) && !trigger.ExcludedDamageTypes.Contains(damageType)) {
 
 					if (trigger.UseTrigger == true) {
 
@@ -716,12 +824,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 								tBlock.DetonationTime = 0;
 								tBlock.Detonate();
 								totalWarheads++;
-
+								
 							} else {
 
-								tBlock.DetonationTime = totalWarheads + 1;
-								tBlock.StartCountdown();
 								totalWarheads++;
+								tBlock.IsArmed = true;
+								tBlock.DetonationTime = (totalWarheads * actions.SelfDestructTimeBetweenBlasts) + actions.SelfDestructTimerPadding;
+								tBlock.StartCountdown();
 
 							}
 
@@ -1226,6 +1335,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				foreach (var variable in actions.ResetCounters)
 					_settings.SetCustomCounter(variable, 0, true);
 
+				//SetCounters
+				if (actions.SetCounters.Count == actions.SetCountersValues.Count) {
+
+					for(int i = 0; i < actions.SetCounters.Count; i++)
+						_settings.SetCustomCounter(actions.SetCounters[i], actions.SetCountersValues[i], false, true);
+
+				}
+
 				//SetSandboxBooleansTrue
 				foreach (var variable in actions.SetSandboxBooleansTrue)
 					SetSandboxBool(variable, true);
@@ -1245,6 +1362,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//ResetSandboxCounters
 				foreach (var variable in actions.ResetSandboxCounters)
 					SetSandboxCounter(variable, 0);
+
+				//SetSandboxCounters
+				if (actions.SetSandboxCounters.Count != 0 && actions.SetSandboxCounters.Count == actions.SetSandboxCountersValues.Count) {
+
+					for (int i = 0; i < actions.SetCounters.Count; i++)
+						SetSandboxCounter(actions.SetSandboxCounters[i], actions.SetSandboxCountersValues[i], true);
+
+				}
 
 				//BehaviorSpecificEventA
 				if (actions.BehaviorSpecificEventA)
@@ -1288,7 +1413,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public void SetSandboxCounter(string counterName, int amount) {
+		public void SetSandboxCounter(string counterName, int amount, bool hardSet = false) {
+
+			if (hardSet) {
+
+				MyAPIGateway.Utilities.SetVariable(counterName, amount);
+				return;
+
+			}
 
 			int existingCounter = 0;
 
@@ -1438,6 +1570,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			ExistingTriggers.Add(trigger.ProfileSubtypeId);
 
+			trigger.InitRandomTimes();
 			if (trigger.Type == "Damage") {
 
 				DamageTriggers.Add(trigger);

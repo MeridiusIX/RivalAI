@@ -341,9 +341,6 @@ namespace RivalAI.Behavior {
 
 			this.BehaviorTerminated = true;
 			this.RemoteControl.CustomData = behaviorString;
-			var newSettings = new StoredSettings(Settings, preserveSettings, preserveTriggers, preserveTargetData);
-			var tempSettingsBytes = MyAPIGateway.Utilities.SerializeToBinary<StoredSettings>(newSettings);
-			var tempSettingsString = Convert.ToBase64String(tempSettingsBytes);
 
 			if (this.RemoteControl.Storage == null) {
 
@@ -351,13 +348,25 @@ namespace RivalAI.Behavior {
 
 			}
 
-			if (this.RemoteControl.Storage.ContainsKey(_settingsStorageKey)) {
+			if (preserveSettings) {
 
-				this.RemoteControl.Storage[_settingsStorageKey] = tempSettingsString;
+				var newSettings = new StoredSettings(Settings, preserveSettings, preserveTriggers, preserveTargetData);
+				var tempSettingsBytes = MyAPIGateway.Utilities.SerializeToBinary<StoredSettings>(newSettings);
+				var tempSettingsString = Convert.ToBase64String(tempSettingsBytes);
+
+				if (this.RemoteControl.Storage.ContainsKey(_settingsStorageKey)) {
+
+					this.RemoteControl.Storage[_settingsStorageKey] = tempSettingsString;
+
+				} else {
+
+					this.RemoteControl.Storage.Add(_settingsStorageKey, tempSettingsString);
+
+				}
 
 			} else {
 
-				this.RemoteControl.Storage.Add(_settingsStorageKey, tempSettingsString);
+				this.RemoteControl.Storage[_settingsStorageKey] = "";
 
 			}
 
@@ -516,7 +525,7 @@ namespace RivalAI.Behavior {
 
 				try {
 
-					if (tempSettingsString != null) {
+					if (!string.IsNullOrWhiteSpace(tempSettingsString)) {
 
 						var tempSettingsBytes = Convert.FromBase64String(tempSettingsString);
 						StoredSettings tempSettings = MyAPIGateway.Utilities.SerializeFromBinary<StoredSettings>(tempSettingsBytes);
@@ -526,11 +535,20 @@ namespace RivalAI.Behavior {
 							Settings = tempSettings;
 							foundStoredSettings = true;
 							Logger.MsgDebug("Loaded Stored Settings For " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.BehaviorSetup);
-							Logger.MsgDebug("Stored Settings BehaviorMode: " + Settings.Mode.ToString(), DebugTypeEnum.BehaviorSetup); ;
-							Trigger.Triggers = Settings.Triggers;
-							Trigger.DamageTriggers = Settings.DamageTriggers;
-							Trigger.CommandTriggers = Settings.CommandTriggers;
-							Trigger.CompromisedTriggers = Settings.CompromisedTriggers;
+							Logger.MsgDebug("Stored Settings BehaviorMode: " + Settings.Mode.ToString(), DebugTypeEnum.BehaviorSetup);
+
+							if (!Settings.IgnoreTriggers) {
+
+								Trigger.Triggers = Settings.Triggers;
+								Trigger.DamageTriggers = Settings.DamageTriggers;
+								Trigger.CommandTriggers = Settings.CommandTriggers;
+								Trigger.CompromisedTriggers = Settings.CompromisedTriggers;
+
+							} else {
+
+								Settings.IgnoreTriggers = false;
+
+							}
 
 						} else {
 

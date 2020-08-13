@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <SpawnGroups>
+
+    <SpawnGroup>
+      <Id>
+        <TypeId>SpawnGroupDefinition</TypeId>
+        <SubtypeId>RAIDevTest-Misc-SpawnGroup</SubtypeId>
+      </Id>
+      <Description>
+
+        [Modular Encounters SpawnGroup]
+
+        [AtmosphericCargoShip:true]
+
+        [FactionOwner:SPRT]
+        [ReplenishSystems:true]
+        [AdminSpawnOnly:true]
+
+        [UseRivalAi:true]
+        [RivalAiReplaceRemoteControl:true]
+
+      </Description>
+      <IsPirate>true</IsPirate>
+      <Frequency>5.0</Frequency>
+      <Prefabs>
+        <Prefab SubtypeId="(NPC-RAI) Atmo Test Drone">
+          <Position>
+            <X>0.0</X>
+            <Y>0.0</Y>
+            <Z>0.0</Z>
+          </Position>
+          <Speed>0</Speed>
+          <Behaviour>RAIDevTest-Misc-Behavior</Behaviour>
+        </Prefab>
+      </Prefabs>
+    </SpawnGroup>
+    
+  </SpawnGroups>
+  
+  <EntityComponents>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Behavior</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Behavior]
+        [BehaviorName:Horsefly]
+
+        [Triggers:RAIDevTest-Misc-Trigger-A]
+        [Triggers:RAIDevTest-Misc-Trigger-B]
+
+      </Description>
+
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-BehaviorB</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Behavior]
+        [BehaviorName:Fighter]
+
+        [Triggers:RAIDevTest-Misc-Trigger-C]
+
+      </Description>
+
+    </EntityComponent>
+    
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Trigger-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:true]
+        [Type:PlayerNear]
+        [TargetDistance:1000]
+        [StartsReady:true]
+        [MaxActions:1]
+
+        [Actions:RAIDevTest-Misc-Action-A]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Action-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [UseChatBroadcast:true]
+        [ChatData:RAIDevTest-Misc-Chat-A]
+
+        [GenerateExplosion:true]
+        [ExplosionRange:10]
+        [ExplosionDamage:10000]
+        [ExplosionIgnoresVoxels:true]
+
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Chat-A</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Chat]
+
+        [UseChat:true]
+        [StartsReady:true]
+        [MaxChats:1]
+        [BroadcastRandomly:false]
+        [Author:Misc Test Drone]
+        [Color:Red]
+
+        [ChatMessages:Boom Boom!]
+        [ChatAudio:ArcHudGPSNotification2]
+        [BroadcastChatType:Chat]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Trigger-B</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:true]
+        [Type:PlayerNear]
+        [TargetDistance:1000]
+        [StartsReady:true]
+        [MaxActions:1]
+
+        [Actions:RAIDevTest-Misc-Action-B]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Action-B</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [UseChatBroadcast:true]
+        [ChatData:RAIDevTest-Misc-Chat-B]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Chat-B</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Chat]
+
+        [UseChat:true]
+        [StartsReady:true]
+        [MaxChats:1]
+        [BroadcastRandomly:false]
+        [Author:Misc Test Drone]
+        [Color:Red]
+
+        [ChatMessages:Old Behavior Trigger!]
+        [ChatAudio:ArcHudGPSNotification2]
+        [BroadcastChatType:Chat]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Trigger-C</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Trigger]
+
+        [UseTrigger:true]
+        [Type:PlayerNear]
+        [TargetDistance:1000]
+        [StartsReady:true]
+        [MaxActions:1]
+
+        [Actions:RAIDevTest-Misc-Action-C]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Action-C</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Action]
+
+        [UseChatBroadcast:true]
+        [ChatData:RAIDevTest-Misc-Chat-C]
+
+      </Description>
+    </EntityComponent>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-Misc-Chat-C</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Chat]
+
+        [UseChat:true]
+        [StartsReady:true]
+        [MaxChats:1]
+        [BroadcastRandomly:false]
+        [Author:Misc Test Drone]
+        [Color:Red]
+
+        [ChatMessages:New Behavior Trigger!]
+        [ChatAudio:ArcHudGPSNotification2]
+        [BroadcastChatType:Chat]
+
+      </Description>
+    </EntityComponent>
+
+  </EntityComponents>
+</Definitions>

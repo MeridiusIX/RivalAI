@@ -261,7 +261,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public void StopAllRotation() {
 
 			this.RotationToApply = Vector3.Zero;
-			ActiveGyro.StopRotation();
+			ActiveGyro?.StopRotation();
 
 		}
 

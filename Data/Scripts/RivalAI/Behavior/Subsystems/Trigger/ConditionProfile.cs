@@ -30,6 +30,17 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
+	public enum CounterCompareEnum {
+	
+		GreaterOrEqual,
+		Greater,
+		Equal,
+		NotEqual,
+		Less,
+		LessOrEqual,
+	
+	}
+
 	[ProtoContract]
 	public class ConditionProfile {
 
@@ -159,6 +170,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(42)]
 		public double MaxTargetChaseAngle;
 
+		[ProtoMember(43)]
+		public List<CounterCompareEnum> CounterCompareTypes;
+
+		[ProtoMember(44)]
+		public List<CounterCompareEnum> SandboxCounterCompareTypes;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -251,6 +268,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			CheckIfTargetIsChasing = false;
 			MinTargetChaseAngle = -1;
 			MaxTargetChaseAngle = -1;
+
+			CounterCompareTypes = new List<CounterCompareEnum>();
+			SandboxCounterCompareTypes = new List<CounterCompareEnum>();
 
 			ProfileSubtypeId = "";
 
@@ -370,9 +390,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						try {
 
-							if (_settings.GetCustomCounterResult(CustomCounters[i], CustomCountersTargets[i]) == false) {
+							var compareType = CounterCompareEnum.GreaterOrEqual;
 
-								Logger.MsgDebug(ProfileSubtypeId + ": Counter Amount Not High Enough: " + CustomCounters[i], DebugTypeEnum.Condition);
+							if (i <= CounterCompareTypes.Count - 1)
+								compareType = CounterCompareTypes[i];
+
+							if (_settings.GetCustomCounterResult(CustomCounters[i], CustomCountersTargets[i], compareType) == false) {
+
+								Logger.MsgDebug(ProfileSubtypeId + ": Counter Amount Condition Not Satisfied: " + CustomCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -447,9 +472,34 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 							int counter = 0;
 							var result = MyAPIGateway.Utilities.GetVariable(CustomSandboxCounters[i], out counter);
 
-							if (!result || counter < CustomSandboxCountersTargets[i]) {
+							var compareType = CounterCompareEnum.GreaterOrEqual;
 
-								Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Counter Amount Not High Enough: " + CustomSandboxCounters[i], DebugTypeEnum.Condition);
+							if (i <= SandboxCounterCompareTypes.Count - 1)
+								compareType = SandboxCounterCompareTypes[i];
+
+							bool counterResult = false;
+
+							if (compareType == CounterCompareEnum.GreaterOrEqual)
+								counterResult = (counter >= CustomSandboxCountersTargets[i]);
+
+							if (compareType == CounterCompareEnum.Greater)
+								counterResult = (counter > CustomSandboxCountersTargets[i]);
+
+							if (compareType == CounterCompareEnum.Equal)
+								counterResult = (counter == CustomSandboxCountersTargets[i]);
+
+							if (compareType == CounterCompareEnum.NotEqual)
+								counterResult = (counter != CustomSandboxCountersTargets[i]);
+
+							if (compareType == CounterCompareEnum.Less)
+								counterResult = (counter < CustomSandboxCountersTargets[i]);
+
+							if (compareType == CounterCompareEnum.LessOrEqual)
+								counterResult = (counter <= CustomSandboxCountersTargets[i]);
+
+							if (!result || !counterResult) {
+
+								Logger.MsgDebug(ProfileSubtypeId + ": Sandbox Counter Amount Condition Not Satisfied: " + CustomSandboxCounters[i], DebugTypeEnum.Condition);
 								failedCheck = true;
 								break;
 
@@ -597,7 +647,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					var myCoreDist = Vector3D.Distance(planetPos, _remoteControl.GetPosition());
 					var difference = targetCoreDist - myCoreDist;
 
-					if (this.MinTargetAltitudeDifference >= difference && this.MinTargetAltitudeDifference <= this.MaxTargetAltitudeDifference)
+					if (difference >= this.MinTargetAltitudeDifference && difference <= this.MaxTargetAltitudeDifference)
 						satisfiedConditions++;
 
 				}
@@ -612,7 +662,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					var dist = _behavior.AutoPilot.Targeting.Target.Distance(_remoteControl.GetPosition());
 
-					if ((this.MinTargetDistance == -1 || this.MinTargetDistance >= dist) && (this.MaxTargetDistance == -1 || this.MaxTargetDistance <= dist))
+					if ((this.MinTargetDistance == -1 || dist >= this.MinTargetDistance) && (this.MaxTargetDistance == -1 || dist <= this.MaxTargetDistance))
 						satisfiedConditions++;
 
 				}
@@ -629,7 +679,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					var myForward = _behavior.AutoPilot.RefBlockMatrixRotation.Forward;
 					var angle = VectorHelper.GetAngleBetweenDirections(dirToTarget, myForward);
 
-					if ((this.MinTargetAngle == -1 || this.MinTargetAngle >= angle) && (this.MaxTargetAngle == -1 || this.MaxTargetAngle <= angle))
+					if ((this.MinTargetAngle == -1 || angle >= this.MinTargetAngle) && (this.MaxTargetAngle == -1 || angle <= this.MaxTargetAngle))
 						satisfiedConditions++;
 
 				}
@@ -649,7 +699,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						var angle = VectorHelper.GetAngleBetweenDirections(dirFromTarget, targetVelocity);
 
-						if ((this.MinTargetChaseAngle == -1 || this.MinTargetChaseAngle >= angle) && (this.MaxTargetChaseAngle == -1 || this.MaxTargetChaseAngle <= angle))
+						if ((this.MinTargetChaseAngle == -1 || angle >= this.MinTargetChaseAngle) && (this.MaxTargetChaseAngle == -1 || angle <= this.MaxTargetChaseAngle))
 							satisfiedConditions++;
 					
 					}
@@ -1240,6 +1290,21 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					}
 
+					//CounterCompareTypes
+					if (tag.Contains("[CounterCompareTypes:") == true) {
+
+						var tempValue = TagHelper.TagCounterCompareEnumCheck(tag);
+						CounterCompareTypes.Add(tempValue);
+
+					}
+
+					//SandboxCounterCompareTypes
+					if (tag.Contains("[SandboxCounterCompareTypes:") == true) {
+
+						var tempValue = TagHelper.TagCounterCompareEnumCheck(tag);
+						SandboxCounterCompareTypes.Add(tempValue);
+
+					}
 
 				}
 

@@ -63,7 +63,7 @@ namespace RivalAI.Entities {
 
 		public bool ActiveEntity() {
 
-			if (Closed || !IsPowered())
+			if (Closed || !Functional)
 				return false;
 
 			return true;

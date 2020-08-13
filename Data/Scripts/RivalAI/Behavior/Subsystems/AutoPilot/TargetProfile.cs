@@ -141,6 +141,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(36)]
 		public double MaxLineOfSight;
 
+		[ProtoMember(37)]
+		public double MaxMovementDetectableDistance;
+
+		[ProtoMember(38)]
+		public bool BroadcastOnlyAntenna;
+
 		[ProtoIgnore]
 		public bool BuiltUniqueFilterList;
 
@@ -194,7 +200,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			MaxLineOfSight = -1;
 
+			MaxMovementDetectableDistance = -1;
+
 			PrioritizePlayerControlled = false;
+
+			BroadcastOnlyAntenna = false;
 
 			Names = new List<string>();
 			UsePartialNameMatching = false;
@@ -503,6 +513,20 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					if (tag.Contains("[MaxLineOfSight:") == true) {
 
 						MaxLineOfSight = TagHelper.TagDoubleCheck(tag, MaxLineOfSight);
+
+					}
+
+					//MaxMovementDetectableDistance
+					if (tag.Contains("[MaxMovementDetectableDistance:") == true) {
+
+						MaxMovementDetectableDistance = TagHelper.TagDoubleCheck(tag, MaxMovementDetectableDistance);
+
+					}
+
+					//BroadcastOnlyAntenna
+					if (tag.Contains("[BroadcastOnlyAntenna:") == true) {
+
+						BroadcastOnlyAntenna = TagHelper.TagBoolCheck(tag);
 
 					}
 

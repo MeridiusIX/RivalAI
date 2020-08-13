@@ -47,6 +47,9 @@ namespace RivalAI.Behavior {
 
 				for (int i = Behaviors.Count - 1; i >= 0; i--) {
 
+					if (Behaviors[i] == null)
+						continue;
+
 					if (!Behaviors[i].IsClosed() && Behaviors[i].IsAIReady()) {
 
 						Behaviors[i].DebugDrawWaypoints();
@@ -90,7 +93,7 @@ namespace RivalAI.Behavior {
 
 				for (int i = Behaviors.Count - 1; i >= 0; i--) {
 
-					if (Behaviors[i].IsClosed() || Behaviors[i].BehaviorTerminated) {
+					if (Behaviors[i] == null || Behaviors[i].IsClosed() || Behaviors[i].BehaviorTerminated) {
 
 						Behaviors.RemoveAt(i);
 						continue;

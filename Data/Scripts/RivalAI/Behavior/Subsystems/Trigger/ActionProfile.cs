@@ -462,6 +462,24 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(143)]
 		public bool CreateLightningAtTarget;
 
+		[ProtoMember(144)]
+		public int SelfDestructTimerPadding;
+
+		[ProtoMember(145)]
+		public int SelfDestructTimeBetweenBlasts;
+
+		[ProtoMember(146)]
+		public List<string> SetCounters;
+
+		[ProtoMember(147)]
+		public List<string> SetSandboxCounters;
+
+		[ProtoMember(148)]
+		public List<int> SetCountersValues;
+
+		[ProtoMember(149)]
+		public List<int> SetSandboxCountersValues;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -537,12 +555,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			IncreaseCounters = new List<string>();
 			DecreaseCounters = new List<string>();
 			ResetCounters = new List<string>();
+			SetCounters = new List<string>();
+			SetCountersValues = new List<int>();
 
 			SetSandboxBooleansTrue = new List<string>();
 			SetSandboxBooleansFalse = new List<string>();
 			IncreaseSandboxCounters = new List<string>();
 			DecreaseSandboxCounters = new List<string>();
 			ResetSandboxCounters = new List<string>();
+			SetSandboxCounters = new List<string>();
+			SetSandboxCountersValues = new List<int>();
 
 			BroadcastGenericCommand = false;
 
@@ -646,6 +668,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			LightningMinDistance = 100;
 			LightningMaxDistance = 200;
 			CreateLightningAtTarget = false;
+
+			SelfDestructTimerPadding = 0;
+			SelfDestructTimeBetweenBlasts = 1;
 
 			ProfileSubtypeId = "";
 
@@ -1779,6 +1804,68 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 						CreateLightningAtTarget = TagHelper.TagBoolCheck(tag);
 
 					}
+
+					//SelfDestructTimerPadding
+					if (tag.Contains("[SelfDestructTimerPadding:") == true) {
+
+						SelfDestructTimerPadding = TagHelper.TagIntCheck(tag, SelfDestructTimerPadding);
+
+					}
+
+					//SelfDestructTimeBetweenBlasts
+					if (tag.Contains("[SelfDestructTimeBetweenBlasts:") == true) {
+
+						SelfDestructTimeBetweenBlasts = TagHelper.TagIntCheck(tag, SelfDestructTimeBetweenBlasts);
+
+					}
+
+					//SetCounters
+					if (tag.Contains("[SetCounters:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							SetCounters.Add(tempvalue);
+
+						}
+
+					}
+
+					//SetSandboxCounters
+					if (tag.Contains("[SetSandboxCounters:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							SetSandboxCounters.Add(tempvalue);
+
+						}
+
+					}
+
+					//SetCountersValues
+					if (tag.Contains("[SetCountersValues:") == true) {
+
+						var tempvalue = TagHelper.TagIntCheck(tag, 0);
+						SetCountersValues.Add(tempvalue);
+
+					}
+
+					//SetSandboxCountersValues
+					if (tag.Contains("[SetSandboxCountersValues:") == true) {
+
+						var tempvalue = TagHelper.TagIntCheck(tag, 0);
+						SetSandboxCountersValues.Add(tempvalue);
+
+					}
+
+					//ReplaceAutopilotProfile
+
+					//ReplaceAutopilotProfileName
+
+					//ReplaceAutopilotProfileMode
 
 				}
 

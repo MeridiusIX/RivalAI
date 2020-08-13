@@ -31,15 +31,18 @@ namespace RivalAI.Helpers {
 		/// <returns>Distance in Meters that Braking Acceleration needs to be applied at</returns>
 		public static double StoppingDistance(double brakingAcceleration, double currentVelocity, double desiredStopSpeed = 0, double gravityAcceleration = 0) {
 
-			double acceleration = Math.Abs(brakingAcceleration) - Math.Abs(gravityAcceleration);
+			double acceleration = (Math.Abs(brakingAcceleration) - Math.Abs(gravityAcceleration)) * -1;
 
-			if (acceleration <= 0)
+			if (acceleration > 0)
 				return -1;
 
-			double time = (desiredStopSpeed - currentVelocity) / (brakingAcceleration * -1);
-			double timeMultipliedSpeed = time * currentVelocity;
-			double distance = ((brakingAcceleration * -1) * (time * time)) / 2;
-			return timeMultipliedSpeed + distance;
+			var time = (desiredStopSpeed - currentVelocity) / acceleration;
+			var maxDistanceInTime = time * currentVelocity;
+			var timeSquared = time * time;
+			var timeSqMultipliedByAccel = acceleration * timeSquared;
+			var distance = maxDistanceInTime + (timeSqMultipliedByAccel / 2);
+
+			return distance;
 
 		}
 
@@ -174,6 +177,12 @@ namespace RivalAI.Helpers {
 
 			return number + tolerance > target;
 
+		}
+
+		public static int VariantValue(int existingValue, int variant) {
+
+			return _rnd.Next(existingValue - variant, existingValue + variant + 1);
+		
 		}
 
 		public static double ValueBetween(double a, double b) {

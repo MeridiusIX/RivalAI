@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <SpawnGroups>
+
+    <SpawnGroup>
+      <Id>
+        <TypeId>SpawnGroupDefinition</TypeId>
+        <SubtypeId>RAIDevTest-WC1-SpawnGroup</SubtypeId>
+      </Id>
+      <Description>
+
+        [Modular Encounters SpawnGroup]
+
+        [AtmosphericCargoShip:true]
+
+        [FactionOwner:SPRT]
+        [ReplenishSystems:true]
+        [AdminSpawnOnly:true]
+
+        [UseRivalAi:true]
+        [RivalAiReplaceRemoteControl:true]
+
+      </Description>
+      <IsPirate>true</IsPirate>
+      <Frequency>5.0</Frequency>
+      <Prefabs>
+        <Prefab SubtypeId="(NPC-RAI) Debug WeaponCore Atmo">
+          <Position>
+            <X>0.0</X>
+            <Y>0.0</Y>
+            <Z>0.0</Z>
+          </Position>
+          <Speed>0</Speed>
+          <Behaviour>RAIDevTest-WC1-Behavior</Behaviour>
+        </Prefab>
+      </Prefabs>
+    </SpawnGroup>
+
+    <SpawnGroup>
+      <Id>
+        <TypeId>SpawnGroupDefinition</TypeId>
+        <SubtypeId>RAIDevTest-WC2-SpawnGroup</SubtypeId>
+      </Id>
+      <Description>
+
+        [Modular Encounters SpawnGroup]
+
+        [AtmosphericCargoShip:true]
+
+        [FactionOwner:SPRT]
+        [ReplenishSystems:true]
+        [AdminSpawnOnly:true]
+
+        [UseRivalAi:true]
+        [RivalAiReplaceRemoteControl:true]
+
+      </Description>
+      <IsPirate>true</IsPirate>
+      <Frequency>5.0</Frequency>
+      <Prefabs>
+        <Prefab SubtypeId="(NPC-RAI) Debug WeaponCore Atmo">
+          <Position>
+            <X>0.0</X>
+            <Y>0.0</Y>
+            <Z>0.0</Z>
+          </Position>
+          <Speed>0</Speed>
+          <Behaviour>RAIDevTest-WC2-Behavior</Behaviour>
+        </Prefab>
+      </Prefabs>
+    </SpawnGroup>
+    
+  </SpawnGroups>
+  
+  <EntityComponents>
+
+    <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+      <Id>
+        <TypeId>Inventory</TypeId>
+        <SubtypeId>RAIDevTest-WC1-Behavior</SubtypeId>
+      </Id>
+      <Description>
+
+        [RivalAI Behavior]
+        [BehaviorName:Fighter]
+
+        [UseBarrageFire:true]
+        [UseAmmoReplenish:true]
+
+      </Description>
+
+    </EntityComponent>
+
+      <EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+        <Id>
+          <TypeId>Inventory</TypeId>
+          <SubtypeId>RAIDevTest-WC2-Behavior</SubtypeId>
+        </Id>
+        <Description>
+
+          [RivalAI Behavior]
+          [BehaviorName:Fighter]
+
+          [UseBarrageFire:false]
+          [UseAmmoReplenish:true]
+
+        </Description>
+
+      </EntityComponent>
+
+  </EntityComponents>
+</Definitions> 

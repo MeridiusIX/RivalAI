@@ -94,6 +94,8 @@ namespace RivalAI.Behavior.Subsystems {
 		[ProtoMember(19)]
 		public AutoPilotDataMode APDataMode;
 
+		[ProtoMember(20)]
+		public bool IgnoreTriggers;
 
 		public StoredSettings(){
 			
@@ -123,6 +125,8 @@ namespace RivalAI.Behavior.Subsystems {
 
 			AutoPilotFlags = NewAutoPilotMode.None;
 			APDataMode = AutoPilotDataMode.Primary;
+
+			IgnoreTriggers = false;
 
 		}
 
@@ -154,6 +158,10 @@ namespace RivalAI.Behavior.Subsystems {
 				this.CommandTriggers = oldSettings.CommandTriggers;
 				this.CompromisedTriggers = oldSettings.CompromisedTriggers;
 
+			} else {
+
+				IgnoreTriggers = true;
+
 			}
 
 			//TargetProfile
@@ -179,7 +187,7 @@ namespace RivalAI.Behavior.Subsystems {
 			
 		}
 		
-		public bool GetCustomCounterResult(string varName, int target){
+		public bool GetCustomCounterResult(string varName, int target, CounterCompareEnum compareType){
 
 			if (string.IsNullOrWhiteSpace(varName)) {
 
@@ -192,8 +200,27 @@ namespace RivalAI.Behavior.Subsystems {
 			int result = 0;
 			this.StoredCustomCounters.TryGetValue(varName, out result);
 			Logger.MsgDebug(varName + ": " + result.ToString() + " / " + target.ToString(), DebugTypeEnum.Condition);
-			return (result >= target);
-			
+
+			if(compareType == CounterCompareEnum.GreaterOrEqual)
+				return (result >= target);
+
+			if (compareType == CounterCompareEnum.Greater)
+				return (result > target);
+
+			if (compareType == CounterCompareEnum.Equal)
+				return (result == target);
+
+			if (compareType == CounterCompareEnum.NotEqual)
+				return (result != target);
+
+			if (compareType == CounterCompareEnum.Less)
+				return (result < target);
+
+			if (compareType == CounterCompareEnum.LessOrEqual)
+				return (result <= target);
+
+			return false;
+
 		}
 		
 		public void SetCustomBool(string name, bool value){
@@ -213,12 +240,19 @@ namespace RivalAI.Behavior.Subsystems {
 			
 		}
 		
-		public void SetCustomCounter(string name, int value, bool reset = false){
+		public void SetCustomCounter(string name, int value, bool reset = false, bool hardSet = false){
 
 			if (string.IsNullOrWhiteSpace(name))
 				return;
 
 			if(this.StoredCustomCounters.ContainsKey(name)){
+
+				if (hardSet) {
+
+					this.StoredCustomCounters[name] = value;
+					return;
+
+				}
 
 				if (reset) {
 

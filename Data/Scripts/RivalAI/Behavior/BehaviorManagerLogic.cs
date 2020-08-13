@@ -96,6 +96,9 @@ namespace RivalAI.Behavior{
 				*/
 			NeedsUpdate = MyEntityUpdateEnum.NONE;
 
+			if (!RAI_SessionCore.RivalAiEnabled)
+				return;
+
 			if(SetupComplete == false){
 
 				if(MyAPIGateway.Multiplayer.IsServer == false) {

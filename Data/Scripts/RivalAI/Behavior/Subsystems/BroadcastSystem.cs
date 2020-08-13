@@ -230,6 +230,7 @@ namespace RivalAI.Behavior.Subsystems {
 				if (modifiedMsg.Contains("{GPS}") == true) {
 
 					modifiedMsg = modifiedMsg.Replace("{GPS}", GetGPSString(chat.GPSLabel));
+					SendGPSToPlayer(chat.GPSLabel, RemoteControl.SlimBlock.CubeGrid.WorldAABB.Center, player.IdentityId);
 
 				}
 
@@ -391,15 +392,22 @@ namespace RivalAI.Behavior.Subsystems {
 			StringBuilder stringBuilder = new StringBuilder("GPS:", 256);
 			stringBuilder.Append(name);
 			stringBuilder.Append(":");
-			stringBuilder.Append(Math.Round(coords.X).ToString());
+			stringBuilder.Append(Math.Round(coords.X, 2).ToString());
 			stringBuilder.Append(":");
-			stringBuilder.Append(Math.Round(coords.Y).ToString());
+			stringBuilder.Append(Math.Round(coords.Y, 2).ToString());
 			stringBuilder.Append(":");
-			stringBuilder.Append(Math.Round(coords.Z).ToString());
+			stringBuilder.Append(Math.Round(coords.Z, 2).ToString());
 			stringBuilder.Append(":");
 
 			return stringBuilder.ToString();
 
+		}
+
+		internal void SendGPSToPlayer(string gpsName, Vector3D gpsCoords, long playerId) {
+
+			var gps = MyAPIGateway.Session.GPS.Create(gpsName, "", gpsCoords, false);
+			MyAPIGateway.Session.GPS.AddGps(playerId, gps);
+		
 		}
 
 	}

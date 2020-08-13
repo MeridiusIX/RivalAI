@@ -23,6 +23,7 @@ namespace RivalAI.Entities {
 			}
 
 			Entity = entity;
+			ParentEntity = entity.GetTopMostParent();
 			Closed = entity.Closed;
 			Entity.OnClose += CloseEntity;
 

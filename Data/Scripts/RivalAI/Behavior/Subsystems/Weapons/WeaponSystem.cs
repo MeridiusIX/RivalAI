@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using RivalAI.Behavior.Subsystems.Profiles;
+using RivalAI.Entities;
 using RivalAI.Helpers;
 using Sandbox.ModAPI;
 using VRage;
 using VRage.Game;
+using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
 using static RivalAI.Helpers.WcApiDef;
@@ -121,13 +123,15 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 		public void Setup() {
 
-			var blocks = BlockHelper.GetBlocksOfType<IMyFunctionalBlock>(_remoteControl.SlimBlock.CubeGrid);
+			var blocks = new List<IMySlimBlock>();
+			GridManager.GetBlocksFromGrid<IMyTerminalBlock>(_remoteControl.SlimBlock.CubeGrid, blocks);
 			//Logger.MsgDebug("WCAPI Ready: " + RAI_SessionCore.Instance.WeaponCore.IsReady.ToString(), DebugTypeEnum.Weapon);
 			//Logger.MsgDebug(string.Format("All WC: {0} /// All WCS: {1} /// All WCT: {2}", Utilities.AllWeaponCoreBlocks.Count, Utilities.AllWeaponCoreGuns.Count, Utilities.AllWeaponCoreTurrets.Count), DebugTypeEnum.Weapon);
 
-			foreach (var block in blocks) {
+			foreach (var slimBlock in blocks) {
 
 				IWeapon weapon = null;
+				var block = slimBlock.FatBlock as IMyTerminalBlock;
 
 				//Logger.MsgDebug(block.CustomName + " Has Core Weapon: " + RAI_SessionCore.Instance.WeaponCore.HasCoreWeapon(block).ToString(), DebugTypeEnum.Weapon);
 

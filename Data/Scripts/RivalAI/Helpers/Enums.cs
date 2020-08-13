@@ -121,7 +121,9 @@ namespace RivalAI.Helpers {
         Entity,
         Grid,
         Block,
-        Override
+        Override,
+        PlayerAndGrid,
+        PlayerAndBlock,
 
     }
 

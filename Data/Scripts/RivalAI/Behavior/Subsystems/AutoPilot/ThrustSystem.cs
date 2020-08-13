@@ -100,7 +100,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			if (this.AngleToCurrentWaypoint <= this.Data.AngleAllowedForForwardThrust) {
 
-				_debugThrustForwardMode = "Thrust Angle Matched";
+				_debugThrustForwardMode = "Ram Thrust Angle Matched";
 				_thrustToApply.SetX(false, false, 0, _orientation);
 				_thrustToApply.SetY(false, false, 0, _orientation);
 				_thrustToApply.SetZ(true, false, 1, _orientation);
@@ -177,7 +177,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
-			_debugThrustForwardMode = "Drifting At Desired Speed";
+			_debugThrustForwardMode = "Drifting At Desired Speed " + stoppingDist.ToString();
 			_thrustToApply.SetZ(true, false, 0.0001f, _orientation);
 
 		}

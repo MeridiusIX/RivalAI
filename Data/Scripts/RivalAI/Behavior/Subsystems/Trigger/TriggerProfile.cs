@@ -143,6 +143,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			MaxActions = -1;
 			Actions = new List<ActionProfile>();
 			DamageTypes = new List<string>();
+			ExcludedDamageTypes = new List<string>();
 			Conditions = new ConditionProfile();
 
 			Triggered = false;
@@ -269,6 +270,28 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
+		public void InitRandomTimes() {
+
+			this.CooldownTime = (int)MathTools.RandomBetween(this.MinCooldownMs, this.MaxCooldownMs);
+
+			foreach (var actionProfile in this.Actions) {
+
+				foreach (var spawner in actionProfile.Spawner) {
+				
+					spawner.CooldownTime = (int)MathTools.RandomBetween(spawner.SpawnMinCooldown, spawner.SpawnMaxCooldown);
+
+				}
+
+				foreach (var chat in actionProfile.ChatData) {
+				
+					chat.SecondsUntilChat = (int)MathTools.RandomBetween(chat.MinTime, chat.MaxTime);
+
+				}
+			
+			}
+
+		}
+
 		public void InitTags(string customData) {
 
 			if (string.IsNullOrWhiteSpace(customData) == false) {
@@ -387,6 +410,19 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 						if (!string.IsNullOrWhiteSpace(tempValue) && DamageTypes.Contains(tempValue) == false) {
 
 							DamageTypes.Add(tempValue);
+
+						}
+
+					}
+
+					//ExcludedDamageTypes
+					if (tag.Contains("[ExcludedDamageTypes:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (!string.IsNullOrWhiteSpace(tempValue) && ExcludedDamageTypes.Contains(tempValue) == false) {
+
+							ExcludedDamageTypes.Add(tempValue);
 
 						}
 

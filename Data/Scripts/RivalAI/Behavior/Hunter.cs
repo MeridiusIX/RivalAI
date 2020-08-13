@@ -72,11 +72,11 @@ namespace RivalAI.Behavior{
 			EngageOnWeaponActivation = false;
 			EngageOnTargetLineOfSight = false;
 
-			EngageDistanceSpace = 500;
-			EngageDistancePlanet = 500;
+			EngageDistanceSpace = 550;
+			EngageDistancePlanet = 550;
 
-			DisengageDistanceSpace = 600;
-			DisengageDistancePlanet = 600;
+			DisengageDistanceSpace = 650;
+			DisengageDistancePlanet = 650;
 
 			CameraDetectionMaxRange = 1800;
 
@@ -137,16 +137,32 @@ namespace RivalAI.Behavior{
 
 					if (MyAPIGateway.Entities.TryGetEntityById(Settings.LastDamagerEntity, out tempEntity)) {
 
-						AutoPilot.Targeting.ForceTargetEntityId = Settings.LastDamagerEntity;
-						AutoPilot.Targeting.ForceTargetEntity = tempEntity;
-						AutoPilot.Targeting.ForceRefresh = true;
-						ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-						return;
+						var parentEnt = tempEntity.GetTopMostParent();
+
+						if (parentEnt != null) {
+
+							var gridGroup = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+
+							foreach (var grid in gridGroup) {
+
+								if (grid.EntityId == tempEntity.GetTopMostParent().EntityId) {
+
+									AutoPilot.Targeting.ForceTargetEntityId = Settings.LastDamagerEntity;
+									AutoPilot.Targeting.ForceTargetEntity = tempEntity;
+									AutoPilot.Targeting.ForceRefresh = true;
+									AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
+									ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+									return;
+
+								}
+
+							}
+
+						}
 
 					}
 
 				}
-
 
 			}
 
@@ -212,8 +228,8 @@ namespace RivalAI.Behavior{
 				}
 
 				//Check Collision Data
-				if (AutoPilot.Targeting.Data.MaxLineOfSight > 0) {
-				
+				if (!engageTarget && EngageOnTargetLineOfSight && AutoPilot.Targeting.Data.MaxLineOfSight > 0 && AutoPilot.Collision.TargetResult.HasTarget(AutoPilot.Targeting.Data.MaxLineOfSight)) {
+					
 					if(AutoPilot.Targeting.Target.GetParentEntity().EntityId == AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId)
 						engageTarget = true;
 
@@ -247,7 +263,7 @@ namespace RivalAI.Behavior{
 
 					} else {
 
-						if (targetDist < (AutoPilot.InGravity() ? DisengageDistancePlanet : DisengageDistanceSpace)) {
+						if (targetDist > (AutoPilot.InGravity() ? DisengageDistancePlanet : DisengageDistanceSpace)) {
 
 							_inRange = false;
 							BehaviorTriggerF = true;
