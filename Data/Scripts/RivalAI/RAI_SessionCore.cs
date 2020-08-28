@@ -37,7 +37,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.28.0";
+		public static string ReleaseVersion = "0.30.0";
 
 		//Server
 		public static bool IsServer = false;
@@ -110,14 +110,14 @@ namespace RivalAI {
 				if (MyAPIGateway.Session.SessionSettings.SyncDistance < 10000) {
 
 					Logger.WriteLog("Mod Disabled.");
-					Logger.WriteLog("Sync Distance Must Be Set to 10000m or Higher for RivalAI to Function.");
+					Logger.WriteLog("Sync Distance Must Be Set to 10000m or Higher for RivalAI to Function with Selective Physics Updates enabled.");
 					Logger.WriteLog("Please Adjust World Settings and Restart Server.");
 					RivalAiEnabled = false;
 					return;
 
 				}
 
-				Logger.WriteLog("Encounters Using RivalAI May Not Work Correctly Outside of 10000m Sync Distance.");
+				Logger.WriteLog("Encounters Using RivalAI May Not Work Correctly Outside of 10000m Sync Distance with Selective Physics Updates enabled.");
 				Logger.WriteLog("Consider Increasing Sync Distnace if you Encounter Issues Outside Your Current Sync Distance Range.");
 
 			}

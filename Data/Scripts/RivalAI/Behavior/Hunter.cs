@@ -46,12 +46,6 @@ namespace RivalAI.Behavior{
 		public bool EngageOnWeaponActivation;
 		public bool EngageOnTargetLineOfSight;
 
-		public double EngageDistanceSpace;
-		public double EngageDistancePlanet;
-
-		public double DisengageDistanceSpace;
-		public double DisengageDistancePlanet;
-
 		public double CameraDetectionMaxRange;
 
 		//Non-Config
@@ -71,12 +65,6 @@ namespace RivalAI.Behavior{
 			EngageOnCameraDetection = false;
 			EngageOnWeaponActivation = false;
 			EngageOnTargetLineOfSight = false;
-
-			EngageDistanceSpace = 550;
-			EngageDistancePlanet = 550;
-
-			DisengageDistanceSpace = 650;
-			DisengageDistancePlanet = 650;
 
 			CameraDetectionMaxRange = 1800;
 
@@ -127,34 +115,53 @@ namespace RivalAI.Behavior{
 
 			}
 
-			if (BehaviorActionA) {
+			if (BehaviorActionA && Mode != BehaviorMode.EngageTarget) {
+
+				//Logger.MsgDebug("Hunter BehaviorActionA Triggered", DebugTypeEnum.General);
 
 				BehaviorActionA = false;
 
 				if (Settings.LastDamagerEntity != 0) {
 
+					//Logger.MsgDebug("Damager Entity Id Valid" + Settings.LastDamagerEntity.ToString(), DebugTypeEnum.General);
+
 					IMyEntity tempEntity = null;
 
 					if (MyAPIGateway.Entities.TryGetEntityById(Settings.LastDamagerEntity, out tempEntity)) {
+
+						//Logger.MsgDebug("Damager Entity Valid", DebugTypeEnum.General);
 
 						var parentEnt = tempEntity.GetTopMostParent();
 
 						if (parentEnt != null) {
 
+							//Logger.MsgDebug("Damager Parent Entity Valid", DebugTypeEnum.General);
 							var gridGroup = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+							bool isSameGridConstrust = false;
 
 							foreach (var grid in gridGroup) {
 
 								if (grid.EntityId == tempEntity.GetTopMostParent().EntityId) {
 
-									AutoPilot.Targeting.ForceTargetEntityId = Settings.LastDamagerEntity;
-									AutoPilot.Targeting.ForceTargetEntity = tempEntity;
-									AutoPilot.Targeting.ForceRefresh = true;
-									AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
-									ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-									return;
+									//Logger.MsgDebug("Damager Parent Entity Was Same Grid", DebugTypeEnum.General);
+									isSameGridConstrust = true;
+									break;
 
 								}
+
+							}
+
+							if (!isSameGridConstrust) {
+
+								//Logger.MsgDebug("Damager Parent Entity Was External", DebugTypeEnum.General);
+								AutoPilot.Targeting.ForceTargetEntityId = parentEnt.EntityId;
+								AutoPilot.Targeting.ForceTargetEntity = parentEnt;
+								AutoPilot.Targeting.ForceRefresh = true;
+								AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
+								AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+								ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+								Logger.MsgDebug("Hunter Approaching Potential Target From Damage", DebugTypeEnum.BehaviorSpecific);
+								return;
 
 							}
 
@@ -181,6 +188,7 @@ namespace RivalAI.Behavior{
 						BehaviorTriggerA = true;
 						AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
 						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+						Logger.MsgDebug("Hunter Approaching Potential Target", DebugTypeEnum.BehaviorSpecific);
 
 					}
 					
@@ -197,6 +205,7 @@ namespace RivalAI.Behavior{
 
 					if (time.TotalSeconds > LostTargetTimerTrigger) {
 
+						Logger.MsgDebug("Hunter Returning To Despawn", DebugTypeEnum.BehaviorSpecific);
 						ReturnToDespawn();
 						return;
 
@@ -213,30 +222,45 @@ namespace RivalAI.Behavior{
 				//Check Turret
 				if (EngageOnWeaponActivation == true) {
 
-					if (AutoPilot.Weapons.GetTurretTarget() != 0)
+					if (AutoPilot.Weapons.GetTurretTarget() != 0) {
+
+						Logger.MsgDebug("Hunter Turrets Detected Target", DebugTypeEnum.BehaviorSpecific);
 						engageTarget = true;
+
+					}
+						
 
 
 				}
 
 				//Check Visual Range
 				if (!engageTarget && EngageOnCameraDetection && targetDist < CameraDetectionMaxRange) {
-				
-					if(Grid.RaycastGridCheck(AutoPilot.Targeting.TargetLastKnownCoords))
+
+					if (Grid.RaycastGridCheck(AutoPilot.Targeting.TargetLastKnownCoords)) {
+
+						Logger.MsgDebug("Hunter Raycast Target Success", DebugTypeEnum.BehaviorSpecific);
+
+					}
 						engageTarget = true;
 
 				}
 
 				//Check Collision Data
 				if (!engageTarget && EngageOnTargetLineOfSight && AutoPilot.Targeting.Data.MaxLineOfSight > 0 && AutoPilot.Collision.TargetResult.HasTarget(AutoPilot.Targeting.Data.MaxLineOfSight)) {
-					
-					if(AutoPilot.Targeting.Target.GetParentEntity().EntityId == AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId)
+
+					if (AutoPilot.Targeting.Target.GetParentEntity().EntityId == AutoPilot.Collision.TargetResult.GetCollisionEntity().EntityId) {
+
+						Logger.MsgDebug("Hunter Has Line of Sight to Target", DebugTypeEnum.BehaviorSpecific);
 						engageTarget = true;
+
+					}
+						
 
 				}
 
 				if (engageTarget) {
 
+					Logger.MsgDebug("Hunter Engaging Target", DebugTypeEnum.BehaviorSpecific);
 					BehaviorTriggerD = true;
 					ChangeCoreBehaviorMode(BehaviorMode.EngageTarget);
 
@@ -253,8 +277,9 @@ namespace RivalAI.Behavior{
 
 					if (!_inRange) {
 
-						if (targetDist < (AutoPilot.InGravity() ? EngageDistancePlanet : EngageDistanceSpace)) {
+						if (targetDist < (AutoPilot.InGravity() ? AutoPilot.Data.EngageDistancePlanet : AutoPilot.Data.EngageDistanceSpace)) {
 
+							Logger.MsgDebug("Hunter Within Engage Range", DebugTypeEnum.BehaviorSpecific);
 							_inRange = true;
 							BehaviorTriggerE = true;
 							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
@@ -263,8 +288,9 @@ namespace RivalAI.Behavior{
 
 					} else {
 
-						if (targetDist > (AutoPilot.InGravity() ? DisengageDistancePlanet : DisengageDistanceSpace)) {
+						if (targetDist > (AutoPilot.InGravity() ? AutoPilot.Data.DisengageDistancePlanet : AutoPilot.Data.DisengageDistanceSpace)) {
 
+							Logger.MsgDebug("Hunter Outside Engage Range", DebugTypeEnum.BehaviorSpecific);
 							_inRange = false;
 							BehaviorTriggerF = true;
 							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
@@ -275,7 +301,10 @@ namespace RivalAI.Behavior{
 
 				} else {
 
+					Logger.MsgDebug("Hunter Lost Target While Engaging", DebugTypeEnum.BehaviorSpecific);
 					BehaviorTriggerB = true;
+					_inRange = false;
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
 				}
@@ -381,37 +410,6 @@ namespace RivalAI.Behavior{
 						this.EngageOnTargetLineOfSight = TagHelper.TagBoolCheck(tag);
 
 					}
-
-					//EngageDistanceSpace
-					if (tag.Contains("[EngageDistanceSpace:")) {
-
-						this.EngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.EngageDistanceSpace);
-
-					}
-
-					//EngageDistancePlanet
-					if (tag.Contains("[EngageDistancePlanet:")) {
-
-						this.EngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.EngageDistancePlanet);
-
-					}
-
-
-					//DisengageDistanceSpace
-					if (tag.Contains("[DisengageDistanceSpace:")) {
-
-						this.DisengageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.DisengageDistanceSpace);
-
-					}
-
-
-					//DisengageDistancePlanet
-					if (tag.Contains("[DisengageDistancePlanet:")) {
-
-						this.DisengageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.DisengageDistancePlanet);
-
-					}
-
 
 					//CameraDetectionMaxRange
 					if (tag.Contains("[CameraDetectionMaxRange:")) {

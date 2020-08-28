@@ -480,6 +480,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(149)]
 		public List<int> SetSandboxCountersValues;
 
+		[ProtoMember(150)]
+		public bool InheritLastAttackerFromCommand;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -671,6 +674,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			SelfDestructTimerPadding = 0;
 			SelfDestructTimeBetweenBlasts = 1;
+
+			InheritLastAttackerFromCommand = false;
 
 			ProfileSubtypeId = "";
 
@@ -1639,7 +1644,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
 
-							DamageMultiplierBlockNames.Add(tempvalue);
+							RazeBlocksNames.Add(tempvalue);
 
 						}
 
@@ -1858,6 +1863,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						var tempvalue = TagHelper.TagIntCheck(tag, 0);
 						SetSandboxCountersValues.Add(tempvalue);
+
+					}
+
+					//InheritLastAttackerFromCommand
+					if (tag.Contains("[InheritLastAttackerFromCommand:") == true) {
+
+						InheritLastAttackerFromCommand = TagHelper.TagBoolCheck(tag);
 
 					}
 

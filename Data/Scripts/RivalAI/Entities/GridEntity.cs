@@ -512,10 +512,7 @@ namespace RivalAI.Entities {
 			if (!ActiveEntity())
 				return false;
 
-			if (string.IsNullOrWhiteSpace(MyVisualScriptLogicProvider.GetEntityName(CubeGrid.EntityId)))
-				MyVisualScriptLogicProvider.SetName(CubeGrid.EntityId, CubeGrid.EntityId.ToString());
-
-			return MyVisualScriptLogicProvider.HasPower(CubeGrid.EntityId.ToString());
+			return PowerOutput().Y > 0;
 
 		}
 

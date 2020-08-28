@@ -337,6 +337,25 @@ namespace RivalAI.Helpers {
 			
 		}
 
+		public static ActionExecutionEnum TagActionExecutionCheck(string tag) {
+
+			ActionExecutionEnum result = ActionExecutionEnum.All;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (ActionExecutionEnum.TryParse(tagSplit[1], out result) == false) {
+
+					return ActionExecutionEnum.All;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
 		public static AutoPilotDataMode TagAutoPilotProfileModeCheck(string tag) {
 
 			AutoPilotDataMode result = AutoPilotDataMode.Primary;

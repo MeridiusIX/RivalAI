@@ -502,6 +502,7 @@ namespace RivalAI.Behavior {
 				Logger.MsgDebug("Total Triggers: " + Trigger.Triggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
 				Logger.MsgDebug("Total Damage Triggers: " + Trigger.DamageTriggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
 				Logger.MsgDebug("Total Command Triggers: " + Trigger.CommandTriggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
+				Logger.MsgDebug("Total Compromised Triggers: " + Trigger.CompromisedTriggers.Count.ToString(), DebugTypeEnum.BehaviorSetup);
 
 			}
 

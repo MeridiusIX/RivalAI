@@ -43,6 +43,8 @@ namespace RivalAI.Helpers {
 
 			if (faction != null)
 				owner = faction.FounderId;
+			else
+				return;
 
 			foreach (var block in blocks) {
 

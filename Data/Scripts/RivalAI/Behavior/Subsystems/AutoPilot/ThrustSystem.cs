@@ -89,7 +89,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (!Targeting.HasTarget())
 				return;
 
-			if (CurrentMode.HasFlag(NewAutoPilotMode.Strafe) || _remoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
+			if (Strafing || _remoteControl?.SlimBlock?.CubeGrid?.Physics == null) {
 
 				_debugThrustForwardMode = "Strafing Still Active";
 				return;
@@ -603,6 +603,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				}
 
 			} else {
+
+				if (!Strafing && _applyRamming)
+					return;
 
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - this.LastStrafeStartTime;
 

@@ -14,6 +14,7 @@ namespace RivalAI.Entities {
 		public IMyPlayer Player;
 		public bool Online;
 		public bool IsParentEntityGrid;
+		public bool IsParentEntitySeat;
 
 		public bool PlayerEntityChanged;
 
@@ -91,6 +92,7 @@ namespace RivalAI.Entities {
 
 			this.PlayerEntityChanged = false;
 			this.IsParentEntityGrid = false;
+			this.IsParentEntitySeat = false;
 
 			if (!this.Online)
 				return;
@@ -125,6 +127,7 @@ namespace RivalAI.Entities {
 				this.Entity = controller;
 				this.ParentEntity = controller.SlimBlock.CubeGrid;
 				this.IsParentEntityGrid = true;
+				this.IsParentEntitySeat = (controller as IMyCockpit) != null;
 				return;
 
 			}
@@ -236,15 +239,10 @@ namespace RivalAI.Entities {
 
 		public bool IsPowered() {
 
-			var character = ParentEntity as IMyCharacter;
-
-			if (character == null)
+			if (!ActiveEntity())
 				return false;
 
-			if (MyVisualScriptLogicProvider.GetPlayersEnergyLevel(Player.IdentityId) < 1)
-				return false;
-
-			return true;
+			return PowerOutput().Y > 0;
 
 		}
 
@@ -318,7 +316,24 @@ namespace RivalAI.Entities {
 				if (grid == null)
 					return Vector2.Zero;
 
-				return EntityEvaluator.GridPowerOutput(LinkedGrids);
+				var result = EntityEvaluator.GridPowerOutput(LinkedGrids);
+
+				if (result.Y > 0)
+					return result;
+
+
+				if (!IsParentEntitySeat)
+					return Vector2.Zero;
+
+				var controller = Entity as IMyCockpit;
+
+				if(controller?.Pilot == null)
+					return Vector2.Zero;
+
+				if(controller.Pilot.SuitEnergyLevel < 0.01)
+					return Vector2.Zero;
+
+				return new Vector2(0.009f, 0.009f);
 
 			} else {
 
@@ -327,7 +342,7 @@ namespace RivalAI.Entities {
 				if (character == null)
 					return Vector2.Zero;
 
-				if(MyVisualScriptLogicProvider.GetPlayersEnergyLevel(Player.IdentityId) < 1)
+				if(character.SuitEnergyLevel < 0.01)
 					return Vector2.Zero;
 
 				return new Vector2(0.009f, 0.009f);

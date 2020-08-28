@@ -167,6 +167,55 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(49)]
 		public int RamMaxDurationMs;
 
+		[ProtoMember(50)]
+		public double EngageDistanceSpace;
+
+		[ProtoMember(51)]
+		public double EngageDistancePlanet;
+
+		[ProtoMember(52)]
+		public double DisengageDistanceSpace;
+
+		[ProtoMember(53)]
+		public double DisengageDistancePlanet;
+
+		[ProtoMember(54)]
+		public int WaypointWaitTimeTrigger;
+
+		[ProtoMember(55)]
+		public int WaypointAbandonTimeTrigger;
+
+		[ProtoMember(56)]
+		public double AttackRunDistanceSpace;
+
+		[ProtoMember(57)]
+		public double AttackRunDistancePlanet;
+
+		[ProtoMember(58)]
+		public double AttackRunBreakawayDistance;
+
+		[ProtoMember(59)]
+		public int OffsetRecalculationTime;
+
+		[ProtoMember(60)]
+		public bool AttackRunUseSafePlanetPathing;
+
+		[ProtoMember(61)]
+		public bool AttackRunUseCollisionEvasionSpace;
+
+		[ProtoMember(62)]
+		public bool AttackRunUseCollisionEvasionPlanet;
+
+		[ProtoMember(63)]
+		public bool AttackRunOverrideWithDistanceAndTimer;
+
+		[ProtoMember(64)]
+		public int AttackRunOverrideTimerTrigger;
+
+		[ProtoMember(65)]
+		public double AttackRunOverrideDistance;
+
+
 		public AutoPilotProfile() {
 
 			ProfileSubtypeId = "";
@@ -231,6 +280,25 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			RamMinDurationMs = 7000;
 			RamMaxDurationMs = 12000;
+
+			EngageDistanceSpace = 500;
+			EngageDistancePlanet = 500;
+			DisengageDistanceSpace = 600;
+			DisengageDistancePlanet = 600;
+
+			WaypointWaitTimeTrigger = 5;
+			WaypointAbandonTimeTrigger = 30;
+
+			AttackRunDistanceSpace = 0;
+			AttackRunDistancePlanet = 0;
+			AttackRunBreakawayDistance = 0;
+			OffsetRecalculationTime = 0;
+			AttackRunUseSafePlanetPathing = false;
+			AttackRunUseCollisionEvasionSpace = false;
+			AttackRunUseCollisionEvasionPlanet = false;
+			AttackRunOverrideWithDistanceAndTimer = false;
+			AttackRunOverrideTimerTrigger = 0;
+			AttackRunOverrideDistance = 0;
 
 		}
 
@@ -564,6 +632,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			////////////////////
+			//The Rest
+			////////////////////
+
 			//PadDistanceFromTarget
 			if (tag.Contains("[PadDistanceFromTarget:") == true) {
 
@@ -596,6 +668,118 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (tag.Contains("[RamMaxDurationMs:") == true) {
 
 				this.RamMaxDurationMs = TagHelper.TagIntCheck(tag, this.RamMaxDurationMs);
+
+			}
+
+			//EngageDistanceSpace
+			if (tag.Contains("[EngageDistanceSpace:") == true) {
+
+				this.EngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.EngageDistanceSpace);
+
+			}
+
+			//EngageDistancePlanet
+			if (tag.Contains("[EngageDistancePlanet:") == true) {
+
+				this.EngageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.EngageDistancePlanet);
+
+			}
+
+			//DisengageDistanceSpace
+			if (tag.Contains("[DisengageDistanceSpace:") == true) {
+
+				this.DisengageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.DisengageDistanceSpace);
+
+			}
+
+			//DisengageDistancePlanet
+			if (tag.Contains("[DisengageDistancePlanet:") == true) {
+
+				this.DisengageDistancePlanet = TagHelper.TagDoubleCheck(tag, this.DisengageDistancePlanet);
+
+			}
+
+			//WaypointWaitTimeTrigger
+			if (tag.Contains("[WaypointWaitTimeTrigger:") == true) {
+
+				this.WaypointWaitTimeTrigger = TagHelper.TagIntCheck(tag, this.WaypointWaitTimeTrigger);
+
+			}
+
+			//WaypointAbandonTimeTrigger
+			if (tag.Contains("[WaypointAbandonTimeTrigger:") == true) {
+
+				this.WaypointAbandonTimeTrigger = TagHelper.TagIntCheck(tag, this.WaypointAbandonTimeTrigger);
+
+			}
+
+			//AttackRunDistanceSpace
+			if (tag.Contains("[AttackRunDistanceSpace:") == true) {
+
+				this.AttackRunDistanceSpace = TagHelper.TagDoubleCheck(tag, this.AttackRunDistanceSpace);
+
+			}
+
+			//AttackRunDistancePlanet
+			if (tag.Contains("[AttackRunDistancePlanet:") == true) {
+
+				this.AttackRunDistancePlanet = TagHelper.TagDoubleCheck(tag, this.AttackRunDistancePlanet);
+
+			}
+
+			//AttackRunBreakawayDistance
+			if (tag.Contains("[AttackRunBreakawayDistance:") == true) {
+
+				this.AttackRunBreakawayDistance = TagHelper.TagDoubleCheck(tag, this.AttackRunBreakawayDistance);
+
+			}
+
+			//OffsetRecalculationTime
+			if (tag.Contains("[OffsetRecalculationTime:") == true) {
+
+				this.OffsetRecalculationTime = TagHelper.TagIntCheck(tag, this.OffsetRecalculationTime);
+
+			}
+
+			//AttackRunUseSafePlanetPathing
+			if (tag.Contains("[AttackRunUseSafePlanetPathing:") == true) {
+
+				this.AttackRunUseSafePlanetPathing = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//AttackRunUseCollisionEvasionSpace
+			if (tag.Contains("[AttackRunUseCollisionEvasionSpace:") == true) {
+
+				this.AttackRunUseCollisionEvasionSpace = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//AttackRunUseCollisionEvasionPlanet
+			if (tag.Contains("[AttackRunUseCollisionEvasionPlanet:") == true) {
+
+				this.AttackRunUseCollisionEvasionPlanet = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//AttackRunOverrideWithDistanceAndTimer
+			if (tag.Contains("[AttackRunOverrideWithDistanceAndTimer:") == true) {
+
+				this.AttackRunOverrideWithDistanceAndTimer = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//AttackRunOverrideTimerTrigger
+			if (tag.Contains("[AttackRunOverrideTimerTrigger:") == true) {
+
+				this.AttackRunOverrideTimerTrigger = TagHelper.TagIntCheck(tag, this.AttackRunOverrideTimerTrigger);
+
+			}
+
+			//AttackRunOverrideDistance
+			if (tag.Contains("[AttackRunOverrideDistance:") == true) {
+
+				this.AttackRunOverrideDistance = TagHelper.TagDoubleCheck(tag, this.AttackRunOverrideDistance);
 
 			}
 

@@ -29,6 +29,14 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
+	public enum ActionExecutionEnum {
+	
+		All,
+		Sequential,
+		Random
+	
+	}
+
 	[ProtoContract]
 	public class TriggerProfile {
 
@@ -125,6 +133,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(31)]
 		public List<ActionProfile> Actions;
 
+		[ProtoMember(32)]
+		public int NextActionIndex;
+
+		[ProtoMember(33)]
+		public ActionExecutionEnum ActionExecution;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -167,6 +181,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			CommandReceiveCode = "";
 
+			NextActionIndex = 0;
+			ActionExecution = ActionExecutionEnum.All;
+
 			ProfileSubtypeId = "";
 
 
@@ -188,7 +205,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				TimeSpan duration = MyAPIGateway.Session.GameDateTime - LastTriggerTime;
 
-				if (duration.TotalMilliseconds >= CooldownTime) {
+				if ((this.StartsReady && this.TriggerCount == 0) || duration.TotalMilliseconds >= CooldownTime) {
 
 					if (mainTriggerCheck != null) {
 
@@ -513,6 +530,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[PlayerNearPositionOffset:") == true) {
 
 						PlayerNearPositionOffset = TagHelper.TagVector3DCheck(tag);
+
+					}
+
+					//ActionExecution
+					if (tag.Contains("[ActionExecution:") == true) {
+
+						ActionExecution = TagHelper.TagActionExecutionCheck(tag);
 
 					}
 

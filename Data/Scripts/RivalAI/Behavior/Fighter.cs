@@ -38,23 +38,87 @@ namespace RivalAI.Behavior{
 	public class Fighter : CoreBehavior, IBehavior{
 
 		//Configurable
-		public double FighterEngageDistanceSpace;
-		public double FighterEngageDistancePlanet;
+		public double FighterEngageDistanceSpace {
 
-		public double FighterDisengageDistanceSpace;
-		public double FighterDisengageDistancePlanet;
+			get {
+
+				return _fighterEngageDistanceSpace > 0 ? _fighterEngageDistanceSpace : AutoPilot.Data.EngageDistanceSpace;
+
+			}
+
+			set {
+
+				_fighterEngageDistanceSpace = value;
+
+			}
 		
+		}
+
+		public double FighterEngageDistancePlanet {
+
+			get {
+
+				return _fighterEngageDistancePlanet > 0 ? _fighterEngageDistancePlanet : AutoPilot.Data.EngageDistancePlanet;
+
+			}
+
+			set {
+
+				_fighterEngageDistancePlanet = value;
+
+			}
+
+		}
+
+		public double FighterDisengageDistanceSpace {
+
+			get {
+
+				return _fighterDisengageDistanceSpace > 0 ? _fighterDisengageDistanceSpace : AutoPilot.Data.DisengageDistanceSpace;
+
+			}
+
+			set {
+
+				_fighterDisengageDistanceSpace = value;
+
+			}
+
+		}
+
+		public double FighterDisengageDistancePlanet {
+
+			get {
+
+				return _fighterDisengageDistancePlanet > 0 ? _fighterDisengageDistancePlanet : AutoPilot.Data.DisengageDistancePlanet;
+
+			}
+
+			set {
+
+				_fighterDisengageDistancePlanet = value;
+
+			}
+
+		}
+
+		private double _fighterEngageDistanceSpace;
+		private double _fighterEngageDistancePlanet;
+
+		private double _fighterDisengageDistanceSpace;
+		private double _fighterDisengageDistancePlanet;
+
 		public byte Counter;
 
 		public Fighter() : base() {
 
 			_behaviorType = "Fighter";
 
-			FighterEngageDistanceSpace = 400;
-			FighterEngageDistancePlanet = 600;
+			_fighterEngageDistanceSpace = -1;
+			_fighterEngageDistancePlanet = -1;
 
-			FighterDisengageDistanceSpace = 600;
-			FighterDisengageDistancePlanet = 600;
+			_fighterDisengageDistanceSpace = -1;
+			_fighterDisengageDistancePlanet = -1;
 			
 			Counter = 0;
 

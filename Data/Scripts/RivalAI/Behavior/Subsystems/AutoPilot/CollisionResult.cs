@@ -34,16 +34,19 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public IMyEntity VoxelEntity;
 		public IMyEntity SafezoneEntity;
 		public IMyEntity ShieldBlockEntity;
+		public IMyEntity PlayerEntity;
 
 		public Vector3D GridCoords;
 		public Vector3D VoxelCoords;
 		public Vector3D SafezoneCoords;
 		public Vector3D ShieldCoords;
+		public Vector3D PlayerCoords;
 
 		public double GridDistance;
 		public double VoxelDistance;
 		public double SafezoneDistance;
 		public double ShieldDistance;
+		public double PlayerDistance;
 
 		public TargetOwnerEnum GridOwner;
 		public TargetOwnerEnum ShieldOwner;
@@ -124,16 +127,19 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			VoxelEntity = null;
 			SafezoneEntity = null;
 			ShieldBlockEntity = null;
+			PlayerEntity = null;
 
 			GridCoords = Vector3D.Zero;
 			VoxelCoords = Vector3D.Zero;
 			SafezoneCoords = Vector3D.Zero;
 			ShieldCoords = Vector3D.Zero;
+			PlayerCoords = Vector3D.Zero;
 
 			GridDistance = -1;
 			VoxelDistance = -1;
 			SafezoneDistance = -1;
 			ShieldDistance = -1;
+			PlayerDistance = -1;
 
 			GridOwner = TargetOwnerEnum.None;
 			GridRelation = TargetRelationEnum.None;
@@ -169,6 +175,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (Type == CollisionType.None || ShieldDistance < closestDist)
 					Type = CollisionType.Shield;
+
+			}
+
+			if (PlayerEntity != null) {
+
+				if (Type == CollisionType.None || PlayerDistance < closestDist)
+					Type = CollisionType.Player;
 
 			}
 
@@ -212,6 +225,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					return ShieldCoords;
 				case CollisionType.Safezone:
 					return SafezoneCoords;
+				case CollisionType.Player:
+					return PlayerCoords;
 
 			}
 
@@ -231,6 +246,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					return ShieldDistance;
 				case CollisionType.Safezone:
 					return SafezoneDistance;
+				case CollisionType.Player:
+					return PlayerDistance;
 
 			}
 
@@ -250,6 +267,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					return ShieldBlockEntity;
 				case CollisionType.Safezone:
 					return SafezoneEntity;
+				case CollisionType.Player:
+					return PlayerEntity;
 
 			}
 
@@ -269,6 +288,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					return distance <= ShieldDistance;
 				case CollisionType.Safezone:
 					return distance <= SafezoneDistance;
+				case CollisionType.Player:
+					return distance <= PlayerDistance;
 
 			}
 
@@ -347,11 +368,15 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			MySafeZone closestZone = null;
 			double closestZoneDistance = -1;
 
+			IMyCharacter closestCharacter = null;
+			double closestCharacterDistance = -1;
+
 			foreach (var item in _entityScanList) {
 
 				var targetGrid = item.Element as IMyCubeGrid;
 				var targetZone = item.Element as MySafeZone;
 				var targetVoxel = item.Element as MyVoxelBase;
+				var targetPlayer = item.Element as IMyCharacter;
 
 				if (targetGrid != null) {
 
@@ -361,7 +386,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (closestGrid == null || closestGrid != null && item.Distance < closestGridDistance) {
+					if (closestGrid == null || (closestGrid != null && item.Distance < closestGridDistance)) {
 
 						closestGrid = targetGrid;
 						closestGridDistance = item.Distance;
@@ -372,7 +397,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (targetZone != null) {
 
-					if (closestZone == null || closestZone != null && item.Distance < closestZoneDistance) {
+					if (closestZone == null || (closestZone != null && item.Distance < closestZoneDistance)) {
 
 						closestZone = targetZone;
 						closestZoneDistance = item.Distance;
@@ -385,6 +410,17 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					_voxelScanList.Add(targetVoxel);
 
+				}
+
+				if (targetPlayer != null) {
+
+					if (closestCharacter == null || (closestCharacter != null && item.Distance < closestCharacterDistance)) {
+
+						closestCharacter = targetPlayer;
+						closestCharacterDistance = item.Distance;
+
+					}
+				
 				}
 
 			}
@@ -431,6 +467,14 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				SafezoneEntity = closestZone;
 				SafezoneCoords = closestZoneDistance * DirectionVector + StartPosition;
 				SafezoneDistance = closestZoneDistance;
+
+			}
+
+			if (closestCharacter != null) {
+
+				PlayerEntity = closestCharacter;
+				PlayerCoords = PlayerEntity.PositionComp.WorldAABB.Center;
+				PlayerDistance = closestCharacterDistance;
 
 			}
 

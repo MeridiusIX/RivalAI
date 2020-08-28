@@ -29,6 +29,15 @@ namespace RivalAI.Behavior {
 		bool BehaviorTriggerF { get; set; }
 		bool BehaviorTriggerG { get; set; }
 		bool BehaviorTriggerH { get; set; }
+		bool BehaviorActionA { get; set; }
+		bool BehaviorActionB { get; set; }
+		bool BehaviorActionC { get; set; }
+		bool BehaviorActionD { get; set; }
+		bool BehaviorActionE { get; set; }
+		bool BehaviorActionF { get; set; }
+		bool BehaviorActionG { get; set; }
+		bool BehaviorActionH { get; set; }
+
 		void BehaviorInit(IMyRemoteControl remoteControl);
 		string BehaviorType { get; }
 		List<IMyCubeGrid> CurrentGrids { get; }

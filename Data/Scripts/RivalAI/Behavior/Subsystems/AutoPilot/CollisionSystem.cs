@@ -158,7 +158,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		Grid,
 		Voxel,
 		Safezone,
-		Shield
+		Shield,
+		Player
 
 	}
 

@@ -30,6 +30,7 @@ namespace RivalAI.Behavior.Subsystems {
 			
 				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
 
+
 					OverrideTarget = value;
 					return;
 				
@@ -150,6 +151,8 @@ namespace RivalAI.Behavior.Subsystems {
 			//Get Target Below
 			var targetList = new List<ITarget>();
 
+			bool targetIsOverride = false;
+
 			if (ForceTargetEntityId == 0) {
 
 				if (Data.Target == TargetTypeEnum.Player || Data.Target == TargetTypeEnum.PlayerAndBlock || Data.Target == TargetTypeEnum.PlayerAndGrid) {
@@ -183,6 +186,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 					if (target != null) {
 
+						targetIsOverride = true;
 						targetList.Add(target);
 
 					} else {
@@ -263,7 +267,18 @@ namespace RivalAI.Behavior.Subsystems {
 				if (tempTarget != null) {
 
 					Logger.MsgDebug(string.Format(" - Target Acquired: {0}", tempTarget.Name()), DebugTypeEnum.TargetAcquisition);
-					this.NormalTarget = tempTarget;
+
+					if (targetIsOverride) {
+
+						this.OverrideTarget = tempTarget;
+
+					} else {
+
+						this.NormalTarget = tempTarget;
+
+					}
+
+					
 					this.LastRefreshTime = MyAPIGateway.Session.GameDateTime;
 					this.LastEvaluationTime = MyAPIGateway.Session.GameDateTime;
 
@@ -440,7 +455,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
-			Logger.MsgDebug(string.Format(" - Evaluating Target: {0}", target.Name()), DebugTypeEnum.TargetEvaluation);
+			Logger.MsgDebug(string.Format(" - Evaluating Target: {0} using profile {1}", target.Name(), data.ProfileSubtypeId), DebugTypeEnum.TargetEvaluation);
 
 			if (!data.BuiltUniqueFilterList) {
 

@@ -176,6 +176,15 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(44)]
 		public List<CounterCompareEnum> SandboxCounterCompareTypes;
 
+		[ProtoMember(45)]
+		public bool CheckIfGridNameMatches;
+
+		[ProtoMember(46)]
+		public bool AllowPartialGridNameMatches;
+
+		[ProtoMember(47)]
+		public List<string> GridNamesToCheck;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -271,6 +280,10 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			CounterCompareTypes = new List<CounterCompareEnum>();
 			SandboxCounterCompareTypes = new List<CounterCompareEnum>();
+
+			CheckIfGridNameMatches = false;
+			AllowPartialGridNameMatches = false;
+			GridNamesToCheck = new List<string>();
 
 			ProfileSubtypeId = "";
 
@@ -703,6 +716,37 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 							satisfiedConditions++;
 					
 					}
+
+				}
+
+			}
+
+			if (CheckIfGridNameMatches) {
+
+				usedConditions++;
+
+				if(!string.IsNullOrWhiteSpace(_remoteControl.SlimBlock.CubeGrid.CustomName)){
+
+					bool pass = false;
+
+					foreach (var name in GridNamesToCheck) {
+
+						if (AllowPartialGridNameMatches) {
+
+							if (_remoteControl.SlimBlock.CubeGrid.CustomName.Contains(name))
+								pass = true;
+
+						} else {
+
+							if (_remoteControl.SlimBlock.CubeGrid.CustomName == name)
+								pass = true;
+
+						}
+
+					}
+
+					if(pass)
+						satisfiedConditions++;
 
 				}
 
@@ -1303,6 +1347,28 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						var tempValue = TagHelper.TagCounterCompareEnumCheck(tag);
 						SandboxCounterCompareTypes.Add(tempValue);
+
+					}
+
+					//CheckIfGridNameMatches
+					if (tag.Contains("[CheckIfGridNameMatches:") == true) {
+
+						CheckIfGridNameMatches = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//AllowPartialGridNameMatches
+					if (tag.Contains("[AllowPartialGridNameMatches:") == true) {
+
+						AllowPartialGridNameMatches = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//GridNamesToCheck
+					if (tag.Contains("[GridNamesToCheck:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+						GridNamesToCheck.Add(tempValue);
 
 					}
 

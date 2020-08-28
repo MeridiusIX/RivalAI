@@ -468,7 +468,7 @@ namespace RivalAI.Entities {
 
 			foreach (var block in grid.Power) {
 
-				if (block.IsClosed())
+				if (block.IsClosed() || !block.Working || !block.Functional)
 					continue;
 
 				var powerBlock = block.Block as IMyPowerProducer;

@@ -416,6 +416,9 @@ namespace RivalAI.Behavior.Subsystems {
 
         public void RazeBlocksWithNames(List<string> names) {
 
+            Logger.MsgDebug("Razing Blocks With Names Count: " + names.Count.ToString(), DebugTypeEnum.Action);
+            Logger.MsgDebug("Razing Blocks Total Terminal Blocks: " + AllTerminalBlocks.Count.ToString(), DebugTypeEnum.Action);
+
             for (int i = AllTerminalBlocks.Count - 1; i >= 0; i--) {
 
                 var block = AllTerminalBlocks[i];

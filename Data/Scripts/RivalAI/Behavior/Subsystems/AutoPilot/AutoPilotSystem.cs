@@ -761,6 +761,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (rollTime.TotalMilliseconds >= _barrelRollDuration) {
 
+					Logger.MsgDebug("Barrel Roll End", DebugTypeEnum.AutoPilot);
 					_applyBarrelRoll = false;
 					CurrentMode &= ~NewAutoPilotMode.BarrelRoll;
 
@@ -779,6 +780,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (rollTime.TotalMilliseconds >= _ramDuration) {
 
+					Logger.MsgDebug("Ramming End", DebugTypeEnum.AutoPilot);
 					_applyRamming = false;
 					CurrentMode &= ~NewAutoPilotMode.Ram;
 
@@ -1553,6 +1555,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void ActivateBarrelRoll() {
 
+			Logger.MsgDebug("Barrel Roll Start", DebugTypeEnum.AutoPilot);
 			_applyBarrelRoll = true;
 			_barrelRollStart = MyAPIGateway.Session.GameDateTime;
 			_barrelRollDuration = MathTools.RandomBetween(Data.BarrelRollMinDurationMs, Data.BarrelRollMaxDurationMs);
@@ -1561,6 +1564,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void ActivateRamming() {
 
+			Logger.MsgDebug("Ramming Start", DebugTypeEnum.AutoPilot);
 			_applyRamming = true;
 			_ramStart = MyAPIGateway.Session.GameDateTime;
 			_ramDuration = MathTools.RandomBetween(Data.RamMinDurationMs, Data.RamMaxDurationMs);

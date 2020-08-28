@@ -45,6 +45,7 @@ namespace RivalAI.Helpers{
 		AutoPilotPlanetPath,
 		BehaviorMode,
 		BehaviorSetup,
+		BehaviorSpecific,
 		Chat,
 		Command,
 		Condition,
