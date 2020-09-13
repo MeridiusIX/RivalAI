@@ -33,7 +33,7 @@ using RivalAI.Behavior.Subsystems.Trigger;
 namespace RivalAI.Behavior.Subsystems.Trigger {
 	public partial class TriggerSystem {
 
-		public void ProcessAction(ActionProfile actions, long attackerEntityId = 0, long detectedEntity = 0, Command command = null) {
+		public void ProcessAction(TriggerProfile trigger, ActionProfile actions, long attackerEntityId = 0, long detectedEntity = 0, Command command = null) {
 
 			if (actions.Chance < 100) {
 
@@ -306,6 +306,89 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//ChangePlayerCredits
+			if (actions.ChangePlayerCredits && command != null && command.Type == CommandType.PlayerChat) {
+
+				if (command.PlayerIdentity != 0) {
+
+					var playerList = new List<IMyPlayer>();
+					MyAPIGateway.Players.GetPlayers(playerList, p => p.IdentityId == command.PlayerIdentity);
+
+					foreach (var player in playerList) {
+
+						long credits = 0;
+						player.TryGetBalanceInfo(out credits);
+
+						if (actions.ChangePlayerCreditsAmount > 0) {
+
+							player.RequestChangeBalance(actions.ChangePlayerCreditsAmount);
+							PaymentSuccessTriggered = true;
+						
+						} else {
+
+							if (actions.ChangePlayerCreditsAmount > credits) {
+
+								PaymentFailureTriggered = true;
+							
+							} else {
+
+								player.RequestChangeBalance(actions.ChangePlayerCreditsAmount);
+								PaymentSuccessTriggered = true;
+
+							}
+						
+						}
+					
+					}
+
+				}
+			
+			}
+
+			//ChangeNpcFactionCredits
+			if (actions.ChangeNpcFactionCredits) {
+
+				IMyFaction faction = null;
+
+				if (string.IsNullOrWhiteSpace(actions.ChangeNpcFactionCreditsTag)) {
+
+					faction = _behavior.Owner.Faction;
+				
+				} else {
+
+					faction = MyAPIGateway.Session.Factions.TryGetFactionByTag(actions.ChangeNpcFactionCreditsTag);
+
+				}
+
+				if (faction != null) {
+
+					long credits = 0;
+					faction.TryGetBalanceInfo(out credits);
+
+					if (actions.ChangePlayerCreditsAmount > 0) {
+
+						faction.RequestChangeBalance(actions.ChangePlayerCreditsAmount);
+						PaymentSuccessTriggered = true;
+
+					} else {
+
+						if (actions.ChangePlayerCreditsAmount > credits) {
+
+							PaymentFailureTriggered = true;
+
+						} else {
+
+							faction.RequestChangeBalance(actions.ChangePlayerCreditsAmount);
+							PaymentSuccessTriggered = true;
+
+						}
+
+					}
+
+				}
+
+			}
+
 			//RefreshTarget
 			if (actions.RefreshTarget == true) {
 
@@ -573,9 +656,17 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//Enable Blocks
 			if (actions.EnableBlocks) {
 
 				_behavior.Grid.EnableBlocks(actions.EnableBlockNames, actions.EnableBlockStates);
+
+			}
+
+			//BuildProjectedBlocks
+			if (actions.BuildProjectedBlocks) {
+
+				_behavior.Grid.BuildProjectedBlocks(actions.MaxProjectedBlocksToBuild);
 
 			}
 

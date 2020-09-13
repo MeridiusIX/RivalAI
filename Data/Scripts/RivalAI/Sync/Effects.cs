@@ -77,6 +77,9 @@ namespace RivalAI.Sync {
 		[ProtoMember(11)]
 		public string AvatarId;
 
+		[ProtoMember(12)]
+		public float SoundVolume;
+
 		public Effects() {
 
 			Mode = EffectSyncMode.None;
@@ -90,6 +93,7 @@ namespace RivalAI.Sync {
 			ParticleUpDir = Vector3D.Up;
 			Velocity = Vector3.Zero;
 			AvatarId = "";
+			SoundVolume = 0;
 
 		}
 

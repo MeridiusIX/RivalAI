@@ -60,6 +60,9 @@ namespace RivalAI.Behavior {
 
 			}
 
+			if (WaterHelper.RequiresUpdate)
+				WaterHelper.RefreshWater();
+
 			_barrageCounter++;
 
 			if (Mode != BehaviorManagerMode.None) {
@@ -171,6 +174,20 @@ namespace RivalAI.Behavior {
 
 					Logger.MsgDebug("Behavior: Hunter", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Hunter();
+					MainBehavior.BehaviorInit(remoteControl);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
+					return;
+
+				}
+
+				//Nautical
+				if (remoteControl.CustomData.Contains("[BehaviorName:Nautical]")) {
+
+					Logger.MsgDebug("Behavior: Nautical", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Nautical();
 					MainBehavior.BehaviorInit(remoteControl);
 
 					lock (Behaviors)

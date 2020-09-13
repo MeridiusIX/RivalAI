@@ -33,9 +33,18 @@ using RivalAI.Helpers;
 
 namespace RivalAI.Helpers {
 
+    public enum CommandType {
+    
+        DroneAntenna,
+        PlayerChat,
+        
+    }
+
     public class Command {
 
         public string CommandCode;
+
+        public CommandType Type;
 
         public IMyEntity RemoteControl;
 
@@ -55,10 +64,15 @@ namespace RivalAI.Helpers {
 
         public Vector3D Position;
 
+        public long PlayerIdentity;
+
+        public bool UseTriggerTargetDistance;
+
 
         public Command() {
 
             CommandCode = "";
+            Type = CommandType.DroneAntenna;
             RemoteControl = null;
             Character = null;
             Radius = 0;
@@ -66,6 +80,8 @@ namespace RivalAI.Helpers {
             TargetEntityId = 0;
             TargetEntity = null;
             Position = Vector3D.Zero;
+            PlayerIdentity = 0;
+            UseTriggerTargetDistance = false;
 
         }
         

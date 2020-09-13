@@ -159,7 +159,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		Voxel,
 		Safezone,
 		Shield,
-		Player
+		Player,
+		Water
 
 	}
 

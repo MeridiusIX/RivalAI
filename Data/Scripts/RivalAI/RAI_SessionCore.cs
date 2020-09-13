@@ -37,7 +37,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.30.0";
+		public static string ReleaseVersion = "0.32.0";
 
 		//Server
 		public static bool IsServer = false;
@@ -65,13 +65,33 @@ namespace RivalAI {
 		public bool WeaponCoreLoaded { get; set; }
 		public WcApi WeaponCore = new WcApi();
 
+		//Water Mod ID and API
+		public ulong WaterModID = 2200451495;
+		public WaterModAPI WaterMod = new WaterModAPI();
+
 		public int Ticks = 0;
 
 		public static bool SetupComplete = false;
 
+		public override void Init(MyObjectBuilder_SessionComponent sessionComponent) {
+			base.Init(sessionComponent);
+
+			if (MyAPIGateway.Multiplayer.IsServer) {
+
+				WaterMod.Register("Modular Encounters Spawner");
+				WaterMod.OnRegisteredEvent += WaterLogged;
+				WaterMod.WaterCreatedEvent += WaterHelper.WaterAdded;
+				WaterMod.WaterRemovedEvent += WaterHelper.WaterRemoved;
+
+			}
+
+		}
+
 		public override void LoadData() {
 
-			if(MyAPIGateway.Multiplayer.IsServer == false)
+			Logger.WriteLog("Mod Version: " + ReleaseVersion);
+
+			if (MyAPIGateway.Multiplayer.IsServer == false)
 				return;
 
 			//if(MyAPIGateway.Utilities.GamePaths.ModScopeName.StartsWith("RivalAI (Unstable)"))
@@ -237,8 +257,6 @@ namespace RivalAI {
 
 		public static void Setup() {
 
-			Logger.WriteLog("Mod Version: " + ReleaseVersion);
-
 			IsServer = MyAPIGateway.Multiplayer.IsServer;
 			IsDedicated = MyAPIGateway.Utilities.IsDedicated;
 			ConfigInstance = MyAPIGateway.Utilities.GamePaths.ModScopeName;
@@ -267,6 +285,12 @@ namespace RivalAI {
 
 		}
 
+		public void WaterLogged() {
+
+			Logger.WriteLog("Water Mod Detected and API Loaded.");
+
+		}
+
 		protected override void UnloadData() {
 
 			if(ShieldApiLoaded)
@@ -277,6 +301,15 @@ namespace RivalAI {
 
 			if (MESApi.MESApiReady)
 				MESApi.UnregisterListener();
+
+			if (WaterMod.Registered) {
+
+				WaterMod.Unregister();
+				WaterMod.OnRegisteredEvent -= WaterLogged;
+				WaterMod.WaterCreatedEvent -= WaterHelper.WaterAdded;
+				WaterMod.WaterRemovedEvent -= WaterHelper.WaterRemoved;
+
+			}
 
 			DebugTerminalControls.RegisterControls(false);
 

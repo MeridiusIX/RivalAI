@@ -101,6 +101,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(23)]
 		public string GPSLabel;
 
+		[ProtoMember(24)]
+		public List<float> ChatVolumeMultiplier;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -125,6 +128,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			ChatAvatar = new List<string>();
 			SendToAllOnlinePlayers = false;
 			GPSLabel = "";
+			ChatVolumeMultiplier = new List<float>();
 
 			SecondsUntilChat = 0;
 			ChatSentCount = 0;
@@ -135,7 +139,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref string avatar) {
+		public bool ProcessChat(ref string msg, ref string audio, ref BroadcastType type, ref string avatar, ref float volume) {
 
 			if (UseChat == false) {
 
@@ -164,9 +168,10 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			string thisMsg = "";
 			string thisSound = "";
 			string thisAvatar = "";
+			float thisVolume = 1;
 			BroadcastType thisType = BroadcastType.None;
 
-			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType, ref thisAvatar);
+			GetChatAndSoundFromLists(ref thisMsg, ref thisSound, ref thisType, ref thisAvatar, ref thisVolume);
 
 			if (string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
@@ -183,6 +188,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			audio = thisSound;
 			type = thisType;
 			avatar = thisAvatar;
+			volume = thisVolume;
 			return true;
 
 		}
@@ -336,6 +342,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					}
 
+					//ChatVolumeMultiplier
+					if (tag.Contains("[ChatVolumeMultiplier:") == true) {
+
+						ChatVolumeMultiplier.Add(TagHelper.TagFloatCheck(tag, 1));
+
+					}
+
 				}
 
 			}
@@ -359,7 +372,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref string avatar) {
+		private void GetChatAndSoundFromLists(ref string message, ref string sound, ref BroadcastType type, ref string avatar, ref float volume) {
 
 			if (ChatMessages.Count == 0) {
 
@@ -390,6 +403,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				if (ChatVolumeMultiplier.Count >= ChatMessages.Count) {
+
+					volume = ChatVolumeMultiplier[index];
+
+				}
+
 			} else {
 
 				if (MessageIndex >= ChatMessages.Count) {
@@ -415,6 +434,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				if (ChatAvatar.Count >= ChatMessages.Count) {
 
 					avatar = ChatAvatar[MessageIndex];
+
+				}
+
+				if (ChatVolumeMultiplier.Count >= ChatMessages.Count) {
+
+					volume = ChatVolumeMultiplier[MessageIndex];
 
 				}
 

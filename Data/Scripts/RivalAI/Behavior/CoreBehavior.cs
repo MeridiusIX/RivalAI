@@ -450,6 +450,7 @@ namespace RivalAI.Behavior {
 			Logger.MsgDebug("Remote Control Has Physics: " + PhysicsValid.ToString(), DebugTypeEnum.BehaviorSetup);
 			Logger.MsgDebug("Setting Up Subsystems", DebugTypeEnum.BehaviorSetup);
 
+			Settings = new StoredSettings();
 			AutoPilot = new AutoPilotSystem(remoteControl, this);
 			Broadcast = new BroadcastSystem(remoteControl);
 			Damage = new DamageSystem(remoteControl);
@@ -457,7 +458,6 @@ namespace RivalAI.Behavior {
 			Grid = new GridSystem(remoteControl);
 			Owner = new OwnerSystem(remoteControl);
 			//Spawning = new SpawningSystem(remoteControl);
-			Settings = new StoredSettings();
 			Trigger = new TriggerSystem(remoteControl);
 
 			Logger.MsgDebug("Setting Up Subsystem References", DebugTypeEnum.BehaviorSetup);

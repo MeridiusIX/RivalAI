@@ -61,14 +61,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		public MyDamageInformation DamageInfo;
 		public bool PendingDamage;
 
-		public Action BehaviorEventA;
-		public Action BehaviorEventB;
-		public Action BehaviorEventC;
-		public Action BehaviorEventD;
-		public Action BehaviorEventE;
-		public Action BehaviorEventF;
-		public Action BehaviorEventG;
-		public Action BehaviorEventH;
+		public bool PaymentSuccessTriggered;
+		public bool PaymentFailureTriggered;
 
 		public DateTime LastTriggerRun;
 
@@ -484,6 +478,33 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				//PaymentSuccess
+				if (trigger.Type == "PaymentSuccess") {
+
+					if (trigger.UseTrigger == true && PaymentSuccessTriggered) {
+
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//PaymentFailure
+				if (trigger.Type == "PaymentFailure") {
+
+					if (trigger.UseTrigger == true && PaymentFailureTriggered) {
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
 			}
 
 			_behavior.BehaviorTriggerA = false;
@@ -493,6 +514,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			_behavior.BehaviorTriggerE = false;
 			_behavior.BehaviorTriggerF = false;
 			_behavior.BehaviorTriggerG = false;
+			PaymentSuccessTriggered = false;
+			PaymentFailureTriggered = false;
 			TimedTriggersProcessed = true;
 
 		}
@@ -597,11 +620,22 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			var dist = Vector3D.Distance(RemoteControl.GetPosition(), command.RemoteControl.GetPosition());
 
-			if (!command.IgnoreAntennaRequirement) {
+			if (!command.UseTriggerTargetDistance) {
 
-				var antenna = _behavior.Grid.GetActiveAntenna();
+				if (!command.IgnoreAntennaRequirement) {
 
-				if (antenna == null) {
+					var antenna = _behavior.Grid.GetActiveAntenna();
+
+					if (antenna == null) {
+
+						Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
+						return;
+
+					}
+
+				}
+
+				if (dist > command.Radius) {
 
 					Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
 					return;
@@ -610,19 +644,19 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
-			if (dist > command.Radius) {
-
-				Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
-				return;
-
-			}
-
-
 			for (int i = 0; i < CommandTriggers.Count; i++) {
 
 				var trigger = CommandTriggers[i];
 
-				if (trigger.UseTrigger == true && command.CommandCode == trigger.CommandReceiveCode) {
+				if (trigger.CommandCodeType != command.Type)
+					continue;
+
+				if (command.UseTriggerTargetDistance && dist > trigger.TargetDistance)
+					continue;
+
+				bool commandCodePass = !trigger.AllowCommandCodePartialMatch ? (command.CommandCode.ToLower() == trigger.CommandReceiveCode.ToLower()) : (command.CommandCode.ToLower().Contains(trigger.CommandReceiveCode.ToLower()));
+
+				if (trigger.UseTrigger == true && commandCodePass) {
 
 					trigger.ActivateTrigger();
 
@@ -710,7 +744,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				foreach (var actions in trigger.Actions) {
 
-					ProcessAction(actions, attackerEntityId, detectedEntity, command);
+					ProcessAction(trigger, actions, attackerEntityId, detectedEntity, command);
 
 				}
 
@@ -721,7 +755,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				if (trigger.NextActionIndex >= trigger.Actions.Count)
 					trigger.NextActionIndex = 0;
 
-				ProcessAction(trigger.Actions[trigger.NextActionIndex], attackerEntityId, detectedEntity, command);
+				ProcessAction(trigger, trigger.Actions[trigger.NextActionIndex], attackerEntityId, detectedEntity, command);
 				trigger.NextActionIndex++;
 
 			}
@@ -730,11 +764,11 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				if (trigger.Actions.Count == 1) {
 
-					ProcessAction(trigger.Actions[0], attackerEntityId, detectedEntity, command);
+					ProcessAction(trigger, trigger.Actions[0], attackerEntityId, detectedEntity, command);
 
 				} else {
 
-					ProcessAction(trigger.Actions[MathTools.RandomBetween(0, trigger.Actions.Count)], attackerEntityId, detectedEntity, command);
+					ProcessAction(trigger, trigger.Actions[MathTools.RandomBetween(0, trigger.Actions.Count)], attackerEntityId, detectedEntity, command);
 
 				}
 
@@ -1004,6 +1038,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 								if (profile != null) {
 
+									gotTrigger = true;
 									foreach (var trigger in profile.Triggers) {
 
 										AddTrigger(trigger);
@@ -1023,7 +1058,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					}
 
 					if (!gotTrigger)
-						Logger.WriteLog("Could Not Find Trigger Profile Associated To Tag: " + tag);
+						Logger.WriteLog("Could Not Find Trigger Group Profile Associated To Tag: " + tag);
 
 				}
 

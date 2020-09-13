@@ -102,15 +102,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			var gridSize = (_remoteControl.CubeGrid.GridSizeEnum == MyCubeSize.Small);
 
 			//Calculate Yaw
-
-			if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
-
-				double angleLeftToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, directionToTarget);
-				double angleRightToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, directionToTarget);
-				YawTargetAngleResult = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, directionToTarget) - VectorHelper.GetAngleBetweenDirections(referenceMatrix.Backward, directionToTarget);
-				gyroRotation.Y = (float)CalculateGyroAxisRadians(angleLeftToTarget, angleRightToTarget, YawTargetAngleResult, gridSize, ref YawAngleDifference);
-
-			}
+			double angleLeftToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Left, directionToTarget);
+			double angleRightToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Right, directionToTarget);
+			YawTargetAngleResult = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, directionToTarget) - VectorHelper.GetAngleBetweenDirections(referenceMatrix.Backward, directionToTarget);
+			gyroRotation.Y = (float)CalculateGyroAxisRadians(angleLeftToTarget, angleRightToTarget, YawTargetAngleResult, gridSize, ref YawAngleDifference);
 
 			//Calculate Pitch
 			if (_upDirection != Vector3D.Zero && CurrentMode.HasFlag(NewAutoPilotMode.LevelWithGravity) && !CurrentMode.HasFlag(NewAutoPilotMode.Ram)) {
@@ -238,7 +233,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void ProcessRotationParallel(bool hasWaypoint) {
 
-			if (hasWaypoint && CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint)) {
+			if (hasWaypoint && (CurrentMode.HasFlag(NewAutoPilotMode.RotateToWaypoint) || CurrentMode.HasFlag(NewAutoPilotMode.RotateToTarget) || CurrentMode.HasFlag(NewAutoPilotMode.Ram))) {
 
 				CalculateGyroRotation();
 

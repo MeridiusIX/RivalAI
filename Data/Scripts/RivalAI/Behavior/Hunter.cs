@@ -59,7 +59,7 @@ namespace RivalAI.Behavior{
 			_behaviorType = "Hunter";
 
 			TimeBetweenNewTargetChecks = 15;
-			LostTargetTimerTrigger = 3;
+			LostTargetTimerTrigger = 30;
 			DistanceToCheckEngagableTarget = 1200;
 
 			EngageOnCameraDetection = false;

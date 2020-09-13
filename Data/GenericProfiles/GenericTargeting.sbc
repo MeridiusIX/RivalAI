@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-    <EntityComponents>
+		<EntityComponents>
 		
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-            <Id>
-                <TypeId>Inventory</TypeId>
-                <SubtypeId>RivalAI-GenericTargetProfile-EnemyOverride</SubtypeId>
-            </Id>
-            <Description>
+						<Id>
+								<TypeId>Inventory</TypeId>
+								<SubtypeId>RivalAI-GenericTargetProfile-EnemyOverride</SubtypeId>
+						</Id>
+						<Description>
 			
 			[RivalAI Target]
 	
@@ -26,14 +26,14 @@
 			[Relations:Enemy]
 
 			</Description>
-        </EntityComponent>
+				</EntityComponent>
 		
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-            <Id>
-                <TypeId>Inventory</TypeId>
-                <SubtypeId>RivalAI-GenericTargetProfile-EnemyPlayer</SubtypeId>
-            </Id>
-            <Description>
+						<Id>
+								<TypeId>Inventory</TypeId>
+								<SubtypeId>RivalAI-GenericTargetProfile-EnemyPlayer</SubtypeId>
+						</Id>
+						<Description>
 			
 			[RivalAI Target]
 	
@@ -51,14 +51,14 @@
 			[Relations:Enemy]
 
 			</Description>
-        </EntityComponent>
+				</EntityComponent>
 		
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-            <Id>
-                <TypeId>Inventory</TypeId>
-                <SubtypeId>RivalAI-GenericTargetProfile-EnemyGrid</SubtypeId>
-            </Id>
-            <Description>
+						<Id>
+								<TypeId>Inventory</TypeId>
+								<SubtypeId>RivalAI-GenericTargetProfile-EnemyGrid</SubtypeId>
+						</Id>
+						<Description>
 			
 			[RivalAI Target]
 	
@@ -76,14 +76,14 @@
 			[Relations:Enemy]
 
 			</Description>
-        </EntityComponent>
+				</EntityComponent>
 		
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
-            <Id>
-                <TypeId>Inventory</TypeId>
-                <SubtypeId>RivalAI-GenericTargetProfile-Hunter</SubtypeId>
-            </Id>
-            <Description>
+						<Id>
+								<TypeId>Inventory</TypeId>
+								<SubtypeId>RivalAI-GenericTargetProfile-Hunter</SubtypeId>
+						</Id>
+						<Description>
 			
 			[RivalAI Target]
 	
@@ -109,7 +109,7 @@
 			[GetTargetBy:ClosestDistance]
 
 			</Description>
-        </EntityComponent>
+				</EntityComponent>
 		
 	</EntityComponents>
 </Definitions>

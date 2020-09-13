@@ -267,6 +267,7 @@ namespace RivalAI.Helpers {
         TargetIsInitialWaypoint = 1 << 5,
         PlanetPathingAscend = 1 << 6,
         TargetPadding = 1 << 7,
+        WaterPathing = 1 << 8
 
 
     }

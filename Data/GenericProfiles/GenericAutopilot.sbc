@@ -82,6 +82,29 @@
 			</Description>
 
 		</EntityComponent>
+
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Autopilot-Nautical</SubtypeId>
+			</Id>
+			<Description>
+
+				[RivalAI Autopilot]
+
+				[DisableInertiaDampeners:false]
+				[SlowDownOnWaypointApproach:false]
+				[ExtraSlowDownDistance:0]
+				[FlyLevelWithGravity:false]
+				[AllowStrafing:false]
+				[WaypointTolerance:30]
+				[IdealMinSpeed:10]
+				[IdealMaxSpeed:100]
+
+			</Description>
+
+		</EntityComponent>
 		
 		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
 		

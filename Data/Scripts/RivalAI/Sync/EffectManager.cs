@@ -31,13 +31,28 @@ using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
 
 namespace RivalAI.Sync {
+
+	public class ChatSoundData {
+
+		public string SoundId;
+		public string Avatar;
+		public float VolumeMultiplier;
+
+		public ChatSoundData(string soundId, string avatar, float volume) {
+
+			SoundId = soundId;
+			Avatar = avatar;
+			VolumeMultiplier = volume;
+
+		}
 	
+	} 
+
 	public static class EffectManager {
 
 		public static bool SoundsPending = false;
 		public static bool SoundsPlaying = false;
-		public static List<string> SoundsPendingList = new List<string>();
-		public static List<string> AvatarPendingList = new List<string>();
+		public static List<ChatSoundData> SoundsPendingList = new List<ChatSoundData>();
 
 		public static IMyEntity CurrentPlayerEntity;
 		public static MyEntity3DSoundEmitter SoundEmitter;
@@ -48,8 +63,8 @@ namespace RivalAI.Sync {
 
 			if(effectData.Mode == EffectSyncMode.PlayerSound) {
 				
-				SoundsPendingList.Add(effectData.SoundId);
-				AvatarPendingList.Add(effectData.AvatarId);
+
+				SoundsPendingList.Add(new ChatSoundData(effectData.SoundId, effectData.AvatarId, effectData.SoundVolume));
 				SoundsPending = true;
 
 			}
@@ -138,27 +153,27 @@ namespace RivalAI.Sync {
 
 			}
 
-			if(SoundEmitter.IsPlaying == true) {
+			if (SoundEmitter.IsPlaying == true) {
 
+				ProcessAvatarDisplay();
 				return;
+
+			} else if(SoundsPendingList.Count > 0) {
+
+				var soundPair = new MySoundPair(SoundsPendingList[0].SoundId);
+				SoundEmitter.VolumeMultiplier = SoundsPendingList[0].VolumeMultiplier;
+				SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
+				SoundsPlaying = true;
+				SoundsPendingList.RemoveAt(0);
 
 			}
 			
 			if(SoundsPendingList.Count == 0){
-			
-				SoundsPending = false;
-				return;
-			
-			}
-			
-			var soundPair = new MySoundPair(SoundsPendingList[0]);
-			SoundsPendingList.RemoveAt(0);
-			SoundEmitter.PlaySound(soundPair, false, false, true, true, false);
-			SoundsPlaying = true;
 
-			if (SoundsPendingList.Count == 0){
-			
+				SoundsPlaying = false;
 				SoundsPending = false;
+				ProcessAvatarDisplay();
+				return;
 			
 			}
 
@@ -169,19 +184,14 @@ namespace RivalAI.Sync {
 			if (SoundEmitter == null)
 				return;
 
-			if (!SoundEmitter.IsPlaying || string.IsNullOrWhiteSpace(CurrentAvatar)) {
+			if (!SoundEmitter.IsPlaying) {
 
 				SoundsPlaying = false;
 				return;
 
 			}
 
-
-			var camera = MyAPIGateway.Session.Camera;
-			var camCenter = camera.Position + camera.ViewMatrix.Forward;
-			var screenPos = camera.WorldToScreen(ref camCenter);
-			MyTransparentGeometry.AddBillboardOriented(MyStringId.GetOrCompute("Avatar-Glitchy-Berserk"), Color.White, screenPos, camera.ViewMatrix.Left, camera.ViewMatrix.Up, (float)1 * 0.075f, 4);
-
+			//Do Something With This Later
 
 		}
 
@@ -195,10 +205,8 @@ namespace RivalAI.Sync {
 
 				if (GotFirstEmitter) {
 
-					AvatarPendingList.Clear();
 					SoundsPendingList.Clear();
 					SoundsPending = false;
-					SoundsPlaying = false;
 				
 				}
 

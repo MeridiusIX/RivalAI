@@ -139,6 +139,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(33)]
 		public ActionExecutionEnum ActionExecution;
 
+		[ProtoMember(34)]
+		public CommandType CommandCodeType;
+
+		[ProtoMember(35)]
+		public bool AllowCommandCodePartialMatch;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -180,6 +186,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			InventoryItemMax = -1;
 
 			CommandReceiveCode = "";
+			CommandCodeType = CommandType.DroneAntenna;
+			AllowCommandCodePartialMatch = false;
 
 			NextActionIndex = 0;
 			ActionExecution = ActionExecutionEnum.All;

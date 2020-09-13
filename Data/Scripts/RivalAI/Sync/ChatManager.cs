@@ -66,6 +66,8 @@ namespace RivalAI.Sync {
             chatData.Message = messageText;
             chatData.PlayerId = thisPlayer.IdentityId;
             chatData.SteamId = thisPlayer.SteamUserId;
+            chatData.PlayerPosition = thisPlayer.GetPosition();
+            chatData.PlayerEntity = thisPlayer.Controller?.ControlledEntity?.Entity != null ? thisPlayer.Controller.ControlledEntity.Entity.EntityId : 0;
             SendChatDataOverNetwork(chatData, true);
 
         }
@@ -117,11 +119,25 @@ namespace RivalAI.Sync {
             
             }
 
+            //Everything Else
+
+            IMyEntity playerEntity = null;
+
+            if (!MyAPIGateway.Entities.TryGetEntityById(newChatData.PlayerEntity, out playerEntity))
+                return;
+
+            var command = new Command();
+            command.CommandCode = newChatData.Message;
+            command.Type = CommandType.PlayerChat;
+            command.Character = playerEntity;
+            command.UseTriggerTargetDistance = true;
+            command.Position = newChatData.PlayerPosition;
+            command.PlayerIdentity = newChatData.PlayerId;
+            CommandHelper.CommandTrigger?.Invoke(command);
+
         }
 
         public static void ProcessReturnChat(ChatMessage chatData) {
-
-            
 
             if(string.IsNullOrWhiteSpace(chatData.ClipboardPayload) == false) {
 

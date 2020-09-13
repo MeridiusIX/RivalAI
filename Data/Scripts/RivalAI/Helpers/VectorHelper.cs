@@ -14,6 +14,12 @@ namespace RivalAI.Helpers {
 
 		public static Random Rnd = new Random();
 
+		public static Vector3D CreateCoords(Vector3D start, Vector3D dir, double dist) {
+
+			return start * dir + dist;
+
+		}
+
 		public static Vector3D GetRandomDespawnCoords(Vector3D coords, double distance = 8000, double altitude = 1500) {
 
 			Vector3D result = Vector3D.Zero;

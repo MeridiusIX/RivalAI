@@ -52,6 +52,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		Ram = 1 << 9,
 		OffsetWaypoint = 1 << 10,
 		RotateToTarget = 1 << 11,
+		WaterNavigation = 1 << 12,
 
 	}
 
@@ -73,13 +74,43 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			get {
 
-				if (DataMode == AutoPilotDataMode.Secondary && _secondaryAutoPilot != null)
-					return _secondaryAutoPilot;
+				if (DataMode == AutoPilotDataMode.Primary) {
 
-				if (DataMode == AutoPilotDataMode.Tertiary && _tertiaryAutopilot != null)
-					return _tertiaryAutopilot;
+					bool settingBlank = string.IsNullOrWhiteSpace(_behavior.Settings.PrimaryAutopilotId);
+					bool profileBlank = string.IsNullOrWhiteSpace(_primaryAutoPilot?.ProfileSubtypeId);
 
-				return _primaryAutoPilot;
+					if (settingBlank && !profileBlank) {
+
+						_behavior.Settings.PrimaryAutopilotId = _primaryAutoPilot.ProfileSubtypeId;
+
+					}
+
+					if (_behavior.Settings.PrimaryAutopilotId != _primaryAutoPilot.ProfileSubtypeId)
+						_primaryAutoPilot = TagHelper.GetAutopilotProfile(_behavior.Settings.PrimaryAutopilotId);
+
+					return _primaryAutoPilot;
+
+				}
+
+				if (DataMode == AutoPilotDataMode.Secondary) {
+
+					if (_behavior.Settings.SecondaryAutopilotId != _secondaryAutoPilot?.ProfileSubtypeId)
+						_secondaryAutoPilot = TagHelper.GetAutopilotProfile(_behavior.Settings.SecondaryAutopilotId);
+
+					return _secondaryAutoPilot != null ? _secondaryAutoPilot : _primaryAutoPilot;
+
+				}
+
+				if (DataMode == AutoPilotDataMode.Tertiary) {
+
+					if (_behavior.Settings.TertiaryAutopilotId != _tertiaryAutopilot?.ProfileSubtypeId)
+						_tertiaryAutopilot = TagHelper.GetAutopilotProfile(_behavior.Settings.TertiaryAutopilotId);
+
+					return _tertiaryAutopilot != null ? _tertiaryAutopilot : _primaryAutoPilot;
+
+				}
+
+				return null;
 
 			}
 
@@ -216,6 +247,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		//PlanetData - Self
 		private bool _inGravityLastUpdate;
 		public MyPlanet CurrentPlanet;
+		public Water CurrentWater;
+		public WaterPathing WaterPath;
 		private Vector3D _upDirection;
 		private double _gravityStrength;
 		private double _surfaceDistance;
@@ -237,6 +270,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public AutoPilotSystem(IMyRemoteControl remoteControl, IBehavior behavior) {
 
+			_behavior = behavior;
 			Data = new AutoPilotProfile();
 			_primaryAutoPilot = new AutoPilotProfile();
 			_secondaryAutoPilot = new AutoPilotProfile();
@@ -288,6 +322,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			_requiresNavigationAroundCollision = false;
 
 			CurrentPlanet = null;
+			WaterPath = new WaterPathing(_behavior);
 			_upDirection = Vector3D.Zero;
 			_gravityStrength = 0;
 			_surfaceDistance = 0;
@@ -312,6 +347,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			_referenceOrientation = new MyBlockOrientation(Base6Directions.Direction.Forward, Base6Directions.Direction.Up);
 
+			Logger.MsgDebug("Strafe Setup Start", DebugTypeEnum.BehaviorSetup);
 			Strafing = false;
 			CurrentStrafeDirections = Vector3I.Zero;
 			CurrentAllowedStrafeDirections = Vector3I.Zero;
@@ -320,6 +356,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
 			LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 			_strafeStartPosition = Vector3D.Zero;
+			Logger.MsgDebug("Strafe Setup End", DebugTypeEnum.BehaviorSetup);
 
 			_collisionStrafeAdjusted = false;
 			_minAngleDistanceStrafeAdjusted = false;
@@ -329,7 +366,6 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (remoteControl != null && MyAPIGateway.Entities.Exist(remoteControl?.SlimBlock?.CubeGrid)) {
 
 				_remoteControl = remoteControl;
-				_behavior = behavior;
 				Collision = new CollisionSystem(_remoteControl, this);
 				Targeting = new TargetingSystem(_remoteControl);
 				Weapons = new WeaponSystem(_remoteControl, _behavior);
@@ -378,7 +414,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 						var profileId = TagHelper.TagStringCheck(tag);
 						_primaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
-					
+
+						if (!string.IsNullOrWhiteSpace(_primaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(_behavior.Settings.PrimaryAutopilotId))
+							_behavior.Settings.PrimaryAutopilotId = _primaryAutoPilot.ProfileSubtypeId;
+
 					}
 
 					//SecondaryAutopilotData
@@ -387,6 +426,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 						var profileId = TagHelper.TagStringCheck(tag);
 						_secondaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
 
+						if (!string.IsNullOrWhiteSpace(_secondaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(_behavior.Settings.SecondaryAutopilotId))
+							_behavior.Settings.SecondaryAutopilotId = _secondaryAutoPilot.ProfileSubtypeId;
+
 					}
 
 					//TertiaryAutopilotData
@@ -394,6 +436,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 						var profileId = TagHelper.TagStringCheck(tag);
 						_tertiaryAutopilot = TagHelper.GetAutopilotProfile(profileId);
+
+						if (!string.IsNullOrWhiteSpace(_tertiaryAutopilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(_behavior.Settings?.TertiaryAutopilotId))
+							_behavior.Settings.TertiaryAutopilotId = _tertiaryAutopilot.ProfileSubtypeId;
 
 					}
 
@@ -612,13 +657,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				sbStats.Append("Behavior Type: ").Append(_behavior.BehaviorType).AppendLine();
 				sbStats.Append("Behavior Mode: ").Append(_behavior.Mode).AppendLine();
 				sbStats.Append("Speed: ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
-				sbStats.Append("Allowed Waypoint Types: ").AppendLine();
-				sbStats.Append(DirectWaypointType.ToString()).AppendLine();
-				sbStats.Append("Restricted Waypoint Types: ").AppendLine();
-				sbStats.Append(IndirectWaypointType.ToString()).AppendLine();
-				sbStats.Append("Debug Data A: ").Append(Data.IdealMinSpeed).AppendLine();
-				sbStats.Append("Debug Data B: ").Append(Data.IdealMaxSpeed).AppendLine();
-				sbStats.Append("Debug Data C: ").Append(Data.ExtraSlowDownDistance).AppendLine();
+				sbStats.Append("AP Modes: ").AppendLine();
+				sbStats.Append(CurrentMode.ToString().Replace(",", "\r\n")).AppendLine();
+				//sbStats.Append("Allowed Waypoint Types: ").AppendLine();
+				//sbStats.Append(DirectWaypointType.ToString()).AppendLine();
+				//sbStats.Append("Restricted Waypoint Types: ").AppendLine();
+				//sbStats.Append(IndirectWaypointType.ToString()).AppendLine();
+
 
 				var sbThrust = new StringBuilder();
 				sbThrust.Append("Dampeners Enabled: ").Append(_remoteControl.DampenersOverride.ToString()).AppendLine();
@@ -725,12 +770,14 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			var planetEntity = CurrentPlanet as IMyEntity;
 			var gravityProvider = planetEntity?.Components?.Get<MyGravityProviderComponent>();
+			CurrentWater = WaterHelper.GetWater(CurrentPlanet);
 
 			if (gravityProvider != null && gravityProvider.IsPositionInRange(_myPosition)) {
 
+				
 				_upDirection = Vector3D.Normalize(_myPosition - planetEntity.GetPosition());
 				_gravityStrength = gravityProvider.GetWorldGravity(_myPosition).Length();
-				_surfaceDistance = Vector3D.Distance(VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, CurrentPlanet), _myPosition);
+				_surfaceDistance = Vector3D.Distance(WaterHelper.GetClosestSurface(_myPosition, CurrentPlanet, CurrentWater), _myPosition);
 				_airDensity = CurrentPlanet.GetAirDensity(_myPosition);
 
 				if (!_inGravityLastUpdate && (_offsetType == WaypointOffsetType.RandomOffsetFixed || _offsetType == WaypointOffsetType.RandomOffsetRelativeEntity)) {
@@ -755,6 +802,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			//Logger.MsgDebug("Autopilot: BarrelRoll and Ram", DebugTypeEnum.TempDebug);
 			if (_applyBarrelRoll) {
 
 				var rollTime = MyAPIGateway.Session.GameDateTime - _barrelRollStart;
@@ -783,6 +831,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					Logger.MsgDebug("Ramming End", DebugTypeEnum.AutoPilot);
 					_applyRamming = false;
 					CurrentMode &= ~NewAutoPilotMode.Ram;
+					StopAllThrust();
 
 				} else {
 
@@ -799,6 +848,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			//Logger.MsgDebug("Autopilot: Collision", DebugTypeEnum.TempDebug);
 			//Collision
 			if (this.Data.UseVelocityCollisionEvasion && Collision.VelocityResult.CollisionImminent()) {
 
@@ -846,6 +896,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			//Logger.MsgDebug("Autopilot: Pad Distance", DebugTypeEnum.TempDebug);
 			if (Data.PadDistanceFromTarget != 0 && Targeting.HasTarget()) {
 
 				var dirFromTarget = Vector3D.Normalize(_myPosition - Targeting.TargetLastKnownCoords);
@@ -853,7 +904,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (InGravity()) {
 
-					var surfaceCoords = CurrentPlanet.GetClosestSurfacePointGlobal(roughPaddedCoords);
+					var surfaceCoords = WaterHelper.GetClosestSurface(roughPaddedCoords, CurrentPlanet, CurrentWater);
 					var distRoughToSurface = Vector3D.Distance(surfaceCoords, roughPaddedCoords);
 					var distsurfaceToCore = Vector3D.Distance(surfaceCoords, CurrentPlanet.PositionComp.WorldAABB.Center);
 					var distroughToCore = Vector3D.Distance(surfaceCoords, CurrentPlanet.PositionComp.WorldAABB.Center);
@@ -873,10 +924,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 
 			//Offset
-			
-			if(CurrentMode.HasFlag(NewAutoPilotMode.OffsetWaypoint))
+			//Logger.MsgDebug("Autopilot: Offset", DebugTypeEnum.TempDebug);
+			if (CurrentMode.HasFlag(NewAutoPilotMode.OffsetWaypoint))
 				OffsetWaypointGenerator();
 
+			//Logger.MsgDebug("Autopilot: Planet Pathing", DebugTypeEnum.TempDebug);
 			//PlanetPathing
 			if (CurrentMode.HasFlag(NewAutoPilotMode.PlanetaryPathing) && _gravityStrength > 0) {
 
@@ -890,6 +942,24 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			//WaterNavigation
+			if (CurrentMode.HasFlag(NewAutoPilotMode.WaterNavigation) && _gravityStrength > 0) {
+
+				if (WaterHelper.Enabled && WaterPath != null) {
+
+					_pendingWaypoint = WaterPath.GetPathCoords(_myPosition, Data.WaypointTolerance);
+
+					if (_initialWaypoint != _pendingWaypoint) {
+
+						IndirectWaypointType |= WaypointModificationEnum.WaterPathing;
+
+					}
+
+				}
+			
+			}
+
+			//Logger.MsgDebug("Autopilot: Projectile Lead", DebugTypeEnum.TempDebug);
 			if (Targeting.Target != null && _initialWaypoint == _pendingWaypoint && Targeting.Target.CurrentSpeed() > 0.1) {
 
 				bool gotLead = false;
@@ -939,6 +1009,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					_calculatedWeaponPredictionWaypoint = Vector3D.Zero;
 
 			}
+
+			//Logger.MsgDebug("Autopilot: Calculation Done", DebugTypeEnum.TempDebug);
 
 		}
 
@@ -1068,7 +1140,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					if (Data.ReverseOffsetDistAltAboveHeight) {
 
-						var surfaceAtWaypoint = CurrentPlanet.GetClosestSurfacePointGlobal(_pendingWaypoint);
+						var surfaceAtWaypoint = WaterHelper.GetClosestSurface(_pendingWaypoint, CurrentPlanet, CurrentWater);
 						reverseDistAlt = Vector3D.Distance(surfaceAtWaypoint, _pendingWaypoint) > Data.ReverseOffsetHeight;
 
 					}
@@ -1110,7 +1182,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					if (InGravity()) {
 
-						_offsetMatrix = MatrixD.CreateWorld(CurrentPlanet.GetClosestSurfacePointGlobal(_remoteControl.WorldMatrix.Translation), Vector3D.CalculatePerpendicularVector(_upDirection), _upDirection);
+						_offsetMatrix = MatrixD.CreateWorld(WaterHelper.GetClosestSurface(_remoteControl.WorldMatrix.Translation, CurrentPlanet, CurrentWater), Vector3D.CalculatePerpendicularVector(_upDirection), _upDirection);
 
 					} else {
 
@@ -1126,7 +1198,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (InGravity()) {
 
 				var roughPerpendicularCoords = _offsetDistance * _offsetDirection + _offsetMatrix.Translation;
-				var roughCoordsSurface = CurrentPlanet.GetClosestSurfacePointGlobal(roughPerpendicularCoords);
+				var roughCoordsSurface = WaterHelper.GetClosestSurface(roughPerpendicularCoords, CurrentPlanet, CurrentWater);
 				var worldCenter = CurrentPlanet.PositionComp.WorldAABB.Center;
 				var upAtRoughCoords = Vector3D.Normalize(roughPerpendicularCoords - worldCenter);
 				var centerToRoughDist = Vector3D.Distance(worldCenter, roughPerpendicularCoords);
@@ -1295,7 +1367,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			
 				var directionFromTarget = Vector3D.Normalize(_myPosition - _pendingWaypoint);
 				var lineFromTarget = directionFromTarget * (Vector3D.Distance(_pendingWaypoint, _myPosition) * 0.8) + _pendingWaypoint;
-				var surfaceAtLineTermination = CurrentPlanet.GetClosestSurfacePointGlobal(lineFromTarget);
+				var surfaceAtLineTermination = WaterHelper.GetClosestSurface(lineFromTarget, CurrentPlanet, CurrentWater);
 				_pendingWaypoint = Vector3D.Normalize(surfaceAtLineTermination - planetPosition) * Data.IdealPlanetAltitude + surfaceAtLineTermination;
 
 			}
@@ -1306,8 +1378,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			double requiredAltitude = _requiresClimbToIdealAltitude ? this.Data.IdealPlanetAltitude : this.Data.MinimumPlanetAltitude;
 			
 
-			Vector3D mySurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_myPosition, CurrentPlanet);
-			Vector3D waypointSurfaceCoords = VectorHelper.GetPlanetSurfaceCoordsAtPosition(_pendingWaypoint, CurrentPlanet);
+			Vector3D mySurfaceCoords = WaterHelper.GetClosestSurface(_myPosition, CurrentPlanet, CurrentWater);
+			Vector3D waypointSurfaceCoords = WaterHelper.GetClosestSurface(_pendingWaypoint, CurrentPlanet, CurrentWater);
 
 			double myAltitude = Vector3D.Distance(_myPosition, mySurfaceCoords);
 			double waypointAltitude = Vector3D.Distance(_pendingWaypoint, waypointSurfaceCoords);
@@ -1322,7 +1394,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			foreach (Vector3D pathPoint in stepsList) {
 
-				Vector3D surfacePathPoint = VectorHelper.GetPlanetSurfaceCoordsAtPosition(pathPoint, CurrentPlanet);
+				Vector3D surfacePathPoint = WaterHelper.GetClosestSurface(pathPoint, CurrentPlanet, CurrentWater);
 				double surfaceCoreDistance = Vector3D.Distance(surfacePathPoint, planetPosition);
 
 				if (surfaceCoreDistance >= highestTerrainCoreDistance) {
@@ -1381,6 +1453,19 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			_pendingWaypoint = waypointCoreDirection * (highestTerrainCoreDistance + waypointAltitude) + planetPosition;
 			_calculatedPlanetPathWaypoint = _pendingWaypoint;
 			Logger.MsgDebug("Planet Pathing: Terrain Higher Than Target " + waypointAltitudeDifferenceFromHighestTerrain.ToString(), DebugTypeEnum.AutoPilot); ;
+
+		}
+
+		private Vector3D CalculateWaterPath() {
+
+			if (CurrentWater == null)
+				return _pendingWaypoint;
+
+			bool isTargetOnOrAboveWater = false;
+			Vector3D waterCoordsAtTarget = WaterHelper.GetClosestSurface(_pendingWaypoint, CurrentPlanet, CurrentWater, ref isTargetOnOrAboveWater);
+
+
+			return _pendingWaypoint;
 
 		}
 
@@ -1486,6 +1571,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		
 		}
 
+		public Vector3D GetPendingWaypoint() {
+
+			return _pendingWaypoint;
+
+		}
+
 		public MyPlanet GetCurrentPlanet() {
 
 			return CurrentPlanet;
@@ -1564,10 +1655,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void ActivateRamming() {
 
-			Logger.MsgDebug("Ramming Start", DebugTypeEnum.AutoPilot);
 			_applyRamming = true;
+			this.Strafing = false;
 			_ramStart = MyAPIGateway.Session.GameDateTime;
 			_ramDuration = MathTools.RandomBetween(Data.RamMinDurationMs, Data.RamMaxDurationMs);
+			Logger.MsgDebug("Ramming Start. Dur: " + _ramDuration, DebugTypeEnum.AutoPilot);
 
 		}
 
@@ -1590,6 +1682,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (_currentWaypoint != Vector3D.Zero) {
 
 				MySimpleObjectDraw.DrawLine(_myPosition, _currentWaypoint, MyStringId.GetOrCompute("WeaponLaser"), ref colorGreen, 1.1f);
+				WaterPath.DrawCurrentPath();
 
 			}
 			

@@ -61,6 +61,12 @@ namespace RivalAI.Sync {
 		[ProtoMember(6)]
 		public string ClipboardPayload;
 
+		[ProtoMember(7)]
+		public Vector3D PlayerPosition;
+
+		[ProtoMember(8)]
+		public long PlayerEntity;
+
 		public ChatMessage() {
 
 			Mode = ChatMsgMode.None;
@@ -69,6 +75,8 @@ namespace RivalAI.Sync {
 			SteamId = 0;
 			ReturnMessage = "";
 			ClipboardPayload = "";
+			PlayerPosition = Vector3D.Zero;
+			PlayerEntity = 0;
 
 		}
 

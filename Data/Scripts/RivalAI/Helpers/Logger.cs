@@ -84,6 +84,7 @@ namespace RivalAI.Helpers{
 		public static bool DebugNotification = false;
 
 		public static List<DebugTypeEnum> CurrentDebugTypeList = new List<DebugTypeEnum>();
+		public static bool EnableAll = false;
 
 		public static DateTime StartTimer = DateTime.Now;
 		public static DateTime StepTimer = DateTime.Now;
@@ -129,7 +130,7 @@ namespace RivalAI.Helpers{
 			if (string.IsNullOrWhiteSpace(message))
 				return;
 
-			if (!IsMessageValid(type))
+			if (!EnableAll && !IsMessageValid(type))
 				return;
 			
 			string typeModifier = type.ToString() + ": ";
@@ -238,7 +239,8 @@ namespace RivalAI.Helpers{
 
 			LoggerDebugMode = true;
 			DebugWriteToLog = true;
-
+			EnableAll = true;
+			/*
 			CurrentDebugTypeList.Clear();
 
 			var values = Enum.GetValues(typeof(DebugTypeEnum)).Cast<DebugTypeEnum>();
@@ -248,7 +250,7 @@ namespace RivalAI.Helpers{
 				CurrentDebugTypeList.Add(debugType);
 
 			}
-
+			*/
 		}
 
 		public static void DisableAllOptions() {

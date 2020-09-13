@@ -93,6 +93,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			_restrictedFlags.Add(WaypointModificationEnum.Offset);
 			_restrictedFlags.Add(WaypointModificationEnum.PlanetPathing);
 			_restrictedFlags.Add(WaypointModificationEnum.PlanetPathingAscend);
+			_restrictedFlags.Add(WaypointModificationEnum.WaterPathing);
 
 			StaticWeapons = new List<IWeapon>();
 			Turrets = new List<IWeapon>();

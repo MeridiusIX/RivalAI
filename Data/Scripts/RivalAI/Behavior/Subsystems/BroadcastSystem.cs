@@ -112,6 +112,7 @@ namespace RivalAI.Behavior.Subsystems {
 			string message = "";
 			string sound = "";
 			string avatar = "";
+			float volume = 1;
 			var broadcastType = BroadcastType.None;
 
 			if (chat.Chance < 100) {
@@ -128,7 +129,7 @@ namespace RivalAI.Behavior.Subsystems {
 			
 			}
 
-			if(chat.ProcessChat(ref message, ref sound, ref broadcastType, ref avatar) == false) {
+			if(chat.ProcessChat(ref message, ref sound, ref broadcastType, ref avatar, ref volume) == false) {
 
 				Logger.MsgDebug(chat.ProfileSubtypeId + ": Process Chat Fail", DebugTypeEnum.Chat);
 				return;
@@ -272,6 +273,8 @@ namespace RivalAI.Behavior.Subsystems {
 					effect.Mode = EffectSyncMode.PlayerSound;
 					effect.SoundId = sound;
 					effect.AvatarId = avatar;
+					effect.SoundVolume = volume;
+					//MyVisualScriptLogicProvider.ShowNotificationToAll("Volume: " + volume, 4000);
 					var sync = new SyncContainer(effect);
 					SyncManager.SendSyncMesage(sync, player.SteamUserId);
 

@@ -50,6 +50,7 @@ namespace RivalAI.Behavior.Subsystems {
 
         public List<IMyRadioAntenna> Antennas;
         public List<IMyCameraBlock> Cameras;
+        public List<IMyProjector> Projectors;
         public List<IMyTimerBlock> Timers;
         public List<IMyWarhead> Warheads;
 
@@ -70,6 +71,7 @@ namespace RivalAI.Behavior.Subsystems {
 
             Antennas = new List<IMyRadioAntenna>();
             Cameras = new List<IMyCameraBlock>();
+            Projectors = new List<IMyProjector>();
             Timers = new List<IMyTimerBlock>();
             Warheads = new List<IMyWarhead>();
             
@@ -138,12 +140,63 @@ namespace RivalAI.Behavior.Subsystems {
             if ((block.FatBlock as IMyCameraBlock) != null)
                 Cameras.Add(block.FatBlock as IMyCameraBlock);
 
+            if ((block.FatBlock as IMyProjector) != null)
+                Projectors.Add(block.FatBlock as IMyProjector);
+
             if ((block.FatBlock as IMyTimerBlock) != null)
                 Timers.Add(block.FatBlock as IMyTimerBlock);
 
             if ((block.FatBlock as IMyWarhead) != null)
                 Warheads.Add(block.FatBlock as IMyWarhead);
 
+        }
+
+        public void BuildProjectedBlocks(int maxBlocksToBuild) {
+
+            int builtBlocks = 0;
+
+            foreach(var projector in Projectors) {
+
+                if (projector == null || projector.MarkedForClose) 
+                    continue;
+
+                if (projector.ProjectedGrid == null)
+                    continue;
+
+                var projectedBlocks = new List<IMySlimBlock>();
+                projector.ProjectedGrid.GetBlocks(projectedBlocks);
+
+                while (maxBlocksToBuild > 0 || builtBlocks < maxBlocksToBuild) {
+
+                    bool restartLoop = false;
+
+                    for (int i = projectedBlocks.Count - 1; i >= 0; i--) {
+
+                        var projectedBlock = projectedBlocks[i];
+
+                        if (projectedBlock == null)
+                            continue;
+
+                        if (projector.CanBuild(projectedBlock, true) != BuildCheckResult.OK)
+                            continue;
+
+                        projector.Build(projectedBlock, RemoteControl.OwnerId, RemoteControl.OwnerId, true);
+                        builtBlocks++;
+                        projectedBlocks.RemoveAt(i);
+                        restartLoop = true;
+                        break;
+
+                    }
+
+                    if (restartLoop)
+                        continue;
+
+                    break;
+
+                }
+
+            }
+        
         }
 
         public bool CheckBlockValid(IMyTerminalBlock block) {

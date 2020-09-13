@@ -97,6 +97,15 @@ namespace RivalAI.Behavior.Subsystems {
 		[ProtoMember(20)]
 		public bool IgnoreTriggers;
 
+		[ProtoMember(21)]
+		public string PrimaryAutopilotId;
+
+		[ProtoMember(22)]
+		public string SecondaryAutopilotId;
+
+		[ProtoMember(23)]
+		public string TertiaryAutopilotId;
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -125,6 +134,10 @@ namespace RivalAI.Behavior.Subsystems {
 
 			AutoPilotFlags = NewAutoPilotMode.None;
 			APDataMode = AutoPilotDataMode.Primary;
+
+			PrimaryAutopilotId = "";
+			SecondaryAutopilotId = "";
+			TertiaryAutopilotId = "";
 
 			IgnoreTriggers = false;
 

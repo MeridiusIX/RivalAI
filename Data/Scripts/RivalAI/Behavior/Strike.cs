@@ -285,8 +285,6 @@ namespace RivalAI.Behavior {
             InitTags();
             SetDefaultTargeting();
 
-            Trigger.BehaviorEventA += ChangeOffsetAction;
-
             _defaultCollisionSettings = AutoPilot.Data.UseVelocityCollisionEvasion;
 
             SetupCompleted = true;

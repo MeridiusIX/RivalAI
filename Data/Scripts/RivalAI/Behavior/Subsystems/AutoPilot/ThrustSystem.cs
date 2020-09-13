@@ -54,6 +54,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			if (!hasWaypoint) {
 
+				//Logger.MsgDebug("No Waypoint", DebugTypeEnum.AutoPilot);
 				StopAllThrust();
 				return;
 
@@ -76,8 +77,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (CurrentMode.HasFlag(NewAutoPilotMode.Ram))
 				CalculateRamThrust();
 
+			//Logger.MsgDebug("Allow Strafe: " + this.Data.AllowStrafing, DebugTypeEnum.AutoPilot);
+			//Logger.MsgDebug("Is Strafe:    " + CurrentMode.HasFlag(NewAutoPilotMode.Strafe), DebugTypeEnum.AutoPilot);
 			if (this.Data.AllowStrafing && CurrentMode.HasFlag(NewAutoPilotMode.Strafe)) {
 
+				//Logger.MsgDebug("Calc Strafe: ", DebugTypeEnum.AutoPilot);
 				CalculateStrafeThrust();
 
 			}
@@ -408,11 +412,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					//Logger.MsgDebug("Begin Strafe", DebugTypeEnum.Strafe);
 					this.LastStrafeStartTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeDuration = Rnd.Next(Data.StrafeMinDurationMs, Data.StrafeMaxDurationMs);
 					_strafeStartPosition = _myPosition;
 					this.Strafing = true;
+					Logger.MsgDebug("Begin Strafe. Dur: " + ThisStrafeDuration, DebugTypeEnum.AutoPilot);
 
 					Collision.RunSecondaryCollisionChecks();
 
@@ -611,7 +615,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (duration.TotalMilliseconds >= this.ThisStrafeDuration || MyVelocity.Length() > Data.StrafeSpeedCutOff || Vector3D.Distance(_strafeStartPosition, _myPosition) > Data.StrafeDistanceCutOff) {
 
-					//Logger.MsgDebug("End Strafe", DebugTypeEnum.General);
+					Logger.MsgDebug("End Strafe", DebugTypeEnum.AutoPilot);
 					this.InvertStrafingActivated = false;
 					this.LastStrafeEndTime = MyAPIGateway.Session.GameDateTime;
 					this.ThisStrafeCooldown = Rnd.Next(Data.StrafeMinCooldownMs, Data.StrafeMaxCooldownMs);

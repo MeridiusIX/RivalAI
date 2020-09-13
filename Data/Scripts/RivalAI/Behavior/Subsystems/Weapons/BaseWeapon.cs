@@ -1,4 +1,5 @@
-﻿using RivalAI.Helpers;
+﻿using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Helpers;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -9,6 +10,7 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.Weapons {
 	public abstract class BaseWeapon {
@@ -122,6 +124,117 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 		public void CloseChange(IMyEntity entity) {
 
 			_closed = entity.MarkedForClose || entity.Closed;
+
+		}
+
+		public bool StaticWeaponAlignedToTarget(bool mustContactHostile = false) {
+
+			var waypointCoords = _behavior.AutoPilot.GetCurrentWaypoint();
+			var targetCoords = _behavior.AutoPilot.Targeting.TargetLastKnownCoords;
+			var shootableCoords = Vector3D.Zero;
+			var collisionCoords = Vector3D.Zero;
+
+			bool isWaypointTarget = _weaponSystem.WaypointIsTarget;
+			bool hasValidTarget = _behavior.AutoPilot.Targeting.HasTarget();
+
+			bool canShootWaypoint = false;
+			bool canShootTarget = false;
+			bool canShootCollision = false;
+
+			var trajectory = _weaponSystem.MaxStaticWeaponRange > -1 ? MathHelper.Clamp(_ammoMaxTrajectory, 0, _weaponSystem.MaxStaticWeaponRange) : _ammoMaxTrajectory;
+
+			//Waypoint Details
+			if (isWaypointTarget) {
+
+				canShootWaypoint = StaticDistanceAndAngleCheck(waypointCoords, trajectory);
+
+			}
+
+			//Target Details
+			if (!canShootWaypoint && hasValidTarget) {
+
+				canShootTarget = StaticDistanceAndAngleCheck(targetCoords, trajectory);
+
+			}
+
+			shootableCoords = canShootWaypoint ? waypointCoords : (canShootTarget ? targetCoords : Vector3D.Zero);
+			var maxTargetTrajectory = shootableCoords != Vector3D.Zero ? Vector3D.Distance(shootableCoords, _block.GetPosition()) : trajectory;
+
+			//Collision
+			var collision = _behavior.AutoPilot.Collision.GetResult(_direction);
+			bool hasCollision = false;
+			bool hostile = false;
+			bool collisionIsGrid = false;
+
+			if (collision == null) {
+
+				Logger.MsgDebug(" - Collision Null", DebugTypeEnum.Weapon);
+
+			} else {
+
+				if (collision.HasTarget(maxTargetTrajectory)) {
+
+					if ((collision.Type == CollisionType.Voxel && !collision.CollisionIsWater) || collision.Type == CollisionType.Safezone) {
+
+						Logger.MsgDebug(" - Voxel Collision or SafeZone", DebugTypeEnum.Weapon);
+						hasCollision = true;
+
+					}
+
+					if (collision.Type == CollisionType.Grid || collision.Type == CollisionType.Shield) {
+
+						hasCollision = true;
+						collisionIsGrid = true;
+						bool hostileEntity = collision.GridRelation == TargetRelationEnum.Enemy || collision.ShieldRelation == TargetRelationEnum.Enemy;
+
+						if (!hostileEntity && _behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
+
+							Logger.MsgDebug(" - Target On Other Side Of Friendly Grid", DebugTypeEnum.Weapon);
+							hasCollision = true;
+
+						}
+
+						if (hostileEntity) {
+
+							collisionCoords = collision.GetCollisionCoords();
+							hostile = true;
+
+						}
+
+					}
+
+				}
+			
+			}
+
+			if (!canShootWaypoint && !canShootTarget)
+				return false;
+
+			if (hasCollision && !hostile)
+				return false;
+
+			if (mustContactHostile && !hostile)
+				return false;
+
+			return true;
+		
+		}
+
+		public bool StaticDistanceAndAngleCheck(Vector3D coords, double trajectory) {
+
+			var directionToTarget = Vector3D.Normalize(coords - _block.GetPosition());
+			var allowedAngle = VectorHelper.GetAngleBetweenDirections(directionToTarget, _block.WorldMatrix.Forward) <= _weaponSystem.WeaponMaxAngleFromTarget;
+			var dist = Vector3D.Distance(_block.GetPosition(), coords);
+			var reqTrajectory = dist > trajectory ? trajectory : trajectory - (trajectory - dist);
+			var distFromMaxTrajectory = Vector3D.Distance(coords, _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
+
+			if (allowedAngle && distFromMaxTrajectory < _weaponSystem.WeaponMaxBaseDistanceTarget && dist < trajectory) {
+
+				return true;
+
+			}
+
+			return false;
 
 		}
 

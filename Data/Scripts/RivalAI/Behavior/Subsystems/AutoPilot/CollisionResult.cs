@@ -25,6 +25,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public LineD Line;
 		public RayD Ray;
 
+		public bool CollisionIsWater;
+
 		public bool CollisionDetected;
 		public CollisionType Type;
 		public bool CalculateTime;
@@ -184,7 +186,6 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					Type = CollisionType.Player;
 
 			}
-
 
 			if (CalculateTime) {
 
@@ -488,12 +489,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				var planet = _collisionSystem.AutoPilot.GetCurrentPlanet();
 				var planetCenter = planet.PositionComp.WorldAABB.Center;
 				int index = -1;
+				bool underwater = false;
 
 				for (int i = 0; i < stepList.Count; i++) {
 
 					var step = stepList[i];
 					var stepToCore = Vector3D.Distance(planetCenter, step);
-					var stepSurfaceToCore = Vector3D.Distance(planetCenter, VectorHelper.GetPlanetSurfaceCoordsAtPosition(step, planet));
+					var stepSurfaceToCore = Vector3D.Distance(planetCenter, WaterHelper.GetClosestSurface(step, planet, _collisionSystem.AutoPilot.CurrentWater));
 
 					if (stepToCore < stepSurfaceToCore) {
 
@@ -507,7 +509,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				if (index >= 0) {
 
-
+					CollisionIsWater = WaterHelper.IsPositionUnderwater(stepList[index], _collisionSystem.AutoPilot.CurrentWater);
 					VoxelEntity = planet;
 					VoxelCoords = stepList[index];
 					VoxelDistance = Vector3D.Distance(StartPosition, stepList[index]);

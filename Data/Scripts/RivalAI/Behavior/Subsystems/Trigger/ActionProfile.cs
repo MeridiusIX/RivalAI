@@ -483,6 +483,27 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(150)]
 		public bool InheritLastAttackerFromCommand;
 
+		[ProtoMember(151)]
+		public bool ChangePlayerCredits;
+
+		[ProtoMember(152)]
+		public long ChangePlayerCreditsAmount;
+
+		[ProtoMember(153)]
+		public bool ChangeNpcFactionCredits;
+
+		[ProtoMember(154)]
+		public long ChangeNpcFactionCreditsAmount;
+
+		[ProtoMember(155)]
+		public string ChangeNpcFactionCreditsTag;
+
+		[ProtoMember(156)]
+		public bool BuildProjectedBlocks;
+
+		[ProtoMember(157)]
+		public int MaxProjectedBlocksToBuild;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -676,6 +697,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			SelfDestructTimeBetweenBlasts = 1;
 
 			InheritLastAttackerFromCommand = false;
+
+			ChangePlayerCredits = false;
+			ChangePlayerCreditsAmount = 0;
+
+			ChangeNpcFactionCredits = false;
+			ChangeNpcFactionCreditsAmount = 0;
+			ChangeNpcFactionCreditsTag = "";
+
+			BuildProjectedBlocks = false;
+			MaxProjectedBlocksToBuild = -1;
 
 			ProfileSubtypeId = "";
 
@@ -1870,6 +1901,55 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[InheritLastAttackerFromCommand:") == true) {
 
 						InheritLastAttackerFromCommand = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangePlayerCredits
+					if (tag.Contains("[ChangePlayerCredits:") == true) {
+
+						ChangePlayerCredits = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangePlayerCreditsAmount
+					if (tag.Contains("[ChangePlayerCreditsAmount:") == true) {
+
+						ChangePlayerCreditsAmount = TagHelper.TagLongCheck(tag, ChangePlayerCreditsAmount);
+
+					}
+
+					//ChangeNpcFactionCredits
+					if (tag.Contains("[ChangeNpcFactionCredits:") == true) {
+
+						ChangeNpcFactionCredits = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ChangeNpcFactionCreditsAmount
+					if (tag.Contains("[ChangeNpcFactionCreditsAmount:") == true) {
+
+						ChangeNpcFactionCreditsAmount = TagHelper.TagLongCheck(tag, ChangeNpcFactionCreditsAmount);
+
+					}
+
+					//ChangeNpcFactionCreditsTag
+					if (tag.Contains("[ChangeNpcFactionCreditsTag:") == true) {
+
+						ChangeNpcFactionCreditsTag = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//BuildProjectedBlocks
+					if (tag.Contains("[BuildProjectedBlocks:") == true) {
+
+						BuildProjectedBlocks = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MaxProjectedBlocksToBuild
+					if (tag.Contains("[MaxProjectedBlocksToBuild:") == true) {
+
+						MaxProjectedBlocksToBuild = TagHelper.TagIntCheck(tag, MaxProjectedBlocksToBuild);
 
 					}
 

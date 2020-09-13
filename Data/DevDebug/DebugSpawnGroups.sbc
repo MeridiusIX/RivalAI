@@ -141,13 +141,14 @@
 		<SpawnGroup>
 			<Id>
 				<TypeId>SpawnGroupDefinition</TypeId>
-				<SubtypeId>RAI-D-S1</SubtypeId>
+				<SubtypeId>RAI-D-W1</SubtypeId>
 			</Id>
 			<Description>
 
 			[Modular Encounters SpawnGroup]
 			
-			[SpaceCargoShip:true]
+			[PlanetaryInstallation:true]
+			[InstallationSpawnsOnWaterSurface:true]
 			
 			[FactionOwner:SPRT]
 			[ReplenishSystems:true]
@@ -160,14 +161,14 @@
 			<IsPirate>true</IsPirate>
 			<Frequency>5.0</Frequency>
 			<Prefabs>
-				<Prefab SubtypeId="(NPC-RAI) Hydro Test Drone">
+				<Prefab SubtypeId="(NPC-RAI) Aquila Nautical">
 					<Position>
 						<X>0.0</X>
 						<Y>0.0</Y>
 						<Z>0.0</Z>
 					</Position>
 					<Speed>0</Speed>
-					<Behaviour>RAI-Generic-Behavior-Fighter</Behaviour>
+					<Behaviour>RAI-Generic-Behavior-Nautical</Behaviour>
 				</Prefab>
 			</Prefabs>
 		</SpawnGroup>
