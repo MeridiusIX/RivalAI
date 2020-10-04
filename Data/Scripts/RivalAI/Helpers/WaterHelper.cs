@@ -66,6 +66,20 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static bool GetDepth(Vector3D coords, Water water, ref double depth) {
+
+			if (!Enabled || water == null) {
+
+				depth = 0;
+				return false;
+
+			}
+
+			depth = water.GetDepth(coords);
+			return depth < 0;
+
+		}
+
 		public static Water GetWater(MyPlanet planet) {
 
 			if (!Enabled || planet == null)
@@ -85,6 +99,20 @@ namespace RivalAI.Helpers {
 
 			return water.IsUnderwater(coords);
 		
+		}
+
+		public static bool IsPositionUnderwater(Vector3D coords, MyPlanet planet) {
+
+			if (!Enabled)
+				return false;
+
+			var water = GetWater(planet);
+
+			if (water == null)
+				return false;
+
+			return water.IsUnderwater(coords);
+
 		}
 
 		public static void RefreshWater() {
@@ -152,6 +180,33 @@ namespace RivalAI.Helpers {
 					WaterData.Remove(key);
 
 			}
+
+		}
+
+		public static bool UnderwaterAndDepthCheck(Vector3D pos, Water water, bool targetState, double minDepth, double maxDepth) {
+
+			double depth = 0;
+			var underwater = WaterHelper.GetDepth(pos, water, ref depth);
+
+			if (!underwater && !targetState) {
+
+				return true;
+
+			}
+
+			if (underwater && (minDepth > -1 || maxDepth > -1)) {
+
+				depth = Math.Abs(depth);
+
+				if (minDepth > -1 && depth < minDepth)
+					underwater = false;
+
+				if (maxDepth > -1 && depth > maxDepth)
+					underwater = false;
+
+			}
+
+			return (underwater == targetState);
 
 		}
 

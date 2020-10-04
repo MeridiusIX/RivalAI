@@ -1,4 +1,6 @@
 ﻿using RivalAI.Behavior;
+using RivalAI.Entities;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Interfaces.Terminal;
@@ -17,13 +19,45 @@ namespace RivalAI.Helpers {
 		public bool CurrentGridVulnerable;
 		public bool CurrentGridEditable;
 
-
-
 	}
 
 	public static class DebugTerminalControls {
 
 		private static Dictionary<IMyTerminalBlock, DebugCockpitControls> CockpitSettings = new Dictionary<IMyTerminalBlock, DebugCockpitControls>();
+		public static IMyRemoteControl ReferenceRemoteControl = null;
+
+
+		public static void DisplayRcControls(IMyTerminalBlock block, List<IMyTerminalControl> controls) {
+
+			if (block.SlimBlock.BlockDefinition.Id.TypeId != typeof(MyObjectBuilder_RemoteControl) || !Logger.CurrentDebugTypeList.Contains(DebugTypeEnum.Terminal))
+				return;
+
+			//Use Block As Reference - Button
+			var buttonA = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyRemoteControl>("RAI-Debug-RC-UseAsReference");
+			buttonA.Enabled = (b) => { return true; };
+			buttonA.Visible = (b) => { return true; };
+			buttonA.Title = MyStringId.GetOrCompute("Use Block Reference");
+			buttonA.Tooltip = MyStringId.GetOrCompute("This button will set this block as the current reference block when calculating position offset using chat commands.");
+			buttonA.Action = (b) => { ReferenceRemoteControl = b as IMyRemoteControl; };
+			controls.Add(buttonA);
+
+			var buttonB = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, IMyRemoteControl>("RAI-Debug-RC-ResetAI");
+			buttonB.Enabled = (b) => { return true; };
+			buttonB.Visible = (b) => { return EntityWatcher.RivalAiBlockIds.Contains(b.SlimBlock.BlockDefinition.Id); };
+			buttonB.Title = MyStringId.GetOrCompute("Reset AI");
+			buttonB.Action = (b) => {
+
+				BehaviorManager.AiNeedsReset = true;
+
+				lock(BehaviorManager.ResetAiBlocks)
+					BehaviorManager.ResetAiBlocks.Add(b as IMyRemoteControl);
+
+				Logger.MsgDebug("Resetting AI", DebugTypeEnum.BehaviorSetup);
+				
+			};
+			controls.Add(buttonB);
+
+		}
 
 		public static void DisplayIndustrialCockpitControls(IMyTerminalBlock block, List<IMyTerminalControl> controls) {
 
@@ -192,10 +226,13 @@ namespace RivalAI.Helpers {
 			if (enable) {
 
 				MyAPIGateway.TerminalControls.CustomControlGetter += DisplayIndustrialCockpitControls;
-			
+				MyAPIGateway.TerminalControls.CustomControlGetter += DisplayRcControls;
+
+
 			} else {
 
 				MyAPIGateway.TerminalControls.CustomControlGetter -= DisplayIndustrialCockpitControls;
+				MyAPIGateway.TerminalControls.CustomControlGetter -= DisplayRcControls;
 
 			}
 		

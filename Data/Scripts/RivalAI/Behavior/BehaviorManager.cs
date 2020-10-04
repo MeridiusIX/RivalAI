@@ -32,6 +32,9 @@ namespace RivalAI.Behavior {
 		public static List<IBehavior> Behaviors = new List<IBehavior>();
 		public static List<IMyRemoteControl> DormantAiBlocks = new List<IMyRemoteControl>();
 
+		public static bool AiNeedsReset = false;
+		public static List<IMyRemoteControl> ResetAiBlocks = new List<IMyRemoteControl>();
+
 		public static BehaviorManagerMode Mode = BehaviorManagerMode.None;
 		public static BehaviorManageSubmode Submode = BehaviorManageSubmode.None;
 		public static int CurrentBehaviorIndex = 0;
@@ -62,6 +65,48 @@ namespace RivalAI.Behavior {
 
 			if (WaterHelper.RequiresUpdate)
 				WaterHelper.RefreshWater();
+
+			if (AiNeedsReset) {
+
+				AiNeedsReset = false;
+
+				if (ResetAiBlocks.Count > 0) {
+
+					for (int j = ResetAiBlocks.Count - 1; j >= 0; j--) {
+
+						var behavior = GetBehavior(ResetAiBlocks[j]);
+
+						if (behavior == null)
+							continue;
+
+						behavior.BehaviorTerminated = true;
+						
+						if (ResetAiBlocks[j].Storage != null && ResetAiBlocks[j].Storage.ContainsKey(new Guid("FF814A67-AEC3-4DF0-ADC4-A9B239FA954F"))) {
+
+							ResetAiBlocks[j].Storage[new Guid("FF814A67-AEC3-4DF0-ADC4-A9B239FA954F")] = "";
+
+						}
+
+						Logger.MsgDebug("AI ModStorageComponent Wiped", DebugTypeEnum.BehaviorSetup);
+
+					}
+
+					MyAPIGateway.Parallel.Start(() => {
+
+						for (int i = ResetAiBlocks.Count - 1; i >= 0; i--) {
+
+							Logger.MsgDebug("Re-Registering AI", DebugTypeEnum.BehaviorSetup);
+							RegisterBehaviorFromRemoteControl(ResetAiBlocks[i]);
+
+						}
+
+						ResetAiBlocks.Clear();
+
+					});
+
+				}
+			
+			}
 
 			_barrageCounter++;
 
@@ -202,6 +247,20 @@ namespace RivalAI.Behavior {
 
 					Logger.MsgDebug("Behavior: Passive", DebugTypeEnum.BehaviorSetup);
 					var MainBehavior = new Passive();
+					MainBehavior.BehaviorInit(remoteControl);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
+					return;
+
+				}
+
+				//Sniper
+				if (remoteControl.CustomData.Contains("[BehaviorName:Sniper]")) {
+
+					Logger.MsgDebug("Behavior: Sniper", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new Sniper();
 					MainBehavior.BehaviorInit(remoteControl);
 
 					lock (Behaviors)

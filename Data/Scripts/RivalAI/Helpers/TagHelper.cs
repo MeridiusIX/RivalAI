@@ -146,9 +146,10 @@ namespace RivalAI.Helpers {
 
 					}
 
-				} catch(Exception) {
+				} catch(Exception e) {
 
 					Logger.WriteLog(string.Format("Caught Error While Processing Definition {0}", def.Id));
+					Logger.WriteLog(e.ToString());
 
 				}
 
@@ -366,6 +367,25 @@ namespace RivalAI.Helpers {
 				if (AutoPilotDataMode.TryParse(tagSplit[1], out result) == false) {
 
 					return AutoPilotDataMode.Primary;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static BehaviorMode TagBehaviorModeEnumCheck(string tag) {
+
+			BehaviorMode result = BehaviorMode.Init;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (BehaviorMode.TryParse(tagSplit[1], out result) == false) {
+
+					return BehaviorMode.Init;
 
 				}
 

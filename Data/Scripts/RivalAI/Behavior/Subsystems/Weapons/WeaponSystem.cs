@@ -68,7 +68,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			UseStaticGuns = false;
 			UseTurrets = true;
 
-			MaxStaticWeaponRange = 1500;
+			MaxStaticWeaponRange = 5000;
 			WeaponMaxAngleFromTarget = 6;
 			WeaponMaxBaseDistanceTarget = 20;
 
@@ -141,6 +141,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 					var weaponsInBlock = new Dictionary<string, int>();
 					RAI_SessionCore.Instance.WeaponCore.GetBlockWeaponMap(block, weaponsInBlock);
 
+					Logger.MsgDebug(block.CustomName + ": Core Weapons In Block: " + weaponsInBlock.Keys.Count, DebugTypeEnum.BehaviorSetup);
 					foreach (var weaponName in weaponsInBlock.Keys) {
 
 						WeaponDefinition weaponDef = new WeaponDefinition();

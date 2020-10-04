@@ -25,6 +25,7 @@ namespace RivalAI.Entities {
 			if (player == null) 
 				return;
 
+			Type = EntityType.Player;
 			IsValidEntity = true;
 			Player = player;
 			Online = true;
@@ -210,6 +211,12 @@ namespace RivalAI.Entities {
 			}
 
 			return result;
+		}
+
+		public override EntityType GetEntityType() {
+
+			return IsParentEntityGrid ? EntityType.Grid : EntityType.Player;
+
 		}
 
 		public List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false) {

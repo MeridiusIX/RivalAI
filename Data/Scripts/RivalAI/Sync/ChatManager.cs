@@ -103,6 +103,28 @@ namespace RivalAI.Sync {
 
             }
 
+            //GetBlockOffset
+            if (newChatData.Message.StartsWith("/RAI.GetBlockOffset")) {
+
+                if (DebugTerminalControls.ReferenceRemoteControl == null || DebugTerminalControls.ReferenceRemoteControl.MarkedForClose)
+                    return;
+
+                var rc = DebugTerminalControls.ReferenceRemoteControl.WorldMatrix;
+                var playerPos = chatData.PlayerPosition - rc.Translation;
+                var offset = new Vector3D(Vector3D.Dot(playerPos, rc.Right), Vector3D.Dot(playerPos, rc.Up), Vector3D.Dot(playerPos, rc.Forward));
+                var offsetString = offset.ToString();
+
+                if (string.IsNullOrEmpty(offsetString)) {
+
+                    return;
+
+                }
+
+                MyVisualScriptLogicProvider.ShowNotification("Offset Position To Reference Block Saved To Clipboard", 5000, "White", chatData.PlayerId);
+                VRage.Utils.MyClipboardHelper.SetClipboard(offsetString);
+
+            }
+
             //Debug Mode
             if (newChatData.Message.StartsWith("/RAI.Debug")) {
 

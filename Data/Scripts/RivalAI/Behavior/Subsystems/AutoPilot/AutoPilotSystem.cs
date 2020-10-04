@@ -1559,6 +1559,31 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		}
 
+		public bool ArrivedAtOffsetWaypoint() {
+
+			if (InGravity() && MyAltitude < Data.IdealPlanetAltitude) {
+
+				if (DistanceToWaypointAtMyAltitude == -1 || DistanceToOffsetAtMyAltitude == -1)
+					return false;
+
+				if (DistanceToWaypointAtMyAltitude < Data.WaypointTolerance && DistanceToOffsetAtMyAltitude < Data.WaypointTolerance) {
+
+					Logger.MsgDebug("Offset Compensation", DebugTypeEnum.AutoPilotOffset);
+					return true;
+
+				}
+
+				return false;
+
+			}
+
+			if (DistanceToCurrentWaypoint < Data.WaypointTolerance)
+				return true;
+
+			return false;
+
+		}
+
 		public bool InvalidTarget() {
 
 			return !Targeting.HasTarget();

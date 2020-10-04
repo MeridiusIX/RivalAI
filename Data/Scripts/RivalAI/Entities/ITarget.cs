@@ -18,6 +18,7 @@ namespace RivalAI.Entities {
 		string FactionOwner();
 		IMyEntity GetEntity();
 		long GetEntityId();
+		EntityType GetEntityType();
 		List<long> GetOwners(bool onlyGetCurrentEntity = false, bool includeMinorityOwners = false);
 		IMyEntity GetParentEntity();
 		Vector3D GetPosition();

@@ -37,9 +37,12 @@ namespace RivalAI.Behavior{
 	
 	public class Nautical : CoreBehavior, IBehavior{
 
+		DateTime WaitTime;
+
 		public Nautical() : base() {
 
 			_behaviorType = "Nautical";
+			WaitTime = MyAPIGateway.Session.GameDateTime;
 
 		}
 
@@ -65,6 +68,7 @@ namespace RivalAI.Behavior{
 				if(!AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+					BehaviorTriggerD = true;
 
 				} else {
 
@@ -91,7 +95,8 @@ namespace RivalAI.Behavior{
 				} else if(Despawn.NoTargetExpire == true){
 					
 					Despawn.Retreat();
-					
+					BehaviorTriggerD = true;
+
 				}
 
 			}
@@ -101,6 +106,32 @@ namespace RivalAI.Behavior{
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.LevelWithGravity);
+				BehaviorTriggerD = true;
+
+			}
+
+			//A - Stop All Movement
+			if (BehaviorActionA) {
+
+				BehaviorActionA = false;
+				ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.LevelWithGravity);
+				WaitTime = MyAPIGateway.Session.GameDateTime;
+				BehaviorTriggerC = true;
+
+			}
+
+			//WaitAtWaypoint
+			if (Mode == BehaviorMode.WaitAtWaypoint) {
+
+				var timespan = MyAPIGateway.Session.GameDateTime - WaitTime;
+
+				if (timespan.TotalSeconds >= AutoPilot.Data.WaypointWaitTimeTrigger) {
+
+					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
+					BehaviorTriggerD = true;
+
+				}
 
 			}
 

@@ -37,9 +37,40 @@ namespace RivalAI.Behavior {
 
 	public class Horsefly : CoreBehavior, IBehavior {
 
-		//Configurable
-		public int HorseflyWaypointWaitTimeTrigger;
-		public int HorseflyWaypointAbandonTimeTrigger;
+		public int HorseflyWaypointWaitTimeTrigger {
+
+			get {
+
+				return _horseflyWaypointWaitTimeTrigger > 0 ? _horseflyWaypointWaitTimeTrigger : AutoPilot.Data.WaypointWaitTimeTrigger;
+
+			}
+
+			set {
+
+				_horseflyWaypointWaitTimeTrigger = value;
+
+			}
+
+		}
+
+		public int HorseflyWaypointAbandonTimeTrigger {
+
+			get {
+
+				return _horseflyWaypointAbandonTimeTrigger > 0 ? _horseflyWaypointAbandonTimeTrigger : AutoPilot.Data.WaypointAbandonTimeTrigger;
+
+			}
+
+			set {
+
+				_horseflyWaypointAbandonTimeTrigger = value;
+
+			}
+
+		}
+
+		private int _horseflyWaypointWaitTimeTrigger;
+		private int _horseflyWaypointAbandonTimeTrigger;
 
 		public byte Counter;
 		public DateTime HorseflyWaypointWaitTime;
@@ -49,8 +80,11 @@ namespace RivalAI.Behavior {
 
 			_behaviorType = "Horsefly";
 
-			HorseflyWaypointWaitTimeTrigger = 5;
-			HorseflyWaypointAbandonTimeTrigger = 30;
+			_horseflyWaypointWaitTimeTrigger = -1;
+			_horseflyWaypointAbandonTimeTrigger = -1;
+
+			//HorseflyWaypointWaitTimeTrigger = 5;
+			//HorseflyWaypointAbandonTimeTrigger = 30;
 
 			Counter = 0;
 			HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
@@ -114,7 +148,7 @@ namespace RivalAI.Behavior {
 				var timeSpan = MyAPIGateway.Session.GameDateTime - this.HorseflyWaypointAbandonTime;
 				//Logger.MsgDebug("Distance To Waypoint: " + NewAutoPilot.DistanceToCurrentWaypoint.ToString(), DebugTypeEnum.General);
 
-				if (ArrivedAtWaypoint()) {
+				if (AutoPilot.ArrivedAtOffsetWaypoint()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					this.HorseflyWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
@@ -166,48 +200,6 @@ namespace RivalAI.Behavior {
 
 			}
 
-		}
-
-		public bool ArrivedAtWaypoint() {
-
-			if (AutoPilot.InGravity() && AutoPilot.MyAltitude < AutoPilot.Data.IdealPlanetAltitude) {
-
-				if (AutoPilot.DistanceToWaypointAtMyAltitude == -1 || AutoPilot.DistanceToOffsetAtMyAltitude == -1)
-					return false;
-
-				if (AutoPilot.DistanceToWaypointAtMyAltitude < AutoPilot.Data.WaypointTolerance && AutoPilot.DistanceToOffsetAtMyAltitude < AutoPilot.Data.WaypointTolerance) {
-
-					Logger.MsgDebug("Offset Compensation", DebugTypeEnum.General);
-					return true;
-
-				}
-
-				return false;
-
-			}
-
-			if (AutoPilot.DistanceToCurrentWaypoint < AutoPilot.Data.WaypointTolerance)
-				return true;
-
-			/*
-			if (NewAutoPilot.IsAvoidingCollision() && !_previouslyAvoidingCollision) {
-
-				_previouslyAvoidingCollision = true;
-				return false;
-
-			}
-
-			if (_previouslyAvoidingCollision && !NewAutoPilot.IsAvoidingCollision()) {
-
-				_previouslyAvoidingCollision = false;
-				return true;
-
-
-			}
-			*/
-
-			return false;
-		
 		}
 
 		public override void BehaviorInit(IMyRemoteControl remoteControl) {

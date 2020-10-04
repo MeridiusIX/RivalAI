@@ -57,8 +57,22 @@
 			</Description>
 
 		</EntityComponent>
+
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+			<Id>
+				<TypeId>Inventory</TypeId>
+				<SubtypeId>RAI-Generic-Behavior-Sniper</SubtypeId>
+			</Id>
+			<Description>
+
+				[RivalAI Behavior]
+				[BehaviorName:Sniper]
+
+			</Description>
+
+		</EntityComponent>
 	
-	<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
+		<EntityComponent xsi:type="MyObjectBuilder_InventoryComponentDefinition">
 			<Id>
 					<TypeId>Inventory</TypeId>
 					<SubtypeId>RAI-Generic-Behavior-Strike</SubtypeId>

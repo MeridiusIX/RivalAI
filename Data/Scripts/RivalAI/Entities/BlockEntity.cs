@@ -26,6 +26,8 @@ namespace RivalAI.Entities {
 			if (entity == null || parentEntity == null)
 				return;
 
+			Type = EntityType.Block;
+
 			Block = entity as IMyTerminalBlock;
 			IsValidEntity = true;
 			RefreshSubGrids();
@@ -96,6 +98,12 @@ namespace RivalAI.Entities {
 			}
 
 			return result;
+
+		}
+
+		public override EntityType GetEntityType() {
+
+			return EntityType.Grid;
 
 		}
 

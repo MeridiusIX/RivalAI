@@ -504,6 +504,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(157)]
 		public int MaxProjectedBlocksToBuild;
 
+		[ProtoMember(158)]
+		public bool ForceManualTriggerActivation;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -707,6 +710,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			BuildProjectedBlocks = false;
 			MaxProjectedBlocksToBuild = -1;
+
+			ForceManualTriggerActivation = false;
 
 			ProfileSubtypeId = "";
 
@@ -1950,6 +1955,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[MaxProjectedBlocksToBuild:") == true) {
 
 						MaxProjectedBlocksToBuild = TagHelper.TagIntCheck(tag, MaxProjectedBlocksToBuild);
+
+					}
+
+					//ForceManualTriggerActivation
+					if (tag.Contains("[ForceManualTriggerActivation:") == true) {
+
+						ForceManualTriggerActivation = TagHelper.TagBoolCheck(tag);
 
 					}
 

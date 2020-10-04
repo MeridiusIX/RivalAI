@@ -172,7 +172,7 @@ namespace RivalAI.Behavior {
 
 					var timeSpan = MyAPIGateway.Session.GameDateTime - this.HorseFighterWaypointAbandonTime;
 
-					if (ArrivedAtWaypoint()) {
+					if (AutoPilot.ArrivedAtOffsetWaypoint()) {
 
 						ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 						this.HorseFighterWaypointWaitTime = MyAPIGateway.Session.GameDateTime;
@@ -251,48 +251,6 @@ namespace RivalAI.Behavior {
 
 			}
 
-
-		}
-
-		public bool ArrivedAtWaypoint() {
-
-			if (AutoPilot.InGravity() && AutoPilot.MyAltitude < AutoPilot.Data.IdealPlanetAltitude) {
-
-				if (AutoPilot.DistanceToWaypointAtMyAltitude == -1 || AutoPilot.DistanceToOffsetAtMyAltitude == -1)
-					return false;
-
-				if (AutoPilot.DistanceToWaypointAtMyAltitude < AutoPilot.Data.WaypointTolerance && AutoPilot.DistanceToOffsetAtMyAltitude < AutoPilot.Data.WaypointTolerance) {
-
-					Logger.MsgDebug("Offset Compensation", DebugTypeEnum.General);
-					return true;
-
-				}
-
-				return false;
-
-			}
-
-			if (AutoPilot.DistanceToCurrentWaypoint < AutoPilot.Data.WaypointTolerance)
-				return true;
-
-			/*
-			if (NewAutoPilot.IsAvoidingCollision() && !_previouslyAvoidingCollision) {
-
-				_previouslyAvoidingCollision = true;
-				return false;
-
-			}
-
-			if (_previouslyAvoidingCollision && !NewAutoPilot.IsAvoidingCollision()) {
-
-				_previouslyAvoidingCollision = false;
-				return true;
-
-
-			}
-			*/
-
-			return false;
 
 		}
 

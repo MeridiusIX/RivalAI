@@ -183,6 +183,7 @@ namespace RivalAI.Helpers {
         Speed,
         Static,
         TargetValue,
+        Underwater,
 
     }
 

@@ -413,7 +413,6 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerC) {
 
-
 						trigger.ActivateTrigger();
 
 					}
@@ -427,7 +426,6 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerD) {
 
-
 						trigger.ActivateTrigger();
 
 					}
@@ -440,7 +438,6 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				if (trigger.Type == "BehaviorTriggerE") {
 
 					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerE) {
-
 
 						trigger.ActivateTrigger();
 
@@ -699,13 +696,18 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public void ProcessManualTrigger(TriggerProfile trigger) {
+		public void ProcessManualTrigger(TriggerProfile trigger, bool forceActivation = false) {
 
-			if (trigger.UseTrigger == true) {
+			Logger.MsgDebug("Attempting To Manually Trigger Profile " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
+
+			if (trigger.UseTrigger) {
 
 				trigger.ActivateTrigger();
 
-				if (trigger.Triggered == true) {
+				if (!trigger.Triggered && forceActivation)
+					trigger.Triggered = true;
+
+				if (trigger.Triggered) {
 
 					ProcessTrigger(trigger);
 

@@ -6,12 +6,23 @@ using VRage.ModAPI;
 using VRageMath;
 
 namespace RivalAI.Entities {
+
+	public enum EntityType {
+	
+		Generic,
+		Player,
+		Grid,
+		Block,
+	
+	}
+
 	public abstract class EntityBase {
 
 		public bool IsValidEntity;
 		public IMyEntity Entity;
 		public IMyEntity ParentEntity;
 		public bool Closed;
+		public EntityType Type;
 
 		public EntityBase(IMyEntity entity) {
 
@@ -108,6 +119,12 @@ namespace RivalAI.Entities {
 
 			return Entity.EntityId;
 
+		}
+
+		public virtual EntityType GetEntityType() {
+
+			return Type;
+		
 		}
 
 		public IMyEntity GetParentEntity() {

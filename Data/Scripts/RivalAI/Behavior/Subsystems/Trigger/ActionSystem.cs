@@ -35,6 +35,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		public void ProcessAction(TriggerProfile trigger, ActionProfile actions, long attackerEntityId = 0, long detectedEntity = 0, Command command = null) {
 
+			Logger.MsgDebug(trigger.ProfileSubtypeId + " Attempting To Execute Action Profile " + actions.ProfileSubtypeId, DebugTypeEnum.Action);
+
 			if (actions.Chance < 100) {
 
 				var roll = Utilities.Rnd.Next(0, 101);
@@ -522,8 +524,11 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//EnableTriggers
 			if (actions.EnableTriggers) {
 
+				Logger.MsgDebug(actions.ProfileSubtypeId + " Attempting To Enable Triggers.", DebugTypeEnum.Action);
+
 				foreach (var resetTrigger in Triggers) {
 
 					if (actions.EnableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
@@ -547,8 +552,11 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//DisableTriggers
 			if (actions.DisableTriggers) {
 
+				Logger.MsgDebug(actions.ProfileSubtypeId + " Attempting To Disable Triggers.", DebugTypeEnum.Action);
+
 				foreach (var resetTrigger in Triggers) {
 
 					if (actions.DisableTriggerNames.Contains(resetTrigger.ProfileSubtypeId))
@@ -572,12 +580,15 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//ManuallyActivateTrigger
 			if (actions.ManuallyActivateTrigger) {
+
+				Logger.MsgDebug(actions.ProfileSubtypeId + " Attempting To Manually Activate Triggers.", DebugTypeEnum.Action);
 
 				foreach (var manualTrigger in Triggers) {
 
 					if (actions.ManuallyActivatedTriggerNames.Contains(manualTrigger.ProfileSubtypeId))
-						ProcessManualTrigger(manualTrigger);
+						ProcessManualTrigger(manualTrigger, actions.ForceManualTriggerActivation);
 
 				}
 

@@ -753,6 +753,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			//Underwater
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Underwater)) {
+
+				bool result = false;
+
+				if (WaterHelper.Enabled)
+					result = WaterHelper.UnderwaterAndDepthCheck(target.GetPosition(), _behavior.AutoPilot.CurrentWater, true, Data.MinUnderWaterDepth, Data.MaxUnderWaterDepth);
+
+				if (result)
+					FilterHits.Add(TargetFilterEnum.Underwater);
+
+				Logger.MsgDebug(string.Format(" - Evaluated Underwater: {0}", result), DebugTypeEnum.TargetEvaluation);
+
+			}
+
 			//Any Conditions Check
 			bool anyConditionPassed = false;
 

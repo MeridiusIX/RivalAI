@@ -185,6 +185,36 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(47)]
 		public List<string> GridNamesToCheck;
 
+		[ProtoMember(48)]
+		public bool UnderwaterCheck;
+
+		[ProtoMember(49)]
+		public bool IsUnderwater;
+
+		[ProtoMember(50)]
+		public bool TargetUnderwaterCheck;
+
+		[ProtoMember(51)]
+		public bool TargetIsUnderwater;
+
+		[ProtoMember(52)]
+		public bool BehaviorModeCheck;
+
+		[ProtoMember(53)]
+		public BehaviorMode CurrentBehaviorMode;
+
+		[ProtoMember(54)]
+		public double MinDistanceUnderwater;
+
+		[ProtoMember(55)]
+		public double MaxDistanceUnderwater;
+
+		[ProtoMember(56)]
+		public double MinTargetDistanceUnderwater;
+
+		[ProtoMember(57)]
+		public double MaxTargetDistanceUnderwater;
+
 		[ProtoIgnore]
 		private IMyRemoteControl _remoteControl;
 
@@ -284,6 +314,18 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			CheckIfGridNameMatches = false;
 			AllowPartialGridNameMatches = false;
 			GridNamesToCheck = new List<string>();
+
+			UnderwaterCheck = false;
+			IsUnderwater = false;
+			TargetUnderwaterCheck = false;
+			TargetIsUnderwater = false;
+			MinDistanceUnderwater = -1;
+			MaxDistanceUnderwater = -1;
+			MinTargetDistanceUnderwater = -1;
+			MaxTargetDistanceUnderwater = -1;
+
+			BehaviorModeCheck = false;
+			CurrentBehaviorMode = BehaviorMode.Init;
 
 			ProfileSubtypeId = "";
 
@@ -752,6 +794,33 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			if (UnderwaterCheck) {
+
+				usedConditions++;
+
+				if (WaterHelper.UnderwaterAndDepthCheck(_remoteControl.GetPosition(), _behavior.AutoPilot.CurrentWater, IsUnderwater, MinDistanceUnderwater, MaxDistanceUnderwater))
+					satisfiedConditions++;
+
+			}
+
+			if (TargetUnderwaterCheck) {
+
+				usedConditions++;
+
+				if (WaterHelper.UnderwaterAndDepthCheck(_remoteControl.GetPosition(), _behavior.AutoPilot.CurrentWater, TargetIsUnderwater, MinTargetDistanceUnderwater, MaxTargetDistanceUnderwater))
+					satisfiedConditions++;
+
+			}
+
+			if (BehaviorModeCheck) {
+
+				usedConditions++;
+
+				if(_behavior.Mode == CurrentBehaviorMode)
+					satisfiedConditions++;
+
+			}
+
 			if (MatchAnyCondition == false) {
 
 				bool result = satisfiedConditions >= usedConditions;
@@ -769,6 +838,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			}
 
 		}
+
+		
 
 		private void SetupWatchedBlocks() {
 
@@ -1369,6 +1440,76 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						var tempValue = TagHelper.TagStringCheck(tag);
 						GridNamesToCheck.Add(tempValue);
+
+					}
+
+					//UnderwaterCheck
+					if (tag.Contains("[UnderwaterCheck:") == true) {
+
+						UnderwaterCheck = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//IsUnderwater
+					if (tag.Contains("[IsUnderwater:") == true) {
+
+						IsUnderwater = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//TargetUnderwaterCheck
+					if (tag.Contains("[TargetUnderwaterCheck:") == true) {
+
+						TargetUnderwaterCheck = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//TargetIsUnderwater
+					if (tag.Contains("[TargetIsUnderwater:") == true) {
+
+						TargetIsUnderwater = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinDistanceUnderwater
+					if (tag.Contains("[MinDistanceUnderwater:") == true) {
+
+						MinDistanceUnderwater = TagHelper.TagDoubleCheck(tag, MinDistanceUnderwater);
+
+					}
+
+					//MaxDistanceUnderwater
+					if (tag.Contains("[MaxDistanceUnderwater:") == true) {
+
+						MaxDistanceUnderwater = TagHelper.TagDoubleCheck(tag, MaxDistanceUnderwater);
+
+					}
+
+					//MinTargetDistanceUnderwater
+					if (tag.Contains("[MinTargetDistanceUnderwater:") == true) {
+
+						MinTargetDistanceUnderwater = TagHelper.TagDoubleCheck(tag, MinTargetDistanceUnderwater);
+
+					}
+
+					//MaxTargetDistanceUnderwater
+					if (tag.Contains("[MaxTargetDistanceUnderwater:") == true) {
+
+						MaxTargetDistanceUnderwater = TagHelper.TagDoubleCheck(tag, MaxTargetDistanceUnderwater);
+
+					}
+
+					//BehaviorModeCheck
+					if (tag.Contains("[BehaviorModeCheck:") == true) {
+
+						BehaviorModeCheck = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CurrentBehaviorMode
+					if (tag.Contains("[CurrentBehaviorMode:") == true) {
+
+						CurrentBehaviorMode = TagHelper.TagBehaviorModeEnumCheck(tag);
 
 					}
 

@@ -168,7 +168,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			if (collision == null) {
 
-				Logger.MsgDebug(" - Collision Null", DebugTypeEnum.Weapon);
+				//Logger.MsgDebug(" - Collision Null", DebugTypeEnum.Weapon);
 
 			} else {
 
@@ -176,7 +176,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 					if ((collision.Type == CollisionType.Voxel && !collision.CollisionIsWater) || collision.Type == CollisionType.Safezone) {
 
-						Logger.MsgDebug(" - Voxel Collision or SafeZone", DebugTypeEnum.Weapon);
+						//Logger.MsgDebug(" - Voxel Collision or SafeZone", DebugTypeEnum.Weapon);
 						hasCollision = true;
 
 					}
@@ -189,7 +189,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 						if (!hostileEntity && _behavior.AutoPilot.DistanceToCurrentWaypoint > collision.GetCollisionDistance()) {
 
-							Logger.MsgDebug(" - Target On Other Side Of Friendly Grid", DebugTypeEnum.Weapon);
+							//Logger.MsgDebug(" - Target On Other Side Of Friendly Grid", DebugTypeEnum.Weapon);
 							hasCollision = true;
 
 						}

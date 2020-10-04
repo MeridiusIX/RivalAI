@@ -1,4 +1,5 @@
 ﻿using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Entities;
 using RivalAI.Helpers;
 using Sandbox.ModAPI;
 using System;
@@ -83,9 +84,38 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 				
 				} else {
 
-					if (!_behavior.AutoPilot.Targeting.HasTarget()) {
+					if (_behavior.AutoPilot.Targeting.HasTarget()) {
 
-						//Logger.MsgDebug(" - No Autopilot Target To assign For Homing Ammo", DebugTypeEnum.Weapon);
+						bool threatMatch = false;
+
+						foreach (var threatType in _weaponDefinition.Targeting.Threats) {
+
+							if (threatType == TargetingDef.Threat.Characters && _behavior.AutoPilot.Targeting.Target.GetEntityType() == EntityType.Player) {
+
+								threatMatch = true;
+								break;
+
+							}
+
+							if (threatType == TargetingDef.Threat.Grids && _behavior.AutoPilot.Targeting.Target.GetEntityType() == EntityType.Grid) {
+
+								threatMatch = true;
+								break;
+
+							}
+
+						}
+
+						if (!threatMatch) {
+
+							//Logger.MsgDebug(" - No Autopilot Target To assign For Homing Ammo", DebugTypeEnum.Weapon);
+							_readyToFire = false;
+							return;
+
+						}
+
+					} else {
+
 						_readyToFire = false;
 						return;
 
@@ -297,6 +327,12 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			if (_isTurret)
 				return;
+
+			//Logger.MsgDebug(_block.CustomName + " Valid:  " + _isValid, DebugTypeEnum.Weapon);
+			//Logger.MsgDebug(_block.CustomName + " Active: " + IsActive(), DebugTypeEnum.Weapon);
+			//Logger.MsgDebug(_block.CustomName + " Ready:  " + _readyToFire, DebugTypeEnum.Weapon);
+			//Logger.MsgDebug(_block.CustomName + " Barra:  " + _isBarrageWeapon, DebugTypeEnum.Weapon);
+
 
 			if (_isValid && IsActive() && _readyToFire && !_isBarrageWeapon) {
 

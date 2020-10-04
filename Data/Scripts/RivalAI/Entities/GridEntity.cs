@@ -49,6 +49,7 @@ namespace RivalAI.Entities {
 
 		public GridEntity(IMyEntity entity) : base(entity) {
 
+			Type = EntityType.Grid;
 			CubeGrid = entity as IMyCubeGrid;
 
 			LinkedGrids = new List<GridEntity>();

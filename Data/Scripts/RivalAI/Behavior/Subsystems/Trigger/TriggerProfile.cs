@@ -203,7 +203,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (MaxActions >= 0 && TriggerCount >= MaxActions) {
 
-				Logger.MsgDebug(ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled", DebugTypeEnum.Trigger);
+				Logger.MsgDebug(ProfileSubtypeId + ": Max Successful Actions Reached. Trigger Disabled: " + Type, DebugTypeEnum.Trigger);
 				UseTrigger = false;
 				return;
 
@@ -225,7 +225,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						if (Conditions.AreConditionsMets()) {
 
-							Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied", DebugTypeEnum.Trigger);
+							Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown & Conditions Satisfied. Trigger Activated: " + Type, DebugTypeEnum.Trigger);
 							Triggered = true;
 
 						} else if (ConditionCheckResetsTimer) {
@@ -237,7 +237,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					} else {
 
-						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Cooldown Satisfied. Trigger Activated: " + Type, DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
@@ -256,14 +256,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (Conditions.AreConditionsMets()) {
 
-						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Conditions Satisfied", DebugTypeEnum.Trigger);
+						Logger.MsgDebug(ProfileSubtypeId + ": Trigger Conditions Satisfied. Trigger Activated: " + Type, DebugTypeEnum.Trigger);
 						Triggered = true;
 
 					}
 
 				} else {
 
-					Logger.MsgDebug(ProfileSubtypeId + ": No Trigger Cooldown Needed", DebugTypeEnum.Trigger);
+					Logger.MsgDebug(ProfileSubtypeId + ": No Trigger Cooldown Needed. Trigger Activated: " + Type, DebugTypeEnum.Trigger);
 					Triggered = true;
 
 				}

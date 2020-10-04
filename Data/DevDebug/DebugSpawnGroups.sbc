@@ -137,6 +137,40 @@
 				</Prefab>
 			</Prefabs>
 		</SpawnGroup>
+
+		<SpawnGroup>
+			<Id>
+				<TypeId>SpawnGroupDefinition</TypeId>
+				<SubtypeId>RAI-D-A5</SubtypeId>
+			</Id>
+			<Description>
+
+				[Modular Encounters SpawnGroup]
+
+				[AtmosphericCargoShip:true]
+
+				[FactionOwner:SPRT]
+				[ReplenishSystems:true]
+				[AdminSpawnOnly:true]
+
+				[UseRivalAi:true]
+				[RivalAiReplaceRemoteControl:true]
+
+			</Description>
+			<IsPirate>true</IsPirate>
+			<Frequency>5.0</Frequency>
+			<Prefabs>
+				<Prefab SubtypeId="(NPC-RAI) Snipey McSnipeyFace">
+					<Position>
+						<X>0.0</X>
+						<Y>0.0</Y>
+						<Z>0.0</Z>
+					</Position>
+					<Speed>0</Speed>
+					<Behaviour>RAI-Generic-Behavior-Sniper</Behaviour>
+				</Prefab>
+			</Prefabs>
+		</SpawnGroup>
 		
 		<SpawnGroup>
 			<Id>
