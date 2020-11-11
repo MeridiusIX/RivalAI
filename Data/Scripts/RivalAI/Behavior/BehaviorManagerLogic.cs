@@ -117,7 +117,7 @@ namespace RivalAI.Behavior{
 					
 				}
 
-				if(RemoteControl.CustomData.Contains("[RivalAI Behavior]") == false && RemoteControl.CustomData.Contains("[Rival AI Behavior]") == false) {
+				if(RemoteControl.CustomData.Contains("[RivalAI Behavior]") == false && RemoteControl.CustomData.Contains("[Rival AI Behavior]") == false && RemoteControl.CustomData.Contains("[RivalAI Behaviour]") == false && RemoteControl.CustomData.Contains("[Rival AI Behaviour]") == false) {
 
 					Logger.MsgDebug("Remote Control CustomData Does Not Contain Initializer.", DebugTypeEnum.General);
 					return;

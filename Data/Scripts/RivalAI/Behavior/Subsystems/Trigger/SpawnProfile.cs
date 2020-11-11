@@ -98,6 +98,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(22)]
 		public SpawnTypeEnum SpawningType;
 
+		[ProtoMember(23)]
+		public Direction CustomRelativeForward;
+
+		[ProtoMember(24)]
+		public Direction CustomRelativeUp;
+
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
 
@@ -136,9 +142,58 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			SpawningType = SpawnTypeEnum.CustomSpawn;
 
+			CustomRelativeForward = Direction.None;
+			CustomRelativeUp = Direction.None;
+
 			CurrentPositionMatrix = MatrixD.Identity;
 			CurrentFactionTag = "";
 			Rnd = new Random();
+
+		}
+
+		public void AssignInitialMatrix(MatrixD initialMatrix) {
+
+			var position = initialMatrix.Translation;
+			var forward = initialMatrix.Forward;
+			var up = initialMatrix.Up;
+
+			if (CustomRelativeForward != Direction.None)
+				forward = GetDirectionFromMatrixAndEnum(initialMatrix, CustomRelativeForward);
+
+			if (CustomRelativeUp != Direction.None)
+				up = GetDirectionFromMatrixAndEnum(initialMatrix, CustomRelativeUp);
+
+			if (Vector3D.ArePerpendicular(ref forward, ref up))
+				CurrentPositionMatrix = MatrixD.CreateWorld(position, forward, up);
+			else {
+
+				CurrentPositionMatrix = initialMatrix;
+				Logger.MsgDebug(string.Format("Warning: Custom Spawn Directions [{0}] and [{1}] are not perpendicular. Using default directions instead", CustomRelativeForward, CustomRelativeUp), DebugTypeEnum.Spawn);
+
+			}
+		}
+
+		public Vector3D GetDirectionFromMatrixAndEnum(MatrixD matrix, Direction direction) {
+
+			if (direction == Direction.None)
+				return Vector3D.Zero;
+
+			if (direction == Direction.Forward)
+				return matrix.Forward;
+
+			if (direction == Direction.Backward)
+				return matrix.Backward;
+
+			if (direction == Direction.Left)
+				return matrix.Left;
+
+			if (direction == Direction.Right)
+				return matrix.Right;
+
+			if (direction == Direction.Up)
+				return matrix.Up;
+
+			return matrix.Down;
 
 		}
 
@@ -329,6 +384,20 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[SpawningType:") == true) {
 
 						SpawningType = TagHelper.TagSpawnTypeEnumCheck(tag);
+
+					}
+
+					//CustomRelativeForward
+					if (tag.Contains("[CustomRelativeForward:") == true) {
+
+						CustomRelativeForward = TagHelper.TagDirectionEnumCheck(tag);
+
+					}
+
+					//CustomRelativeUp
+					if (tag.Contains("[CustomRelativeUp:") == true) {
+
+						CustomRelativeUp = TagHelper.TagDirectionEnumCheck(tag);
 
 					}
 

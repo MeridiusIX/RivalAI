@@ -16,6 +16,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 		void DetermineWeaponReadiness();
 		void FireOnce(); //Fires The Weapon Once
 		Direction GetDirection();
+		bool HasAmmo();
 		bool IsActive(); //Checks if weapon is On / Working / Fucntional
 		bool IsBarrageWeapon(); //Checks if Static Gun is able to be Barrage Fired
 		bool IsStaticGun();

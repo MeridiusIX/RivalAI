@@ -107,7 +107,7 @@ namespace RivalAI.Behavior{
 					Settings.DespawnCoords = MESApi.GetDespawnCoords(RemoteControl.SlimBlock.CubeGrid);
 
 					if (Settings.DespawnCoords == Vector3D.Zero)
-						Settings.DespawnCoords = AutoPilot.CalculateDespawnCoords();
+						Settings.DespawnCoords = AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition());
 
 				}
 

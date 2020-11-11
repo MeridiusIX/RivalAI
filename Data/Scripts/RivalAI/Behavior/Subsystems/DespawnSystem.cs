@@ -1,38 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
-using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using Sandbox.ModAPI;
+using System;
+using VRage.Game.ModAPI;
+using VRageMath;
 
-namespace RivalAI.Behavior.Subsystems{
-	
+namespace RivalAI.Behavior.Subsystems {
+
 	public class DespawnSystem{
+
+		private IBehavior _behavior;
 
 		public bool UsePlayerDistanceTimer;
 		public int PlayerDistanceTimerTrigger;
@@ -62,7 +38,7 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public event Action RetreatTriggered;
 
-		public DespawnSystem(IMyRemoteControl remoteControl = null) {
+		public DespawnSystem(IBehavior behavior, IMyRemoteControl remoteControl = null) {
 
 			UsePlayerDistanceTimer = true;
 			PlayerDistanceTimerTrigger = 150;
@@ -89,6 +65,7 @@ namespace RivalAI.Behavior.Subsystems{
 			NoTargetExpire = false;
 
 			Setup(remoteControl);
+			_behavior = behavior;
 
 
 		}
@@ -267,7 +244,7 @@ namespace RivalAI.Behavior.Subsystems{
 			}
 
 			if (DoDespawn) {
-
+				_behavior.Trigger.ProcessDespawnTriggers();
 				DespawnGrid();
 			
 			}
@@ -276,6 +253,7 @@ namespace RivalAI.Behavior.Subsystems{
 		
 		public void Retreat(){
 
+			_behavior.Trigger.ProcessRetreatTriggers();
 			Logger.MsgDebug("Retreat Signal Received For Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
 			DoRetreat = true;
 			
@@ -300,7 +278,6 @@ namespace RivalAI.Behavior.Subsystems{
 				}
 
 			});
-			
 
 		}
 		

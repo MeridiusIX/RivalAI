@@ -626,14 +626,14 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			foreach (var weapon in this.StaticWeapons) {
 
-				if (weapon.IsValid() && weapon.IsActive())
+				if (weapon.IsValid() && weapon.IsActive() && weapon.HasAmmo())
 					return true;
 
 			}
 
 			foreach (var weapon in this.Turrets) {
 
-				if (weapon.IsValid() && weapon.IsActive())
+				if (weapon.IsValid() && weapon.IsActive() && weapon.HasAmmo())
 					return true;
 
 			}

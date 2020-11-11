@@ -118,7 +118,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 						if (spawner.IsReadyToSpawn()) {
 
 							//Logger.AddMsg("Do Spawn", true);
-							spawner.CurrentPositionMatrix = RemoteControl.WorldMatrix;
+							spawner.AssignInitialMatrix(RemoteControl.WorldMatrix);
 							spawner.CurrentFactionTag = spawner.ForceSameFactionOwnership && !string.IsNullOrWhiteSpace(_owner.Faction?.Tag) ? _owner.Faction.Tag : "";
 							SpawnHelper.SpawnRequest(spawner);
 

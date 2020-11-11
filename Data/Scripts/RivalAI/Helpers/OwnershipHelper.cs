@@ -154,7 +154,7 @@ namespace RivalAI.Helpers {
 					string modifier = "Decreased";
 					var oldRep = MyAPIGateway.Session.Factions.GetReputationBetweenPlayerAndFaction(playerId, faction.FactionId);
 
-					if (oldRep <= -1500 || oldRep >= 1500)
+					if ((oldRep <= -1500 && amount < 0) || (oldRep >= 1500 && amount > 0))
 						continue;
 
 					if (amount > 0) {

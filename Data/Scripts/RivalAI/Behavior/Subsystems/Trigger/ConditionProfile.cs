@@ -905,7 +905,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				var block = _watchedAllBlocks[i];
 
-				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+				if (block == null || block?.SlimBlock?.CubeGrid == null || block.SlimBlock.CubeGrid.MarkedForClose) {
 
 					_watchedAllBlocks.RemoveAt(i);
 					continue;
@@ -931,7 +931,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				var block = _watchedAnyBlocks[i];
 
-				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+				if (block == null || block?.SlimBlock?.CubeGrid == null || block.SlimBlock.CubeGrid.MarkedForClose) {
 
 					_watchedAnyBlocks.RemoveAt(i);
 					continue;
@@ -957,7 +957,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				var block = _watchedNoneBlocks[i];
 
-				if (block == null || !MyAPIGateway.Entities.Exist(block?.SlimBlock?.CubeGrid)) {
+				if (block == null || block?.SlimBlock?.CubeGrid == null || block.SlimBlock.CubeGrid.MarkedForClose) {
 
 					_watchedNoneBlocks.RemoveAt(i);
 					continue;
@@ -982,7 +982,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			gridA.OnGridSplit -= GridSplitHandler;
 			gridB.OnGridSplit -= GridSplitHandler;
 
-			if (_remoteControl == null || !MyAPIGateway.Entities.Exist(_remoteControl?.SlimBlock?.CubeGrid))
+			if (_remoteControl == null || _remoteControl?.SlimBlock?.CubeGrid == null || _remoteControl.SlimBlock.CubeGrid.MarkedForClose)
 				return;
 
 			_remoteControl.SlimBlock.CubeGrid.OnGridSplit += GridSplitHandler;

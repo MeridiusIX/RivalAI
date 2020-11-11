@@ -1608,19 +1608,107 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		
 		}
 
-		public Vector3D CalculateDespawnCoords(double distance = 12000) {
+		public Vector3D CalculateDespawnCoords(Vector3D coords, double distance = 12000) {
 
 			if (InGravity()) {
 
-				//
+				Logger.MsgDebug("Manually Created Despawn Coords in Gravity", DebugTypeEnum.AutoPilot);
+				var center = CurrentPlanet.PositionComp.WorldAABB.Center;
+				var up = Vector3D.Normalize(coords - center);
+				var forward = MyUtils.GetRandomPerpendicularVector(ref up);
+				var surfaceCoordsPos = WaterHelper.GetClosestSurface(coords, CurrentPlanet, CurrentWater);
+				var surfaceMatrix = MatrixD.CreateWorld(surfaceCoordsPos, forward, up);
+				var surfaceDistanceCore = Vector3D.DistanceSquared(surfaceCoordsPos, center);
+				Vector3D direction = Vector3D.Zero;
+				double distDifference = -1;
+
+				var forwardDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Forward, distance, center));
+				
+				if (distDifference == -1) {
+
+					distDifference = forwardDespawnCoreDistDifference;
+					direction = surfaceMatrix.Forward;
+
+				}
+
+				var backDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Backward, distance, center));
+
+				if (backDespawnCoreDistDifference < distDifference) {
+
+					distDifference = forwardDespawnCoreDistDifference;
+					direction = surfaceMatrix.Backward;
+
+				}
+
+				var leftDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Left, distance, center));
+
+				if (leftDespawnCoreDistDifference < distDifference) {
+
+					distDifference = forwardDespawnCoreDistDifference;
+					direction = surfaceMatrix.Left;
+
+				}
+
+				var rightDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Right, distance, center));
+
+				if (rightDespawnCoreDistDifference < distDifference) {
+
+					distDifference = forwardDespawnCoreDistDifference;
+					direction = surfaceMatrix.Right;
+
+				}
+
+				var finalRoughCoords = direction * distance + surfaceCoordsPos;
+				var finalSurfaceCoords = WaterHelper.GetClosestSurface(finalRoughCoords, CurrentPlanet, CurrentWater);
+				var finalUp = Vector3D.Normalize(finalSurfaceCoords - center);
+				return finalUp * 1500 + finalSurfaceCoords;
 
 			} else {
-			
-				
+
+				Logger.MsgDebug("Manually Created Despawn Coords in Space", DebugTypeEnum.AutoPilot);
+				var randomDir = Vector3D.Normalize(MyUtils.GetRandomVector3D());
+				Vector3D result = randomDir * distance + coords;
+
+				if (SpaceDespawnInsideGravity(result)) {
+
+					result = -randomDir * distance + coords;
+
+					if(SpaceDespawnInsideGravity(result)){
+					
+						result = Vector3D.CalculatePerpendicularVector(randomDir) + coords;
+
+					}
+
+				}
+
+				return result;
 			
 			}
 
-			return Vector3D.Zero;
+		}
+
+		private bool SpaceDespawnInsideGravity(Vector3D coords) {
+
+			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+
+			if (planet != null) {
+
+				var gravityProvider = planet?.Components?.Get<MyGravityProviderComponent>();
+
+				if (gravityProvider != null && gravityProvider.IsPositionInRange(coords))
+					return true;
+
+			}
+
+			return false;
+
+		}
+
+		private double GetCoreDistanceFromPotentialDespawn(MatrixD matrix, Vector3D direction, double distance, Vector3D center) {
+
+			var roughCoords = direction * distance + matrix.Translation;
+			var surfaceCoords = WaterHelper.GetClosestSurface(roughCoords, CurrentPlanet, CurrentWater);
+			return Vector3D.DistanceSquared(surfaceCoords, center);
 
 		}
 
