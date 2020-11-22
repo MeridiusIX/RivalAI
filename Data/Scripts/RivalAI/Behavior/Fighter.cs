@@ -132,6 +132,8 @@ namespace RivalAI.Behavior{
 
 			}
 
+			base.MainBehavior();
+
 			//Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
 			
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){

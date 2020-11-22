@@ -662,6 +662,22 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 
+			//PlayerKnownLocation
+			if (data.AllUniqueFilters.Contains(TargetFilterEnum.PlayerKnownLocation)) {
+
+				bool inKnownLocation = false;
+
+				if (MESApi.MESApiReady) {
+				
+					if(MESApi.IsPositionInKnownPlayerLocation(target.GetPosition(), true, string.IsNullOrWhiteSpace(data.PlayerKnownLocationFactionOverride) ? _behavior.Owner.Faction?.Tag : data.PlayerKnownLocationFactionOverride));
+						FilterHits.Add(TargetFilterEnum.PlayerKnownLocation);
+
+				}
+
+				Logger.MsgDebug(string.Format(" - Evaluated Player Known Location: {0}", inKnownLocation), DebugTypeEnum.TargetEvaluation);
+
+			}
+
 			//Powered
 			if (data.AllUniqueFilters.Contains(TargetFilterEnum.Powered)) {
 

@@ -54,9 +54,11 @@ namespace RivalAI.Behavior{
 
 			}
 
+			base.MainBehavior();
+
 			//Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
-			
-			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
+
+			if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.LevelWithGravity | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.WaterNavigation);

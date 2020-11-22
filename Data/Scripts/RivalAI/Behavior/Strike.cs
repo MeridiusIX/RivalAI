@@ -84,6 +84,14 @@ namespace RivalAI.Behavior {
 
         public override void MainBehavior() {
 
+            if (RAI_SessionCore.IsServer == false) {
+
+                return;
+
+            }
+
+            base.MainBehavior();
+
             bool skipEngageCheck = false;
 
             if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {

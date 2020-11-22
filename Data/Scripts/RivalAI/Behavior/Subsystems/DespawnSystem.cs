@@ -38,6 +38,8 @@ namespace RivalAI.Behavior.Subsystems {
 		
 		public event Action RetreatTriggered;
 
+		private bool _mesDespawnTriggerCheck;
+
 		public DespawnSystem(IBehavior behavior, IMyRemoteControl remoteControl = null) {
 
 			UsePlayerDistanceTimer = true;
@@ -159,7 +161,7 @@ namespace RivalAI.Behavior.Subsystems {
 				return;
 				
 			}
-			
+
 			this.NearestPlayer = TargetHelper.GetClosestPlayer(this.RemoteControl.GetPosition());
 
 			if(mode == BehaviorMode.Retreat) {

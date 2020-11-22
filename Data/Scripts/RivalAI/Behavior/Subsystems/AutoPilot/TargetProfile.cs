@@ -129,6 +129,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(40)]
 		public double MaxUnderWaterDepth;
 
+		[ProtoMember(41)]
+		public string PlayerKnownLocationFactionOverride;
+
 		[ProtoIgnore]
 		public bool BuiltUniqueFilterList;
 
@@ -193,6 +196,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			MinUnderWaterDepth = -1;
 			MaxUnderWaterDepth = -1;
+
+			PlayerKnownLocationFactionOverride = "";
 
 			ProfileSubtypeId = "";
 			BuiltUniqueFilterList = false;
@@ -526,6 +531,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					if (tag.Contains("[MaxUnderWaterDepth:") == true) {
 
 						MaxUnderWaterDepth = TagHelper.TagDoubleCheck(tag, MaxUnderWaterDepth);
+
+					}
+
+					//PlayerKnownLocationFactionOverride
+					if (tag.Contains("[PlayerKnownLocationFactionOverride:") == true) {
+
+						PlayerKnownLocationFactionOverride = TagHelper.TagStringCheck(tag);
 
 					}
 

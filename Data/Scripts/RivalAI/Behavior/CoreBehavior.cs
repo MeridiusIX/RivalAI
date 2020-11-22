@@ -17,9 +17,14 @@ namespace RivalAI.Behavior {
 		public IMyRemoteControl RemoteControl { get { return _remoteControl; } set { _remoteControl = value; } }
 		public IMyCubeGrid CubeGrid;
 
+		public string RemoteControlCode;
+
 		//public BaseSystems Systems;
 
 		private bool _behaviorTerminated;
+
+		private bool _registeredRemoteCode;
+		private bool _despawnTriggersRegistered;
 
 		private AutoPilotSystem _newAutoPilot;
 		private BroadcastSystem _broadcast;
@@ -144,6 +149,8 @@ namespace RivalAI.Behavior {
 
 			RemoteControl = null;
 			CubeGrid = null;
+
+			RemoteControlCode = "";
 
 			SetupCompleted = false;
 			SetupFailed = false;
@@ -370,7 +377,37 @@ namespace RivalAI.Behavior {
 
 		public virtual void MainBehavior() {
 
+			if (!_registeredRemoteCode) {
+
+				_registeredRemoteCode = true;
+
+				if (MESApi.MESApiReady && !string.IsNullOrWhiteSpace(RemoteControlCode)) {
+
+					MESApi.RegisterRemoteControlCode(this.RemoteControl, RemoteControlCode);
+
+				}
 			
+			}
+
+			if (!_despawnTriggersRegistered) {
+
+				_despawnTriggersRegistered = true;
+
+				foreach (var trigger in Trigger.Triggers) {
+
+					if (!MESApi.MESApiReady)
+						break;
+
+					if (trigger.Type == "DespawnMES") {
+
+						MESApi.RegisterDespawnWatcher(this.RemoteControl?.SlimBlock?.CubeGrid, Trigger.DespawnFromMES);
+						break;
+					
+					}
+								
+				}
+
+			}
 
 		}
 
@@ -450,6 +487,7 @@ namespace RivalAI.Behavior {
 
 			Logger.MsgDebug("Initing Core Tags", DebugTypeEnum.BehaviorSetup);
 
+			CoreTags();
 			AutoPilot.InitTags();
 			AutoPilot.Weapons.InitTags();
 			Damage.InitTags();
@@ -459,6 +497,27 @@ namespace RivalAI.Behavior {
 
 			PostTagsSetup();
 
+
+		}
+
+		public void CoreTags() {
+
+			if (string.IsNullOrWhiteSpace(this.RemoteControl.CustomData) == false) {
+
+				var descSplit = this.RemoteControl.CustomData.Split('\n');
+
+				foreach (var tag in descSplit) {
+
+					//RemoteControlCode
+					if (tag.Contains("[RemoteControlCode:") == true) {
+
+						this.RemoteControlCode = TagHelper.TagStringCheck(tag);
+
+					}
+
+				}
+
+			}
 
 		}
 		

@@ -44,6 +44,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		public DateTime LastTriggerRun;
 
 		public Action OnComplete;
+		public Action<IMyCubeGrid, string> DespawnFromMES;
 
 
 		public TriggerSystem(IMyRemoteControl remoteControl) {
@@ -88,6 +89,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			for (int i = 0; i < Triggers.Count; i++) {
 
 				var trigger = Triggers[i];
+
+				if (!trigger.UseTrigger)
+					continue;
 
 				//Timer
 				if (trigger.Type == "Timer") {
@@ -479,6 +483,49 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+				//PlayerKnownLocation
+				if (trigger.Type == "PlayerKnownLocation") {
+
+					if (MESApi.MESApiReady) {
+
+						if (trigger.UseTrigger == true && MESApi.IsPositionInKnownPlayerLocation(RemoteControl.GetPosition(), true, _behavior.Owner.Faction?.Tag)) {
+
+							trigger.ActivateTrigger();
+
+						}
+
+					}
+
+					continue;
+
+				}
+
+				//SensorActive
+				if (trigger.Type == "SensorActive") {
+
+					if (_behavior.Grid.SensorCheck(trigger.SensorName)) {
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
+				//SensorActive
+				if (trigger.Type == "SensorIdle") {
+
+					if (_behavior.Grid.SensorCheck(trigger.SensorName, false)) {
+
+						trigger.ActivateTrigger();
+
+					}
+
+					continue;
+
+				}
+
 			}
 
 			_behavior.BehaviorTriggerA = false;
@@ -717,6 +764,32 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
+		public void ProcessMESDespawnTriggers(IMyCubeGrid cubeGrid, string despawnType) {
+
+			for (int i = 0; i < Triggers.Count; i++) {
+
+				var trigger = Triggers[i];
+
+				if (trigger.UseTrigger == true && trigger.Type == "DespawnMES") {
+
+					if (trigger.DespawnTypeFromSpawner == "Any" || despawnType == trigger.DespawnTypeFromSpawner) {
+
+						trigger.ActivateTrigger();
+
+						if (trigger.Triggered == true) {
+
+							ProcessTrigger(trigger);
+
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
 		public void ProcessManualTrigger(TriggerProfile trigger, bool forceActivation = false) {
 
 			Logger.MsgDebug("Attempting To Manually Trigger Profile " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
@@ -923,7 +996,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			}
 
 			RemoteControl = remoteControl;
-
+			DespawnFromMES += ProcessMESDespawnTriggers;
 			AntennaList = BlockHelper.GetGridAntennas(RemoteControl.SlimBlock.CubeGrid);
 
 		}

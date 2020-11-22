@@ -214,16 +214,20 @@
 			</Id>
 			<Description>
 
-			[Modular Encounters SpawnGroup]
+				[Modular Encounters SpawnGroup]
 
-			[SpaceCargoShip:true]
-			
-			[FactionOwner:SPRT]
-			[ReplenishSystems:true]
-			[AdminSpawnOnly:true]
-				
-			[UseRivalAi:true]
-			[RivalAiReplaceRemoteControl:true]
+				[SpaceCargoShip:true]
+
+				[FactionOwner:SPRT]
+				[ReplenishSystems:true]
+				[AdminSpawnOnly:true]
+
+				[UseRivalAi:true]
+				[RivalAiReplaceRemoteControl:true]
+
+				[UseSandboxCounterCosts:true]
+				[SandboxCounterCostNames:TestCounter]
+				[SandboxCounterCostAmounts:10]
 
 			</Description>
 			<IsPirate>true</IsPirate>

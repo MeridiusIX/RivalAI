@@ -94,7 +94,15 @@ namespace RivalAI.Behavior {
 
 		public override void MainBehavior() {
 
-			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
+			if (RAI_SessionCore.IsServer == false) {
+
+				return;
+
+			}
+
+			base.MainBehavior();
+
+			if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);

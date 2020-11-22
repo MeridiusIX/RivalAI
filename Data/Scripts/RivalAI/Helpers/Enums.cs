@@ -177,6 +177,7 @@ namespace RivalAI.Helpers {
         OutsideOfSafezone,
         Owner,
         PlayerControlled,
+        PlayerKnownLocation,
         Powered,
         Relation,
         Shielded,

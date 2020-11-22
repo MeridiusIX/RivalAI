@@ -145,6 +145,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(35)]
 		public bool AllowCommandCodePartialMatch;
 
+		[ProtoMember(36)]
+		public string SensorName;
+
+		[ProtoMember(37)]
+		public string DespawnTypeFromSpawner;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -191,6 +197,10 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			NextActionIndex = 0;
 			ActionExecution = ActionExecutionEnum.All;
+
+			SensorName = "";
+
+			DespawnTypeFromSpawner = "";
 
 			ProfileSubtypeId = "";
 
@@ -545,6 +555,20 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[ActionExecution:") == true) {
 
 						ActionExecution = TagHelper.TagActionExecutionCheck(tag);
+
+					}
+
+					//SensorName
+					if (tag.Contains("[SensorName:") == true) {
+
+						SensorName = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//DespawnTypeFromSpawner
+					if (tag.Contains("[DespawnTypeFromSpawner:") == true) {
+
+						DespawnTypeFromSpawner = TagHelper.TagStringCheck(tag);
 
 					}
 

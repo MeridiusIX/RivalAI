@@ -51,6 +51,7 @@ namespace RivalAI.Behavior.Subsystems {
         public List<IMyRadioAntenna> Antennas;
         public List<IMyCameraBlock> Cameras;
         public List<IMyProjector> Projectors;
+        public List<IMySensorBlock> Sensors;
         public List<IMyTimerBlock> Timers;
         public List<IMyWarhead> Warheads;
 
@@ -72,6 +73,7 @@ namespace RivalAI.Behavior.Subsystems {
             Antennas = new List<IMyRadioAntenna>();
             Cameras = new List<IMyCameraBlock>();
             Projectors = new List<IMyProjector>();
+            Sensors = new List<IMySensorBlock>();
             Timers = new List<IMyTimerBlock>();
             Warheads = new List<IMyWarhead>();
             
@@ -142,6 +144,9 @@ namespace RivalAI.Behavior.Subsystems {
 
             if ((block.FatBlock as IMyProjector) != null)
                 Projectors.Add(block.FatBlock as IMyProjector);
+
+            if ((block.FatBlock as IMySensorBlock) != null)
+                Sensors.Add(block.FatBlock as IMySensorBlock);
 
             if ((block.FatBlock as IMyTimerBlock) != null)
                 Timers.Add(block.FatBlock as IMyTimerBlock);
@@ -574,6 +579,41 @@ namespace RivalAI.Behavior.Subsystems {
 
             }
 
+        }
+
+        public bool SensorCheck(string sensorName, bool triggeredState = true) {
+
+            bool result = false;
+            var entities = new List<Sandbox.ModAPI.Ingame.MyDetectedEntityInfo>();
+
+            for (int i = Sensors.Count - 1; i >= 0; i--) {
+
+                var sensor = Sensors[i];
+
+                if (!CheckBlockValid(sensor)) {
+
+                    Sensors.RemoveAt(i);
+                    continue;
+
+                }
+
+                if (sensor.CustomName != sensorName)
+                    continue;
+
+                entities.Clear();
+                sensor.DetectedEntities(entities);
+
+                if ((entities.Count > 0) == triggeredState) {
+
+                    result = true;
+                    break;
+                
+                }
+
+            }
+
+            return result;
+        
         }
 
         public void SetGridAntennaRanges(List<string> names, string operation, float amount) {
