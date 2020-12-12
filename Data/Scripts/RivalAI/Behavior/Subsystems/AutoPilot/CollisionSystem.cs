@@ -2,6 +2,7 @@
 using RivalAI.Helpers;
 using Sandbox.ModAPI;
 using System.Text;
+using VRage.ModAPI;
 using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.AutoPilot {
@@ -124,7 +125,64 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			*/
 		}
 
+		public bool GridsCollisionCheck() {
 
+			return false;
+		
+		}
+
+		public Vector3D? GridToGridCollision(IMyEntity myEntity, IMyEntity theirEntity) {
+
+			if (myEntity?.Physics == null || theirEntity?.Physics == null)
+				return null;
+
+			var mySpeed = myEntity.Physics.LinearVelocity.Length();
+			var theirSpeed = theirEntity.Physics.LinearVelocity.Length();
+
+			var myVelocity = myEntity.Physics.LinearVelocity;
+			var theirVelocity = theirEntity.Physics.LinearVelocity;
+
+			if (mySpeed <= 0.01)
+				return null;
+
+			var myPreviousSphere = myEntity.PositionComp.WorldVolume;
+			var theirPreviousSphere = theirEntity.PositionComp.WorldVolume;
+
+			for (int i = 0; i < 11; i++) {
+
+				if (i <= 1) {
+
+					if (myEntity.WorldAABB.Contains(theirEntity.WorldAABB) != ContainmentType.Disjoint) {
+
+						return myPreviousSphere.Center;
+					
+					}
+				
+				}
+
+				var myMovementVector = myVelocity * i;
+				var theirMovementVector = theirVelocity * i;
+
+				var myNextCenter = myMovementVector + myPreviousSphere.Center;
+				var theirNextCenter = theirMovementVector + theirPreviousSphere.Center;
+
+				var myNewSphere = new BoundingSphereD(myNextCenter, myPreviousSphere.Radius);
+				var theirNewSphere = new BoundingSphereD(theirNextCenter, theirPreviousSphere.Radius);
+
+				var myCombinedSphere = BoundingSphereD.CreateMerged(myNewSphere, myPreviousSphere);
+				var theirCombinedSphere = BoundingSphereD.CreateMerged(theirNewSphere, theirPreviousSphere);
+
+				if (myCombinedSphere.Contains(theirCombinedSphere) != ContainmentType.Disjoint)
+					return theirNewSphere.Center;
+
+				myPreviousSphere = myNewSphere;
+				theirPreviousSphere = theirNewSphere;
+
+			}
+
+			return null;
+		
+		}
 
 		public CollisionResult GetResult(Direction direction) {
 
@@ -162,6 +220,22 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		Player,
 		Water
 
+	}
+
+	public class EntityCollisionResult {
+
+		public Vector3D MyPosition;
+		public Vector3D MyDirection;
+
+		public Vector3D OtherPosition;
+		public Vector3D OtherDirection;
+
+		public EntityCollisionResult() {
+		
+			
+		
+		}
+	
 	}
 
 }

@@ -106,6 +106,15 @@ namespace RivalAI.Behavior.Subsystems {
 		[ProtoMember(23)]
 		public string TertiaryAutopilotId;
 
+		[ProtoMember(24)]
+		public Vector3D InitialWaypointBackup;
+
+		[ProtoMember(25)]
+		public Vector3D PendingWaypointBackup;
+
+		[ProtoMember(26)]
+		public AutoPilotState State;
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -140,6 +149,8 @@ namespace RivalAI.Behavior.Subsystems {
 			TertiaryAutopilotId = "";
 
 			IgnoreTriggers = false;
+
+			State = new AutoPilotState();
 
 		}
 

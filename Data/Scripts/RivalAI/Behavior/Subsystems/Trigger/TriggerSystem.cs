@@ -513,7 +513,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
-				//SensorActive
+				//SensorIdle
 				if (trigger.Type == "SensorIdle") {
 
 					if (_behavior.Grid.SensorCheck(trigger.SensorName, false)) {

@@ -15,7 +15,9 @@ namespace RivalAI.Behavior.Subsystems {
 		public IMyRemoteControl RemoteControl;
 		private IBehavior _behavior;
 
-		public ITarget Target { get { 
+		public ITarget Target { 
+			
+			get { 
 
 				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
 
@@ -30,14 +32,15 @@ namespace RivalAI.Behavior.Subsystems {
 			
 				if (OverrideTarget != null && OverrideTarget.ActiveEntity()) {
 
-
 					OverrideTarget = value;
+					_behavior.Settings.CurrentTargetEntityId = OverrideTarget.GetEntityId();
 					return;
 				
 				}
 
 				NormalTarget = value;
-			
+				_behavior.Settings.CurrentTargetEntityId = NormalTarget?.GetEntityId() ?? 0;
+
 			}
 		}
 
