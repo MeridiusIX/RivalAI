@@ -292,6 +292,10 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			RequiredAnyFunctionalBlockNames = new List<string>();
 			RequiredNoneFunctionalBlockNames = new List<string>();
 
+			UseAccumulatedDamageWatcher = false;
+			MinAccumulatedDamage = -1;
+			MaxAccumulatedDamage = -1;
+
 			CheckTargetAltitudeDifference = false;
 			MinTargetAltitudeDifference = 0;
 			MaxTargetAltitudeDifference = 0;
@@ -648,11 +652,12 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				usedConditions++;
 				bool failedCheck = false;
+				Logger.MsgDebug("Damage Accumulated: " + _settings.TotalDamageAccumulated, DebugTypeEnum.Condition);
 
-				if (MinAccumulatedDamage >= 0 && MinAccumulatedDamage < _settings.TotalDamageAccumulated)
+				if (MinAccumulatedDamage >= 0 && _settings.TotalDamageAccumulated < MinAccumulatedDamage)
 					failedCheck = true;
 
-				if (MaxAccumulatedDamage >= 0 && MaxAccumulatedDamage > _settings.TotalDamageAccumulated)
+				if (MaxAccumulatedDamage >= 0 && _settings.TotalDamageAccumulated > MaxAccumulatedDamage)
 					failedCheck = true;
 
 				if (!failedCheck)
@@ -1318,6 +1323,27 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 							RequiredNoneFunctionalBlockNames.Add(tempValue);
 
 						}
+
+					}
+
+					//UseAccumulatedDamageWatcher
+					if (tag.Contains("[UseAccumulatedDamageWatcher:") == true) {
+
+						UseAccumulatedDamageWatcher = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MinAccumulatedDamage
+					if (tag.Contains("[MinAccumulatedDamage:") == true) {
+
+						MinAccumulatedDamage = TagHelper.TagFloatCheck(tag, MinAccumulatedDamage);
+
+					}
+
+					//MaxAccumulatedDamage
+					if (tag.Contains("[MaxAccumulatedDamage:") == true) {
+
+						MaxAccumulatedDamage = TagHelper.TagFloatCheck(tag, MaxAccumulatedDamage);
 
 					}
 

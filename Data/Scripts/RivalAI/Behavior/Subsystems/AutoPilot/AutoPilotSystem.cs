@@ -156,6 +156,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public TriggerSystem Trigger;
 		public WeaponSystem Weapons;
 
+		public double MaxSpeed { get { return State.MaxSpeedOverride != -1 ? State.MaxSpeedOverride : Data.IdealMaxSpeed; } }
+
 		public WaypointModificationEnum DirectWaypointType;
 		public WaypointModificationEnum IndirectWaypointType;
 		private Vector3D _myPosition; //
@@ -535,7 +537,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			_remoteControl.SetAutoPilotEnabled(false); //
 			_remoteControl.ClearWaypoints();
 
-			if (Data.IdealMaxSpeed == 0)
+			if (MaxSpeed == 0)
 				return;
 
 			/*
@@ -611,6 +613,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				sbStats.Append("Behavior Type: ").Append(_behavior.BehaviorType).AppendLine();
 				sbStats.Append("Behavior Mode: ").Append(_behavior.Mode).AppendLine();
 				sbStats.Append("Speed: ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
+				sbStats.Append("Profile: ").Append(Data.ProfileSubtypeId).AppendLine();
 				sbStats.Append("AP Modes: ").AppendLine();
 				sbStats.Append(CurrentMode.ToString().Replace(",", "\r\n")).AppendLine();
 				//sbStats.Append("Allowed Waypoint Types: ").AppendLine();
@@ -709,6 +712,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public void SetInitialWaypoint(Vector3D coords) {
 
 			_initialWaypoint = coords;
+			DistanceToInitialWaypoint = Vector3D.Distance(coords, _myPosition);
 
 		}
 
@@ -1571,7 +1575,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public void SetAutoPilotDataMode(AutoPilotDataMode mode) {
 
-			_behavior.Settings.APDataMode = mode;
+			State.DataMode = mode;
 		
 		}
 

@@ -90,7 +90,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			if (actions.ChangeAutopilotSpeed == true) {
 
 				Logger.MsgDebug(actions.ProfileSubtypeId + ": Changing AutoPilot Speed To: " + actions.NewAutopilotSpeed.ToString(), DebugTypeEnum.Action);
-				_autopilot.Data.IdealMaxSpeed = actions.NewAutopilotSpeed;
+				_autopilot.State.MaxSpeedOverride = actions.NewAutopilotSpeed;
 				var blockList = TargetHelper.GetAllBlocks(RemoteControl.SlimBlock.CubeGrid);
 
 				foreach (var block in blockList.Where(x => x.FatBlock != null)) {
@@ -263,6 +263,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//InheritLastAttackerFromCommand
+			if (actions.InheritLastAttackerFromCommand) {
+
+				_behavior.Settings.LastDamagerEntity = command != null ? command.TargetEntityId : 0;
+
+			}
+
 			//SwitchToReceivedTarget
 			if (actions.SwitchToReceivedTarget == true && (command != null || detectedEntity != 0)) {
 
@@ -284,20 +291,86 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				if (MyAPIGateway.Entities.TryGetEntityById(switchToId, out tempEntity)) {
 
-					_autopilot.Targeting.ForceTargetEntityId = switchToId;
-					_autopilot.Targeting.ForceTargetEntity = tempEntity;
-					_autopilot.Targeting.ForceRefresh = true;
+					//Logger.MsgDebug("Damager Entity Valid", DebugTypeEnum.General);
+
+					var parentEnt = tempEntity.GetTopMostParent();
+
+					if (parentEnt != null) {
+
+						//Logger.MsgDebug("Damager Parent Entity Valid", DebugTypeEnum.General);
+						var gridGroup = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+						bool isSameGridConstrust = false;
+
+						foreach (var grid in gridGroup) {
+
+							if (grid.EntityId == tempEntity.GetTopMostParent().EntityId) {
+
+								//Logger.MsgDebug("Damager Parent Entity Was Same Grid", DebugTypeEnum.General);
+								isSameGridConstrust = true;
+								break;
+
+							}
+
+						}
+
+						if (!isSameGridConstrust) {
+
+							//Logger.MsgDebug("Damager Parent Entity Was External", DebugTypeEnum.General);
+							_behavior.AutoPilot.Targeting.ForceTargetEntityId = parentEnt.EntityId;
+							_behavior.AutoPilot.Targeting.ForceTargetEntity = parentEnt;
+							_behavior.AutoPilot.Targeting.ForceRefresh = true;
+
+						}
+
+					}
 
 				}
 
 			}
 
-			//SwitchToDamagerTarget
-			if (actions.SwitchToDamagerTarget == true && detectedEntity != 0) {
+			//SwitchTargetToDamager
+			if (actions.SwitchTargetToDamager == true && _behavior.Settings.LastDamagerEntity != 0) {
 
-				Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Switch to Damager Target Data", DebugTypeEnum.Action);
-				_autopilot.Targeting.ForceTargetEntityId = detectedEntity;
-				_autopilot.Targeting.ForceRefresh = true;
+				Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Switch Target to Damager", DebugTypeEnum.Action);
+
+				IMyEntity tempEntity = null;
+
+				if (MyAPIGateway.Entities.TryGetEntityById(_behavior.Settings.LastDamagerEntity, out tempEntity)) {
+
+					//Logger.MsgDebug("Damager Entity Valid", DebugTypeEnum.General);
+
+					var parentEnt = tempEntity.GetTopMostParent();
+
+					if (parentEnt != null) {
+
+						//Logger.MsgDebug("Damager Parent Entity Valid", DebugTypeEnum.General);
+						var gridGroup = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+						bool isSameGridConstrust = false;
+
+						foreach (var grid in gridGroup) {
+
+							if (grid.EntityId == tempEntity.GetTopMostParent().EntityId) {
+
+								//Logger.MsgDebug("Damager Parent Entity Was Same Grid", DebugTypeEnum.General);
+								isSameGridConstrust = true;
+								break;
+
+							}
+
+						}
+
+						if (!isSameGridConstrust) {
+
+							//Logger.MsgDebug("Damager Parent Entity Was External", DebugTypeEnum.General);
+							_behavior.AutoPilot.Targeting.ForceTargetEntityId = parentEnt.EntityId;
+							_behavior.AutoPilot.Targeting.ForceTargetEntity = parentEnt;
+							_behavior.AutoPilot.Targeting.ForceRefresh = true;
+
+						}
+
+					}
+
+				}
 
 			}
 
@@ -695,6 +768,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//OverwriteAutopilotProfile
+			if (actions.OverwriteAutopilotProfile) {
+
+				_behavior.AutoPilot.AssignAutoPilotDataMode(actions.OverwriteAutopilotId, actions.OverwriteAutopilotMode);
+
+			}
+
 			//ChangeAutoPilotProfile
 			if (actions.ChangeAutopilotProfile) {
 
@@ -742,13 +822,6 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
-			}
-
-			//InheritLastAttackerFromCommand
-			if (actions.InheritLastAttackerFromCommand) {
-
-				_behavior.Settings.LastDamagerEntity = command != null ? command.TargetEntityId : 0;
-			
 			}
 
 			//SetBooleansTrue

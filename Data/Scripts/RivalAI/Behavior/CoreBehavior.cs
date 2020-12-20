@@ -335,6 +335,9 @@ namespace RivalAI.Behavior {
 
 			if (preserveSettings) {
 
+				Settings.State.DataMode = AutoPilotDataMode.Primary;
+				Settings.State.AutoPilotFlags = NewAutoPilotMode.None;
+				Settings.Mode = BehaviorMode.Init;
 				var newSettings = new StoredSettings(Settings, preserveSettings, preserveTriggers, preserveTargetData);
 				var tempSettingsBytes = MyAPIGateway.Utilities.SerializeToBinary<StoredSettings>(newSettings);
 				var tempSettingsString = Convert.ToBase64String(tempSettingsBytes);

@@ -605,7 +605,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (!_behavior.IsAIReady()) {
 
-				Logger.MsgDebug("Behavior AI Not Ready", DebugTypeEnum.Command);
+				Logger.MsgDebug("Behavior AI That Received Command Not Active. It Will Be Unregistered.", DebugTypeEnum.Command);
+				UnregisterCommandListener();
 				return;
 
 			}
@@ -1020,6 +1021,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			CommandListenerRegistered = true;
 			CommandHelper.CommandTrigger += ProcessCommandReceiveTriggerWatcher;
+
+		}
+
+		public void UnregisterCommandListener() {
+
+			if (!CommandListenerRegistered)
+				return;
+
+			CommandListenerRegistered = false;
+			CommandHelper.CommandTrigger -= ProcessCommandReceiveTriggerWatcher;
 
 		}
 

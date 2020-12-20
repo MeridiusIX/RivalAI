@@ -1,10 +1,13 @@
-﻿using Sandbox.Game.Entities;
+﻿using RivalAI.Behavior.Subsystems.AutoPilot;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Voxels;
+using VRageMath;
 
 namespace RivalAI.Helpers {
 	public static class CollisionHelper {
@@ -49,6 +52,45 @@ namespace RivalAI.Helpers {
 
 		}
 
+		public static bool VoxelIntersectionCheck(MyVoxelBase voxel, Vector3D start, Vector3D end, double stepLength, ref Vector3D hit) {
+
+			try {
+
+				using (voxel.Pin()) {
+
+					double totalDistance = Vector3D.Distance(start, end);
+					Vector3D pathDirection = Vector3D.Normalize(end - start);
+					var voxelHit = new VoxelHitInfo();
+
+					for (double i = 0; i < totalDistance; i += stepLength) {
+
+						var checkCoords = pathDirection * i + start;
+						var voxelCoords = Vector3I.Zero;
+						Vector3I.Floor(ref checkCoords, out voxelCoords);
+						voxel.Storage.ExecuteOperationFast(ref voxelHit, MyStorageDataTypeFlags.Content, ref voxelCoords, ref voxelCoords, false);
+
+						if (voxelHit.Hit) {
+
+							hit = checkCoords;
+							return true;
+
+						}
+
+					}
+
+				}
+
+			} catch (Exception e) {
+
+				Logger.MsgDebug("Caught Exception While Querying Voxels:", DebugTypeEnum.General);
+				Logger.MsgDebug(e.ToString(), DebugTypeEnum.General);
+
+			}
+
+			return false;
+		
+		}
+
 		public static void RegisterCollisionHelper() {
 
 			MyAPIGateway.Entities.OnEntityAdd += NewEntityDetected;
@@ -85,4 +127,21 @@ namespace RivalAI.Helpers {
 		}
 
 	}
+
+	public struct VoxelHitInfo : IVoxelOperator {
+
+		public bool Hit;
+
+		public VoxelOperatorFlags Flags { get { return VoxelOperatorFlags.Read; } }
+
+		public void Op(ref Vector3I position, MyStorageDataTypeEnum dataType, ref byte inOutContent) {
+
+			if (inOutContent != MyVoxelConstants.VOXEL_CONTENT_EMPTY)
+				Hit = true;
+
+		}
+
+
+	}
+
 }

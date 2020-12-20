@@ -1,61 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
-using RivalAI.Entities;
-using RivalAI.Behavior.Subsystems.Profiles;
 using RivalAI.Behavior.Subsystems.AutoPilot;
+using System.Collections.Generic;
+using RivalAI.Behavior.Subsystems.Trigger;
 
-namespace RivalAI.Behavior{
+namespace RivalAI.Behavior {
 
-	public enum CargoShipMode {
-	
-		SpawnerEndCoords,
-		RandomEndCoords,
-		UseCustomPath,
-	
-	}
+	public class CargoShip : CoreBehavior, IBehavior {
 
-	public class CargoShip : CoreBehavior, IBehavior{
+		public List<Vector3D> CustomWaypoints;
 
-		//Configurable
+		private EncounterWaypoint _cargoShipWaypoint { 
+			
+			get {
+
+				if (AutoPilot.State.CargoShipWaypoints.Count > 0) {
+
+					_waypointIsDespawn = false;
+					return AutoPilot.State.CargoShipWaypoints[0];
+
+				}
+
+				_waypointIsDespawn = true;
+				return AutoPilot.State.CargoShipDespawn;
+
+			} 
 		
-		public bool CargoShipUseCustomPath;
-		public bool CargoShipUseLastWaypointAsDespawn;
-		public Vector3D CargoShipCustomWaypoints;
+		}
 
-		public bool CargoShipCalculateRandomDespawn;
+		private bool _waypointIsDespawn;
+
 
 		public CargoShip() : base() {
 
 			_behaviorType = "CargoShip";
+			_waypointIsDespawn = false;
+
+			CustomWaypoints = new List<Vector3D>();
 
 		}
 
@@ -72,65 +54,91 @@ namespace RivalAI.Behavior{
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+				AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
 			
+			//Init
 			if(Mode == BehaviorMode.Init) {
 
-				if(!AutoPilot.Targeting.HasTarget()) {
+				foreach (var waypoint in CustomWaypoints) {
 
-					ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-
-				} else {
-
-					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
-
+					AutoPilot.State.CargoShipWaypoints.Add(new EncounterWaypoint(waypoint));
+				
 				}
+
+				SelectNextWaypoint();
+				ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 
 			}
 
-			if(Mode == BehaviorMode.WaitingForTarget) {
+			//WaitAtWaypoint
+			if (Mode == BehaviorMode.WaitAtWaypoint) {
 
-				if(AutoPilot.CurrentMode != AutoPilot.UserCustomModeIdle) {
+				var timeSpan = MyAPIGateway.Session.GameDateTime - AutoPilot.State.WaypointWaitTime;
 
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
+				if (timeSpan.TotalSeconds >= AutoPilot.Data.WaypointWaitTimeTrigger) {
 
-				}
-
-				if(AutoPilot.Targeting.HasTarget()) {
-
+					SelectNextWaypoint();
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
 
-				} else if(Despawn.NoTargetExpire == true){
-					
-					Despawn.Retreat();
-					
 				}
-
-			}
-
-			if(!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
-
-
-				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
 
 			}
 
 			//Approach
 			if (Mode == BehaviorMode.ApproachTarget) {
 
+				if (_cargoShipWaypoint == null) {
 
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+					return;
 
-			}
+				}
 
-			//WaitWaitAtWaypoint
-			if (Mode == BehaviorMode.WaitAtWaypoint) {
+				var coords = _cargoShipWaypoint.GetCoords();
 
+				if (!_cargoShipWaypoint.Valid || _cargoShipWaypoint.ReachedWaypoint) {
 
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+					return;
+
+				}
+
+				if (!_waypointIsDespawn && _cargoShipWaypoint.Waypoint == WaypointType.RelativeOffset) {
+
+					AutoPilot.SetInitialWaypoint(coords);
+
+				}
+
+				if (Vector3D.Distance(RemoteControl.GetPosition(), AutoPilot.State.InitialWaypoint) < MathTools.Hypotenuse(AutoPilot.Data.WaypointTolerance, AutoPilot.Data.WaypointTolerance)) {
+
+					_cargoShipWaypoint.ReachedWaypoint = true;
+					_cargoShipWaypoint.ReachedWaypointTime = MyAPIGateway.Session.GameDateTime;
+					AutoPilot.State.WaypointWaitTime = MyAPIGateway.Session.GameDateTime;
+
+					if (_waypointIsDespawn) {
+
+						if (Despawn.NearestPlayer == null || Despawn.PlayerDistance > 1200) {
+
+							Despawn.DoDespawn = true;
+						
+						}
+
+						ChangeCoreBehaviorMode(BehaviorMode.Retreat);
+						Despawn.DoRetreat = true;
+
+					} else {
+
+						AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+						ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+
+					}
+				
+				}
 
 			}
 
@@ -143,6 +151,46 @@ namespace RivalAI.Behavior{
 					AutoPilot.SetInitialWaypoint(VectorHelper.GetDirectionAwayFromTarget(this.RemoteControl.GetPosition(), Despawn.NearestPlayer.GetPosition()) * 1000 + this.RemoteControl.GetPosition());
 
 				}
+
+			}
+
+		}
+
+		private void SelectNextWaypoint() {
+
+			if (!AutoPilot.State.CargoShipDespawn.Valid) {
+
+				Logger.MsgDebug("Setting Initial CargoShip Despawn Waypoint", DebugTypeEnum.General);
+				var despawnCoords = MESApi.GetDespawnCoords(RemoteControl.SlimBlock.CubeGrid);
+
+				if (despawnCoords == Vector3D.Zero) {
+
+					Logger.MsgDebug("Could Not Get From MES. Creating Manual Despawn Waypoint", DebugTypeEnum.General);
+					despawnCoords = AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition());
+
+				}
+
+				AutoPilot.State.CargoShipDespawn = new EncounterWaypoint(despawnCoords);
+
+			}
+
+			while (true) {
+
+				if (AutoPilot.State.CargoShipWaypoints.Count == 0)
+					break;
+
+				var waypoint = AutoPilot.State.CargoShipWaypoints[0];
+				waypoint.GetCoords();
+
+				if (waypoint == null || !waypoint.Valid || waypoint.ReachedWaypoint) {
+
+					Logger.MsgDebug("Invalid or Reached Waypoint Has Been Removed", DebugTypeEnum.General);
+					AutoPilot.State.CargoShipWaypoints.RemoveAt(0);
+					continue;
+
+				}
+			
+				break;
 
 			}
 
@@ -176,11 +224,14 @@ namespace RivalAI.Behavior{
 				var descSplit = this.RemoteControl.CustomData.Split('\n');
 
 				foreach(var tag in descSplit) {
-					
-					//FighterEngageDistanceSpace
-					if(tag.Contains("[FighterEngageDistanceSpace:") == true) {
 
-						//this.FighterEngageDistanceSpace = TagHelper.TagDoubleCheck(tag, this.FighterEngageDistanceSpace);
+					//CustomWaypoints
+					if (tag.Contains("[CustomWaypoints:") == true) {
+
+						var tempValue = TagHelper.TagVector3DCheck(tag);
+
+						if (tempValue != Vector3D.Zero)
+							this.CustomWaypoints.Add(tempValue);
 
 					}	
 

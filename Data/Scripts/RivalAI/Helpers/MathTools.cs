@@ -21,6 +21,13 @@ namespace RivalAI.Helpers {
 		
 		}
 
+		public static double Hypotenuse(double a, double b) {
+
+			var valueA = (a * a) + (b * b);
+			return Math.Sqrt(valueA);
+		
+		}
+
 		/// <summary>
 		/// This method will calculate the distance that a ship will stop at whent Braking Acceleration is applied.
 		/// </summary>

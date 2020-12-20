@@ -196,6 +196,16 @@ namespace RivalAI.Behavior{
 					
 				}
 
+				if (!BehaviorTriggerA) {
+
+					if (Vector3D.Distance(RemoteControl.GetPosition(), Settings.DespawnCoords) <= MathTools.Hypotenuse(AutoPilot.Data.WaypointTolerance, AutoPilot.Data.WaypointTolerance)) {
+
+						Despawn.DoDespawn = true;
+					
+					}
+				
+				}
+
 			}
 
 			if (Mode == BehaviorMode.ApproachTarget) {

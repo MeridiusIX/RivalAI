@@ -671,9 +671,14 @@ namespace RivalAI.Behavior.Subsystems {
 				bool inKnownLocation = false;
 
 				if (MESApi.MESApiReady) {
-				
-					if(MESApi.IsPositionInKnownPlayerLocation(target.GetPosition(), true, string.IsNullOrWhiteSpace(data.PlayerKnownLocationFactionOverride) ? _behavior.Owner.Faction?.Tag : data.PlayerKnownLocationFactionOverride));
+
+					if (MESApi.IsPositionInKnownPlayerLocation(target.GetPosition(), true, string.IsNullOrWhiteSpace(data.PlayerKnownLocationFactionOverride) ? _behavior.Owner.Faction?.Tag : data.PlayerKnownLocationFactionOverride)) {
+
 						FilterHits.Add(TargetFilterEnum.PlayerKnownLocation);
+						inKnownLocation = true;
+
+					}
+						
 
 				}
 
@@ -765,7 +770,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 				var targetValue = target.TargetValue();
 
-				if (targetValue >= data.MinTargetValue && targetValue <= data.MaxTargetValue)
+				if ((data.MinTargetValue == -1 || targetValue >= data.MinTargetValue) && (data.MaxTargetValue == -1 || targetValue <= data.MaxTargetValue))
 					FilterHits.Add(TargetFilterEnum.TargetValue);
 
 				Logger.MsgDebug(string.Format(" - Evaluated Target Value: {0}", targetValue), DebugTypeEnum.TargetEvaluation);

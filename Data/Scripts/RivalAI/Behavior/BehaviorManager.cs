@@ -172,6 +172,20 @@ namespace RivalAI.Behavior {
 
 				}
 
+				//CargoShip
+				if (remoteControl.CustomData.Contains("[BehaviorName:CargoShip]")) {
+
+					Logger.MsgDebug("Behavior: CargoShip", DebugTypeEnum.BehaviorSetup);
+					var MainBehavior = new CargoShip();
+					MainBehavior.BehaviorInit(remoteControl);
+
+					lock (Behaviors)
+						Behaviors.Add(MainBehavior);
+
+					return;
+
+				}
+
 				//Fighter
 				if (remoteControl.CustomData.Contains("[BehaviorName:Fighter]")) {
 

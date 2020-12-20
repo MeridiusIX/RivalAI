@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Voxels;
 using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.AutoPilot {
@@ -387,7 +388,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (closestGrid == null || (closestGrid != null && item.Distance < closestGridDistance)) {
+					if (closestGrid == null || (closestGrid != null && closestGrid.Physics != null && item.Distance < closestGridDistance)) {
 
 						closestGrid = targetGrid;
 						closestGridDistance = item.Distance;
@@ -546,26 +547,11 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 						Vector3D startBox = boxCheckResult ? (minDist - 5) * DirectionVector + StartPosition : StartPosition;
 						Vector3D endBox = boxCheckResult ? (maxDist + 5) * DirectionVector + StartPosition : EndPosition;
-						Vector3D? hitPosition = null;
+						Vector3D hitPosition = Vector3D.Zero;
 						LineD voxelLine = new LineD(startBox, endBox);
-						bool gotHit = false;
+						bool gotHit = CollisionHelper.VoxelIntersectionCheck(voxel, startBox, endBox, 25, ref hitPosition);
 
-						try {
-
-							using (voxel.Pin()) {
-
-								gotHit = voxel.GetIntersectionWithLine(ref voxelLine, out hitPosition);
-
-							}
-
-						} catch (Exception e) {
-
-							Logger.WriteLog("Supressed Exception While Checking Voxel Collision");
-							Logger.WriteLog(e.ToString());
-
-						}
-
-						if (hitPosition.HasValue) {
+						if (gotHit) {
 
 							var hitDist = Vector3D.Distance((Vector3D)hitPosition, StartPosition);
 

@@ -507,6 +507,18 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(158)]
 		public bool ForceManualTriggerActivation;
 
+		[ProtoMember(159)]
+		public bool OverwriteAutopilotProfile;
+
+		[ProtoMember(160)]
+		public AutoPilotDataMode OverwriteAutopilotMode;
+
+		[ProtoMember(161)]
+		public string OverwriteAutopilotId;
+
+		[ProtoMember(162)]
+		public bool SwitchTargetToDamager;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -532,6 +544,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			BroadcastDamagerTarget = false;
 			BroadcastSendCode = "";
 			SwitchToReceivedTarget = false;
+			SwitchTargetToDamager = false;
 
 			SwitchToBehavior = false;
 			NewBehavior = "";
@@ -684,6 +697,10 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			ChangeAutopilotProfile = false;
 			AutopilotProfile = AutoPilotDataMode.Primary;
+
+			OverwriteAutopilotProfile = false;
+			OverwriteAutopilotMode = AutoPilotDataMode.Primary;
+			OverwriteAutopilotId = "";
 
 			Ramming = false;
 
@@ -885,6 +902,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[SwitchToReceivedTarget:") == true) {
 
 						SwitchToReceivedTarget = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//SwitchTargetToDamager
+					if (tag.Contains("[SwitchTargetToDamager:") == true) {
+
+						SwitchTargetToDamager = TagHelper.TagBoolCheck(tag);
 
 					}
 
@@ -1965,11 +1989,26 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					}
 
-					//ReplaceAutopilotProfile
+					//OverwriteAutopilotProfile
+					if (tag.Contains("[OverwriteAutopilotProfile:") == true) {
 
-					//ReplaceAutopilotProfileName
+						OverwriteAutopilotProfile = TagHelper.TagBoolCheck(tag);
 
-					//ReplaceAutopilotProfileMode
+					}
+
+					//OverwriteAutopilotMode
+					if (tag.Contains("[OverwriteAutopilotMode:") == true) {
+
+						OverwriteAutopilotMode = TagHelper.TagAutoPilotProfileModeCheck(tag);
+
+					}
+
+					//OverwriteAutopilotId
+					if (tag.Contains("[OverwriteAutopilotId:") == true) {
+
+						OverwriteAutopilotId = TagHelper.TagStringCheck(tag);
+
+					}
 
 				}
 

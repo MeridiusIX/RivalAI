@@ -164,7 +164,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 
 			//Logger.MsgDebug(string.Format("Forward Thrust Check: {0} / {1}", velocityAmount, IdealMaxSpeed - MaxSpeedTolerance), DebugTypeEnum.Thrust);
-			if (velocityAmount < Data.IdealMaxSpeed - Data.MaxSpeedTolerance) {
+			if (velocityAmount < MaxSpeed - Data.MaxSpeedTolerance) {
 
 				_debugThrustForwardMode = "Thrust To Desired Speed";
 				_thrustToApply.SetZ(true, false, 1, _orientation);
@@ -173,7 +173,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			}
 
 			//Logger.MsgDebug(string.Format("Reverse Thrust Check: {0} / {1}", velocityAmount, IdealMaxSpeed + MaxSpeedTolerance), DebugTypeEnum.Thrust);
-			if (velocityAmount > Data.IdealMaxSpeed + Data.MaxSpeedTolerance) {
+			if (velocityAmount > MaxSpeed + Data.MaxSpeedTolerance) {
 
 				_debugThrustForwardMode = "Brake To Desired Speed";
 				_thrustToApply.SetZ(true, true, 1, _orientation);
@@ -257,7 +257,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && upVelocityAmt < Data.IdealMaxSpeed - Data.MaxSpeedTolerance) {
+					if (!skipCheck && upVelocityAmt < MaxSpeed - Data.MaxSpeedTolerance) {
 
 						_thrustToApply.SetY(true, invertedDir, 1, _orientation);
 						skipCheck = true;
@@ -265,7 +265,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && upVelocityAmt > Data.IdealMaxSpeed + Data.MaxSpeedTolerance) {
+					if (!skipCheck && upVelocityAmt > MaxSpeed + Data.MaxSpeedTolerance) {
 
 						_thrustToApply.SetY(true, invertedDir ? false : true, 1, _orientation);
 						skipCheck = true;
@@ -332,7 +332,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && forwardVelocityAmt < Data.IdealMaxSpeed - Data.MaxSpeedTolerance) {
+					if (!skipCheck && forwardVelocityAmt < MaxSpeed - Data.MaxSpeedTolerance) {
 
 						_debugThrustForwardMode = "Thrust To Desired Speed";
 						_thrustToApply.SetZ(true, false, 1, _orientation);
@@ -340,7 +340,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && forwardVelocityAmt > Data.IdealMaxSpeed + Data.MaxSpeedTolerance) {
+					if (!skipCheck && forwardVelocityAmt > MaxSpeed + Data.MaxSpeedTolerance) {
 
 						_debugThrustForwardMode = "Brake To Desired Speed";
 						_thrustToApply.SetZ(true, true, 1, _orientation);

@@ -54,7 +54,19 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(10)]
 		public Vector3D CurrentWaypoint;
 
-		//Offset Data
+		//CargoShip Data
+
+		[ProtoMember(11)]
+		public List<EncounterWaypoint> CargoShipWaypoints;
+
+		[ProtoMember(12)]
+		public EncounterWaypoint CargoShipDespawn;
+
+		[ProtoMember(13)]
+		public double MaxSpeedOverride;
+
+		[ProtoMember(14)]
+		public DateTime WaypointWaitTime;
 
 		//
 
@@ -73,6 +85,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			FirstRun = false;
 			CurrentAutoPilot = AutoPilotType.None;
 			AutoPilotFlags = NewAutoPilotMode.None;
+
+			CargoShipWaypoints = new List<EncounterWaypoint>();
+			CargoShipDespawn = new EncounterWaypoint();
+
+			MaxSpeedOverride = -1;
+
+			WaypointWaitTime = DateTime.MinValue;
 
 		}
 
