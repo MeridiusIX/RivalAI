@@ -640,6 +640,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			if (command.SingleRecipient && command.Recipient > 0) {
+
+				Logger.MsgDebug("Code Is Single Recipient and Already Processed By Another Entity", DebugTypeEnum.Command);
+				return;
+
+			}
+
 			var dist = Vector3D.Distance(RemoteControl.GetPosition(), command.RemoteControl.GetPosition());
 
 			if (!command.UseTriggerTargetDistance) {
@@ -659,12 +666,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				if (dist > command.Radius) {
 
-					Logger.MsgDebug("Receiver Has No Antenna", DebugTypeEnum.Command);
+					Logger.MsgDebug("Receiver Out Of Code Broadcast Range", DebugTypeEnum.Command);
 					return;
 
 				}
 
 			}
+
+			bool processed = false;
 
 			for (int i = 0; i < CommandTriggers.Count; i++) {
 
@@ -684,6 +693,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (trigger.Triggered == true) {
 
+						processed = true;
 						ProcessTrigger(trigger, 0, command);
 
 					}
@@ -691,6 +701,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				}
 
 			}
+
+			if (command.SingleRecipient && processed)
+				command.Recipient = RemoteControl.EntityId;
 
 		}
 

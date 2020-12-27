@@ -48,8 +48,9 @@ namespace RivalAI.Helpers {
 		public static Dictionary<string, byte[]> TriggerGroupObjectTemplates = new Dictionary<string, byte[]>();
 
 		public static Dictionary<string, AutoPilotProfile> AutoPilotProfiles = new Dictionary<string, AutoPilotProfile>();
+		public static Dictionary<string, CommandProfile> CommandProfiles = new Dictionary<string, CommandProfile>();
 		public static Dictionary<string, TargetProfile> TargetProfiles = new Dictionary<string, TargetProfile>();
-
+		public static Dictionary<string, WaypointProfile> WaypointProfiles = new Dictionary<string, WaypointProfile>();
 
 		public static AutoPilotProfile DefaultAutoPilotSettings = new AutoPilotProfile();
 
@@ -211,6 +212,25 @@ namespace RivalAI.Helpers {
 
 				}
 
+				if (def.DescriptionText.Contains("[RivalAI Waypoint]") == true && WaypointProfiles.ContainsKey(def.Id.SubtypeName) == false) {
+
+					var waypoint = new WaypointProfile();
+					waypoint.InitTags(def.DescriptionText);
+					waypoint.ProfileSubtypeId = def.Id.SubtypeName;
+					WaypointProfiles.Add(def.Id.SubtypeName, waypoint);
+					continue;
+
+				}
+
+				if (def.DescriptionText.Contains("[RivalAI Command]") == true && CommandProfiles.ContainsKey(def.Id.SubtypeName) == false) {
+
+					var command = new CommandProfile();
+					command.InitTags(def.DescriptionText);
+					command.ProfileSubtypeId = def.Id.SubtypeName;
+					CommandProfiles.Add(def.Id.SubtypeName, command);
+					continue;
+
+				}
 
 			}
 
@@ -242,6 +262,8 @@ namespace RivalAI.Helpers {
 			BuildKeyListAndWriteToLog("Chat", ChatObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Spawn", SpawnerObjectTemplates.Keys);
 			BuildKeyListAndWriteToLog("Target", TargetObjectTemplates.Keys);
+			BuildKeyListAndWriteToLog("Command", CommandProfiles.Keys);
+			BuildKeyListAndWriteToLog("Waypoint", WaypointProfiles.Keys);
 
 		}
 
@@ -596,6 +618,25 @@ namespace RivalAI.Helpers {
 			
 		}
 
+		public static RelativeEntityType TagRelativeEntityEnumCheck(string tag) {
+
+			RelativeEntityType result = RelativeEntityType.None;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (WaypointType.TryParse(tagSplit[1], out result) == false) {
+
+					return RelativeEntityType.None;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
 		public static string TagStringCheck(string tag) {
 
 			string result = "";
@@ -792,6 +833,25 @@ namespace RivalAI.Helpers {
 				if(TriggerAction.TryParse(tagSplit[1], out result) == false) {
 
 					return TriggerAction.None;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static WaypointType TagWaypointTypeEnumCheck(string tag) {
+
+			WaypointType result = WaypointType.None;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (WaypointType.TryParse(tagSplit[1], out result) == false) {
+
+					return WaypointType.None;
 
 				}
 

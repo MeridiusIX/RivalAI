@@ -46,6 +46,42 @@ namespace RivalAI.Behavior {
 
 		public EncounterWaypoint() {
 
+			Init();
+
+		}
+
+		public EncounterWaypoint(Vector3D coords){
+
+			Init();
+			SetValid(true);
+			Waypoint = WaypointType.Static;
+			Offset = coords;
+
+		}
+
+		public EncounterWaypoint(Vector3D offset, long entityId){
+
+			Init();
+			SetValid(true);
+			Waypoint = WaypointType.RelativeOffset;
+			Offset = offset;
+			EntityId = entityId;
+
+		}
+
+		public EncounterWaypoint(Vector3D offset, IMyEntity entity) {
+
+			Init();
+			SetValid(true);
+			Waypoint = WaypointType.RelativeOffset;
+			Offset = offset;
+			EntityId = entity != null ? entity.EntityId : 0;
+			Entity = entity;
+
+		}
+
+		public void Init() {
+
 			SetValid(false);
 			Waypoint = WaypointType.None;
 			Offset = Vector3D.Zero;
@@ -57,23 +93,6 @@ namespace RivalAI.Behavior {
 			ReachedWaypointTime = MyAPIGateway.Session.GameDateTime;
 			Entity = null;
 			UpdateWithEntity = false;
-
-		}
-
-		public EncounterWaypoint(Vector3D coords) : base() {
-
-			SetValid(true);
-			Waypoint = WaypointType.Static;
-			Offset = coords;
-
-		}
-
-		public EncounterWaypoint(Vector3D offset, long entityId) : base() {
-
-			SetValid(true);
-			Waypoint = WaypointType.RelativeOffset;
-			Offset = offset;
-			EntityId = entityId;
 
 		}
 

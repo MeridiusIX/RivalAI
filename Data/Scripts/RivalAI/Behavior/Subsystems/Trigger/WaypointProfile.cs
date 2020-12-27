@@ -1,17 +1,23 @@
-﻿using System;
+﻿using RivalAI.Helpers;
+using Sandbox.Game.Entities;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VRage.ModAPI;
+using VRage.Utils;
 using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
 	public enum WaypointType {
 	
-		None,
-		Static,
-		RelativeOffset,
-		RelativeRandom,
+		None = 0,
+		Static = 1,
+		StaticRandom = 2,
+		RelativeOffset = 3,
+		RelativeRandom = 4,
+		EntityOffset = 5,
+		EntityRandom = 6
 	
 	}
 
@@ -31,8 +37,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		public WaypointType Waypoint;
 		public RelativeEntityType RelativeEntity;
 
-		public bool RelativeWaypointUpdatesWithEntity;
 		public Vector3D Coordinates;
+		public Vector3D Offset;
 
 		public double MinDistance;
 		public double MaxDistance;
@@ -48,8 +54,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			Waypoint = WaypointType.None;
 			RelativeEntity = RelativeEntityType.None;
 
-			RelativeWaypointUpdatesWithEntity = false;
 			Coordinates = Vector3D.Zero;
+			Offset = Vector3D.Zero;
 
 			MinDistance = 100;
 			MaxDistance = 101;
@@ -60,10 +66,155 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public EncounterWaypoint GenerateEncounterWaypoint(Vector3D coords, IMyEntity entity) {
+		public EncounterWaypoint GenerateEncounterWaypoint(IMyEntity entity) {
+
+			if (Waypoint == WaypointType.Static) {
+
+				return new EncounterWaypoint(Coordinates);
+
+			}
+
+			if (Waypoint == WaypointType.StaticRandom) {
+
+				return new EncounterWaypoint(GetRandomCoords(Coordinates));
+
+			}
+
+			if (Waypoint == WaypointType.EntityOffset && entity?.PositionComp != null) {
+
+				return new EncounterWaypoint(Vector3D.Transform(this.Coordinates, entity.WorldMatrix));
+
+			}
+
+			if (Waypoint == WaypointType.EntityRandom && entity?.PositionComp != null) {
+
+				return new EncounterWaypoint(GetRandomCoords(entity.PositionComp.WorldAABB.Center));
+
+			}
+
+			if (Waypoint == WaypointType.RelativeOffset && entity?.PositionComp != null) {
+
+				return new EncounterWaypoint(this.Offset, entity);
+
+			}
+
+			if (Waypoint == WaypointType.RelativeRandom && entity?.PositionComp != null) {
+
+				var offset = GetRandomCoords(entity.PositionComp.WorldAABB.Center) - entity.PositionComp.WorldAABB.Center;
+				return new EncounterWaypoint(offset, entity);
+
+			}
 
 			return null;
+
+		}
+
+		public Vector3D GetRandomCoords(Vector3D coords) {
+
+			var planet = MyGamePruningStructure.GetClosestPlanet(coords);
+
+			if (planet != null) {
+
+				var grav = planet.Components.Get<MyGravityProviderComponent>();
+
+				if (grav != null && grav.IsPositionInRange(coords)) {
+
+					//Gravity Calcs
+					var surfaceAtCoords = planet.GetClosestSurfacePointGlobal(coords);
+					var altitudeAdd = this.InheritRelativeAltitude ? Vector3D.Distance(coords, planet.PositionComp.WorldAABB.Center) - Vector3D.Distance(surfaceAtCoords, planet.PositionComp.WorldAABB.Center) : 0;
+					var up = Vector3D.Normalize(surfaceAtCoords - planet.PositionComp.WorldAABB.Center);
+					var randForward = MyUtils.GetRandomPerpendicularVector(ref up);
+					var randForwardDist = MathTools.RandomBetween(this.MinDistance, this.MaxDistance);
+					var upRandDist = MathTools.RandomBetween(this.MinAltitude, this.MaxAltitude) + altitudeAdd;
+					var roughCoords = planet.GetClosestSurfacePointGlobal(randForwardDist * randForward + coords);
+					return up * upRandDist + roughCoords;
+
+				}
+
+			}
+
+			//Space Calcs
+			var dir = Vector3D.Normalize(MyUtils.GetRandomVector3D());
+			var dist = MathTools.RandomBetween(this.MinDistance, this.MaxDistance);
+			return dir * dist + coords;
 		
+		}
+
+		public void InitTags(string tagData) {
+
+			if (!string.IsNullOrWhiteSpace(tagData)) {
+
+				var descSplit = tagData.Split('\n');
+
+				foreach (var tag in descSplit) {
+
+					//Waypoint
+					if (tag.Contains("[Waypoint:") == true) {
+
+						this.Waypoint = TagHelper.TagWaypointTypeEnumCheck(tag);
+
+					}
+
+					//RelativeEntity
+					if (tag.Contains("[RelativeEntity:") == true) {
+
+						this.RelativeEntity = TagHelper.TagRelativeEntityEnumCheck(tag);
+
+					}
+
+					//Coordinates
+					if (tag.Contains("[Coordinates:") == true) {
+
+						this.Coordinates = TagHelper.TagVector3DCheck(tag);
+
+					}
+
+					//Offset
+					if (tag.Contains("[Offset:") == true) {
+
+						this.Offset = TagHelper.TagVector3DCheck(tag);
+
+					}
+
+					//MinDistance
+					if (tag.Contains("[MinDistance:") == true) {
+
+						this.MinDistance = TagHelper.TagDoubleCheck(tag, this.MinDistance);
+
+					}
+
+					//MaxDistance
+					if (tag.Contains("[MaxDistance:") == true) {
+
+						this.MaxDistance = TagHelper.TagDoubleCheck(tag, this.MaxDistance);
+
+					}
+
+					//MinAltitude
+					if (tag.Contains("[MinAltitude:") == true) {
+
+						this.MinAltitude = TagHelper.TagDoubleCheck(tag, this.MinAltitude);
+
+					}
+
+					//MaxAltitude
+					if (tag.Contains("[MaxAltitude:") == true) {
+
+						this.MaxAltitude = TagHelper.TagDoubleCheck(tag, this.MaxAltitude);
+
+					}
+
+					//InheritRelativeAltitude
+					if (tag.Contains("[InheritRelativeAltitude:") == true) {
+
+						this.InheritRelativeAltitude = TagHelper.TagBoolCheck(tag);
+
+					}
+
+				}
+
+			}
+
 		}
 
 	}

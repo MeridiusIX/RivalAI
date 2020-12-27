@@ -10,6 +10,7 @@ namespace RivalAI.Behavior {
 	public class CargoShip : CoreBehavior, IBehavior {
 
 		public List<Vector3D> CustomWaypoints;
+		private bool _waypointIsDespawn;
 
 		private EncounterWaypoint _cargoShipWaypoint { 
 			
@@ -17,20 +18,31 @@ namespace RivalAI.Behavior {
 
 				if (AutoPilot.State.CargoShipWaypoints.Count > 0) {
 
-					_waypointIsDespawn = false;
+					if (_waypointIsDespawn) {
+
+						_waypointIsDespawn = false;
+						BehaviorTriggerC = true;
+
+
+					}
+
 					return AutoPilot.State.CargoShipWaypoints[0];
 
 				}
 
-				_waypointIsDespawn = true;
+				if (!_waypointIsDespawn) {
+
+					_waypointIsDespawn = true;
+					BehaviorTriggerD = true;
+
+
+				}
+
 				return AutoPilot.State.CargoShipDespawn;
 
 			} 
 		
 		}
-
-		private bool _waypointIsDespawn;
-
 
 		public CargoShip() : base() {
 
@@ -82,6 +94,7 @@ namespace RivalAI.Behavior {
 					SelectNextWaypoint();
 					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
+					BehaviorTriggerB = true;
 
 				}
 
@@ -135,6 +148,7 @@ namespace RivalAI.Behavior {
 
 						AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
 						ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+						BehaviorTriggerA = true;
 
 					}
 				
@@ -204,8 +218,8 @@ namespace RivalAI.Behavior {
 			CoreSetup(remoteControl);
 
 			//Behavior Specific Defaults
+			AutoPilot.Data = TagHelper.GetAutopilotProfile("RAI-Generic-Autopilot-CargoShip");
 			Despawn.UseNoTargetTimer = false;
-			AutoPilot.Data.AllowStrafing = false;
 			AutoPilot.Weapons.UseStaticGuns = false;
 			AutoPilot.Data.DisableInertiaDampeners = false;
 			//Get Settings From Custom Data

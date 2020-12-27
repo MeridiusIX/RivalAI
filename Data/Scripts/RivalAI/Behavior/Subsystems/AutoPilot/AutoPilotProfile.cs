@@ -215,6 +215,23 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(65)]
 		public double AttackRunOverrideDistance;
 
+		[ProtoMember(66)]
+		public double DespawnCoordsMinDistance;
+
+		[ProtoMember(67)]
+		public double DespawnCoordsMaxDistance;
+
+		[ProtoMember(68)]
+		public double DespawnCoordsMinAltitude;
+
+		[ProtoMember(69)]
+		public double DespawnCoordsMaxAltitude;
+
+		[ProtoMember(70)]
+		public double MinAngleForLeveledDescent;
+
+		[ProtoMember(71)]
+		public double MaxAngleForLeveledAscent;
 
 		public AutoPilotProfile() {
 
@@ -299,6 +316,15 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			AttackRunOverrideWithDistanceAndTimer = false;
 			AttackRunOverrideTimerTrigger = 0;
 			AttackRunOverrideDistance = 0;
+
+			DespawnCoordsMinDistance = 8000;
+			DespawnCoordsMaxDistance = 11000;
+
+			DespawnCoordsMinAltitude = 1500;
+			DespawnCoordsMaxAltitude = 2500;
+
+			MinAngleForLeveledDescent = 0;
+			MaxAngleForLeveledAscent = 180;
 
 		}
 
@@ -780,6 +806,48 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (tag.Contains("[AttackRunOverrideDistance:") == true) {
 
 				this.AttackRunOverrideDistance = TagHelper.TagDoubleCheck(tag, this.AttackRunOverrideDistance);
+
+			}
+
+			//DespawnCoordsMinDistance
+			if (tag.Contains("[DespawnCoordsMinDistance:") == true) {
+
+				this.DespawnCoordsMinDistance = TagHelper.TagDoubleCheck(tag, this.DespawnCoordsMinDistance);
+
+			}
+
+			//DespawnCoordsMaxDistance
+			if (tag.Contains("[DespawnCoordsMaxDistance:") == true) {
+
+				this.DespawnCoordsMaxDistance = TagHelper.TagDoubleCheck(tag, this.DespawnCoordsMaxDistance);
+
+			}
+
+			//DespawnCoordsMinAltitude
+			if (tag.Contains("[DespawnCoordsMinAltitude:") == true) {
+
+				this.DespawnCoordsMinAltitude = TagHelper.TagDoubleCheck(tag, this.DespawnCoordsMinAltitude);
+
+			}
+
+			//DespawnCoordsMaxAltitude
+			if (tag.Contains("[DespawnCoordsMaxAltitude:") == true) {
+
+				this.DespawnCoordsMaxAltitude = TagHelper.TagDoubleCheck(tag, this.DespawnCoordsMaxAltitude);
+
+			}
+
+			//MinAngleForLeveledDescent
+			if (tag.Contains("[MinAngleForLeveledDescent:") == true) {
+
+				this.MinAngleForLeveledDescent = TagHelper.TagDoubleCheck(tag, this.MinAngleForLeveledDescent);
+
+			}
+
+			//MaxAngleForLeveledAscent
+			if (tag.Contains("[MaxAngleForLeveledAscent:") == true) {
+
+				this.MaxAngleForLeveledAscent = TagHelper.TagDoubleCheck(tag, this.MaxAngleForLeveledAscent);
 
 			}
 

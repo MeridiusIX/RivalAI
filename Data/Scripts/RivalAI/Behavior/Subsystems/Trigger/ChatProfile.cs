@@ -143,14 +143,14 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (UseChat == false) {
 
-				//Logger.AddMsg("UseChat False", true);
+				Logger.MsgDebug(" - UseChat False", DebugTypeEnum.Chat);
 				return false;
 
 			}
 
 			if (MaxChats >= 0 && ChatSentCount >= MaxChats) {
 
-				//Logger.AddMsg("Max Chats Sent", true);
+				Logger.MsgDebug(" - Max Chats Sent", DebugTypeEnum.Chat);
 				UseChat = false;
 				return false;
 
@@ -160,7 +160,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (duration.TotalSeconds < SecondsUntilChat) {
 
-				//Logger.AddMsg("Chat Timer Not Ready", true);
+				Logger.MsgDebug(" - Chat Timer Not Ready", DebugTypeEnum.Chat);
 				return false;
 
 			}
@@ -175,7 +175,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			if (string.IsNullOrWhiteSpace(thisMsg) == true || thisType == BroadcastType.None) {
 
-				//Logger.AddMsg("Message Null or Broadcast None", true);
+				Logger.MsgDebug(" - Message Null or Broadcast None", DebugTypeEnum.Chat);
 				return false;
 
 			}

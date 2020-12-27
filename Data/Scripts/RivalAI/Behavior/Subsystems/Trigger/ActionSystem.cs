@@ -182,6 +182,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//RecalculateDespawnCoords
+			if (actions.RecalculateDespawnCoords) {
+
+				_behavior.AutoPilot.State.CargoShipDespawn = new EncounterWaypoint(_behavior.AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition()));
+
+			}
+
 			//ForceDespawn
 			if (actions.ForceDespawn) {
 
@@ -196,6 +203,114 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				_autopilot.ActivateAutoPilot(Vector3D.Zero, NewAutoPilotMode.None);
 				_behavior.BehaviorTerminated = true;
 
+			}
+
+			//BroadcastCommandProfiles
+			if (actions.BroadcastCommandProfiles) {
+
+				foreach (var commandId in actions.CommandProfileIds) {
+
+					CommandProfile commandProfile = null;
+
+					if (!TagHelper.CommandProfiles.TryGetValue(commandId, out commandProfile))
+						continue;
+
+					var newCommand = new Command();
+					newCommand.CommandCode = commandProfile.CommandCode;
+					newCommand.Type = CommandType.DroneAntenna;
+					newCommand.RemoteControl = RemoteControl;
+
+					double sendRadius = 0;
+
+					if (commandProfile.IgnoreAntennaRequirement) {
+
+						sendRadius = command.Radius;
+
+					} else {
+
+						var antenna = _behavior.Grid.GetAntennaWithHighestRange();
+
+						if (antenna != null)
+							sendRadius = antenna.Radius;
+
+					}
+
+					newCommand.Radius = sendRadius;
+
+					if (commandProfile.SendTargetEntityId && _behavior.AutoPilot.Targeting.HasTarget())
+						newCommand.TargetEntityId = _behavior.AutoPilot.Targeting.Target.GetEntityId();
+
+					if (commandProfile.SendDamagerEntityId)
+						newCommand.DamagerEntityId = _behavior.Settings.LastDamagerEntity;
+
+					if (commandProfile.SendWaypoint) {
+
+						WaypointProfile waypointProfile = null;
+
+						if (TagHelper.WaypointProfiles.TryGetValue(commandProfile.Waypoint, out waypointProfile)) {
+
+							if ((int)waypointProfile.RelativeEntity > 2) {
+
+								if(waypointProfile.RelativeEntity == RelativeEntityType.Self)
+									newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(RemoteControl);
+
+								if (waypointProfile.RelativeEntity == RelativeEntityType.Target && _behavior.AutoPilot.Targeting.HasTarget())
+									newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(_behavior.AutoPilot.Targeting.Target.GetEntity());
+
+								if (waypointProfile.RelativeEntity == RelativeEntityType.Damager) {
+
+									IMyEntity entity = null;
+
+									if (MyAPIGateway.Entities.TryGetEntityById(_behavior.Settings.LastDamagerEntity, out entity)) {
+
+										var parentEnt = entity.GetTopMostParent();
+
+										if (parentEnt != null) {
+
+											//Logger.MsgDebug("Damager Parent Entity Valid", DebugTypeEnum.General);
+											var gridGroup = MyAPIGateway.GridGroups.GetGroup(RemoteControl.SlimBlock.CubeGrid, GridLinkTypeEnum.Physical);
+											bool isSameGridConstrust = false;
+
+											foreach (var grid in gridGroup) {
+
+												if (grid.EntityId == parentEnt.EntityId) {
+
+													//Logger.MsgDebug("Damager Parent Entity Was Same Grid", DebugTypeEnum.General);
+													isSameGridConstrust = true;
+													break;
+
+												}
+
+											}
+
+											if (!isSameGridConstrust) {
+
+												newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(parentEnt);
+
+											}
+
+										}
+
+									}
+								
+								}
+			
+							} else {
+
+								newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(RemoteControl);
+
+							}
+								
+							
+						}
+					
+					}
+
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Sending Command: " + newCommand.CommandCode);
+					CommandHelper.CommandTrigger?.Invoke(newCommand);
+
+				}
+			
 			}
 
 			//BroadcastGenericCommand
@@ -372,6 +487,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				}
 
+			}
+
+			//AddWaypointFromCommand
+			if (actions.AddWaypointFromCommand && command?.Waypoint != null) {
+
+				_behavior.AutoPilot.State.CargoShipWaypoints.Add(command.Waypoint);
+			
 			}
 
 			//SwitchToBehavior

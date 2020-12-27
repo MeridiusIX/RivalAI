@@ -200,6 +200,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 				var myDistToCore = Vector3D.Distance(_myPosition, planetPos);
 				var targetDistCore = Vector3D.Distance(_currentWaypoint, planetPos);
+				var leveledAngleToTarget = VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(_currentWaypoint - _myPosition));
 				var altitudeDist = myDistToCore - targetDistCore;
 
 				if (Math.Abs(altitudeDist) > this.Data.WaypointTolerance) {
@@ -252,6 +253,26 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 							_thrustToApply.SetY(false, false, 0, _orientation);
 							skipCheck = true;
 							_debugThrustUpMode = "Within Waypoint Tolerance Distance";
+
+						}
+
+						bool minAngleDescent = leveledAngleToTarget < Data.MinAngleForLeveledDescent;
+						bool maxAngleAscent = leveledAngleToTarget > Data.MaxAngleForLeveledAscent;
+						bool aboveTarget = myDistToCore > targetDistCore;
+
+						if (!skipCheck && aboveTarget && Data.MinAngleForLeveledDescent > 0 && minAngleDescent) {
+
+							_thrustToApply.SetY(false, false, 0, _orientation);
+							skipCheck = true;
+							_debugThrustUpMode = " Within Leveled Descent Angle To Waypoint";
+
+						}
+
+						if (!skipCheck && !aboveTarget && Data.MaxAngleForLeveledAscent < 180 && maxAngleAscent) {
+
+							_thrustToApply.SetY(false, false, 0, _orientation);
+							skipCheck = true;
+							_debugThrustUpMode = " Within Leveled Ascent Angle To Waypoint";
 
 						}
 

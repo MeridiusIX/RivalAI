@@ -1,35 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.Game.Weapons;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
-using VRageMath;
-using RivalAI;
 using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
+using System;
+using VRage.ModAPI;
+using VRageMath;
 
 namespace RivalAI.Helpers {
 
@@ -68,6 +40,14 @@ namespace RivalAI.Helpers {
 
         public bool UseTriggerTargetDistance;
 
+        public long DamagerEntityId;
+
+        public bool SingleRecipient;
+
+        public long Recipient;
+
+        public EncounterWaypoint Waypoint;
+
 
         public Command() {
 
@@ -82,6 +62,9 @@ namespace RivalAI.Helpers {
             Position = Vector3D.Zero;
             PlayerIdentity = 0;
             UseTriggerTargetDistance = false;
+            SingleRecipient = false;
+            Recipient = 0;
+            Waypoint = null;
 
         }
         

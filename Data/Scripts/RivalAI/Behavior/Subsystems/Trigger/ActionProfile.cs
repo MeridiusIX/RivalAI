@@ -519,6 +519,18 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(162)]
 		public bool SwitchTargetToDamager;
 
+		[ProtoMember(163)]
+		public bool BroadcastCommandProfiles;
+
+		[ProtoMember(164)]
+		public List<string> CommandProfileIds;
+
+		[ProtoMember(165)]
+		public bool AddWaypointFromCommand;
+
+		[ProtoMember(166)]
+		public bool RecalculateDespawnCoords;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -729,6 +741,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			MaxProjectedBlocksToBuild = -1;
 
 			ForceManualTriggerActivation = false;
+
+			BroadcastCommandProfiles = false;
+			CommandProfileIds = new List<string>();
+
+			AddWaypointFromCommand = false;
+
+			RecalculateDespawnCoords = false;
 
 			ProfileSubtypeId = "";
 
@@ -2007,6 +2026,40 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[OverwriteAutopilotId:") == true) {
 
 						OverwriteAutopilotId = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//BroadcastCommandProfiles
+					if (tag.Contains("[BroadcastCommandProfiles:") == true) {
+
+						BroadcastCommandProfiles = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//CommandProfileIds
+					if (tag.Contains("[CommandProfileIds:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							CommandProfileIds.Add(tempvalue);
+
+						}
+
+					}
+
+					//AddWaypointFromCommand
+					if (tag.Contains("[AddWaypointFromCommand:") == true) {
+
+						AddWaypointFromCommand = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RecalculateDespawnCoords
+					if (tag.Contains("[RecalculateDespawnCoords:") == true) {
+
+						RecalculateDespawnCoords = TagHelper.TagBoolCheck(tag);
 
 					}
 

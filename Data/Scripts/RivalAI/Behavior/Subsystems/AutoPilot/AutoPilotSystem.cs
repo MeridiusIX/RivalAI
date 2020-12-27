@@ -1448,7 +1448,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		
 		}
 
-		public Vector3D CalculateDespawnCoords(Vector3D coords, double distance = 12000) {
+		public Vector3D CalculateDespawnCoords(Vector3D coords) {
+
+			var distance = MathTools.RandomBetween(Data.DespawnCoordsMinDistance, Data.DespawnCoordsMaxDistance);
 
 			if (InGravity()) {
 
@@ -1501,7 +1503,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				var finalRoughCoords = direction * distance + surfaceCoordsPos;
 				var finalSurfaceCoords = WaterHelper.GetClosestSurface(finalRoughCoords, CurrentPlanet, CurrentWater);
 				var finalUp = Vector3D.Normalize(finalSurfaceCoords - center);
-				return finalUp * 1500 + finalSurfaceCoords;
+				return finalUp * MathTools.RandomBetween(Data.DespawnCoordsMinAltitude, Data.DespawnCoordsMaxAltitude) + finalSurfaceCoords;
 
 			} else {
 
