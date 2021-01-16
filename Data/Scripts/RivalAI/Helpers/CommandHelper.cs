@@ -1,4 +1,5 @@
 using RivalAI.Behavior;
+using RivalAI.Behavior.Subsystems.Trigger;
 using System;
 using VRage.ModAPI;
 using VRageMath;
@@ -48,8 +49,28 @@ namespace RivalAI.Helpers {
 
         public EncounterWaypoint Waypoint;
 
+        public bool MatchSenderReceiverOwners;
+
+        public long CommandOwnerId;
+
 
         public Command() {
+
+            Defaults();
+
+        }
+
+        public Command(CommandProfile profile) {
+
+            Defaults();
+            this.CommandCode = profile.CommandCode;
+            this.SingleRecipient = profile.SingleRecipient;
+            this.IgnoreAntennaRequirement = profile.IgnoreAntennaRequirement;
+            this.MatchSenderReceiverOwners = profile.MatchSenderReceiverOwners;
+
+        }
+
+        public void Defaults() {
 
             CommandCode = "";
             Type = CommandType.DroneAntenna;
@@ -65,6 +86,8 @@ namespace RivalAI.Helpers {
             SingleRecipient = false;
             Recipient = 0;
             Waypoint = null;
+            MatchSenderReceiverOwners = false;
+            CommandOwnerId = 0;
 
         }
         

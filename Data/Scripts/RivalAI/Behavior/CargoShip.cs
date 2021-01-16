@@ -10,7 +10,9 @@ namespace RivalAI.Behavior {
 	public class CargoShip : CoreBehavior, IBehavior {
 
 		public List<Vector3D> CustomWaypoints;
-		private bool _waypointIsDespawn;
+		private bool _waypointIsDespawn = true;
+
+		private Vector3D _lastCoords = Vector3D.Zero;
 
 		private EncounterWaypoint _cargoShipWaypoint { 
 			
@@ -20,9 +22,9 @@ namespace RivalAI.Behavior {
 
 					if (_waypointIsDespawn) {
 
+						Logger.MsgDebug("CargoShip Switching To A Non-Despawn Waypoint", DebugTypeEnum.General);
 						_waypointIsDespawn = false;
 						BehaviorTriggerC = true;
-
 
 					}
 
@@ -32,6 +34,7 @@ namespace RivalAI.Behavior {
 
 				if (!_waypointIsDespawn) {
 
+					Logger.MsgDebug("CargoShip Switching To A Despawn Waypoint", DebugTypeEnum.General);
 					_waypointIsDespawn = true;
 					BehaviorTriggerD = true;
 
@@ -69,9 +72,11 @@ namespace RivalAI.Behavior {
 				AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 
 			}
-			
+
+			bool _firstRun = false;
+
 			//Init
-			if(Mode == BehaviorMode.Init) {
+			if (Mode == BehaviorMode.Init) {
 
 				foreach (var waypoint in CustomWaypoints) {
 
@@ -81,6 +86,7 @@ namespace RivalAI.Behavior {
 
 				SelectNextWaypoint();
 				ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+				_firstRun = true;
 
 			}
 
@@ -94,7 +100,11 @@ namespace RivalAI.Behavior {
 					SelectNextWaypoint();
 					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					BehaviorTriggerB = true;
+
+					if (!_firstRun)
+						BehaviorTriggerB = true;
+					else
+						_firstRun = false;
 
 				}
 
@@ -121,9 +131,10 @@ namespace RivalAI.Behavior {
 
 				}
 
-				if (!_waypointIsDespawn && _cargoShipWaypoint.Waypoint == WaypointType.RelativeOffset) {
+				if (!_waypointIsDespawn && _lastCoords != coords) {
 
 					AutoPilot.SetInitialWaypoint(coords);
+					_lastCoords = coords;
 
 				}
 
@@ -203,7 +214,7 @@ namespace RivalAI.Behavior {
 					continue;
 
 				}
-			
+
 				break;
 
 			}

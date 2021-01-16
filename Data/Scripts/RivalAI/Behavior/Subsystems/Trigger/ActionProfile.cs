@@ -531,6 +531,27 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(166)]
 		public bool RecalculateDespawnCoords;
 
+		[ProtoMember(168)]
+		public bool AddDatapadsToSeats;
+
+		[ProtoMember(169)]
+		public List<string> DatapadNamesToAdd;
+
+		[ProtoMember(170)]
+		public int DatapadCountToAdd;
+
+		[ProtoMember(171)]
+		public bool ToggleBlocksOfType;
+
+		[ProtoMember(172)]
+		public List<SerializableDefinitionId> BlockTypesToToggle;
+
+		[ProtoMember(173)]
+		public List<SwitchEnum> BlockTypeToggles;
+
+		[ProtoMember(174)]
+		public bool CancelWaitingAtWaypoint;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -748,6 +769,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			AddWaypointFromCommand = false;
 
 			RecalculateDespawnCoords = false;
+
+			AddDatapadsToSeats = false;
+			DatapadNamesToAdd = new List<string>();
+			DatapadCountToAdd = 1;
+
+			ToggleBlocksOfType = false;
+			BlockTypesToToggle = new List<SerializableDefinitionId>();
+			BlockTypeToggles = new List<SwitchEnum>();
+
+			CancelWaitingAtWaypoint = false;
 
 			ProfileSubtypeId = "";
 
@@ -2060,6 +2091,68 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[RecalculateDespawnCoords:") == true) {
 
 						RecalculateDespawnCoords = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//AddDatapadsToSeats
+					if (tag.Contains("[AddDatapadsToSeats:") == true) {
+
+						AddDatapadsToSeats = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//DatapadNamesToAdd
+					if (tag.Contains("[DatapadNamesToAdd:") == true) {
+
+						var tempvalue = TagHelper.TagStringCheck(tag);
+
+						if (string.IsNullOrWhiteSpace(tempvalue) == false) {
+
+							DatapadNamesToAdd.Add(tempvalue);
+
+						}
+
+					}
+
+					//DatapadCountToAdd
+					if (tag.Contains("[DatapadCountToAdd:") == true) {
+
+						DatapadCountToAdd = TagHelper.TagIntCheck(tag, DatapadCountToAdd);
+
+					}
+
+					//ToggleBlocksOfType
+					if (tag.Contains("[ToggleBlocksOfType:") == true) {
+
+						ToggleBlocksOfType = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//BlockTypesToToggle
+					if (tag.Contains("[BlockTypesToToggle:") == true) {
+
+						var tempvalue = TagHelper.TagDefinitionIdCheck(tag);
+
+						if (tempvalue != new MyDefinitionId()) {
+
+							BlockTypesToToggle.Add(tempvalue);
+
+						}
+
+					}
+
+					//BlockTypeToggles
+					if (tag.Contains("[BlockTypeToggles:") == true) {
+
+						var tempvalue = TagHelper.TagSwitchEnumCheck(tag);
+						BlockTypeToggles.Add(tempvalue);
+
+					}
+
+					//CancelWaitingAtWaypoint
+					if (tag.Contains("[CancelWaitingAtWaypoint:") == true) {
+
+						CancelWaitingAtWaypoint = TagHelper.TagBoolCheck(tag);
 
 					}
 

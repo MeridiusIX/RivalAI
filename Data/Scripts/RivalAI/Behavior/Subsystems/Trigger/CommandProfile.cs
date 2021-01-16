@@ -12,10 +12,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		public bool SingleRecipient;
 		public bool IgnoreAntennaRequirement;
 		public double Radius;
+		public double MaxRadius;
 
 		public bool SendTargetEntityId;
 		public bool SendDamagerEntityId;
 		public bool SendWaypoint;
+
+		public bool MatchSenderReceiverOwners;
 
 		public string Waypoint;
 
@@ -27,10 +30,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			SingleRecipient = false;
 			IgnoreAntennaRequirement = false;
 			Radius = 10000;
+			MaxRadius = -1;
 
 			SendTargetEntityId = false;
 			SendDamagerEntityId = false;
 			SendWaypoint = false;
+
+			MatchSenderReceiverOwners = true;
 
 			Waypoint = "";
 
@@ -72,6 +78,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					}
 
+					//MaxRadius
+					if (tag.Contains("[MaxRadius:") == true) {
+
+						this.MaxRadius = TagHelper.TagDoubleCheck(tag, this.MaxRadius);
+
+					}
+
 					//SendTargetEntityId
 					if (tag.Contains("[SendTargetEntityId:") == true) {
 
@@ -90,6 +103,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[SendWaypoint:") == true) {
 
 						this.SendWaypoint = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//MatchSenderReceiverOwners
+					if (tag.Contains("[MatchSenderReceiverOwners:") == true) {
+
+						this.MatchSenderReceiverOwners = TagHelper.TagBoolCheck(tag);
 
 					}
 

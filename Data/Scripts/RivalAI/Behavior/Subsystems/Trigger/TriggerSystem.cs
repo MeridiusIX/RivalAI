@@ -673,6 +673,17 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			if (command.MatchSenderReceiverOwners) {
+
+				if (command.CommandOwnerId != RemoteControl.OwnerId) {
+
+					Logger.MsgDebug("Receiver Owner Doesn't Match Sender Owner", DebugTypeEnum.Command);
+					return;
+
+				}
+			
+			}
+
 			bool processed = false;
 
 			for (int i = 0; i < CommandTriggers.Count; i++) {
@@ -691,7 +702,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					trigger.ActivateTrigger();
 
-					if (trigger.Triggered == true) {
+					if (trigger.Triggered) {
 
 						processed = true;
 						ProcessTrigger(trigger, 0, command);

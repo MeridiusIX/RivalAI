@@ -123,7 +123,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					var surfaceAtCoords = planet.GetClosestSurfacePointGlobal(coords);
 					var altitudeAdd = this.InheritRelativeAltitude ? Vector3D.Distance(coords, planet.PositionComp.WorldAABB.Center) - Vector3D.Distance(surfaceAtCoords, planet.PositionComp.WorldAABB.Center) : 0;
 					var up = Vector3D.Normalize(surfaceAtCoords - planet.PositionComp.WorldAABB.Center);
-					var randForward = MyUtils.GetRandomPerpendicularVector(ref up);
+					var randForward = Vector3D.Normalize(MyUtils.GetRandomPerpendicularVector(ref up));
 					var randForwardDist = MathTools.RandomBetween(this.MinDistance, this.MaxDistance);
 					var upRandDist = MathTools.RandomBetween(this.MinAltitude, this.MaxAltitude) + altitudeAdd;
 					var roughCoords = planet.GetClosestSurfacePointGlobal(randForwardDist * randForward + coords);

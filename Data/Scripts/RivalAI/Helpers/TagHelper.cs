@@ -52,6 +52,8 @@ namespace RivalAI.Helpers {
 		public static Dictionary<string, TargetProfile> TargetProfiles = new Dictionary<string, TargetProfile>();
 		public static Dictionary<string, WaypointProfile> WaypointProfiles = new Dictionary<string, WaypointProfile>();
 
+		public static Dictionary<string, MyDefinitionBase> DatapadTemplates = new Dictionary<string, MyDefinitionBase>();
+
 		public static AutoPilotProfile DefaultAutoPilotSettings = new AutoPilotProfile();
 
 		public static void Setup() {
@@ -228,6 +230,13 @@ namespace RivalAI.Helpers {
 					command.InitTags(def.DescriptionText);
 					command.ProfileSubtypeId = def.Id.SubtypeName;
 					CommandProfiles.Add(def.Id.SubtypeName, command);
+					continue;
+
+				}
+
+				if (def.Id.SubtypeName.StartsWith("RivalAI-Datapad") && !DatapadTemplates.ContainsKey(def.Id.SubtypeName)) {
+
+					DatapadTemplates.Add(def.Id.SubtypeName, def);
 					continue;
 
 				}
@@ -514,6 +523,25 @@ namespace RivalAI.Helpers {
 				if (CounterCompareEnum.TryParse(tagSplit[1], out result) == false) {
 
 					return CounterCompareEnum.GreaterOrEqual;
+
+				}
+
+			}
+
+			return result;
+
+		}
+
+		public static MyDefinitionId TagDefinitionIdCheck(string tag) {
+
+			MyDefinitionId result = new MyDefinitionId();
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				if (MyDefinitionId.TryParse(tagSplit[1], out result) == false) {
+
+					return new MyDefinitionId();
 
 				}
 

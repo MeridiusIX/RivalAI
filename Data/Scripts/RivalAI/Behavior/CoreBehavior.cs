@@ -616,6 +616,55 @@ namespace RivalAI.Behavior {
 				Settings.CommandTriggers = Trigger.CommandTriggers;
 				Settings.CompromisedTriggers = Trigger.CompromisedTriggers;
 
+			} else {
+
+				var sb = new StringBuilder();
+				sb.Append("Checking and Displaying Existing Stored Booleans and Counters").AppendLine();
+
+				if (Settings.StoredCustomBooleans != null && Settings.StoredCustomBooleans.Keys.Count > 0) {
+
+					sb.Append("Stored Custom Booleans:").AppendLine();
+
+					foreach (var name in Settings.StoredCustomBooleans.Keys) {
+
+						if (string.IsNullOrWhiteSpace(name))
+							continue;
+
+						bool result = false;
+
+						if (Settings.StoredCustomBooleans.TryGetValue(name, out result)) {
+
+							sb.Append(string.Format(" - [{0}] == [{1}]", name, result)).AppendLine();
+
+						}
+					
+					}
+
+				}
+
+				if (Settings.StoredCustomCounters != null && Settings.StoredCustomCounters.Keys.Count > 0) {
+
+					sb.Append("Stored Custom Counters:").AppendLine();
+
+					foreach (var name in Settings.StoredCustomCounters.Keys) {
+
+						if (string.IsNullOrWhiteSpace(name))
+							continue;
+
+						int result = 0;
+
+						if (Settings.StoredCustomCounters.TryGetValue(name, out result)) {
+
+							sb.Append(string.Format(" - [{0}] == [{1}]", name, result)).AppendLine();
+
+						}
+
+					}
+
+				}
+
+				Logger.MsgDebug(sb.ToString(), DebugTypeEnum.BehaviorSetup);
+
 			}
 
 			//TODO: Refactor This Into TriggerSystem

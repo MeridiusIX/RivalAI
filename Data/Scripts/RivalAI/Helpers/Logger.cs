@@ -54,6 +54,7 @@ namespace RivalAI.Helpers{
 		Collision,
 		General,
 		Owner,
+		Settings,
 		Spawn,
 		Strafe,
 		Target,

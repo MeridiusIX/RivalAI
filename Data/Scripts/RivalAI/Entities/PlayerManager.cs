@@ -38,9 +38,9 @@ namespace RivalAI.Entities {
 					if (playerEnt.Player == null)
 						continue;
 
-					foundExisting = true;
-
 					if (playerEnt.Player.SteamUserId == player.SteamUserId) {
+
+						foundExisting = true;
 
 						if (playerEnt.Player.IdentityId != player.IdentityId) {
 

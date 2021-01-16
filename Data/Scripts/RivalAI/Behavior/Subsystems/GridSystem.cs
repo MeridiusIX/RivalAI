@@ -30,6 +30,7 @@ using RivalAI;
 using RivalAI.Behavior;
 using RivalAI.Behavior.Subsystems;
 using RivalAI.Helpers;
+using VRage;
 
 namespace RivalAI.Behavior.Subsystems {
 
@@ -51,6 +52,7 @@ namespace RivalAI.Behavior.Subsystems {
         public List<IMyRadioAntenna> Antennas;
         public List<IMyCameraBlock> Cameras;
         public List<IMyProjector> Projectors;
+        public List<IMyCockpit> Seats;
         public List<IMySensorBlock> Sensors;
         public List<IMyTimerBlock> Timers;
         public List<IMyWarhead> Warheads;
@@ -73,6 +75,7 @@ namespace RivalAI.Behavior.Subsystems {
             Antennas = new List<IMyRadioAntenna>();
             Cameras = new List<IMyCameraBlock>();
             Projectors = new List<IMyProjector>();
+            Seats = new List<IMyCockpit>();
             Sensors = new List<IMySensorBlock>();
             Timers = new List<IMyTimerBlock>();
             Warheads = new List<IMyWarhead>();
@@ -144,6 +147,9 @@ namespace RivalAI.Behavior.Subsystems {
 
             if ((block.FatBlock as IMyProjector) != null)
                 Projectors.Add(block.FatBlock as IMyProjector);
+
+            if ((block.FatBlock as IMyCockpit) != null)
+                Seats.Add(block.FatBlock as IMyCockpit);
 
             if ((block.FatBlock as IMySensorBlock) != null)
                 Sensors.Add(block.FatBlock as IMySensorBlock);
@@ -346,6 +352,55 @@ namespace RivalAI.Behavior.Subsystems {
 
         }
 
+        public void ToggleBlocksOfType(List<SerializableDefinitionId> types, List<SwitchEnum> toggles) {
+
+            int maxIndex = types.Count <= toggles.Count ? types.Count : toggles.Count;
+
+            for (int i = AllFunctionalBlocks.Count - 1; i >= 0; i--) {
+
+                var block = AllFunctionalBlocks[i];
+
+                if (!CheckBlockValid(block)) {
+
+                    Antennas.RemoveAt(i);
+                    continue;
+
+                }
+
+                bool actionPerformed = false;
+
+                for (int j = 0; j < maxIndex; j++) {
+
+                    var type = (MyDefinitionId)types[j];
+                    var toggle = toggles[j];
+
+                    if (block.SlimBlock.BlockDefinition.Id == type) {
+
+                        if (toggle == SwitchEnum.Toggle)
+                            block.Enabled = !block.Enabled;
+
+                        if (toggle == SwitchEnum.Off)
+                            block.Enabled = false;
+
+                        if (toggle == SwitchEnum.On)
+                            block.Enabled = true;
+
+                        actionPerformed = true;
+
+                    }
+
+                    if (actionPerformed)
+                        break;
+
+                }
+
+                if (actionPerformed)
+                    continue;
+
+            }
+        
+        }
+
         public IMyRadioAntenna GetActiveAntenna() {
 
             IMyRadioAntenna resultAntenna = null;
@@ -431,6 +486,85 @@ namespace RivalAI.Behavior.Subsystems {
             OverrideConnectedGridCheck = true;
             CheckConnectedGrids();
 
+        }
+
+        public bool InsertDatapadIntoInventory(IMyTerminalBlock block, string datapadId) {
+
+            if (block == null || !block.HasInventory)
+                return false;
+
+            var inventory = block.GetInventory() as MyInventory;
+
+            if (inventory == null)
+                return false;
+
+            MyDefinitionBase def = null;
+
+            if (!TagHelper.DatapadTemplates.TryGetValue(datapadId, out def))
+                return false;
+
+            var id = new MyDefinitionId(typeof(MyObjectBuilder_Datapad), "Datapad");
+            var datapadOb = MyObjectBuilderSerializer.CreateNewObject(id) as MyObjectBuilder_Datapad;
+
+            if (datapadOb == null) {
+
+                return false;
+            
+            }
+
+            datapadOb.Name = def.DisplayNameString;
+            datapadOb.Data = def.DescriptionString;
+
+            if (!inventory.CanItemsBeAdded(1, id) == true) {
+
+                return false;
+
+            }
+
+            inventory.AddItems(1, datapadOb);
+            return true;
+        
+        }
+
+        public void InsertDatapadsIntoSeats(List<string> datapadIds, int count) {
+
+            if (Seats.Count == 0)
+                return;
+
+            var dataPadList = new List<string>(datapadIds.ToList());
+
+            for (int i = 0; i < count; i++) {
+
+                var listCount = dataPadList.Count;
+
+                if (listCount == 0)
+                    break;
+
+                string id = "";
+
+                if (listCount == 1) {
+
+                    id = dataPadList[0];
+                    dataPadList.RemoveAt(0);
+
+                } else {
+
+                    int index = MathTools.RandomBetween(0, listCount);
+                    id = dataPadList[index];
+                    dataPadList.RemoveAt(index);
+
+                }
+
+                int seatIndex = 0;
+
+                if (Seats.Count > 1)
+                    seatIndex = MathTools.RandomBetween(0, Seats.Count);
+
+                if (!InsertDatapadIntoInventory(Seats[seatIndex], id))
+                    i--;
+
+            }
+        
         }
 
         public bool RaycastGridCheck(Vector3D coords) {

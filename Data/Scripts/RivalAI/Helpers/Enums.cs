@@ -131,7 +131,7 @@ namespace RivalAI.Helpers {
 
         Ignore,
         No,
-        Yes,
+        Yes,        
 
     }
 

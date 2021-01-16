@@ -203,7 +203,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				var leveledAngleToTarget = VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(_currentWaypoint - _myPosition));
 				var altitudeDist = myDistToCore - targetDistCore;
 
-				if (Math.Abs(altitudeDist) > this.Data.WaypointTolerance) {
+				if (Math.Abs(altitudeDist) > this.Data.AltitudeTolerance) {
 
 					bool skipCheck = false;
 					bool invertedDir = false;
@@ -248,7 +248,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 						}
 
-						if (upDistance <= this.Data.WaypointTolerance) {
+						if (upDistance <= this.Data.AltitudeTolerance) {
 
 							_thrustToApply.SetY(false, false, 0, _orientation);
 							skipCheck = true;

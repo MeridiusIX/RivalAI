@@ -212,19 +212,23 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					CommandProfile commandProfile = null;
 
-					if (!TagHelper.CommandProfiles.TryGetValue(commandId, out commandProfile))
+					if (!TagHelper.CommandProfiles.TryGetValue(commandId, out commandProfile)) {
+
+						Logger.MsgDebug(commandId + ": Command Profile Not Found", DebugTypeEnum.Action);
 						continue;
 
-					var newCommand = new Command();
-					newCommand.CommandCode = commandProfile.CommandCode;
-					newCommand.Type = CommandType.DroneAntenna;
+					}
+
+					var newCommand = new Command(commandProfile);
 					newCommand.RemoteControl = RemoteControl;
+					newCommand.CommandOwnerId = RemoteControl.OwnerId;
 
 					double sendRadius = 0;
 
 					if (commandProfile.IgnoreAntennaRequirement) {
 
 						sendRadius = command.Radius;
+						newCommand.IgnoreAntennaRequirement = true;
 
 					} else {
 
@@ -234,6 +238,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 							sendRadius = antenna.Radius;
 
 					}
+
+					if (commandProfile.MaxRadius > -1 && sendRadius > commandProfile.MaxRadius)
+						sendRadius = commandProfile.MaxRadius;
 
 					newCommand.Radius = sendRadius;
 
@@ -249,9 +256,11 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						if (TagHelper.WaypointProfiles.TryGetValue(commandProfile.Waypoint, out waypointProfile)) {
 
-							if ((int)waypointProfile.RelativeEntity > 2) {
+							if ((int)waypointProfile.Waypoint > 2) {
 
-								if(waypointProfile.RelativeEntity == RelativeEntityType.Self)
+								Logger.MsgDebug(actions.ProfileSubtypeId + ": Creating an Entity/Relative Waypoint", DebugTypeEnum.Command);
+
+								if (waypointProfile.RelativeEntity == RelativeEntityType.Self)
 									newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(RemoteControl);
 
 								if (waypointProfile.RelativeEntity == RelativeEntityType.Target && _behavior.AutoPilot.Targeting.HasTarget())
@@ -306,7 +315,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					
 					}
 
-					Logger.MsgDebug(actions.ProfileSubtypeId + ": Sending Command: " + newCommand.CommandCode);
+					Logger.MsgDebug(actions.ProfileSubtypeId + ": Sending Command: " + newCommand.CommandCode, DebugTypeEnum.Action);
 					CommandHelper.CommandTrigger?.Invoke(newCommand);
 
 				}
@@ -492,8 +501,16 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			//AddWaypointFromCommand
 			if (actions.AddWaypointFromCommand && command?.Waypoint != null) {
 
+				Logger.MsgDebug(actions.ProfileSubtypeId + ": Adding Received Waypoint From Command", DebugTypeEnum.Action);
 				_behavior.AutoPilot.State.CargoShipWaypoints.Add(command.Waypoint);
 			
+			}
+
+			//CancelWaitingAtWaypoint
+			if (actions.CancelWaitingAtWaypoint) {
+
+				_behavior.AutoPilot.State.WaypointWaitTime = DateTime.MinValue;
+
 			}
 
 			//SwitchToBehavior
@@ -644,6 +661,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			if (actions.ChangeBlockNames) {
 
 				_behavior.Grid.RenameBlocks(actions.ChangeBlockNamesFrom, actions.ChangeBlockNamesTo, actions.ProfileSubtypeId);
+
+			}
+
+			//ChangeBlockNames
+			if (actions.ToggleBlocksOfType) {
+
+				_behavior.Grid.ToggleBlocksOfType(actions.BlockTypesToToggle, actions.BlockTypeToggles);
 
 			}
 
@@ -943,6 +967,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					DamageHelper.CreateLightning(_behavior.AutoPilot.Targeting.TargetLastKnownCoords, actions.LightningDamage, actions.LightningExplosionRadius, actions.LightningColor);
 
 				}
+
+			}
+
+			//AddDatapadsToSeats
+			if (actions.AddDatapadsToSeats) {
+
+				_behavior.Grid.InsertDatapadsIntoSeats(actions.DatapadNamesToAdd, actions.DatapadCountToAdd);
 
 			}
 

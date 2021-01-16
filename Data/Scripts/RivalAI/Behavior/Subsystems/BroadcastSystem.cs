@@ -322,7 +322,21 @@ namespace RivalAI.Behavior.Subsystems {
 
 					this.HighestRadius = antenna.Radius;
 					this.AntennaCoords = antenna.GetPosition();
-					this.HighestAntennaRangeName = antenna.CustomName;
+
+					if (!string.IsNullOrWhiteSpace(antenna.HudText)) {
+
+						this.HighestAntennaRangeName = antenna.HudText;
+
+					} else if (antenna.ShowShipName && !string.IsNullOrWhiteSpace(antenna?.SlimBlock?.CubeGrid?.CustomName)) {
+
+						this.HighestAntennaRangeName = antenna.SlimBlock.CubeGrid.CustomName;
+
+					} else {
+
+						this.HighestAntennaRangeName = antenna.CustomName;
+
+					}
+					
 
 				}
 
