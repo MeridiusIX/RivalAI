@@ -175,15 +175,29 @@ namespace RivalAI.Behavior.Subsystems {
                     continue;
 
                 var projectedBlocks = new List<IMySlimBlock>();
-                projector.ProjectedGrid.GetBlocks(projectedBlocks);
 
                 while (maxBlocksToBuild > 0 || builtBlocks < maxBlocksToBuild) {
 
+                    if (projector.ProjectedGrid == null)
+                        break;
+
+                    projectedBlocks.Clear();
+                    projector.ProjectedGrid.GetBlocks(projectedBlocks);
+
+                    if (projectedBlocks.Count == 0)
+                        break;
+
                     bool restartLoop = false;
 
-                    for (int i = projectedBlocks.Count - 1; i >= 0; i--) {
+                    while (projectedBlocks.Count > 0) {
 
-                        var projectedBlock = projectedBlocks[i];
+                        int randomIndex = 0;
+
+                        if (projectedBlocks.Count > 1)
+                            randomIndex = MathTools.RandomBetween(0, projectedBlocks.Count);
+
+                        var projectedBlock = projectedBlocks[randomIndex];
+                        projectedBlocks.RemoveAt(randomIndex);
 
                         if (projectedBlock == null)
                             continue;
@@ -193,7 +207,6 @@ namespace RivalAI.Behavior.Subsystems {
 
                         projector.Build(projectedBlock, RemoteControl.OwnerId, RemoteControl.OwnerId, true);
                         builtBlocks++;
-                        projectedBlocks.RemoveAt(i);
                         restartLoop = true;
                         break;
 

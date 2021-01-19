@@ -38,6 +38,7 @@ namespace RivalAI.Behavior.Subsystems{
 		public IMyRemoteControl RemoteControl;
 		public string RequiredFactionTag;
 		public bool NpcOwned;
+		public bool WasNpcOwned;
 		public bool AllowHumansInFaction;
 
 		public IMyFaction Faction;
@@ -55,6 +56,7 @@ namespace RivalAI.Behavior.Subsystems{
 			RemoteControl = null;
 			RequiredFactionTag = "";
 			NpcOwned = false;
+			WasNpcOwned = false;
 			AllowHumansInFaction = false;
 
 			UseGridReclamation = false;
@@ -115,6 +117,7 @@ namespace RivalAI.Behavior.Subsystems{
 					if(faction.IsEveryoneNpc() == true) {
 
 						this.NpcOwned = true;
+						this.WasNpcOwned = true;
 						this.Faction = faction;
 						this.FactionId = faction.FactionId;
 						Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);
@@ -137,6 +140,7 @@ namespace RivalAI.Behavior.Subsystems{
 					if(npcSteam == 0) {
 
 						this.NpcOwned = true;
+						this.WasNpcOwned = true;
 						this.Faction = faction;
 						this.FactionId = faction.FactionId;
 						Logger.MsgDebug("Owner Check: Valid NPC Faction", DebugTypeEnum.Owner);

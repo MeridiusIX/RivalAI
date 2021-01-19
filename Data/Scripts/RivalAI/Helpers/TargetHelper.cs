@@ -540,6 +540,46 @@ namespace RivalAI.Helpers {
 
 			return result;
 		}
+
+		public static IMyEntity GetAttackerParentEntity(long entityId, IMyCubeGrid cubeGrid) {
+
+			IMyEntity entity = null;
+
+			if (MyAPIGateway.Entities.TryGetEntityById(entityId, out entity)) {
+
+				var parentEnt = entity.GetTopMostParent();
+
+				if (parentEnt != null) {
+
+					//Logger.MsgDebug("Damager Parent Entity Valid", DebugTypeEnum.General);
+					var gridGroup = MyAPIGateway.GridGroups.GetGroup(cubeGrid, GridLinkTypeEnum.Physical);
+					bool isSameGridConstrust = false;
+
+					foreach (var grid in gridGroup) {
+
+						if (grid.EntityId == parentEnt.EntityId) {
+
+							//Logger.MsgDebug("Damager Parent Entity Was Same Grid", DebugTypeEnum.General);
+							isSameGridConstrust = true;
+							break;
+
+						}
+
+					}
+
+					if (!isSameGridConstrust) {
+
+						return parentEnt;
+
+					}
+
+				}
+
+			}
+
+			return null;
+		
+		}
 		
 		public static Vector2 GetTargetGridPower(IMyCubeGrid cubeGrid){
 			

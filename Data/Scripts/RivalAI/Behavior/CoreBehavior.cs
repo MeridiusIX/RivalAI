@@ -17,7 +17,7 @@ namespace RivalAI.Behavior {
 		public IMyRemoteControl RemoteControl { get { return _remoteControl; } set { _remoteControl = value; } }
 		public IMyCubeGrid CubeGrid;
 
-		public string RemoteControlCode;
+		public List<string> RemoteControlCode;
 
 		//public BaseSystems Systems;
 
@@ -150,7 +150,7 @@ namespace RivalAI.Behavior {
 			RemoteControl = null;
 			CubeGrid = null;
 
-			RemoteControlCode = "";
+			RemoteControlCode = new List<string>();
 
 			SetupCompleted = false;
 			SetupFailed = false;
@@ -384,9 +384,14 @@ namespace RivalAI.Behavior {
 
 				_registeredRemoteCode = true;
 
-				if (MESApi.MESApiReady && !string.IsNullOrWhiteSpace(RemoteControlCode)) {
+				if (MESApi.MESApiReady && RemoteControlCode.Count > 0) {
 
-					MESApi.RegisterRemoteControlCode(this.RemoteControl, RemoteControlCode);
+					foreach (var code in RemoteControlCode) {
+
+						if(!string.IsNullOrWhiteSpace(code))
+							MESApi.RegisterRemoteControlCode(this.RemoteControl, code);
+
+					}
 
 				}
 			
@@ -514,7 +519,10 @@ namespace RivalAI.Behavior {
 					//RemoteControlCode
 					if (tag.Contains("[RemoteControlCode:") == true) {
 
-						this.RemoteControlCode = TagHelper.TagStringCheck(tag);
+						var tempVal = TagHelper.TagStringCheck(tag);
+
+						if (!string.IsNullOrWhiteSpace(tempVal))
+							this.RemoteControlCode.Add(tempVal);
 
 					}
 
@@ -724,6 +732,7 @@ namespace RivalAI.Behavior {
 			if (Settings.CurrentTargetEntityId != 0) {
 
 				AutoPilot.Targeting.ForceTargetEntityId = Settings.CurrentTargetEntityId;
+				AutoPilot.Targeting.ForceRefresh = true;
 
 			}
 
@@ -909,7 +918,7 @@ namespace RivalAI.Behavior {
 
 		public bool RemoteCompromiseCheck() {
 
-			return !IsWorking && HasBeenWorking && !IsParentGridClosed;
+			return !IsWorking && HasBeenWorking && !IsParentGridClosed && Owner.WasNpcOwned;
 		
 		}
 

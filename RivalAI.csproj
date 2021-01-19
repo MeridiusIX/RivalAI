@@ -5,6 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\GenericProfiles\Autopilot\desktop.ini\**" />
+    <EmbeddedResource Remove="Data\GenericProfiles\Autopilot\desktop.ini\**" />
+    <None Remove="Data\GenericProfiles\Autopilot\desktop.ini\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="metadata.mod" />
     <None Remove="modinfo.sbmi" />
   </ItemGroup>

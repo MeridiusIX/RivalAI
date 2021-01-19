@@ -552,6 +552,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(174)]
 		public bool CancelWaitingAtWaypoint;
 
+		[ProtoMember(175)]
+		public bool SwitchToNextWaypoint;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -779,6 +782,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			BlockTypeToggles = new List<SwitchEnum>();
 
 			CancelWaitingAtWaypoint = false;
+			SwitchToNextWaypoint = false;
 
 			ProfileSubtypeId = "";
 
@@ -2153,6 +2157,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[CancelWaitingAtWaypoint:") == true) {
 
 						CancelWaitingAtWaypoint = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//SwitchToNextWaypoint
+					if (tag.Contains("[SwitchToNextWaypoint:") == true) {
+
+						SwitchToNextWaypoint = TagHelper.TagBoolCheck(tag);
 
 					}
 

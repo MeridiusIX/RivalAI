@@ -14,7 +14,7 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.43.0";
+		public static string ReleaseVersion = "0.45.0";
 
 		//Server
 		public static bool IsServer = false;

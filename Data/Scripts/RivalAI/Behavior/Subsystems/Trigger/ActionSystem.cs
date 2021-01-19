@@ -227,7 +227,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (commandProfile.IgnoreAntennaRequirement) {
 
-						sendRadius = command.Radius;
+						sendRadius = commandProfile.Radius;
 						newCommand.IgnoreAntennaRequirement = true;
 
 					} else {
@@ -244,11 +244,19 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					newCommand.Radius = sendRadius;
 
-					if (commandProfile.SendTargetEntityId && _behavior.AutoPilot.Targeting.HasTarget())
-						newCommand.TargetEntityId = _behavior.AutoPilot.Targeting.Target.GetEntityId();
+					if (commandProfile.SendTargetEntityId)
+
+						if(_behavior.AutoPilot.Targeting.HasTarget())
+							newCommand.TargetEntityId = _behavior.AutoPilot.Targeting.Target.GetEntityId();
+						else
+							Logger.MsgDebug("No Current Target To Send With Command", DebugTypeEnum.Command);
 
 					if (commandProfile.SendDamagerEntityId)
-						newCommand.DamagerEntityId = _behavior.Settings.LastDamagerEntity;
+
+						if(_behavior.Settings.LastDamagerEntity == 0)
+							newCommand.DamagerEntityId = _behavior.Settings.LastDamagerEntity;
+						else
+							Logger.MsgDebug("No Damager ID To Send With Command", DebugTypeEnum.Command);
 
 					if (commandProfile.SendWaypoint) {
 
@@ -265,6 +273,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 								if (waypointProfile.RelativeEntity == RelativeEntityType.Target && _behavior.AutoPilot.Targeting.HasTarget())
 									newCommand.Waypoint = waypointProfile.GenerateEncounterWaypoint(_behavior.AutoPilot.Targeting.Target.GetEntity());
+								else
+									Logger.MsgDebug("No Current Target To Send As Target Relative Waypoint", DebugTypeEnum.Command);
 
 								if (waypointProfile.RelativeEntity == RelativeEntityType.Damager) {
 
@@ -510,6 +520,17 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			if (actions.CancelWaitingAtWaypoint) {
 
 				_behavior.AutoPilot.State.WaypointWaitTime = DateTime.MinValue;
+
+			}
+
+			//SwitchToNextWaypoint
+			if (actions.SwitchToNextWaypoint && _behavior.AutoPilot.State.CargoShipWaypoints.Count > 0) {
+
+				for (int i = 0; i < _behavior.AutoPilot.State.CargoShipWaypoints.Count; i++) {
+
+					_behavior.AutoPilot.State.CargoShipWaypoints[0].Valid = false;
+
+				}
 
 			}
 

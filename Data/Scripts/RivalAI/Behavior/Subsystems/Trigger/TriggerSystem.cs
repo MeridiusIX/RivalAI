@@ -96,13 +96,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//Timer
 				if (trigger.Type == "Timer") {
 
-					//Logger.MsgDebug("Checking Timer Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger();
 					continue;
 
 				}
@@ -110,17 +104,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//PlayerNear
 				if (trigger.Type == "PlayerNear") {
 
-					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (IsPlayerNearby(trigger)) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckPlayerNear);
 					continue;
 
 				}
@@ -128,17 +112,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//PlayerFar
 				if (trigger.Type == "PlayerFar") {
 
-					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (IsPlayerNearby(trigger, true)) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckPlayerFar);
 					continue;
 
 				}
@@ -146,17 +120,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//TargetNear
 				if (trigger.Type == "TargetNear") {
 
-					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (_behavior.AutoPilot.Targeting.HasTarget() && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.AutoPilot.Targeting.TargetLastKnownCoords) < trigger.TargetDistance) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckTargetNear);
 					continue;
 
 				}
@@ -164,17 +128,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//TargetFar
 				if (trigger.Type == "TargetFar") {
 
-					//Logger.MsgDebug("Checking PlayerNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (_behavior.AutoPilot.Targeting.HasTarget() && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.AutoPilot.Targeting.TargetLastKnownCoords) > trigger.TargetDistance) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckTargetFar);
 					continue;
 
 				}
@@ -182,17 +136,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//DespawnNear
 				if (trigger.Type == "DespawnNear") {
 
-					//Logger.MsgDebug("Checking DespawnNear Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (_behavior.Settings.DespawnCoords != Vector3D.Zero && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.Settings.DespawnCoords) < trigger.TargetDistance) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckDespawnNear);
 					continue;
 
 				}
@@ -218,25 +162,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//TurretTarget
 				if (trigger.Type == "TurretTarget") {
 
-					//Logger.MsgDebug("Checking TurretTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						var turretTarget = _autopilot.Weapons.GetTurretTarget();
-
-						if (turretTarget != 0) {
-
-							trigger.ActivateTrigger();
-
-							if (trigger.Triggered == true) {
-
-								trigger.DetectedEntityId = turretTarget;
-
-							}
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckTurretTarget);
 					continue;
 
 				}
@@ -244,13 +170,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//NoWeapon
 				if (trigger.Type == "NoWeapon") {
 
-					//Logger.MsgDebug("Checking NoWeapon Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger && !_autopilot.Weapons.HasWorkingWeapons()) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckNoWeapon);
 					continue;
 
 				}
@@ -258,17 +178,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//NoTarget
 				if (trigger.Type == "NoTarget") {
 
-					//Logger.MsgDebug("Checking NoTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger) {
-
-						if (!_autopilot.Targeting.HasTarget()) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckNoTarget);
 					continue;
 
 				}
@@ -276,17 +186,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//HasTarget
 				if (trigger.Type == "HasTarget") {
 
-					//Logger.MsgDebug("Checking HasTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger) {
-
-						if (_autopilot.Targeting.HasTarget()) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckHasTarget);
 					continue;
 
 				}
@@ -294,18 +194,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//AcquiredTarget
 				if (trigger.Type == "AcquiredTarget") {
 
-					//Logger.MsgDebug("Checking NoTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger) {
-
-						if (_autopilot.Targeting.TargetAcquired) {
-
-							_autopilot.Targeting.TargetAcquired = false;
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckAcquiredTarget);
 					continue;
 
 				}
@@ -313,18 +202,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//LostTarget
 				if (trigger.Type == "LostTarget") {
 
-					//Logger.MsgDebug("Checking HasTarget Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger) {
-
-						if (_autopilot.Targeting.TargetLost) {
-
-							_autopilot.Targeting.TargetLost = false;
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckLostTarget);
 					continue;
 
 				}
@@ -332,31 +210,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//TargetInSafezone
 				if (trigger.Type == "TargetInSafezone") {
 
-					//Logger.MsgDebug("Checking TargetInSafezone Trigger: " + trigger.ProfileSubtypeId, DebugTypeEnum.Trigger);
-					if (trigger.UseTrigger == true) {
-
-						if (_autopilot.Targeting.HasTarget() && _autopilot.Targeting.Target.InSafeZone()) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
-					continue;
-
-				}
-
-				//Grounded
-				if (trigger.Type == "Grounded") {
-
-					if (trigger.UseTrigger == true) {
-
-						//Check if Grounded
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckTargetInSafezone);
 					continue;
 
 				}
@@ -364,13 +218,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerA
 				if (trigger.Type == "BehaviorTriggerA") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerA) {
-
-						
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerA);
 					continue;
 
 				}
@@ -378,13 +226,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerB
 				if (trigger.Type == "BehaviorTriggerB") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerB) {
-
-						
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerB);
 					continue;
 
 				}
@@ -392,12 +234,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerC
 				if (trigger.Type == "BehaviorTriggerC") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerC) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerC);
 					continue;
 
 				}
@@ -405,12 +242,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerD
 				if (trigger.Type == "BehaviorTriggerD") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerD) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerD);
 					continue;
 
 				}
@@ -418,12 +250,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerE
 				if (trigger.Type == "BehaviorTriggerE") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerE) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerE);
 					continue;
 
 				}
@@ -431,13 +258,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerF
 				if (trigger.Type == "BehaviorTriggerF") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerF) {
-
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerF);
 					continue;
 
 				}
@@ -445,13 +266,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//BehaviorTriggerG
 				if (trigger.Type == "BehaviorTriggerG") {
 
-					if (trigger.UseTrigger == true && _behavior.BehaviorTriggerG) {
-
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckBehaviorTriggerG);
 					continue;
 
 				}
@@ -459,13 +274,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//PaymentSuccess
 				if (trigger.Type == "PaymentSuccess") {
 
-					if (trigger.UseTrigger == true && PaymentSuccessTriggered) {
-
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckPaymentSuccess);
 					continue;
 
 				}
@@ -473,12 +282,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//PaymentFailure
 				if (trigger.Type == "PaymentFailure") {
 
-					if (trigger.UseTrigger == true && PaymentFailureTriggered) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckPaymentFailure);
 					continue;
 
 				}
@@ -486,16 +290,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//PlayerKnownLocation
 				if (trigger.Type == "PlayerKnownLocation") {
 
-					if (MESApi.MESApiReady) {
-
-						if (trigger.UseTrigger == true && MESApi.IsPositionInKnownPlayerLocation(RemoteControl.GetPosition(), true, _behavior.Owner.Faction?.Tag)) {
-
-							trigger.ActivateTrigger();
-
-						}
-
-					}
-
+					trigger.ActivateTrigger(CheckPlayerKnownLocation);
 					continue;
 
 				}
@@ -503,12 +298,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//SensorActive
 				if (trigger.Type == "SensorActive") {
 
-					if (_behavior.Grid.SensorCheck(trigger.SensorName)) {
-
-						trigger.ActivateTrigger();
-
-					}
-
+					trigger.ActivateTrigger(CheckSensorActive);
 					continue;
 
 				}
@@ -516,12 +306,15 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				//SensorIdle
 				if (trigger.Type == "SensorIdle") {
 
-					if (_behavior.Grid.SensorCheck(trigger.SensorName, false)) {
+					trigger.ActivateTrigger(CheckSensorIdle);
+					continue;
 
-						trigger.ActivateTrigger();
+				}
 
-					}
+				//Weather
+				if (trigger.Type == "Weather") {
 
+					trigger.ActivateTrigger(CheckWeather);
 					continue;
 
 				}

@@ -151,6 +151,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(37)]
 		public string DespawnTypeFromSpawner;
 
+		[ProtoMember(38)]
+		public List<string> WeatherTypes;
+
 		[ProtoIgnore]
 		public Random Rnd;
 
@@ -202,6 +205,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			DespawnTypeFromSpawner = "";
 
+			WeatherTypes = new List<string>();
+
 			ProfileSubtypeId = "";
 
 
@@ -209,7 +214,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 		}
 
-		public void ActivateTrigger(Func<bool> mainTriggerCheck = null) {
+		public void ActivateTrigger(Func<TriggerProfile, bool> mainTriggerCheck = null) {
 
 			if (MaxActions >= 0 && TriggerCount >= MaxActions) {
 
@@ -227,7 +232,21 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 					if (mainTriggerCheck != null) {
 
+						var result = mainTriggerCheck?.Invoke(this);
 
+						if (result == null || !result.HasValue) {
+
+
+
+						} else {
+
+							if (!result.Value) {
+							
+								
+							
+							}
+						
+						}
 
 					}
 
@@ -569,6 +588,19 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[DespawnTypeFromSpawner:") == true) {
 
 						DespawnTypeFromSpawner = TagHelper.TagStringCheck(tag);
+
+					}
+
+					//WeatherTypes
+					if (tag.Contains("[WeatherTypes:") == true) {
+
+						var tempValue = TagHelper.TagStringCheck(tag);
+
+						if (!string.IsNullOrWhiteSpace(tempValue) && WeatherTypes.Contains(tempValue) == false) {
+
+							WeatherTypes.Add(tempValue);
+
+						}
 
 					}
 
