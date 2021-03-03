@@ -69,7 +69,7 @@ namespace RivalAI.Behavior {
 			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+				AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 
 			}
 
@@ -98,7 +98,7 @@ namespace RivalAI.Behavior {
 				if (timeSpan.TotalSeconds >= AutoPilot.Data.WaypointWaitTimeTrigger) {
 
 					SelectNextWaypoint();
-					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
 					if (!_firstRun)
@@ -115,7 +115,7 @@ namespace RivalAI.Behavior {
 
 				if (_cargoShipWaypoint == null) {
 
-					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					return;
 
@@ -125,7 +125,7 @@ namespace RivalAI.Behavior {
 
 				if (!_cargoShipWaypoint.Valid || _cargoShipWaypoint.ReachedWaypoint) {
 
-					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+					AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 					return;
 
@@ -157,7 +157,7 @@ namespace RivalAI.Behavior {
 
 					} else {
 
-						AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), AutoPilot.UserCustomModeIdle);
+						AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 						ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
 						BehaviorTriggerA = true;
 

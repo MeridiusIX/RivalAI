@@ -133,6 +133,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			/*
 			if (this?.Block?.SlimBlock?.CubeGrid?.Physics != null) {
 
 				var anglularVel = this.Block.SlimBlock.CubeGrid.Physics.AngularVelocity;
@@ -142,8 +143,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				RollMagnitude = Vector3D.Dot(anglularVel, RefMatrix.Forward);
 
 				AdjPitchMagnitude = MagnitudeReduction(PitchMagnitude, Behavior.AutoPilot.PitchAngleDifference, Behavior.AutoPilot.PitchTargetAngleResult);
-				AdjYawMagnitude = MagnitudeReduction(YawMagnitude, Behavior.AutoPilot.YawAngleDifference, Behavior.AutoPilot.YawTargetAngleResult);
-				AdjRollMagnitude = MagnitudeReduction(RollMagnitude, Behavior.AutoPilot.YawAngleDifference, Behavior.AutoPilot.YawTargetAngleResult, Behavior.AutoPilot.CurrentMode.HasFlag(NewAutoPilotMode.BarrelRoll));
+				AdjYawMagnitude = MagnitudeReduction(YawMagnitude, Behavior.AutoPilot.YawAngleDifference, Behavior.AutoPilot.YawTargetAngleResult, Behavior.AutoPilot.CurrentMode.HasFlag(NewAutoPilotMode.HeavyYaw));
+				AdjRollMagnitude = MagnitudeReduction(RollMagnitude, Behavior.AutoPilot.RollAngleDifference, Behavior.AutoPilot.RollTargetAngleResult, Behavior.AutoPilot.CurrentMode.HasFlag(NewAutoPilotMode.BarrelRoll));
 
 				
 				//AdjPitchMagnitude = PitchMagnitude;
@@ -157,6 +158,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 					this.Block.SlimBlock.CubeGrid.Physics.AngularVelocity = newAngularVelocity;
 
 			}
+			*/
 
 			return true;
 
@@ -170,7 +172,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (Math.Abs(magnitude) < 1)
 				return magnitude;
 
-			if (AngleDifference >= 90)
+			if (AngleDifference >= (Behavior.AutoPilot.Data.LimitRotationSpeed ? 135 : 90))
 				return magnitude;
 
 			if (TargetAngleDifference >= 0)

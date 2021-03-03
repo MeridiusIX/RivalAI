@@ -68,7 +68,7 @@ namespace RivalAI.Behavior{
 			if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 
 			}
 			
@@ -81,7 +81,7 @@ namespace RivalAI.Behavior{
 				} else {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				}
 
@@ -91,14 +91,14 @@ namespace RivalAI.Behavior{
 
 				if(AutoPilot.CurrentMode != AutoPilot.UserCustomModeIdle) {
 
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 
 				}
 
 				if(AutoPilot.Targeting.HasTarget()) {
 
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				} else if(Despawn.NoTargetExpire == true){
 					
@@ -111,7 +111,7 @@ namespace RivalAI.Behavior{
 			if(!AutoPilot.Targeting.HasTarget() && Mode != BehaviorMode.Retreat && Mode != BehaviorMode.WaitingForTarget) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.WaitingForTarget);
-				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 
 			}
 
@@ -130,7 +130,7 @@ namespace RivalAI.Behavior{
 
 						BehaviorTriggerA = true;
 						ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
-						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), (RotateToTargetWithinRange ? NewAutoPilotMode.RotateToWaypoint : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), (RotateToTargetWithinRange ? NewAutoPilotMode.RotateToWaypoint : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 					}
 				
@@ -147,13 +147,13 @@ namespace RivalAI.Behavior{
 
 					BehaviorTriggerC = true;
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				} else if(targetDist > MaxDistanceFromTarget) {
 
 					BehaviorTriggerB = true;
 					ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				}
 

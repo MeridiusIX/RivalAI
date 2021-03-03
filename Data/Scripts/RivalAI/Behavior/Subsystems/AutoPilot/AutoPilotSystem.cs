@@ -53,6 +53,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		OffsetWaypoint = 1 << 10,
 		RotateToTarget = 1 << 11,
 		WaterNavigation = 1 << 12,
+		HeavyYaw = 1 << 13,
 
 	}
 
@@ -149,6 +150,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		public NewAutoPilotMode UserCustomMode { get { return Data.FlyLevelWithGravity ? NewAutoPilotMode.LevelWithGravity : NewAutoPilotMode.None; } }
 		public NewAutoPilotMode UserCustomModeIdle { get { return Data.LevelWithGravityWhenIdle ? NewAutoPilotMode.LevelWithGravity : NewAutoPilotMode.None; } }
+
 		public CollisionSystem Collision;
 		//public RotationSystem Rotation;
 		public TargetingSystem Targeting;
@@ -183,6 +185,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		private bool _applyBarrelRoll;
 		private int _barrelRollDuration;
 		private DateTime _barrelRollStart;
+
+		private bool _applyHeavyYaw;
+		private int _heavyYawDuration;
+		private DateTime _heavyYawStart;
 
 		private bool _applyRamming;
 		private int _ramDuration;
@@ -608,67 +614,94 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			if (Logger.CurrentDebugTypeList.Contains(DebugTypeEnum.Terminal)) {
 
-				var sbStats = new StringBuilder();
-				sbStats.Append("Ship: ").Append(_remoteControl.SlimBlock.CubeGrid.CustomName).AppendLine().AppendLine();
-				sbStats.Append("Behavior Type: ").Append(_behavior.BehaviorType).AppendLine();
-				sbStats.Append("Behavior Mode: ").Append(_behavior.Mode).AppendLine();
-				sbStats.Append("Speed: ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
-				sbStats.Append("Profile: ").Append(Data.ProfileSubtypeId).AppendLine();
-				sbStats.Append("AP Modes: ").AppendLine();
-				sbStats.Append(CurrentMode.ToString().Replace(",", "\r\n")).AppendLine();
-				//sbStats.Append("Allowed Waypoint Types: ").AppendLine();
-				//sbStats.Append(DirectWaypointType.ToString()).AppendLine();
-				//sbStats.Append("Restricted Waypoint Types: ").AppendLine();
-				//sbStats.Append(IndirectWaypointType.ToString()).AppendLine();
+				try {
+
+					var sbStats = new StringBuilder();
+					sbStats.Append("Ship: ").Append(_remoteControl.SlimBlock.CubeGrid.CustomName).AppendLine().AppendLine();
+					sbStats.Append("Behavior Type: ").Append(_behavior.BehaviorType).AppendLine();
+					sbStats.Append("Behavior Mode: ").Append(_behavior.Mode).AppendLine();
+					sbStats.Append("Speed: ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
+					sbStats.Append("Profile: ").Append(Data.ProfileSubtypeId).AppendLine();
+					sbStats.Append("AP Modes: ").AppendLine();
+					sbStats.Append(CurrentMode.ToString().Replace(",", "\r\n")).AppendLine();
+					//sbStats.Append("Allowed Waypoint Types: ").AppendLine();
+					//sbStats.Append(DirectWaypointType.ToString()).AppendLine();
+					//sbStats.Append("Restricted Waypoint Types: ").AppendLine();
+					//sbStats.Append(IndirectWaypointType.ToString()).AppendLine();
 
 
-				var sbThrust = new StringBuilder();
-				sbThrust.Append("Dampeners Enabled: ").Append(_remoteControl.DampenersOverride.ToString()).AppendLine();
-				sbThrust.Append("Forward Thrust Mode: ").AppendLine();
-				sbThrust.Append(_debugThrustForwardMode).AppendLine();
-				sbThrust.Append("Upward Thrust Mode:  ").AppendLine();
-				sbThrust.Append(_debugThrustUpMode).AppendLine();
-				sbThrust.Append("Side Thrust Mode:  ").AppendLine();
-				sbThrust.Append(_debugThrustSideMode).AppendLine();
+					var sbThrust = new StringBuilder();
+					sbThrust.Append("Dampeners Enabled: ").Append(_remoteControl.DampenersOverride.ToString()).AppendLine();
+					sbThrust.Append("Forward Thrust Mode: ").AppendLine();
+					sbThrust.Append(_debugThrustForwardMode).AppendLine().AppendLine();
+					sbThrust.Append("Upward Thrust Mode:  ").AppendLine();
+					sbThrust.Append(_debugThrustUpMode).AppendLine().AppendLine();
+					sbThrust.Append("Side Thrust Mode:  ").AppendLine();
+					sbThrust.Append(_debugThrustSideMode).AppendLine().AppendLine();
+					sbThrust.Append("Altitude:  ").AppendLine();
+					sbThrust.Append(MyAltitude.ToString());
 
-				var sbRotate = new StringBuilder();
-				sbRotate.Append("Pitch: ").AppendLine();
-				sbRotate.Append(" - Angle / Target Diff: " ).Append(Math.Round(PitchAngleDifference, 2)).Append(" // ").Append(Math.Round(PitchTargetAngleResult, 2)).AppendLine();
-				sbRotate.Append(" - Rotation Amount: ").Append(Math.Round(ActiveGyro.RawValues.X, 4)).AppendLine();
-				sbRotate.Append(" - Magnitude Diff: ").Append(Math.Round(ActiveGyro.PitchMagnitude, 4)).Append(" // ").Append(Math.Round(ActiveGyro.AdjPitchMagnitude, 4)).AppendLine();
-				sbRotate.Append("Yaw: ").AppendLine();
-				sbRotate.Append(" - Angle / Target Diff: ").Append(Math.Round(YawAngleDifference, 2)).Append(" // ").Append(Math.Round(YawTargetAngleResult, 2)).AppendLine();
-				sbRotate.Append(" - Rotation Amount: ").Append(Math.Round(ActiveGyro.RawValues.Y, 4)).AppendLine();
-				sbRotate.Append(" - Magnitude Diff: ").Append(Math.Round(ActiveGyro.YawMagnitude, 4)).Append(" // ").Append(Math.Round(ActiveGyro.AdjYawMagnitude, 4)).AppendLine();
-				sbRotate.Append("Roll: ").AppendLine();
-				sbRotate.Append(" - Angle / Target Diff: ").Append(Math.Round(RollAngleDifference, 2)).Append(" // ").Append(Math.Round(RollTargetAngleResult, 2)).AppendLine();
-				sbRotate.Append(" - Rotation Amount: ").Append(Math.Round(ActiveGyro.RawValues.Z, 4)).AppendLine();
-				sbRotate.Append(" - Magnitude Diff: ").Append(Math.Round(ActiveGyro.RollMagnitude, 4)).Append(" // ").Append(Math.Round(ActiveGyro.AdjRollMagnitude, 4)).AppendLine();
+					var sbRotate = new StringBuilder();
+					sbRotate.Append("Pitch: ").AppendLine();
+					sbRotate.Append(" - Angle:         ").Append(Math.Round(PitchAngleDifference, 2)).AppendLine();
+					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(PitchTargetAngleResult, 2)).AppendLine();
+					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.X, 4)).AppendLine();
+					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingPitchMagnitude, 4)).AppendLine();
+					sbRotate.Append("Yaw: ").AppendLine();
+					sbRotate.Append(" - Angle:         ").Append(Math.Round(YawAngleDifference, 2)).AppendLine();
+					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(YawTargetAngleResult, 2)).AppendLine();
+					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Y, 4)).AppendLine();
+					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingYawMagnitude, 4)).AppendLine();
+					sbRotate.Append("Roll: ").AppendLine();
+					sbRotate.Append(" - Angle:         ").Append(Math.Round(RollAngleDifference, 2)).AppendLine();
+					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(RollTargetAngleResult, 2)).AppendLine();
+					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Z, 4)).AppendLine();
+					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingRollMagnitude, 4)).AppendLine();
 
-				var sbRotation = new StringBuilder();
+					if (RAI_SessionCore.Instance.TextHudApi.Heartbeat) {
 
-				for (int i = _behavior.DebugCockpits.Count - 1; i >= 0; i--) {
+						if (RAI_SessionCore.Instance.HudText == null) {
 
-					var cockpit = _behavior.DebugCockpits[i];
+							RAI_SessionCore.Instance.HudText = new HudAPIv2.HUDMessage(sbThrust, Vector2D.Zero);
 
-					if (cockpit == null || cockpit.MarkedForClose || !cockpit.IsFunctional)
-						continue;
+						} else {
 
-					var screenA = (cockpit as IMyTextSurfaceProvider).GetSurface(0);
-					var screenB = (cockpit as IMyTextSurfaceProvider).GetSurface(1);
-					var screenC = (cockpit as IMyTextSurfaceProvider).GetSurface(2);
+							RAI_SessionCore.Instance.HudText.Message = sbThrust;
 
-					screenA.ContentType = ContentType.TEXT_AND_IMAGE;
-					screenB.ContentType = ContentType.TEXT_AND_IMAGE;
-					screenC.ContentType = ContentType.TEXT_AND_IMAGE;
+						}
+					
+					}
 
-					screenA.WriteText(sbStats.ToString());
-					screenB.WriteText(sbThrust.ToString());
-					screenC.WriteText(sbRotate.ToString());
+					var sbRotation = new StringBuilder();
+
+					for (int i = _behavior.DebugCockpits.Count - 1; i >= 0; i--) {
+
+						var cockpit = _behavior.DebugCockpits[i];
+
+						if (cockpit == null || cockpit.MarkedForClose || !cockpit.IsFunctional)
+							continue;
+
+						var screenA = (cockpit as IMyTextSurfaceProvider).GetSurface(0);
+						var screenB = (cockpit as IMyTextSurfaceProvider).GetSurface(1);
+						var screenC = (cockpit as IMyTextSurfaceProvider).GetSurface(2);
+
+						screenA.ContentType = ContentType.TEXT_AND_IMAGE;
+						screenB.ContentType = ContentType.TEXT_AND_IMAGE;
+						screenC.ContentType = ContentType.TEXT_AND_IMAGE;
+
+						screenA.WriteText(sbStats.ToString());
+						screenB.WriteText(sbThrust.ToString());
+						screenC.WriteText(sbRotate.ToString());
 
 
+					}
+
+				} catch (Exception e) {
+				
+				
+				
 				}
-
+	
 			}
 
 			return;
@@ -676,10 +709,24 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		}
 
-		public void ActivateAutoPilot(Vector3D initialWaypoint, NewAutoPilotMode mode) {
+		public void ActivateAutoPilot(Vector3D initialWaypoint, NewAutoPilotMode mode, CheckEnum useUserMode = CheckEnum.Ignore, CheckEnum useUserModeIdle = CheckEnum.Ignore) {
 
 			DeactivateAutoPilot();
+			State.NormalAutopilotFlags = mode;
 			CurrentMode = mode;
+
+			if (useUserMode != CheckEnum.Ignore)
+				State.UseFlyLevelWithGravity = (useUserMode == CheckEnum.Yes);
+
+			if (useUserModeIdle != CheckEnum.Ignore)
+				State.UseFlyLevelWithGravityIdle = (useUserModeIdle == CheckEnum.Yes);
+
+			if (State.UseFlyLevelWithGravity && Data.FlyLevelWithGravity)
+				CurrentMode |= NewAutoPilotMode.LevelWithGravity;
+
+			if (State.UseFlyLevelWithGravityIdle && Data.LevelWithGravityWhenIdle)
+				CurrentMode |= NewAutoPilotMode.LevelWithGravity;
+
 			State.CurrentAutoPilot = AutoPilotType.RivalAI;
 			_initialWaypoint = initialWaypoint;
 
@@ -775,6 +822,25 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					if (!CurrentMode.HasFlag(NewAutoPilotMode.BarrelRoll))
 						CurrentMode |= NewAutoPilotMode.BarrelRoll;
+
+				}
+
+			}
+
+			if (_applyHeavyYaw) {
+
+				var rollTime = MyAPIGateway.Session.GameDateTime - _heavyYawStart;
+
+				if (rollTime.TotalMilliseconds >= _heavyYawDuration) {
+
+					Logger.MsgDebug("Heavy Yaw End", DebugTypeEnum.AutoPilot);
+					_applyHeavyYaw = false;
+					CurrentMode &= ~NewAutoPilotMode.HeavyYaw;
+
+				} else {
+
+					if (!CurrentMode.HasFlag(NewAutoPilotMode.HeavyYaw))
+						CurrentMode |= NewAutoPilotMode.HeavyYaw;
 
 				}
 
@@ -890,13 +956,18 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			//PlanetPathing
 			if (CurrentMode.HasFlag(NewAutoPilotMode.PlanetaryPathing) && _gravityStrength > 0) {
 
-				CalculateSafePlanetPathWaypoint(CurrentPlanet);
+				if (!Data.UseSurfaceHoverThrustMode)
+					CalculateSafePlanetPathWaypoint(CurrentPlanet);
+				else
+					CalculateHoverPath(CurrentPlanet);
+
+				CalculateAllowedGravity(CurrentPlanet);
 
 				if (_initialWaypoint != _pendingWaypoint) {
 
 					IndirectWaypointType |= WaypointModificationEnum.PlanetPathing;
 
-				}	
+				}
 
 			}
 
@@ -1296,6 +1367,112 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		}
 
+		private void CalculateHoverPath(MyPlanet planet) {
+
+			var targetDir = Vector3D.Normalize(_pendingWaypoint - _myPosition);
+			var core = planet.PositionComp.WorldAABB.Center;
+
+			//My Position
+			var mySurface = WaterHelper.GetClosestSurface(_myPosition, planet, CurrentWater);
+			var myAltitude = Vector3D.Distance(_myPosition, mySurface);
+			var myCoreAltitude = Vector3D.Distance(_myPosition, core);
+
+			//Step Ahead
+			
+			var stepAheadSurface = WaterHelper.GetClosestSurface(targetDir * Data.HoverPathStepDistance + _myPosition, planet, CurrentWater);
+			var stepAheadCoords = _upDirection * Data.IdealPlanetAltitude + stepAheadSurface;
+			var stepAheadUpAngle = VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(stepAheadCoords - _myPosition));
+			var stepAheadCoreDistance = Vector3D.Distance(stepAheadCoords, core);
+
+			//Cliff Check
+			var cliffCheckSurface = WaterHelper.GetClosestSurface(targetDir * Data.HoverPathStepDistance + targetDir * (Data.HoverPathStepDistance * 4) + _myPosition, planet, CurrentWater);
+			var cliffCheckCoords = _upDirection * Data.IdealPlanetAltitude + cliffCheckSurface;
+			var cliffCheckUpAngle = VectorHelper.GetAngleBetweenDirections(_upDirection, Vector3D.Normalize(cliffCheckCoords - _myPosition));
+			var cliffCheckCoreDistance = Vector3D.Distance(cliffCheckCoords, core);
+
+			//Step Altitude Checks
+			bool isStepHigher = stepAheadCoreDistance - myCoreAltitude > 0;
+			bool isCliffHigher = cliffCheckCoreDistance - myCoreAltitude > 0;
+
+			//Cliff Safety Check
+			if (isCliffHigher && cliffCheckUpAngle <= 80) {
+
+				_pendingWaypoint = Vector3D.Normalize(stepAheadSurface - core) * cliffCheckCoreDistance + core;
+				IndirectWaypointType |= WaypointModificationEnum.PlanetPathingAscend;
+				return;
+
+			}
+
+			_pendingWaypoint = stepAheadCoords;
+
+		}
+
+		private void CalculateAllowedGravity(MyPlanet planet) {
+
+			if ((Data.MinGravity < 0 && Data.MaxGravity < 0) || Data.MaxGravity < Data.MinGravity)
+				return;
+
+			var gravity = planet?.Components?.Get<MyGravityProviderComponent>();
+
+			if (gravity == null)
+				return;
+
+			var minDistance = Data.MinGravity >= 0 ? MathTools.GravityToDistance(Data.MinGravity, planet.Generator.SurfaceGravity, planet.Generator.GravityFalloffPower, planet.MinimumRadius, planet.MaximumRadius) : -1;
+			var maxDistance = Data.MaxGravity >= 0 ? MathTools.GravityToDistance(Data.MaxGravity, planet.Generator.SurfaceGravity, planet.Generator.GravityFalloffPower, planet.MinimumRadius, planet.MaximumRadius) : -1;
+			var currentDistance = Vector3D.Distance(_pendingWaypoint, planet.PositionComp.WorldAABB.Center);
+			var up = Vector3D.Normalize(_pendingWaypoint - planet.PositionComp.WorldAABB.Center);
+			var surfaceCoords = WaterHelper.GetClosestSurface(_pendingWaypoint, planet, CurrentWater);
+			var surfaceCoreDistance = Vector3D.Distance(surfaceCoords, planet.PositionComp.WorldAABB.Center);
+			var newCoords = Vector3D.Zero;
+
+			//Adjust Minimum
+			if (minDistance > 0 && currentDistance < minDistance) {
+
+				newCoords = up * minDistance + planet.PositionComp.WorldAABB.Center;
+
+				if (Vector3D.Distance(newCoords, planet.PositionComp.WorldAABB.Center) - surfaceCoreDistance < Data.MinimumPlanetAltitude)
+					newCoords = up * Data.MinimumPlanetAltitude + surfaceCoords;
+
+				currentDistance = Vector3D.Distance(newCoords, planet.PositionComp.WorldAABB.Center);
+
+			}
+
+			//Adjust Maximum
+			if (maxDistance > 0 && currentDistance > maxDistance) {
+
+				newCoords = up * maxDistance + planet.PositionComp.WorldAABB.Center;
+
+				if (Vector3D.Distance(newCoords, planet.PositionComp.WorldAABB.Center) - surfaceCoreDistance < Data.MinimumPlanetAltitude)
+					newCoords = up * Data.MinimumPlanetAltitude + surfaceCoords;
+
+				currentDistance = Vector3D.Distance(newCoords, planet.PositionComp.WorldAABB.Center);
+
+			}
+
+			//Change Pending
+			if (newCoords != Vector3D.Zero)
+				_pendingWaypoint = newCoords;
+
+		}
+
+		private void SetMaxAltitude(MyPlanet planet) {
+
+			if (!Data.UseSurfaceHoverThrustMode || planet == null || IndirectWaypointType.HasFlag(WaypointModificationEnum.PlanetPathingAscend))
+				return;
+
+			var surfaceCoords = WaterHelper.GetClosestSurface(_myPosition, planet, CurrentWater); ;
+			var mySurfaceDistance = Vector3D.Distance(_myPosition, surfaceCoords);
+
+			var targetDir = Vector3D.Normalize(_pendingWaypoint - _myPosition);
+			var projectedCoords = targetDir * 100 + _myPosition;
+			var projectedSurface = WaterHelper.GetClosestSurface(projectedCoords, planet, CurrentWater);
+			var projectedSurfaceDist = Vector3D.Distance(projectedCoords, projectedSurface);
+
+			if (mySurfaceDistance > Data.IdealPlanetAltitude + Data.AltitudeTolerance && projectedSurfaceDist > Data.IdealPlanetAltitude + Data.AltitudeTolerance)
+				_pendingWaypoint = Vector3D.Normalize(_myPosition - surfaceCoords) * Data.IdealPlanetAltitude + surfaceCoords;
+
+		}
+
 		private Vector3D CalculateWaterPath() {
 
 			if (CurrentWater == null)
@@ -1578,6 +1755,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public void SetAutoPilotDataMode(AutoPilotDataMode mode) {
 
 			State.DataMode = mode;
+			ActivateAutoPilot(_initialWaypoint, State.NormalAutopilotFlags);
 		
 		}
 
@@ -1606,6 +1784,15 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			_barrelRollStart = MyAPIGateway.Session.GameDateTime;
 			_barrelRollDuration = MathTools.RandomBetween(Data.BarrelRollMinDurationMs, Data.BarrelRollMaxDurationMs);
 		
+		}
+
+		public void ActivateHeavyYaw() {
+
+			Logger.MsgDebug("Heavy Yaw Start", DebugTypeEnum.AutoPilot);
+			_applyHeavyYaw = true;
+			_heavyYawStart = MyAPIGateway.Session.GameDateTime;
+			_heavyYawDuration = MathTools.RandomBetween(Data.BarrelRollMinDurationMs, Data.BarrelRollMaxDurationMs);
+
 		}
 
 		public void ActivateRamming() {

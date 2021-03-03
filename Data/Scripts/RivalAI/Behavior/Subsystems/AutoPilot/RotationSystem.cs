@@ -23,7 +23,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		public double PitchTargetAngleResult;
 		public double RollTargetAngleResult;
 
-		public bool BarrelRollEnabled;
+		public double ExistingPitchMagnitude;
+		public double ExistingYawMagnitude;
+		public double ExistingRollMagnitude;
 
 		public void ApplyGyroRotation() {
 
@@ -84,6 +86,20 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			MatrixD referenceMatrix = this.RefBlockMatrixRotation; //This should be either the control block or at least represent what direction the ship should face
 			Vector3D directionToTarget = Vector3D.Normalize(rotationTarget - referenceMatrix.Translation);
 			Vector3 gyroRotation = new Vector3(0, 0, 0); // Pitch,Yaw,Roll
+
+			ExistingPitchMagnitude = 0;
+			ExistingYawMagnitude = 0;
+			ExistingRollMagnitude = 0;
+
+			//Measure Existing Speed
+			if (_remoteControl?.SlimBlock?.CubeGrid?.Physics != null) {
+
+				var angularVelocity = _remoteControl.SlimBlock.CubeGrid.Physics.AngularVelocity;
+				ExistingPitchMagnitude = Vector3D.Dot(angularVelocity, _remoteControl.WorldMatrix.Right);
+				ExistingYawMagnitude = -Vector3D.Dot(angularVelocity, _remoteControl.WorldMatrix.Up);
+				ExistingRollMagnitude = Vector3D.Dot(angularVelocity, _remoteControl.WorldMatrix.Forward);
+
+			}
 
 			//Get Actual Angle To Target
 			double angleToTarget = VectorHelper.GetAngleBetweenDirections(referenceMatrix.Forward, directionToTarget);
@@ -147,28 +163,36 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			
+			if (ExistingPitchMagnitude != 0)
+				gyroRotation.X = LimitSpeed(gyroRotation.X, ExistingPitchMagnitude);
+
+			if (ExistingYawMagnitude != 0)
+				gyroRotation.Y = LimitSpeed(gyroRotation.Y, ExistingYawMagnitude);
+
+			if (ExistingRollMagnitude != 0)
+				gyroRotation.Z = LimitSpeed(gyroRotation.Z, ExistingRollMagnitude);
+
+
 			this.RotationToApply = gyroRotation;
 
-			/*
-			var sb = new StringBuilder();
-			sb.Append("Rotation Readout:").AppendLine().AppendLine();
-
-			sb.Append("Pitch Angle Difference: ").Append(this.PitchAngleDifference.ToString()).AppendLine();
-			sb.Append("Pitch Target Angle: ").Append((_upDirection != Vector3D.Zero && CurrentMode.HasFlag(NewAutoPilotMode.LevelWithGravity) ? this.AngleToUpDirection : angleToTarget).ToString()).AppendLine();
-			sb.Append("Pitch Applied: ").Append(gyroRotation.X.ToString()).AppendLine().AppendLine();
-
-			sb.Append("Yaw Angle Difference: ").Append(this.YawAngleDifference.ToString()).AppendLine();
-			sb.Append("Yaw Target Angle: ").Append(this.AngleToCurrentWaypoint.ToString()).AppendLine();
-			sb.Append("Yaw Applied: ").Append(gyroRotation.Y.ToString()).AppendLine().AppendLine();
-
-			sb.Append("Roll Angle Difference: ").Append(this.RollAngleDifference.ToString()).AppendLine();
-			sb.Append("Roll Target Angle: ").Append(this.AngleToUpDirection.ToString()).AppendLine();
-			sb.Append("Roll Applied: ").Append(gyroRotation.Z.ToString()).AppendLine().AppendLine();
-
-			Logger.MsgDebug(sb.ToString(), DebugTypeEnum.AutoPilotStats);
-			*/
 			return;
 
+		}
+
+		public float LimitSpeed(float proposedSpeed, double actualSpeed) {
+
+			if (proposedSpeed == 0 || Math.Sign(proposedSpeed) != Math.Sign(actualSpeed))
+				return proposedSpeed;
+
+			if (_behavior.AutoPilot.Data.LimitRotationSpeed && Math.Abs(actualSpeed) > Math.Abs(proposedSpeed))
+				return 0;
+
+			if(Math.Abs(actualSpeed) > _behavior.AutoPilot.Data.MaxRotationMagnitude)
+				return 0;
+
+			return proposedSpeed;
+		
 		}
 
 		public void GetNextEligibleGyro() {
@@ -246,6 +270,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (CurrentMode.HasFlag(NewAutoPilotMode.BarrelRoll)) {
 
 				this.RotationToApply.Z = 10;
+
+			}
+
+			if (CurrentMode.HasFlag(NewAutoPilotMode.HeavyYaw)) {
+
+				this.RotationToApply.Y = 10;
 
 			}
 

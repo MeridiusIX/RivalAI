@@ -127,6 +127,8 @@ namespace RivalAI.Helpers {
 
 				if (WaterMod.Waters != null) {
 
+					WaterMod.UpdateRadius();
+
 					for (int i = WaterMod.Waters.Count - 1; i >= 0; i--) {
 
 						if (WaterMod.Waters[i] == null)

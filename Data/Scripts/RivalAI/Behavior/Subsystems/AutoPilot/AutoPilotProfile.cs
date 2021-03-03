@@ -233,6 +233,30 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(71)]
 		public double MaxAngleForLeveledAscent;
 
+		[ProtoMember(72)]
+		public bool LimitRotationSpeed;
+
+		[ProtoMember(73)]
+		public double MaxRotationMagnitude;
+
+		[ProtoMember(74)]
+		public double MinGravity;
+
+		[ProtoMember(75)]
+		public double MaxGravity;
+
+		[ProtoMember(76)]
+		public bool AvoidPlayerCollisions;
+
+		[ProtoMember(77)]
+		public bool UseSurfaceHoverThrustMode;
+
+		[ProtoMember(78)]
+		public double MaxVerticalSpeed;
+
+		[ProtoMember(79)]
+		public double HoverPathStepDistance;
+
 		public AutoPilotProfile() {
 
 			ProfileSubtypeId = "";
@@ -325,6 +349,19 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			MinAngleForLeveledDescent = 0;
 			MaxAngleForLeveledAscent = 180;
+
+			LimitRotationSpeed = false;
+			MaxRotationMagnitude = 6.28;
+
+			MinGravity = -1;
+			MaxGravity = -1;
+
+			AvoidPlayerCollisions = true;
+
+			UseSurfaceHoverThrustMode = false;
+			HoverPathStepDistance = 50;
+
+			MaxVerticalSpeed = -1;
 
 		}
 
@@ -848,6 +885,62 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (tag.Contains("[MaxAngleForLeveledAscent:") == true) {
 
 				this.MaxAngleForLeveledAscent = TagHelper.TagDoubleCheck(tag, this.MaxAngleForLeveledAscent);
+
+			}
+
+			//LimitRotationSpeed
+			if (tag.Contains("[LimitRotationSpeed:") == true) {
+
+				this.LimitRotationSpeed = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//MaxRotationMagnitude
+			if (tag.Contains("[MaxRotationMagnitude:") == true) {
+
+				this.MaxRotationMagnitude = TagHelper.TagDoubleCheck(tag, this.MaxRotationMagnitude);
+
+			}
+
+			//MinGravity
+			if (tag.Contains("[MinGravity:") == true) {
+
+				this.MinGravity = TagHelper.TagDoubleCheck(tag, this.MinGravity);
+
+			}
+
+			//MaxGravity
+			if (tag.Contains("[MaxGravity:") == true) {
+
+				this.MaxGravity = TagHelper.TagDoubleCheck(tag, this.MaxGravity);
+
+			}
+
+			//AvoidPlayerCollisions
+			if (tag.Contains("[AvoidPlayerCollisions:") == true) {
+
+				this.AvoidPlayerCollisions = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//UseSurfaceHoverThrustMode
+			if (tag.Contains("[UseSurfaceHoverThrustMode:") == true) {
+
+				this.UseSurfaceHoverThrustMode = TagHelper.TagBoolCheck(tag);
+
+			}
+
+			//MaxVerticalSpeed
+			if (tag.Contains("[MaxVerticalSpeed:") == true) {
+
+				this.MaxVerticalSpeed = TagHelper.TagDoubleCheck(tag, this.MaxVerticalSpeed);
+
+			}
+
+			//HoverPathStepDistance
+			if (tag.Contains("[HoverPathStepDistance:") == true) {
+
+				this.HoverPathStepDistance = TagHelper.TagDoubleCheck(tag, this.HoverPathStepDistance);
 
 			}
 

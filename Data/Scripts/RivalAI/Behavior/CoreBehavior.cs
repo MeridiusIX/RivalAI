@@ -671,6 +671,13 @@ namespace RivalAI.Behavior {
 
 				}
 
+				if (Settings.CurrentTargetEntityId != 0) {
+
+					AutoPilot.Targeting.ForceTargetEntityId = Settings.CurrentTargetEntityId;
+					AutoPilot.Targeting.ForceRefresh = true;
+
+				}
+
 				Logger.MsgDebug(sb.ToString(), DebugTypeEnum.BehaviorSetup);
 
 			}
@@ -728,13 +735,6 @@ namespace RivalAI.Behavior {
 
 			Logger.MsgDebug("Behavior Mode Set To: " + Mode.ToString(), DebugTypeEnum.BehaviorSetup); 
 			Logger.MsgDebug("Core Settings Setup Complete", DebugTypeEnum.BehaviorSetup);
-
-			if (Settings.CurrentTargetEntityId != 0) {
-
-				AutoPilot.Targeting.ForceTargetEntityId = Settings.CurrentTargetEntityId;
-				AutoPilot.Targeting.ForceRefresh = true;
-
-			}
 
 
 		}

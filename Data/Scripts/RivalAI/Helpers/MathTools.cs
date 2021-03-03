@@ -214,25 +214,48 @@ namespace RivalAI.Helpers {
 
 		}
 
-		public static float RandomBetween(float a, float b) {
+		public static float RandomBetween(float a, float b, float divideBy = 1) {
 
 			if (a == b)
 				return a;
 
 			float min = a < b ? a : b;
 			float max = a < b ? b : a;
-			return _rnd.Next((int)min, (int)max);
+			return _rnd.Next((int)min, (int)max) / divideBy;
 
 		}
 
-		public static double RandomBetween(double a, double b) {
+		public static double RandomBetween(double a, double b, double divideBy = 1) {
 
 			if (a == b)
 				return a;
 
 			double min = a < b ? a : b;
 			double max = a < b ? b : a;
-			return _rnd.Next((int)min, (int)max);
+			return _rnd.Next((int)min, (int)max) / divideBy;
+
+		}
+
+		public static bool RandomBool() {
+
+			return _rnd.Next(0, 2) == 0;
+		
+		}
+
+		public static bool RandomChance(int chance) {
+		
+			return _rnd.Next(0, chance) == 0;
+
+		}
+
+		public static double GravityToDistance(double gravityMultiplier = 1, double maxGravity = 1, double falloff = 7, double minRadius = 59400, double maxRadius = 67200) {
+
+			if (gravityMultiplier >= maxGravity)
+				return maxRadius;
+
+			var multiplier = gravityMultiplier / maxGravity;
+			var distanceMultiplier = Math.Pow(multiplier, 1 / -falloff);
+			return maxRadius * distanceMultiplier;
 
 		}
 

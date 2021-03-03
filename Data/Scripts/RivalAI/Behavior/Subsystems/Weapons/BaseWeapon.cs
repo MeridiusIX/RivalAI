@@ -224,7 +224,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			var directionToTarget = Vector3D.Normalize(coords - _block.GetPosition());
 			var allowedAngle = VectorHelper.GetAngleBetweenDirections(directionToTarget, _block.WorldMatrix.Forward) <= _weaponSystem.WeaponMaxAngleFromTarget;
-			var dist = Vector3D.Distance(_block.GetPosition(), coords);
+			var dist = _weaponSystem.IndirectWaypointTargetDistance > -1 ? _weaponSystem.IndirectWaypointTargetDistance : Vector3D.Distance(_block.GetPosition(), coords);
 			var reqTrajectory = dist > trajectory ? trajectory : trajectory - (trajectory - dist);
 			var distFromMaxTrajectory = Vector3D.Distance(coords, _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
 

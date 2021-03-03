@@ -240,6 +240,28 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 					if (!IndirectWaypointType.HasFlag(WaypointModificationEnum.PlanetPathingAscend) && !IndirectWaypointType.HasFlag(WaypointModificationEnum.Collision)) {
 
+						if (Data.MaxVerticalSpeed > -1 && upVelocityAmt > Data.MaxVerticalSpeed) {
+
+							bool limitSpeed = true;
+
+							if (Data.UseSurfaceHoverThrustMode) {
+
+								if (!invertedDir || (invertedDir && MyAltitude > Data.IdealPlanetAltitude * 1.33))
+									limitSpeed = false;
+							
+							}
+
+							if (limitSpeed) {
+
+								if (Data.UseSurfaceHoverThrustMode)
+									_thrustToApply.SetY(false, false, 0, _orientation);
+								skipCheck = true;
+								_debugThrustUpMode = "Vertical Speed Higher Than Allowed";
+
+							}
+
+						}
+
 						if ((stoppingDist >= upDistance && upVelocityAmt >= Data.IdealMinSpeed)) {
 
 							_thrustToApply.SetY(false, false, 0, _orientation);
@@ -707,6 +729,14 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			foreach (var thrust in ThrustProfiles)
 				thrust.ApplyThrust(_thrustToApply);
+
+		}
+
+		public void SetRandomThrust() {
+
+			_thrustToApply.SetX(MathTools.RandomBool(), MathTools.RandomBool(), MathTools.RandomBetween(0,101,100), _orientation);
+			_thrustToApply.SetY(MathTools.RandomBool(), MathTools.RandomBool(), MathTools.RandomBetween(0, 101, 100), _orientation);
+			_thrustToApply.SetZ(MathTools.RandomBool(), MathTools.RandomBool(), MathTools.RandomBetween(0, 101, 100), _orientation);
 
 		}
 

@@ -97,7 +97,7 @@ namespace RivalAI.Behavior {
             if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
 
                 Mode = BehaviorMode.Retreat;
-                AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+                AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 
             }
 
@@ -124,7 +124,7 @@ namespace RivalAI.Behavior {
 
                 if (AutoPilot.CurrentMode != AutoPilot.UserCustomMode) {
 
-                    AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), AutoPilot.UserCustomModeIdle);
+                    AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.None, CheckEnum.No, CheckEnum.Yes);
 
                 }
 
@@ -273,7 +273,7 @@ namespace RivalAI.Behavior {
 
             AutoPilot.OffsetWaypointGenerator(true);
             LastOffsetCalculation = MyAPIGateway.Session.GameDateTime;
-            AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode | NewAutoPilotMode.OffsetWaypoint);
+            AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | NewAutoPilotMode.OffsetWaypoint, CheckEnum.Yes, CheckEnum.No);
 
         }
 

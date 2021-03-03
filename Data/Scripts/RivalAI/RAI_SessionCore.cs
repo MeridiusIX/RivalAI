@@ -7,6 +7,7 @@ using RivalAI.Behavior;
 using RivalAI.Helpers;
 using RivalAI.Sync;
 using RivalAI.Entities;
+using System.Text;
 
 namespace RivalAI {
 
@@ -14,11 +15,12 @@ namespace RivalAI {
 
 	public class RAI_SessionCore:MySessionComponentBase {
 
-		public static string ReleaseVersion = "0.45.0";
+		public static string ReleaseVersion = "0.52.0";
 
 		//Server
 		public static bool IsServer = false;
 		public static bool IsDedicated = false;
+		public static bool IsDev = false;
 
 		public static bool RivalAiEnabled = true;
 
@@ -46,6 +48,11 @@ namespace RivalAI {
 		public ulong WaterModID = 2200451495;
 		public WaterModAPI WaterMod = new WaterModAPI();
 
+		//TextHudApi
+		public HudAPIv2 TextHudApi;
+		public HudAPIv2.HUDMessage HudText;
+		public StringBuilder DebugStringBuilder;
+
 		public int Ticks = 0;
 
 		public static bool SetupComplete = false;
@@ -59,6 +66,9 @@ namespace RivalAI {
 				WaterMod.OnRegisteredEvent += WaterLogged;
 				WaterMod.WaterCreatedEvent += WaterHelper.WaterAdded;
 				WaterMod.WaterRemovedEvent += WaterHelper.WaterRemoved;
+
+				TextHudApi = new HudAPIv2();
+				DebugStringBuilder = new StringBuilder();
 
 			}
 
@@ -252,7 +262,10 @@ namespace RivalAI {
 
 			//LogicManager.Setup();
 
-			if(!IsServer)
+			if (MyAPIGateway.Session.LocalHumanPlayer != null)
+				IsDev = MyAPIGateway.Session.LocalHumanPlayer.SteamUserId == 76561197995523659;
+
+			if (!IsServer)
 				return;
 
 			Logger.LoadDebugFromSandbox();

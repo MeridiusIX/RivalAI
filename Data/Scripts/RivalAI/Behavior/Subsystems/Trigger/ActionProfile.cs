@@ -1,32 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
-using VRageMath;
-using RivalAI.Helpers;
+﻿using ProtoBuf;
 using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Helpers;
+using Sandbox.ModAPI;
+using System;
+using System.Collections.Generic;
+using VRage.Game;
+using VRage.ObjectBuilders;
+using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
@@ -555,6 +535,21 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(175)]
 		public bool SwitchToNextWaypoint;
 
+		[ProtoMember(176)]
+		public bool HeavyYaw;
+
+		[ProtoMember(177)]
+		public bool StopAllRotation;
+
+		[ProtoMember(178)]
+		public bool StopAllThrust;
+
+		[ProtoMember(179)]
+		public bool RandomGyroRotation;
+
+		[ProtoMember(180)]
+		public bool RandomThrustDirection;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -783,6 +778,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			CancelWaitingAtWaypoint = false;
 			SwitchToNextWaypoint = false;
+
+			HeavyYaw = false;
+
+			StopAllRotation = false;
+			StopAllThrust = false;
+			RandomGyroRotation = false;
+			RandomThrustDirection = false;
 
 			ProfileSubtypeId = "";
 
@@ -2164,6 +2166,41 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[SwitchToNextWaypoint:") == true) {
 
 						SwitchToNextWaypoint = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//HeavyYaw
+					if (tag.Contains("[HeavyYaw:") == true) {
+
+						HeavyYaw = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//StopAllRotation
+					if (tag.Contains("[StopAllRotation:") == true) {
+
+						StopAllRotation = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//StopAllThrust
+					if (tag.Contains("[StopAllThrust:") == true) {
+
+						StopAllThrust = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RandomGyroRotation
+					if (tag.Contains("[RandomGyroRotation:") == true) {
+
+						RandomGyroRotation = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//RandomThrustDirection
+					if (tag.Contains("[RandomThrustDirection:") == true) {
+
+						RandomThrustDirection = TagHelper.TagBoolCheck(tag);
 
 					}
 

@@ -1,31 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
-using VRageMath;
+﻿using ProtoBuf;
 using RivalAI.Helpers;
+using Sandbox.ModAPI;
+using System;
+using System.Collections.Generic;
+using VRageMath;
 
 namespace RivalAI.Behavior.Subsystems.Trigger {
 
@@ -230,23 +208,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 				if ((this.StartsReady && this.TriggerCount == 0) || duration.TotalMilliseconds >= CooldownTime) {
 
-					if (mainTriggerCheck != null) {
+					if (mainTriggerCheck != null && !InvokeTriggerTypeCondition(mainTriggerCheck)) {
 
-						var result = mainTriggerCheck?.Invoke(this);
-
-						if (result == null || !result.HasValue) {
-
-
-
-						} else {
-
-							if (!result.Value) {
-							
-								
-							
-							}
-						
-						}
+						return;
 
 					}
 
@@ -275,9 +239,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			} else {
 
-				if (mainTriggerCheck != null) {
+				if (mainTriggerCheck != null && !InvokeTriggerTypeCondition(mainTriggerCheck)) {
 
-
+					return;
 
 				}
 
@@ -298,6 +262,31 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				}
 
 			}
+
+		}
+
+		public bool InvokeTriggerTypeCondition(Func<TriggerProfile, bool> mainTriggerCheck) {
+
+			var result = mainTriggerCheck?.Invoke(this);
+
+			if (result == null || !result.HasValue) {
+
+				Logger.MsgDebug(ProfileSubtypeId + ": Trigger Encountered An Error And Is Now Disabled: " + Type, DebugTypeEnum.Trigger);
+				UseTrigger = false;
+				return false;
+
+			} else {
+
+				if (!result.Value) {
+
+					Logger.MsgDebug(ProfileSubtypeId + ": Trigger Type Condition Not Met: " + Type, DebugTypeEnum.Trigger);
+					return false;
+
+				}
+
+			}
+
+			return true;
 
 		}
 

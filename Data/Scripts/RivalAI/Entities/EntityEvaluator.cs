@@ -584,6 +584,8 @@ namespace RivalAI.Entities {
 				if (!scanInventory)
 					continue;
 
+				//TODO: Inventory Check
+
 			}
 
 			return result;

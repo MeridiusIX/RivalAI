@@ -1,40 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
+using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Helpers;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
+using System;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
 using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
-using RivalAI.Entities;
-using RivalAI.Behavior.Subsystems.Profiles;
-using RivalAI.Behavior.Subsystems.AutoPilot;
 
-namespace RivalAI.Behavior{
-	
+namespace RivalAI.Behavior {
+
 	public class Hunter : CoreBehavior, IBehavior{
 
 		//Configurable
@@ -98,7 +71,7 @@ namespace RivalAI.Behavior{
 			if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 
 			}
 			
@@ -160,7 +133,7 @@ namespace RivalAI.Behavior{
 								AutoPilot.Targeting.ForceTargetEntity = parentEnt;
 								AutoPilot.Targeting.ForceRefresh = true;
 								AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
-								AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+								AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 								ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 								Logger.MsgDebug("Hunter Approaching Potential Target From Damage", DebugTypeEnum.BehaviorSpecific);
 								return;
@@ -189,7 +162,7 @@ namespace RivalAI.Behavior{
 						_lostTargetTimer = MyAPIGateway.Session.GameDateTime;
 						BehaviorTriggerA = true;
 						AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Secondary);
-						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+						AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 						Logger.MsgDebug("Hunter Approaching Potential Target", DebugTypeEnum.BehaviorSpecific);
 
 					}
@@ -294,7 +267,7 @@ namespace RivalAI.Behavior{
 							Logger.MsgDebug("Hunter Within Engage Range", DebugTypeEnum.BehaviorSpecific);
 							_inRange = true;
 							BehaviorTriggerE = true;
-							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.Strafe | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 						}
 
@@ -305,7 +278,7 @@ namespace RivalAI.Behavior{
 							Logger.MsgDebug("Hunter Outside Engage Range", DebugTypeEnum.BehaviorSpecific);
 							_inRange = false;
 							BehaviorTriggerF = true;
-							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+							AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 						}
 
@@ -316,7 +289,7 @@ namespace RivalAI.Behavior{
 					Logger.MsgDebug("Hunter Lost Target While Engaging", DebugTypeEnum.BehaviorSpecific);
 					BehaviorTriggerB = true;
 					_inRange = false;
-					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget | AutoPilot.UserCustomMode);
+					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 
 				}
@@ -345,7 +318,7 @@ namespace RivalAI.Behavior{
 
 			ChangeCoreBehaviorMode(BehaviorMode.ApproachWaypoint);
 			AutoPilot.SetAutoPilotDataMode(AutoPilotDataMode.Primary);
-			AutoPilot.ActivateAutoPilot(Settings.DespawnCoords, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | AutoPilot.UserCustomMode);
+			AutoPilot.ActivateAutoPilot(Settings.DespawnCoords, NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
 			_checkActiveTargetTimer = MyAPIGateway.Session.GameDateTime;
 
 		}

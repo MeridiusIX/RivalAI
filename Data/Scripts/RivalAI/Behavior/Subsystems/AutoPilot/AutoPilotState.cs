@@ -68,7 +68,16 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(14)]
 		public DateTime WaypointWaitTime;
 
-		//
+		//User Custom Mode
+
+		[ProtoMember(15)]
+		public bool UseFlyLevelWithGravity;
+
+		[ProtoMember(16)]
+		public bool UseFlyLevelWithGravityIdle;
+
+		[ProtoMember(17)]
+		public NewAutoPilotMode NormalAutopilotFlags;
 
 		public AutoPilotState() {
 
@@ -92,6 +101,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			MaxSpeedOverride = -1;
 
 			WaypointWaitTime = DateTime.MinValue;
+
+			UseFlyLevelWithGravity = false;
+			UseFlyLevelWithGravityIdle = false;
+			NormalAutopilotFlags = NewAutoPilotMode.None;
 
 		}
 

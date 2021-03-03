@@ -144,10 +144,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			Target = TargetTypeEnum.None;
 			BlockTargets = new List<BlockTypeEnum>();
 
-			TimeUntilTargetAcquisition = 1;
+			TimeUntilTargetAcquisition = 5;
 			UseTargetRefresh = false;
 			TimeUntilNextRefresh = 60;
-			TimeUntilNextEvaluation = 1;
+			TimeUntilNextEvaluation = 2;
 
 			MaxDistance = 12000;
 

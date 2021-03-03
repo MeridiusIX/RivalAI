@@ -181,7 +181,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
-			if (PlayerEntity != null) {
+			if (PlayerEntity != null && _collisionSystem.AutoPilot.Data.AvoidPlayerCollisions) {
 
 				if (Type == CollisionType.None || PlayerDistance < closestDist)
 					Type = CollisionType.Player;

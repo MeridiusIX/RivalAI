@@ -58,6 +58,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 		public Dictionary<Direction, double> MaxStaticRangesPerDirection;
 		
 		public bool WaypointIsTarget;
+		public double IndirectWaypointTargetDistance;
 
 		public bool IncomingHomingProjectiles;
 		public DateTime LastHomingTargetCheck;
@@ -109,6 +110,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 			MaxStaticRangesPerDirection.Add(Direction.Right, 0);
 
 			WaypointIsTarget = false;
+			IndirectWaypointTargetDistance = -1;
 
 			IncomingHomingProjectiles = false;
 			LastHomingTargetCheck = DateTime.MinValue;
@@ -390,6 +392,8 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 		public void CheckIfWaypointIsTarget() {
 
+			IndirectWaypointTargetDistance = -1;
+
 			foreach (var waypointType in _restrictedFlags) {
 
 				if (_behavior.AutoPilot.IndirectWaypointType.HasFlag(waypointType)) {
@@ -403,6 +407,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 						if (angleToWaypoint <= WeaponMaxAngleFromTarget) {
 
 							//Logger.MsgDebug("Invalid Waypoint Lines Up With Target", DebugTypeEnum.Weapon);
+							IndirectWaypointTargetDistance = Vector3D.Distance(_behavior.AutoPilot.RefBlockMatrixRotation.Translation, _behavior.AutoPilot.Targeting.TargetLastKnownCoords);
 							break;
 
 						}
@@ -427,6 +432,7 @@ namespace RivalAI.Behavior.Subsystems.Weapons {
 
 			}
 
+			
 			WaypointIsTarget = false;
 
 		}

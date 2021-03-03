@@ -72,6 +72,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			}
 
+			//HeavyYaw
+			if (actions.HeavyYaw == true) {
+
+				_behavior.AutoPilot.ActivateHeavyYaw();
+
+			}
+
 			//Ramming
 			if (actions.Ramming == true) {
 
@@ -150,7 +157,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 						if (!actions.StaggerWarheadDetonation) {
 
 							tBlock.IsArmed = true;
-							tBlock.DetonationTime = 0;
+							tBlock.DetonationTime = 0 + actions.SelfDestructTimerPadding;
 							tBlock.Detonate();
 							totalWarheads++;
 
@@ -995,6 +1002,47 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			if (actions.AddDatapadsToSeats) {
 
 				_behavior.Grid.InsertDatapadsIntoSeats(actions.DatapadNamesToAdd, actions.DatapadCountToAdd);
+
+			}
+
+			//StopAllRotation
+			if (actions.StopAllRotation) {
+
+				_behavior.AutoPilot.StopAllRotation();
+				_behavior.AutoPilot.ApplyGyroRotation();
+
+			}
+
+			//StopAllThrust
+			if (actions.StopAllThrust) {
+
+				_behavior.AutoPilot.StopAllThrust();
+				_behavior.AutoPilot.ApplyThrust();
+
+			}
+
+			//RandomGyroRotation
+			if (actions.RandomGyroRotation) {
+
+				if (MathTools.RandomBool())
+					_behavior.AutoPilot.RotationToApply.X = MathTools.RandomBetween(-314, 315, 100);
+
+				if (MathTools.RandomBool())
+					_behavior.AutoPilot.RotationToApply.Y = MathTools.RandomBetween(-314, 315, 100);
+
+				if (MathTools.RandomBool())
+					_behavior.AutoPilot.RotationToApply.Z = MathTools.RandomBetween(-314, 315, 100);
+
+				_behavior.AutoPilot.PrepareGyroForRotation();
+				_behavior.AutoPilot.ApplyGyroRotation();
+
+			}
+
+			//RandomThrustDirection
+			if (actions.RandomThrustDirection) {
+
+				_behavior.AutoPilot.SetRandomThrust();
+				_behavior.AutoPilot.ApplyThrust();
 
 			}
 

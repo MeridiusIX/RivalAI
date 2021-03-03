@@ -149,7 +149,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 						if (_behavior.Settings.DespawnCoords != Vector3D.Zero && Vector3D.Distance(RemoteControl.GetPosition(), _behavior.Settings.DespawnCoords) > trigger.TargetDistance) {
 
-							trigger.ActivateTrigger();
+							trigger.ActivateTrigger(CheckDespawnFar);
 
 						}
 
