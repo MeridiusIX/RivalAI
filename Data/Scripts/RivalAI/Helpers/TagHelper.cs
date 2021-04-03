@@ -475,6 +475,21 @@ namespace RivalAI.Helpers {
 			
 		}
 
+		public static BoolEnum TagBoolEnumCheck(string tag) {
+
+			BoolEnum result = BoolEnum.None;
+			var tagSplit = ProcessTag(tag);
+
+			if (tagSplit.Length == 2) {
+
+				BoolEnum.TryParse(tagSplit[1], true, out result);
+
+			}
+
+			return result;
+
+		}
+
 		public static BroadcastType TagBroadcastTypeEnumCheck(string tag) {
 
 			BroadcastType result = BroadcastType.None;

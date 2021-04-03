@@ -852,6 +852,7 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			if (actions.ChangeRotationDirection) {
 
 				_behavior.Settings.SetRotation(actions.RotationDirection);
+				_behavior.AutoPilot.StopAllThrust();
 
 			}
 

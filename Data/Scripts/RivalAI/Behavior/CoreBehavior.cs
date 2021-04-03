@@ -443,9 +443,9 @@ namespace RivalAI.Behavior {
 				this.ConfigCheck = true;
 				var valA = RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTk1NzU4Mjc1OQ==")));
 				var valB = RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MjA0MzU0MzkyNQ==")));
+				var valC = RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("NzUwODU5")));
 
-
-				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) && (!valA && !valB)) {
+				if (RAI_SessionCore.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) && (!valA && !valB && !valC)) {
 
 					this.BehaviorTerminated = true;
 					return;

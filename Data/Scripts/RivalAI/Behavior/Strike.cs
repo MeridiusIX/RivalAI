@@ -221,7 +221,7 @@ namespace RivalAI.Behavior {
             if (Mode == BehaviorMode.EngageTarget && !skipEngageCheck) {
 
                 Logger.MsgDebug("Strike: " + StrikeBreakawayDistance.ToString() + " - " + AutoPilot.DistanceToInitialWaypoint, DebugTypeEnum.General);
-                if (AutoPilot.DistanceToInitialWaypoint <= StrikeBreakawayDistance || (AutoPilot.Data.UseVelocityCollisionEvasion && AutoPilot.Collision.VelocityResult.CollisionImminent())) {
+                if (AutoPilot.DistanceToInitialWaypoint <= StrikeBreakawayDistance || (AutoPilot.Data.Unused && AutoPilot.Collision.VelocityResult.CollisionImminent())) {
 
                     EngageOverrideTimer = MyAPIGateway.Session.GameDateTime;
                     ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
@@ -242,11 +242,11 @@ namespace RivalAI.Behavior {
 
                 if (this.Mode == BehaviorMode.EngageTarget) {
 
-                    this.AutoPilot.Data.UseVelocityCollisionEvasion = UseEngageCollisionEvasion();
+                    this.AutoPilot.Data.Unused = UseEngageCollisionEvasion();
 
                 } else {
 
-                    this.AutoPilot.Data.UseVelocityCollisionEvasion = true;
+                    this.AutoPilot.Data.Unused = true;
 
                 }
 
@@ -293,7 +293,7 @@ namespace RivalAI.Behavior {
             InitTags();
             SetDefaultTargeting();
 
-            _defaultCollisionSettings = AutoPilot.Data.UseVelocityCollisionEvasion;
+            _defaultCollisionSettings = AutoPilot.Data.Unused;
 
             SetupCompleted = true;
 

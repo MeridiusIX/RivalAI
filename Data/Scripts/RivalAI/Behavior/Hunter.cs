@@ -288,6 +288,7 @@ namespace RivalAI.Behavior {
 
 					Logger.MsgDebug("Hunter Lost Target While Engaging", DebugTypeEnum.BehaviorSpecific);
 					BehaviorTriggerB = true;
+					BehaviorTriggerF = true;
 					_inRange = false;
 					AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 					ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);

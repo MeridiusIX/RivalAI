@@ -377,8 +377,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 						var profileId = TagHelper.TagStringCheck(tag);
 						State.PrimaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
 
-						if (!string.IsNullOrWhiteSpace(State.PrimaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State.PrimaryAutopilotId))
+						if (!string.IsNullOrWhiteSpace(State.PrimaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State.PrimaryAutopilotId)) {
+
 							State.PrimaryAutopilotId = State.PrimaryAutoPilot.ProfileSubtypeId;
+							Logger.MsgDebug("Primary AutoPilot: " + State.PrimaryAutopilotId, DebugTypeEnum.BehaviorSetup);
+
+						}	
 
 					}
 
@@ -388,8 +392,12 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 						var profileId = TagHelper.TagStringCheck(tag);
 						State.SecondaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
 
-						if (!string.IsNullOrWhiteSpace(State.SecondaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State.SecondaryAutopilotId))
+						if (!string.IsNullOrWhiteSpace(State.SecondaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State.SecondaryAutopilotId)) {
+
 							State.SecondaryAutopilotId = State.SecondaryAutoPilot.ProfileSubtypeId;
+							Logger.MsgDebug("Secondary AutoPilot: " + State.SecondaryAutopilotId, DebugTypeEnum.BehaviorSetup);
+
+						}
 
 					}
 
@@ -399,8 +407,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 						var profileId = TagHelper.TagStringCheck(tag);
 						State.TertiaryAutoPilot = TagHelper.GetAutopilotProfile(profileId);
 
-						if (!string.IsNullOrWhiteSpace(State.TertiaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State?.TertiaryAutopilotId))
+						if (!string.IsNullOrWhiteSpace(State.TertiaryAutoPilot?.ProfileSubtypeId) && string.IsNullOrWhiteSpace(State?.TertiaryAutopilotId)) {
+
 							State.TertiaryAutopilotId = State.TertiaryAutoPilot.ProfileSubtypeId;
+							Logger.MsgDebug("Tertiary AutoPilot: " + State.TertiaryAutopilotId, DebugTypeEnum.BehaviorSetup);
+
+						}
+
 
 					}
 
@@ -617,56 +630,56 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 				try {
 
 					var sbStats = new StringBuilder();
-					sbStats.Append("Ship: ").Append(_remoteControl.SlimBlock.CubeGrid.CustomName).AppendLine().AppendLine();
+					sbStats.Append("Ship:          ").Append(_remoteControl.SlimBlock.CubeGrid.CustomName).AppendLine().AppendLine();
 					sbStats.Append("Behavior Type: ").Append(_behavior.BehaviorType).AppendLine();
 					sbStats.Append("Behavior Mode: ").Append(_behavior.Mode).AppendLine();
-					sbStats.Append("Speed: ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
-					sbStats.Append("Profile: ").Append(Data.ProfileSubtypeId).AppendLine();
-					sbStats.Append("AP Modes: ").AppendLine();
+					sbStats.Append("Speed:         ").Append(Math.Round(MyVelocity.Length(), 4).ToString()).AppendLine();
+					sbStats.Append("Profile:       ").Append(Data.ProfileSubtypeId).AppendLine();
+					sbStats.Append("AP Modes:      ").AppendLine();
 					sbStats.Append(CurrentMode.ToString().Replace(",", "\r\n")).AppendLine();
 					//sbStats.Append("Allowed Waypoint Types: ").AppendLine();
 					//sbStats.Append(DirectWaypointType.ToString()).AppendLine();
 					//sbStats.Append("Restricted Waypoint Types: ").AppendLine();
 					//sbStats.Append(IndirectWaypointType.ToString()).AppendLine();
 
+					sbStats.AppendLine().Append("Dampeners Enabled: ").Append(_remoteControl.DampenersOverride.ToString()).AppendLine();
+					sbStats.Append("Forward Thrust Mode: ").AppendLine();
+					sbStats.Append(_debugThrustForwardMode).AppendLine().AppendLine();
+					sbStats.Append("Upward Thrust Mode:  ").AppendLine();
+					sbStats.Append(_debugThrustUpMode).AppendLine().AppendLine();
+					sbStats.Append("Side Thrust Mode:  ").AppendLine();
+					sbStats.Append(_debugThrustSideMode).AppendLine().AppendLine();
+					sbStats.Append("Altitude:  ").AppendLine();
+					sbStats.Append(MyAltitude.ToString()).AppendLine();
 
-					var sbThrust = new StringBuilder();
-					sbThrust.Append("Dampeners Enabled: ").Append(_remoteControl.DampenersOverride.ToString()).AppendLine();
-					sbThrust.Append("Forward Thrust Mode: ").AppendLine();
-					sbThrust.Append(_debugThrustForwardMode).AppendLine().AppendLine();
-					sbThrust.Append("Upward Thrust Mode:  ").AppendLine();
-					sbThrust.Append(_debugThrustUpMode).AppendLine().AppendLine();
-					sbThrust.Append("Side Thrust Mode:  ").AppendLine();
-					sbThrust.Append(_debugThrustSideMode).AppendLine().AppendLine();
-					sbThrust.Append("Altitude:  ").AppendLine();
-					sbThrust.Append(MyAltitude.ToString());
 
-					var sbRotate = new StringBuilder();
-					sbRotate.Append("Pitch: ").AppendLine();
-					sbRotate.Append(" - Angle:         ").Append(Math.Round(PitchAngleDifference, 2)).AppendLine();
-					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(PitchTargetAngleResult, 2)).AppendLine();
-					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.X, 4)).AppendLine();
-					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingPitchMagnitude, 4)).AppendLine();
-					sbRotate.Append("Yaw: ").AppendLine();
-					sbRotate.Append(" - Angle:         ").Append(Math.Round(YawAngleDifference, 2)).AppendLine();
-					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(YawTargetAngleResult, 2)).AppendLine();
-					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Y, 4)).AppendLine();
-					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingYawMagnitude, 4)).AppendLine();
-					sbRotate.Append("Roll: ").AppendLine();
-					sbRotate.Append(" - Angle:         ").Append(Math.Round(RollAngleDifference, 2)).AppendLine();
-					sbRotate.Append(" - Target Diff:   ").Append(Math.Round(RollTargetAngleResult, 2)).AppendLine();
-					sbRotate.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Z, 4)).AppendLine();
-					sbRotate.Append(" - Magnitude:     ").Append(Math.Round(ExistingRollMagnitude, 4)).AppendLine();
+					sbStats.AppendLine();
+					sbStats.Append("ForwardDir:       ").Append(_behavior.Settings.RotationDirection.ToString()).AppendLine();
+					sbStats.Append("Pitch: ").AppendLine();
+					sbStats.Append(" - Angle:         ").Append(Math.Round(PitchAngleDifference, 2)).AppendLine();
+					sbStats.Append(" - Target Diff:   ").Append(Math.Round(PitchTargetAngleResult, 2)).AppendLine();
+					sbStats.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.X, 4)).AppendLine();
+					sbStats.Append(" - Magnitude:     ").Append(Math.Round(ExistingPitchMagnitude, 4)).AppendLine();
+					sbStats.Append("Yaw: ").AppendLine();
+					sbStats.Append(" - Angle:         ").Append(Math.Round(YawAngleDifference, 2)).AppendLine();
+					sbStats.Append(" - Target Diff:   ").Append(Math.Round(YawTargetAngleResult, 2)).AppendLine();
+					sbStats.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Y, 4)).AppendLine();
+					sbStats.Append(" - Magnitude:     ").Append(Math.Round(ExistingYawMagnitude, 4)).AppendLine();
+					sbStats.Append("Roll: ").AppendLine();
+					sbStats.Append(" - Angle:         ").Append(Math.Round(RollAngleDifference, 2)).AppendLine();
+					sbStats.Append(" - Target Diff:   ").Append(Math.Round(RollTargetAngleResult, 2)).AppendLine();
+					sbStats.Append(" - Gyro Rotation: ").Append(Math.Round(ActiveGyro.RawValues.Z, 4)).AppendLine();
+					sbStats.Append(" - Magnitude:     ").Append(Math.Round(ExistingRollMagnitude, 4)).AppendLine();
 
 					if (RAI_SessionCore.Instance.TextHudApi.Heartbeat) {
 
 						if (RAI_SessionCore.Instance.HudText == null) {
 
-							RAI_SessionCore.Instance.HudText = new HudAPIv2.HUDMessage(sbThrust, Vector2D.Zero);
+							RAI_SessionCore.Instance.HudText = new HudAPIv2.HUDMessage(sbStats, new Vector2D(-0.75, 0.75));
 
 						} else {
 
-							RAI_SessionCore.Instance.HudText.Message = sbThrust;
+							RAI_SessionCore.Instance.HudText.Message = sbStats;
 
 						}
 					
@@ -690,8 +703,6 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 						screenC.ContentType = ContentType.TEXT_AND_IMAGE;
 
 						screenA.WriteText(sbStats.ToString());
-						screenB.WriteText(sbThrust.ToString());
-						screenC.WriteText(sbRotate.ToString());
 
 
 					}
@@ -874,7 +885,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			//Logger.MsgDebug("Autopilot: Collision", DebugTypeEnum.TempDebug);
 			//Collision
-			if (this.Data.UseVelocityCollisionEvasion && Collision.VelocityResult.CollisionImminent()) {
+			if (this.Data.UseVelocityCollisionEvasion == BoolEnum.True && Collision.VelocityResult.CollisionImminent()) {
 
 				if ((_gravityStrength <= 0 && Collision.VelocityResult.Type == CollisionType.Voxel) || Collision.VelocityResult.Type != CollisionType.Voxel) {
 

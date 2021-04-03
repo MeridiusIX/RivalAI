@@ -127,6 +127,14 @@ namespace RivalAI.Helpers {
 
     }
 
+    public enum BoolEnum {
+    
+        None,
+        False,
+        True,
+    
+    }
+
     public enum CheckEnum {
 
         Ignore,

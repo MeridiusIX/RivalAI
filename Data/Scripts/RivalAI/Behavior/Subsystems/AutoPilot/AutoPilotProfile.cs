@@ -73,7 +73,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 		//Collision Config
 		[ProtoMember(20)]
-		public bool UseVelocityCollisionEvasion;
+		public bool Unused;
 
 		[ProtoMember(21)]
 		public double CollisionEvasionWaypointDistance; //Make Space and Planet Variant - OR... Make This Based on Detection Type!
@@ -257,6 +257,9 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(79)]
 		public double HoverPathStepDistance;
 
+		[ProtoMember(80)]
+		public BoolEnum UseVelocityCollisionEvasion;
+
 		public AutoPilotProfile() {
 
 			ProfileSubtypeId = "";
@@ -289,7 +292,7 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			PadDistanceFromTarget = 0;
 
-			UseVelocityCollisionEvasion = true;
+			Unused = true;
 			CollisionEvasionWaypointDistance = 300;
 			CollisionFallEvasionWaypointDistance = 75;
 			CollisionEvasionResumeDistance = 25;
@@ -362,6 +365,8 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			HoverPathStepDistance = 50;
 
 			MaxVerticalSpeed = -1;
+
+			UseVelocityCollisionEvasion = BoolEnum.True;
 
 		}
 
@@ -544,10 +549,10 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 
 			}
 
-			//UseVelocityCollisionEvasion
-			if (tag.Contains("[UseVelocityCollisionEvasion:") == true) {
+			//Unused
+			if (tag.Contains("[Unused:") == true) {
 
-				this.UseVelocityCollisionEvasion = TagHelper.TagBoolCheck(tag);
+				this.Unused = TagHelper.TagBoolCheck(tag);
 
 			}
 
@@ -941,6 +946,13 @@ namespace RivalAI.Behavior.Subsystems.AutoPilot {
 			if (tag.Contains("[HoverPathStepDistance:") == true) {
 
 				this.HoverPathStepDistance = TagHelper.TagDoubleCheck(tag, this.HoverPathStepDistance);
+
+			}
+
+			//UseVelocityCollisionEvasion
+			if (tag.Contains("[UseVelocityCollisionEvasion:") == true) {
+
+				this.UseVelocityCollisionEvasion = TagHelper.TagBoolEnumCheck(tag);
 
 			}
 
