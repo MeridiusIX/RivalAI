@@ -94,7 +94,7 @@ namespace RivalAI.Behavior {
 
             bool skipEngageCheck = false;
 
-            if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
+            if (Mode != BehaviorMode.Retreat && Settings.DoRetreat == true) {
 
                 Mode = BehaviorMode.Retreat;
                 AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);

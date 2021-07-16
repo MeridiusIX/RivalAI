@@ -32,8 +32,6 @@ namespace RivalAI.Behavior.Subsystems {
 		public bool SuspendNoTargetTimer = false;
 		public int NoTargetTimer;
 
-		public bool DoDespawn;
-		public bool DoRetreat;
 		public bool NoTargetExpire;
 		
 		public event Action RetreatTriggered;
@@ -62,8 +60,6 @@ namespace RivalAI.Behavior.Subsystems {
 
 			NoTargetTimer = 0;
 
-			DoDespawn = false;
-			DoRetreat = false;
 			NoTargetExpire = false;
 
 			Setup(remoteControl);
@@ -171,14 +167,14 @@ namespace RivalAI.Behavior.Subsystems {
 					if(Vector3D.Distance(this.RemoteControl.GetPosition(), this.NearestPlayer.GetPosition()) > this.RetreatDespawnDistance){
 
 						Logger.MsgDebug("Retreat Despawn: Player Far Enough", DebugTypeEnum.Despawn);
-						DoDespawn = true;
+						_behavior.Settings.DoDespawn = true;
 						
 					}
 
 				} else {
 
 					Logger.MsgDebug("Retreat Despawn: No Player", DebugTypeEnum.Despawn);
-					DoDespawn = true;
+					_behavior.Settings.DoDespawn = true;
 
 				}
 
@@ -199,7 +195,7 @@ namespace RivalAI.Behavior.Subsystems {
 						if(PlayerDistanceTimer >= PlayerDistanceTimerTrigger) {
 
 							Logger.MsgDebug("No Player Within Distance", DebugTypeEnum.Despawn);
-							DoDespawn = true;
+							_behavior.Settings.DoDespawn = true;
 
 						}
 						
@@ -233,19 +229,19 @@ namespace RivalAI.Behavior.Subsystems {
 
 			}
 			
-			if(this.UseRetreatTimer == true && this.DoRetreat == false){
+			if(this.UseRetreatTimer == true && _behavior.Settings.DoRetreat == false){
 				
 				RetreatTimer++;
 
 				if(RetreatTimer >= RetreatTimerTrigger) {
 
-					DoRetreat = true;
+					_behavior.Settings.DoRetreat = true;
 
 				}
 				
 			}
 
-			if (DoDespawn) {
+			if (_behavior.Settings.DoDespawn) {
 				_behavior.Trigger.ProcessDespawnTriggers();
 				DespawnGrid();
 			
@@ -257,7 +253,7 @@ namespace RivalAI.Behavior.Subsystems {
 
 			_behavior.Trigger.ProcessRetreatTriggers();
 			Logger.MsgDebug("Retreat Signal Received For Grid: " + this.RemoteControl.SlimBlock.CubeGrid.CustomName, DebugTypeEnum.Despawn);
-			DoRetreat = true;
+			_behavior.Settings.DoRetreat = true;
 			
 		}
 

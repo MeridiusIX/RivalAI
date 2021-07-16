@@ -550,6 +550,9 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 		[ProtoMember(180)]
 		public bool RandomThrustDirection;
 
+		[ProtoMember(181)]
+		public string ParentGridNameRequirement;
+
 		public ActionProfile() {
 
 			UseChatBroadcast = false;
@@ -785,6 +788,8 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 			StopAllThrust = false;
 			RandomGyroRotation = false;
 			RandomThrustDirection = false;
+
+			ParentGridNameRequirement = "";
 
 			ProfileSubtypeId = "";
 
@@ -2201,6 +2206,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[RandomThrustDirection:") == true) {
 
 						RandomThrustDirection = TagHelper.TagBoolCheck(tag);
+
+					}
+
+					//ParentGridNameRequirement
+					if (tag.Contains("ParentGridNameRequirement:") == true) {
+
+						this.ParentGridNameRequirement = TagHelper.TagStringCheck(tag);
 
 					}
 

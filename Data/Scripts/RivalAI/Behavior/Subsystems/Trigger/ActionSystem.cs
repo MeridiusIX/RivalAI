@@ -37,6 +37,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 
 			Logger.MsgDebug(trigger.ProfileSubtypeId + " Attempting To Execute Action Profile " + actions.ProfileSubtypeId, DebugTypeEnum.Action);
 
+			if (!string.IsNullOrWhiteSpace(actions.ParentGridNameRequirement) && !string.IsNullOrWhiteSpace(_behavior?.RemoteControl?.SlimBlock?.CubeGrid?.CustomName)) {
+
+				if (_behavior.RemoteControl.SlimBlock.CubeGrid.CustomName != actions.ParentGridNameRequirement)
+					return;
+
+			}
+
 			if (actions.Chance < 100) {
 
 				var roll = Utilities.Rnd.Next(0, 101);
@@ -120,6 +127,13 @@ namespace RivalAI.Behavior.Subsystems.Trigger {
 				foreach (var spawner in actions.Spawner) {
 
 					if (spawner.UseSpawn) {
+
+						if (!string.IsNullOrWhiteSpace(spawner.ParentGridNameRequirement) && !string.IsNullOrWhiteSpace(_behavior?.RemoteControl?.SlimBlock?.CubeGrid?.CustomName)) {
+
+							if (_behavior.RemoteControl.SlimBlock.CubeGrid.CustomName != spawner.ParentGridNameRequirement)
+								continue;
+						
+						}
 
 						Logger.MsgDebug(actions.ProfileSubtypeId + ": Attempting Spawn", DebugTypeEnum.Spawn);
 						if (spawner.IsReadyToSpawn()) {

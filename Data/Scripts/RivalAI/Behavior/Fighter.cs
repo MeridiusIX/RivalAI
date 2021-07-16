@@ -1,40 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Sandbox.Common;
-using Sandbox.Common.ObjectBuilders;
-using Sandbox.Common.ObjectBuilders.Definitions;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.GameSystems;
-using Sandbox.ModAPI;
-using Sandbox.ModAPI.Interfaces;
-using Sandbox.ModAPI.Weapons;
-using SpaceEngineers.Game.ModAPI;
-using ProtoBuf;
-using VRage.Game;
-using VRage.Game.Components;
-using VRage.Game.Entity;
-using VRage.Game.ModAPI;
-using VRage.ModAPI;
-using VRage.ObjectBuilders;
-using VRage.Game.ObjectBuilders.Definitions;
-using VRage.Utils;
-using VRageMath;
-using RivalAI;
-using RivalAI.Behavior;
-using RivalAI.Behavior.Subsystems;
-using RivalAI.Helpers;
-using RivalAI.Entities;
-using RivalAI.Behavior.Subsystems.Profiles;
 using RivalAI.Behavior.Subsystems.AutoPilot;
+using RivalAI.Helpers;
+using Sandbox.ModAPI;
 
-namespace RivalAI.Behavior{
-	
+namespace RivalAI.Behavior {
+
 	public class Fighter : CoreBehavior, IBehavior{
 
 		//Configurable
@@ -136,7 +105,7 @@ namespace RivalAI.Behavior{
 
 			//Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
 			
-			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
+			if(Mode != BehaviorMode.Retreat && Settings.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);

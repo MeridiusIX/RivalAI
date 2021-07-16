@@ -115,6 +115,12 @@ namespace RivalAI.Behavior.Subsystems {
 		[ProtoMember(26)]
 		public AutoPilotState State;
 
+		[ProtoMember(27)]
+		public bool DoRetreat;
+
+		[ProtoMember(28)]
+		public bool DoDespawn;
+
 		public StoredSettings(){
 			
 			Mode = BehaviorMode.Init;
@@ -152,6 +158,9 @@ namespace RivalAI.Behavior.Subsystems {
 
 			State = new AutoPilotState();
 
+			DoRetreat = false;
+			DoDespawn = false;
+
 		}
 
 		public StoredSettings(StoredSettings oldSettings, bool preserveSettings, bool preserveTriggers, bool preserveTargetProfile) : base() {
@@ -173,6 +182,8 @@ namespace RivalAI.Behavior.Subsystems {
 			this.LastDamagerEntity = oldSettings.LastDamagerEntity;
 			this.AutoPilotFlags = oldSettings.AutoPilotFlags;
 			this.APDataMode = oldSettings.APDataMode;
+			this.DoDespawn = oldSettings.DoDespawn;
+			this.DoRetreat = oldSettings.DoRetreat;
 
 			//Triggers
 			if (preserveTriggers) {

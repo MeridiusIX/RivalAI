@@ -22,7 +22,7 @@ namespace RivalAI.Behavior {
 
 					if (_waypointIsDespawn) {
 
-						Logger.MsgDebug("CargoShip Switching To A Non-Despawn Waypoint", DebugTypeEnum.General);
+						Logger.MsgDebug("CargoShip Switching To A Non-Despawn Waypoint", DebugTypeEnum.BehaviorSpecific);
 						_waypointIsDespawn = false;
 						BehaviorTriggerC = true;
 
@@ -34,7 +34,7 @@ namespace RivalAI.Behavior {
 
 				if (!_waypointIsDespawn) {
 
-					Logger.MsgDebug("CargoShip Switching To A Despawn Waypoint", DebugTypeEnum.General);
+					Logger.MsgDebug("CargoShip Switching To A Despawn Waypoint", DebugTypeEnum.BehaviorSpecific);
 					_waypointIsDespawn = true;
 					BehaviorTriggerD = true;
 
@@ -66,7 +66,7 @@ namespace RivalAI.Behavior {
 
 			Logger.MsgDebug(Mode.ToString(), DebugTypeEnum.General);
 			
-			if(Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true){
+			if(Mode != BehaviorMode.Retreat && Settings.DoRetreat == true){
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
@@ -138,7 +138,7 @@ namespace RivalAI.Behavior {
 
 				}
 
-				if (Vector3D.Distance(RemoteControl.GetPosition(), AutoPilot.State.InitialWaypoint) < MathTools.Hypotenuse(AutoPilot.Data.WaypointTolerance, AutoPilot.Data.WaypointTolerance)) {
+				if (GetDistanceToWaypoint() < MathTools.Hypotenuse(AutoPilot.Data.WaypointTolerance, AutoPilot.Data.WaypointTolerance)) {
 
 					_cargoShipWaypoint.ReachedWaypoint = true;
 					_cargoShipWaypoint.ReachedWaypointTime = MyAPIGateway.Session.GameDateTime;
@@ -148,12 +148,12 @@ namespace RivalAI.Behavior {
 
 						if (Despawn.NearestPlayer == null || Despawn.PlayerDistance > 1200) {
 
-							Despawn.DoDespawn = true;
+							Settings.DoDespawn = true;
 						
 						}
 
 						ChangeCoreBehaviorMode(BehaviorMode.Retreat);
-						Despawn.DoRetreat = true;
+						Settings.DoRetreat = true;
 
 					} else {
 
@@ -181,16 +181,32 @@ namespace RivalAI.Behavior {
 
 		}
 
+		private double GetDistanceToWaypoint() {
+
+			if (AutoPilot.CurrentPlanet != null && _waypointIsDespawn) {
+
+				var despawnUp = Vector3D.Normalize(AutoPilot.State.InitialWaypoint - AutoPilot.CurrentPlanet.PositionComp.WorldAABB.Center);
+				var mySeaLevel = AutoPilot.UpDirectionFromPlanet * AutoPilot.CurrentPlanet.AverageRadius + AutoPilot.CurrentPlanet.PositionComp.WorldAABB.Center;
+				var despawnSeaLevel = despawnUp * AutoPilot.CurrentPlanet.AverageRadius + AutoPilot.CurrentPlanet.PositionComp.WorldAABB.Center;
+
+				return Vector3D.Distance(mySeaLevel, despawnSeaLevel);
+
+			} 
+
+			return Vector3D.Distance(RemoteControl.GetPosition(), AutoPilot.State.InitialWaypoint); 
+
+		}
+
 		private void SelectNextWaypoint() {
 
 			if (!AutoPilot.State.CargoShipDespawn.Valid) {
 
-				Logger.MsgDebug("Setting Initial CargoShip Despawn Waypoint", DebugTypeEnum.General);
+				Logger.MsgDebug("Setting Initial CargoShip Despawn Waypoint", DebugTypeEnum.BehaviorSpecific);
 				var despawnCoords = MESApi.GetDespawnCoords(RemoteControl.SlimBlock.CubeGrid);
 
 				if (despawnCoords == Vector3D.Zero) {
 
-					Logger.MsgDebug("Could Not Get From MES. Creating Manual Despawn Waypoint", DebugTypeEnum.General);
+					Logger.MsgDebug("Could Not Get From MES. Creating Manual Despawn Waypoint", DebugTypeEnum.BehaviorSpecific);
 					despawnCoords = AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition());
 
 				}
@@ -209,7 +225,7 @@ namespace RivalAI.Behavior {
 
 				if (waypoint == null || !waypoint.Valid || waypoint.ReachedWaypoint) {
 
-					Logger.MsgDebug("Invalid or Reached Waypoint Has Been Removed", DebugTypeEnum.General);
+					Logger.MsgDebug("Invalid or Reached Waypoint Has Been Removed", DebugTypeEnum.BehaviorSpecific);
 					AutoPilot.State.CargoShipWaypoints.RemoveAt(0);
 					continue;
 
@@ -223,7 +239,7 @@ namespace RivalAI.Behavior {
 
 		public override void BehaviorInit(IMyRemoteControl remoteControl) {
 
-			Logger.MsgDebug("Beginning Behavior Init For CargoShip", DebugTypeEnum.General);
+			Logger.MsgDebug("Beginning Behavior Init For CargoShip", DebugTypeEnum.BehaviorSetup);
 
 			//Core Setup
 			CoreSetup(remoteControl);

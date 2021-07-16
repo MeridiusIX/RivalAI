@@ -158,7 +158,8 @@ namespace RivalAI.Helpers {
         RandomEncounter,
         PlanetaryCargoShip,
         PlanetaryInstallation,
-        BossEncounter
+        BossEncounter,
+        Creature
     
     }
 

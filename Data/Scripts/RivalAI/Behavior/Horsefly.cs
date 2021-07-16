@@ -102,7 +102,7 @@ namespace RivalAI.Behavior {
 
 			base.MainBehavior();
 
-			if (Mode != BehaviorMode.Retreat && Despawn.DoRetreat == true) {
+			if (Mode != BehaviorMode.Retreat && Settings.DoRetreat == true) {
 
 				ChangeCoreBehaviorMode(BehaviorMode.Retreat);
 				AutoPilot.ActivateAutoPilot(this.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
